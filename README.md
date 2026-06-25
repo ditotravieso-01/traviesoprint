@@ -18,4 +18,39 @@ Herramientas internas de **CairoStudio**, desarrolladas por TraviesoWorks.
 
 Las actualizaciones se aplican automáticamente cada minuto mediante `cron` + `deploy.sh`.
 
+
+```text
+## 🛠️ Mantenimiento
+
+- `git push` desde el entorno de desarrollo.
+- El servidor se actualiza solo en el siguiente ciclo del cron.
+```
+
 ## 📁 Estructura
+Cairostudiokit/
+├── tools/
+│   ├── etiquetas/
+│   │   ├── app.py
+│   │   └── templates/
+│   │       └── calculadora.html
+│   ├── lona/
+│   │   ├── app.py
+│   │   └── templates/
+│   │       └── lona.html
+│   ├── portal/
+│   │   └── index.html
+│   └── services/
+│       ├── calculadora.service
+│       ├── lona-calculadora.service
+│       └── calculadora-monitor.service
+├── monitor/
+│   └── monitor.py
+├── config/
+│   └── nginx-cairostudiokit.conf
+├── setup.sh
+├── deploy.sh
+├── requirements.txt
+├── .gitignore
+└── README.md
+
+

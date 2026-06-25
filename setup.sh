@@ -1,7 +1,6 @@
 #!/bin/bash
 # =============================================================================
 # Cairostudiokit – Instalación inicial en LXC nuevo
-# Ejecutar después de clonar el repo en /opt/cairostudiokit
 # =============================================================================
 set -e
 
@@ -9,7 +8,7 @@ PROJECT_DIR="/opt/cairostudiokit"
 
 echo "=== Instalando dependencias del sistema ==="
 apt update
-apt install -y python3 python3-pip python3-venv nginx git curl
+apt install -y python3 python3-pip python3-venv nginx git curl cron
 
 echo "=== Creando usuario cairostudiokit ==="
 id -u cairostudiokit &>/dev/null || useradd -m -s /bin/bash cairostudiokit
@@ -22,13 +21,13 @@ mkdir -p /opt/venvs
 python3 -m venv /opt/venvs/calculadora
 python3 -m venv /opt/venvs/lona
 
-/opt/venvs/calculadora/bin/pip install -r "$PROJECT_DIR/tools/requirements.txt"
-/opt/venvs/lona/bin/pip install -r "$PROJECT_DIR/tools/requirements.txt"
+/opt/venvs/calculadora/bin/pip install -r "$PROJECT_DIR/requirements.txt"
+/opt/venvs/lona/bin/pip install -r "$PROJECT_DIR/requirements.txt"
 
 chown -R cairostudiokit:cairostudiokit /opt/venvs
 
 echo "=== Instalando servicios systemd ==="
-cp "$PROJECT_DIR/services"/*.service /etc/systemd/system/
+cp "$PROJECT_DIR/tools/services"/*.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable calculadora lona-calculadora calculadora-monitor
 
@@ -41,7 +40,7 @@ ln -sf /etc/nginx/sites-available/cairostudiokit /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
 nginx -t && systemctl restart nginx
 
-echo "=== Configurando cron de actualización automática ==="
+echo "=== Configurando tarea cron para despliegue automático ==="
 echo "* * * * * cairostudiokit cd $PROJECT_DIR && bash deploy.sh >> $PROJECT_DIR/deploy.log 2>&1" > /etc/cron.d/cairostudiokit-deploy
 
 echo "=== Iniciando servicios ==="

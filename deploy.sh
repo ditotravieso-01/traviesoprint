@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+
 REPO_DIR="/opt/cairostudiokit"
 VENV_ETIQUETAS="/opt/venvs/calculadora/bin"
 VENV_LONA="/opt/venvs/lona/bin"
