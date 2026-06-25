@@ -22,8 +22,8 @@ mkdir -p /opt/venvs
 python3 -m venv /opt/venvs/calculadora
 python3 -m venv /opt/venvs/lona
 
-/opt/venvs/calculadora/bin/pip install -r "$PROJECT_DIR/requirements.txt"
-/opt/venvs/lona/bin/pip install -r "$PROJECT_DIR/requirements.txt"
+/opt/venvs/calculadora/bin/pip install -r "$PROJECT_DIR/tools/requirements.txt"
+/opt/venvs/lona/bin/pip install -r "$PROJECT_DIR/tools/requirements.txt"
 
 chown -R cairostudiokit:cairostudiokit /opt/venvs
 

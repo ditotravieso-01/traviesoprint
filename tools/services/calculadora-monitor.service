@@ -1,14 +1,13 @@
 [Unit]
-Description=Monitor de calculadoras Cairostudiokit
-After=network.target calculadora.service lona-calculadora.service
+Description=Calculadora de Etiquetas – Cairostudiokit
+After=network.target
 
 [Service]
 User=cairostudiokit
 Group=cairostudiokit
-WorkingDirectory=/opt/cairostudiokit/monitor
-ExecStart=/usr/bin/python3 /opt/cairostudiokit/monitor/monitor.py
-Restart=always
-RestartSec=10
+WorkingDirectory=/opt/cairostudiokit/tools/etiquetas
+Environment="PATH=/opt/venvs/calculadora/bin"
+ExecStart=/opt/venvs/calculadora/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
 
 [Install]
 WantedBy=multi-user.target
