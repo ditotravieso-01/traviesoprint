@@ -1,11 +1,11 @@
 [Unit]
-Description=Calculadora de Lona – CairostudioKit
+Description=Calculadora de Lona – Cairostudiokit
 After=network.target
 
 [Service]
-User=cairokit
-Group=cairokit
-WorkingDirectory=/opt/cairokit/tools/lona
+User=cairostudiokit
+Group=cairostudiokit
+WorkingDirectory=/opt/cairostudiokit/tools/lona
 Environment="PATH=/opt/venvs/lona/bin"
 ExecStart=/opt/venvs/lona/bin/gunicorn --workers 2 --bind 127.0.0.1:5001 app:app
 

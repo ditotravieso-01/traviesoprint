@@ -1,12 +1,12 @@
 [Unit]
-Description=Monitor de calculadoras CairostudioKit
+Description=Monitor de calculadoras Cairostudiokit
 After=network.target calculadora.service lona-calculadora.service
 
 [Service]
-User=cairokit
-Group=cairokit
-WorkingDirectory=/opt/cairokit/monitor
-ExecStart=/usr/bin/python3 /opt/cairokit/monitor/monitor.py
+User=cairostudiokit
+Group=cairostudiokit
+WorkingDirectory=/opt/cairostudiokit/monitor
+ExecStart=/usr/bin/python3 /opt/cairostudiokit/monitor/monitor.py
 Restart=always
 RestartSec=10
 
