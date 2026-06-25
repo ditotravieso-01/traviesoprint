@@ -8,6 +8,7 @@ VENV_LONA="/opt/venvs/lona/bin"
 echo "📥 Descargando cambios..."
 cd "$REPO_DIR"
 git pull origin main
+git fetch --tags
 
 echo "📦 Verificando dependencias..."
 $VENV_ETIQUETAS/pip install -r requirements.txt -q
