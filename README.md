@@ -29,28 +29,12 @@ Las actualizaciones se aplican automáticamente cada minuto mediante `cron` + `d
 ## 📁 Estructura
 Cairostudiokit/
 ├── tools/
-│   ├── etiquetas/
-│   │   ├── app.py
-│   │   └── templates/
-│   │       └── calculadora.html
-│   ├── lona/
-│   │   ├── app.py
-│   │   └── templates/
-│   │       └── lona.html
-│   ├── portal/
-│   │   └── index.html
-│   └── services/
-│       ├── calculadora.service
-│       ├── lona-calculadora.service
-│       └── calculadora-monitor.service
-├── monitor/
-│   └── monitor.py
-├── config/
-│   └── nginx-cairostudiokit.conf
-├── setup.sh
-├── deploy.sh
-├── requirements.txt
-├── .gitignore
-└── README.md
-
-
+│ ├── etiquetas/ (app.py + templates/)
+│ ├── lona/ (app.py + templates/)
+│ ├── portal/ (index.html)
+│ └── services/ (systemd units)
+├── monitor/ (monitor.py)
+├── config/ (nginx)
+├── setup.sh (instalación inicial)
+├── deploy.sh (actualización automática)
+└── requirements.txt
