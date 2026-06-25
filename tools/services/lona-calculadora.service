@@ -1,0 +1,13 @@
+[Unit]
+Description=Calculadora de Lona – CairostudioKit
+After=network.target
+
+[Service]
+User=cairokit
+Group=cairokit
+WorkingDirectory=/opt/cairokit/tools/lona
+Environment="PATH=/opt/venvs/lona/bin"
+ExecStart=/opt/venvs/lona/bin/gunicorn --workers 2 --bind 127.0.0.1:5001 app:app
+
+[Install]
+WantedBy=multi-user.target

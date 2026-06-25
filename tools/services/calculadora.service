@@ -1,0 +1,13 @@
+[Unit]
+Description=Calculadora de Etiquetas – CairostudioKit
+After=network.target
+
+[Service]
+User=cairokit
+Group=cairokit
+WorkingDirectory=/opt/cairokit/tools/etiquetas
+Environment="PATH=/opt/venvs/calculadora/bin"
+ExecStart=/opt/venvs/calculadora/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
+
+[Install]
+WantedBy=multi-user.target

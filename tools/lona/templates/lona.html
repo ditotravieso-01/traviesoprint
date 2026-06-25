@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculadora de Lona – CairoStudio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" type="image/png" href="https://portal.cairostudio.cu/logo.png">
+    <style>
+        :root {
+            --bg: #ffffff; --text: #1a1a1a; --card: #f8f9fa; --border: #dee2e6;
+            --primary: #198754; --primary-hover: #157347; --result-bg: #e9ecef;
+            --error-bg: #f8d7da; --info: #6c757d;
+        }
+        .dark-mode {
+            --bg: #212529; --text: #f1f3f5; --card: #343a40; --border: #495057;
+            --primary: #198754; --primary-hover: #146c43; --result-bg: #495057;
+            --error-bg: #842029; --info: #adb5bd;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; padding: 1rem;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 2rem; max-width: 650px; width: 100%;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+        }
+        .logo-title {
+            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;
+        }
+        .logo-title img { height: 45px; }
+        .logo-title span { font-size: 1.6rem; font-weight: bold; }
+        .info { color: var(--info); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.4; }
+        form { display: flex; flex-direction: column; gap: 0.8rem; }
+        label { font-weight: 600; margin-top: 0.5rem; }
+        input[type="number"], select {
+            padding: 0.65rem; border: 1px solid var(--border); border-radius: 10px;
+            background: var(--bg); color: var(--text); font-size: 1rem; width: 100%;
+        }
+        input:focus, select:focus {
+            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(25,135,84,0.15);
+        }
+        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
+        .checkbox-group input { width: auto; }
+        button[type="submit"] {
+            background: var(--primary); color: white; border: none; padding: 0.75rem;
+            border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem;
+        }
+        button[type="submit"]:hover { background: var(--primary-hover); }
+        hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
+        .result, .error {
+            margin-top: 1.2rem; padding: 1rem; border-radius: 10px;
+            background: var(--result-bg); line-height: 1.5;
+        }
+        .error { background: var(--error-bg); }
+        footer { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; }
+        footer a { color: var(--primary); text-decoration: none; }
+        #theme-toggle {
+            background: none; border: 1px solid var(--border); border-radius: 50%;
+            width: 40px; height: 40px; font-size: 1.4rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            margin-left: auto; transition: background 0.2s;
+        }
+        #theme-toggle:hover { background: var(--result-bg); }
+
+        /* Estilos de impresión */
+        @media print {
+            @page { margin: 0.5cm; }
+            body { background: white !important; color: black !important; }
+            .container { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 100% !important; }
+            form, .info, hr, h3, label, input, select, button[type="submit"], .checkbox-group, #theme-toggle, footer {
+                display: none !important;
+            }
+            .logo-title img { height: 35px; }
+            .logo-title span { font-size: 18pt; }
+            .result { background: none !important; padding: 0 !important; font-size: 14pt; }
+            .result button { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-title">
+            <img src="https://portal.cairostudio.cu/logo.png" alt="CairoStudio">
+            <span>Lona / Merma</span>
+            <button id="theme-toggle" onclick="toggleDark()" title="Modo oscuro">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+        <p class="info">
+            Ancho máximo del rollo: <strong>1.34 m (134 cm)</strong>.<br>
+            Introduce las dimensiones de la pieza y el material.
+        </p>
+
+        <form method="POST">
+            <label>📏 Ancho de la pieza (cm):</label>
+            <input type="number" step="any" name="ancho" value="{{ ancho }}" placeholder="Ej: 120" required>
+
+            <label>📐 Alto de la pieza (cm):</label>
+            <input type="number" step="any" name="alto" value="{{ alto }}" placeholder="Ej: 80" required>
+
+            <div class="checkbox-group">
+                <input type="checkbox" id="girar" name="girar" value="1" {{ girar_checked }}>
+                <label for="girar">🔄 Girar 90° (intercambia ancho y alto)</label>
+            </div>
+
+            <label>🧵 Material:</label>
+            <select name="material" required>
+                {% for mat, precios in materiales.items() %}
+                <option value="{{ mat }}" {% if mat == material %}selected{% endif %}>
+                    {{ mat }} (impr ${{ precios.impresion }}/m², merma ${{ precios.merma }}/m²)
+                </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit">Calcular</button>
+        </form>
+
+        {% if resultado %}
+        <div class="result">
+            {{ resultado|safe }}
+            <div style="text-align: right; margin-top: 1rem;">
+                <button onclick="window.print()" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                    🖨️ Imprimir / Guardar como PDF
+                </button>
+            </div>
+        </div>
+        {% endif %}
+        {% if error %}
+        <div class="error">{{ error }}</div>
+        {% endif %}
+
+        <footer><a href="https://portal.cairostudio.cu/">← Volver al inicio</a></footer>
+    </div>
+
+    <script>
+        function toggleDark() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+        }
+        (function() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const stored = localStorage.getItem('theme');
+            const darkMode = stored ? stored === 'dark' : prefersDark;
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-icon').textContent = '☀️';
+            } else {
+                document.getElementById('theme-icon').textContent = '🌙';
+            }
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="logo.png">
+    <title>CairoStudio – Herramientas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        :root {
+            --bg: #f4f4f4;
+            --text: #333;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(0,0,0,0.1);
+            --btn-primary: #0073aa;
+            --btn-primary-hover: #005a87;
+            --btn-lona: #198754;
+            --btn-lona-hover: #146c43;
+            --footer-color: #777;
+            --border: #dee2e6;
+        }
+        .dark-mode {
+            --bg: #212529;
+            --text: #f1f3f5;
+            --card-bg: #343a40;
+            --card-shadow: rgba(0,0,0,0.4);
+            --btn-primary: #3b82f6;
+            --btn-primary-hover: #2563eb;
+            --btn-lona: #198754;
+            --btn-lona-hover: #146c43;
+            --footer-color: #adb5bd;
+            --border: #495057;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: system-ui, sans-serif;
+            background: var(--bg); color: var(--text);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; margin: 0; padding: 1rem;
+            transition: background 0.3s, color 0.3s;
+        }
+        .container {
+            background: var(--card-bg); border-radius: 24px;
+            padding: 3rem; box-shadow: 0 12px 32px var(--card-shadow);
+            text-align: center; max-width: 560px; width: 100%;
+            transition: background 0.3s, box-shadow 0.3s;
+        }
+        .logo-title {
+            display: flex; align-items: center; justify-content: center;
+            gap: 1rem; margin-bottom: 1.5rem;
+        }
+        .logo-title img { height: 60px; }
+        .logo-title h1 { font-size: 1.8rem; color: var(--btn-primary); }
+        p { margin-bottom: 2rem; font-size: 1.05rem; }
+        .btn {
+            display: block; margin: 1rem 0; padding: 1rem;
+            background: var(--btn-primary); color: white; text-decoration: none;
+            border-radius: 12px; font-size: 1.2rem; font-weight: 600;
+            transition: background 0.2s; letter-spacing: 0.3px;
+        }
+        .btn:hover { background: var(--btn-primary-hover); }
+        .btn.lona { background: var(--btn-lona); }
+        .btn.lona:hover { background: var(--btn-lona-hover); }
+        footer { margin-top: 2.5rem; font-size: 0.85rem; color: var(--footer-color); }
+        #theme-toggle {
+            background: none; border: 1px solid var(--border); border-radius: 50%;
+            width: 44px; height: 44px; font-size: 1.5rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            margin-left: auto; transition: background 0.2s;
+        }
+        #theme-toggle:hover { background: var(--border); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo-title">
+            <img src="logo.png" alt="CairoStudio">
+            <h1>🧰 Herramientas</h1>
+            <button id="theme-toggle" onclick="toggleDark()" title="Modo oscuro">
+                <span id="theme-icon">🌙</span>
+            </button>
+        </div>
+        <p>Elige la calculadora que necesites:</p>
+        <a href="https://calculadora.cairostudio.cu" class="btn">🧾 Calculadora de Etiquetas</a>
+        <a href="https://lona.cairostudio.cu" class="btn lona">🧵 Calculadora de Lona / Merma</a>
+        <footer>&copy; CairoStudio – Grupo Creativo · Acceso interno</footer>
+    </div>
+    <script>
+        function toggleDark() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+        }
+        (function() {
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const stored = localStorage.getItem('theme');
+            const darkMode = stored ? stored === 'dark' : prefersDark;
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                document.getElementById('theme-icon').textContent = '☀️';
+            } else {
+                document.getElementById('theme-icon').textContent = '🌙';
+            }
+        })();
+    </script>
+</body>
+</html>
