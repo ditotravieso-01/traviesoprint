@@ -27,7 +27,7 @@ python3 -m venv /opt/venvs/lona
 chown -R cairostudiokit:cairostudiokit /opt/venvs
 
 echo "=== Instalando servicios systemd ==="
-cp "$PROJECT_DIR/tools/services"/*.service /etc/systemd/system/
+cp "$PROJECT_DIR/services"/*.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable calculadora lona-calculadora calculadora-monitor
 
