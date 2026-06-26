@@ -34,6 +34,13 @@ systemctl enable etiquetas carteles calculadora-monitor
 echo "=== Configurando sudo para reinicio de servicios ==="
 echo "cairostudiokit ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart etiquetas.service, /usr/bin/systemctl restart carteles.service" > /etc/sudoers.d/cairostudiokit
 
+echo "=== Generando certificado SSL autofirmado para *.cairostudio.cu ==="
+mkdir -p /etc/nginx/ssl
+openssl req -x509 -nodes -days 3650 -newkey rsa:2048 \
+  -keyout /etc/nginx/ssl/cairostudiokit.key \
+  -out /etc/nginx/ssl/cairostudiokit.crt \
+  -subj "/C=CU/ST=LaHabana/L=Centro/O=CairoStudio/CN=*.cairostudio.cu"
+
 echo "=== Configurando Nginx ==="
 cp "$PROJECT_DIR/config/nginx-cairostudiokit.conf" /etc/nginx/sites-available/cairostudiokit
 ln -sf /etc/nginx/sites-available/cairostudiokit /etc/nginx/sites-enabled/
