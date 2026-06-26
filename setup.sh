@@ -18,21 +18,21 @@ chown -R cairostudiokit:cairostudiokit "$PROJECT_DIR"
 
 echo "=== Creando entornos virtuales ==="
 mkdir -p /opt/venvs
-python3 -m venv /opt/venvs/calculadora
-python3 -m venv /opt/venvs/lona
+python3 -m venv /opt/venvs/etiquetas
+python3 -m venv /opt/venvs/carteles
 
-/opt/venvs/calculadora/bin/pip install -r "$PROJECT_DIR/requirements.txt"
-/opt/venvs/lona/bin/pip install -r "$PROJECT_DIR/requirements.txt"
+/opt/venvs/etiquetas/bin/pip install -r "$PROJECT_DIR/requirements.txt"
+/opt/venvs/carteles/bin/pip install -r "$PROJECT_DIR/requirements.txt"
 
 chown -R cairostudiokit:cairostudiokit /opt/venvs
 
 echo "=== Instalando servicios systemd ==="
 cp "$PROJECT_DIR/services"/*.service /etc/systemd/system/
 systemctl daemon-reload
-systemctl enable calculadora lona-calculadora calculadora-monitor
+systemctl enable etiquetas carteles calculadora-monitor
 
 echo "=== Configurando sudo para reinicio de servicios ==="
-echo "cairostudiokit ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart calculadora.service, /usr/bin/systemctl restart lona-calculadora.service" > /etc/sudoers.d/cairostudiokit
+echo "cairostudiokit ALL=(ALL) NOPASSWD: /usr/bin/systemctl restart etiquetas.service, /usr/bin/systemctl restart carteles.service" > /etc/sudoers.d/cairostudiokit
 
 echo "=== Configurando Nginx ==="
 cp "$PROJECT_DIR/config/nginx-cairostudiokit.conf" /etc/nginx/sites-available/cairostudiokit
@@ -44,7 +44,8 @@ echo "=== Configurando tarea cron para despliegue automático ==="
 echo "* * * * * cairostudiokit cd $PROJECT_DIR && bash deploy.sh >> $PROJECT_DIR/deploy.log 2>&1" > /etc/cron.d/cairostudiokit-deploy
 
 echo "=== Iniciando servicios ==="
-systemctl start calculadora lona-calculadora calculadora-monitor
+systemctl enable etiquetas carteles calculadora-monitor
+systemctl start etiquetas carteles calculadora-monitor
 
 echo "=== Verificación ==="
 sleep 2

@@ -15,6 +15,6 @@ $VENV_ETIQUETAS/pip install -r requirements.txt -q
 $VENV_LONA/pip install -r requirements.txt -q
 
 echo "🔄 Reiniciando servicios..."
-sudo systemctl restart calculadora lona-calculadora
+sudo systemctl restart etiquetas carteles
 
 echo "✅ Despliegue completado."

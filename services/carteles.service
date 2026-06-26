@@ -1,0 +1,13 @@
+[Unit]
+Description=Calculadora de Carteles – Cairostudiokit
+After=network.target
+
+[Service]
+User=cairostudiokit
+Group=cairostudiokit
+WorkingDirectory=/opt/cairostudiokit/tools/carteles
+Environment="PATH=/opt/venvs/carteles/bin"
+ExecStart=/opt/venvs/carteles/bin/gunicorn --workers 2 --bind 127.0.0.1:5001 app:app
+
+[Install]
+WantedBy=multi-user.target

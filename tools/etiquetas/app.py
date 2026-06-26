@@ -151,7 +151,7 @@ def index():
             mesa_checked = "checked" if request.form.get('mesa') == '1' else ""
             girar_checked = "checked" if request.form.get('girar') == '1' else ""
 
-    return render_template('calculadora.html',
+    return render_template('etiquetas.html',
                            resultado=resultado,
                            error=error,
                            ancho=ancho,

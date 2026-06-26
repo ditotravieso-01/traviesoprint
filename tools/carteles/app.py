@@ -74,7 +74,7 @@ def index():
             alto = request.form.get('alto', '')
             girar_checked = "checked" if request.form.get('girar') == '1' else ""
 
-    return render_template('lona.html',
+    return render_template('carteles.html',
                            resultado=resultado,
                            error=error,
                            ancho=ancho,

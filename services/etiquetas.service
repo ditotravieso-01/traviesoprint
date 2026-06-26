@@ -6,8 +6,8 @@ After=network.target
 User=cairostudiokit
 Group=cairostudiokit
 WorkingDirectory=/opt/cairostudiokit/tools/etiquetas
-Environment="PATH=/opt/venvs/calculadora/bin"
-ExecStart=/opt/venvs/calculadora/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
+Environment="PATH=/opt/venvs/etiquetas/bin"
+ExecStart=/opt/venvs/etiquetas/bin/gunicorn --workers 2 --bind 127.0.0.1:5000 app:app
 
 [Install]
 WantedBy=multi-user.target

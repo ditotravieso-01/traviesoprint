@@ -1,6 +1,6 @@
 [Unit]
 Description=Monitor de calculadoras Cairostudiokit
-After=network.target calculadora.service lona-calculadora.service
+After=network.target etiquetas.service carteles.service
 
 [Service]
 User=cairostudiokit

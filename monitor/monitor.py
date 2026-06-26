@@ -15,8 +15,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 SERVICES = {
-    'calculadora': {'port': 5000, 'service': 'calculadora.service'},
-    'lona': {'port': 5001, 'service': 'lona-calculadora.service'},
+    'calculadora': {'port': 5000, 'service': 'etiquetas.service'},
+    'lona': {'port': 5001, 'service': 'carteles.service'},
 }
 
 CHECK_INTERVAL = 60
