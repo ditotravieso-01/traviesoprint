@@ -83,7 +83,7 @@
 <body>
     <div class="container">
         <div class="logo-title">
-            <img src="https://portal.cairostudio.cu/logo.png" alt="CairoStudio">
+            <img src="https://kit.cairostudio.cu/logo.png" alt="CairoStudio">
             <span>Calculadora de Etiquetas</span>
             <button id="theme-toggle" onclick="toggleDark()" title="Modo oscuro">
                 <span id="theme-icon">🌙</span>
@@ -107,6 +107,11 @@
             </div>
 
             <div class="checkbox-group">
+                <input type="checkbox" id="auto_girar" name="auto_girar" value="1" {{ auto_girar_checked }}>
+                <label for="auto_girar">🤖 Modo automático (elige la mejor orientación)</label>
+            </div>
+
+            <div class="checkbox-group">
                 <input type="checkbox" id="mesa" name="mesa" value="1" {{ mesa_checked }}>
                 <label for="mesa">➕ Añadir 2 mm por mesa de trabajo (margen de corte)</label>
             </div>
@@ -120,7 +125,7 @@
             <input type="number" step="any" name="cantidad" placeholder="Dejar en blanco si usas Área" value="{{ cantidad }}">
 
             <label>📏 Área total (m²):</label>
-            <input type="number" step="any" name="area" placeholder="Dejar en blanco si usas Cantidad" value="{{ area }}">
+            <input type="number" step="any" name="area" placeholder="1.0" value="{{ area }}">
 
             <button type="submit">Calcular</button>
         </form>
