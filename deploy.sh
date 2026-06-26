@@ -2,8 +2,8 @@
 set -e
 
 REPO_DIR="/opt/cairostudiokit"
-VENV_ETIQUETAS="/opt/venvs/calculadora/bin"
-VENV_LONA="/opt/venvs/lona/bin"
+VENV_ETIQUETAS="/opt/venvs/etiquetas/bin"
+VENV_LONA="/opt/venvs/carteles/bin"
 
 echo "📥 Descargando cambios..."
 cd "$REPO_DIR"
