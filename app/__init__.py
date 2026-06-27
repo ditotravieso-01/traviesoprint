@@ -2,26 +2,36 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from .config import Config
 
-# Creamos el objeto SQLAlchemy a nivel global (para usarlo en models.py)
+# Instancia global de SQLAlchemy
 db = SQLAlchemy()
 
 def create_app():
-    # Creamos la instancia de Flask
     app = Flask(__name__)
-    
-    # Cargamos la configuración desde config.py
     app.config.from_object(Config)
-    
-    # Inicializamos la base de datos con la app
+
+    # Inicializar SQLAlchemy con la app
     db.init_app(app)
-    
-    # Por ahora, dejamos un mensaje en la raíz para probar que funciona
-    @app.route('/')
-    def index():
-        return "¡La nueva estructura de Cairostudiokit está viva! Diseño en construcción..."
-    
-    # 🔥 AQUÍ REGISTRAREMOS LOS BLUEPRINTS/MÓDULOS MÁS ADELANTE
-    # from .auth import auth_bp
-    # app.register_blueprint(auth_bp, url_prefix='/auth')
-    
+
+    # Importar los modelos para que SQLAlchemy los conozca
+    from . import models
+
+    # Crear las tablas en la base de datos (si no existen)
+    with app.app_context():
+        db.create_all()
+        # Crear un usuario administrador por defecto si no existe
+        admin_user = models.User.query.filter_by(username='admin').first()
+        if not admin_user:
+            admin = models.User(username='admin')
+            admin.set_password('admin')  # Contraseña: admin
+            db.session.add(admin)
+            db.session.commit()
+            print("✅ Usuario 'admin' creado con contraseña 'admin'")
+
+    # Registrar los blueprints
+    from .auth import auth_bp
+    from .home import home_bp
+
+    app.register_blueprint(auth_bp, url_prefix='/auth')
+    app.register_blueprint(home_bp)  # La raíz '/' la maneja home_bp
+
     return app
