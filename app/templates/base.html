@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Cairostudiokit{% endblock %}</title>
+
+    <!-- CSS personalizado -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Bloque para CSS adicional (por si un módulo necesita algo extra) -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- ==================== SIDEBAR ==================== -->
+    <aside class="sidebar">
+        <div class="logo-area">
+            <div class="logo-circle">
+                <!-- LOGO REAL DE CAIROSTUDIO -->
+                <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}"
+                     alt="Logo CairoStudio Grupo Creativo">
+            </div>
+            <div class="logo-text">
+                CAIROSTUDIO
+                <small>Grupo Creativo</small>
+            </div>
+        </div>
+
+        <nav class="nav-menu">
+            <!-- El bloque 'nav_items' permite a cada página resaltar su ítem activo -->
+            {% block nav_items %}
+                <a href="{{ url_for('home.home') }}" class="nav-item active">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">🏷️</span> Etiquetas
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📐</span> Carteles
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">👥</span> Clientes
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📝</span> Notas
+                </a>
+                <a href="#" class="nav-item">
+                    <span class="icon">📦</span> Órdenes
+                </a>
+            {% endblock %}
+        </nav>
+
+        <div class="sidebar-footer">
+            v0.1 · Interno
+        </div>
+    </aside>
+
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
+    <main class="main-content">
+
+        <!-- Header superior -->
+        <header class="main-header">
+            <h1>{% block page_title %}Bienvenido{% endblock %}</h1>
+            <div class="user-badge">
+                <span>{% block user_name %}Admin{% endblock %}</span>
+                <div class="user-avatar">A</div>
+            </div>
+        </header>
+
+        <!-- Contenido dinámico (lo que cada página inyecta) -->
+        {% block content %}
+        <div class="content-card">
+            <p>Contenido por defecto. Las páginas hijas deben sobrescribir el bloque 'content'.</p>
+        </div>
+        {% endblock %}
+
+    </main>
+
+    <!-- ==================== SCRIPTS ==================== -->
+    <!-- Bloque para JavaScript común -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <!-- Bloque para scripts adicionales de cada página -->
+    {% block extra_js %}{% endblock %}
+
+</body>
+</html>

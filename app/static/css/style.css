@@ -1,0 +1,317 @@
+/* ============================================
+   CAIROSTUDIO KIT - ESTILO ARTÍSTICO (Estilo C)
+   ============================================ */
+
+/* 1. IMPORTAR FUENTES DE GOOGLE */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap');
+
+/* 2. VARIABLES GLOBALES (Paleta de colores) */
+:root {
+    /* Sidebar */
+    --sidebar-bg-start: #2c2c2c;
+    --sidebar-bg-end: #1a1a1a;
+    --sidebar-text: #c0c0c0;
+    --sidebar-text-active: #ffffff;
+    --sidebar-item-hover: rgba(255, 255, 255, 0.05);
+    --sidebar-item-active: rgba(255, 255, 255, 0.08);
+
+    /* Logo */
+    --logo-circle-bg: #3a3a3a;
+    --logo-circle-border: #555555;
+    --logo-text-color: #efefef;
+    --logo-subtext-color: #bfbfbf;
+
+    /* Main Content */
+    --main-bg: #f4f0ed;
+    --main-card-bg: #ffffff;
+    --main-border-color: #ddd6d0;
+    --main-text-color: #2a2a2a;
+
+    /* Tipografías */
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Sombras */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+/* 3. RESET Y ESTILOS BASE */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: var(--font-body);
+    background: var(--main-bg);
+    color: var(--main-text-color);
+    display: flex;
+    min-height: 100vh;
+}
+
+/* 4. SIDEBAR */
+.sidebar {
+    width: 260px;
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
+    padding: 30px 20px;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+}
+
+/* Logo */
+.logo-area {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 40px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.logo-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: var(--logo-circle-bg);
+    border: 1px solid var(--logo-circle-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.logo-circle img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    filter: brightness(0) invert(1); /* Si tu logo es oscuro, lo vuelve blanco. Si no, quita esta línea */
+}
+
+.logo-text {
+    color: var(--logo-text-color);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.logo-text small {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--logo-subtext-color);
+    margin-top: 2px;
+}
+
+/* Menú de navegación */
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-weight: 400;
+    font-size: 15px;
+    color: var(--sidebar-text);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background: var(--sidebar-item-hover);
+    color: var(--sidebar-text-active);
+}
+
+.nav-item.active {
+    background: var(--sidebar-item-active);
+    color: var(--sidebar-text-active);
+    font-weight: 500;
+}
+
+.nav-item .icon {
+    width: 24px;
+    text-align: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
+/* Footer del sidebar (opcional) */
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.3);
+    text-align: center;
+}
+
+/* 5. CONTENIDO PRINCIPAL */
+.main-content {
+    flex: 1;
+    padding: 30px 40px 40px 40px;
+    background: var(--main-bg);
+    min-height: 100vh;
+}
+
+/* Header superior */
+.main-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--main-border-color);
+}
+
+.main-header h1 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 28px;
+    color: var(--main-text-color);
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #555;
+}
+
+.user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--main-text-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+/* 6. TARJETAS Y COMPONENTES */
+.content-card {
+    background: var(--main-card-bg);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: var(--shadow-sm);
+    margin-bottom: 24px;
+}
+
+.content-card h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 22px;
+    margin-bottom: 16px;
+    color: var(--main-text-color);
+}
+
+.content-card p {
+    color: #555;
+    line-height: 1.7;
+}
+
+/* 7. BOTONES (ejemplo) */
+.btn {
+    display: inline-block;
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: 14px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: var(--main-text-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #444;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: #ccc;
+    color: #555;
+}
+
+.btn-outline:hover {
+    border-color: #888;
+    background: #f5f5f5;
+}
+
+/* 8. RESPONSIVE */
+@media (max-width: 768px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        width: 100%;
+        min-height: auto;
+        height: auto;
+        position: relative;
+        padding: 20px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+    }
+    .logo-area {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+        flex: 1;
+    }
+    .nav-menu {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 4px;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .nav-item {
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    .main-content {
+        padding: 20px;
+    }
+    .main-header h1 {
+        font-size: 22px;
+    }
+    .sidebar-footer {
+        display: none;
+    }
+}
