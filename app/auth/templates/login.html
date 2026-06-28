@@ -110,10 +110,18 @@
 </head>
 <body>
     <div class="login-container">
-        <div class="login-logo">
-            <h1>CAIROSTUDIO</h1>
-            <p>Grupo Creativo · Panel Interno</p>
-        </div>
+       <div class="login-logo">
+           <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" 
+           alt="CairoStudio Grupo Creativo" 
+           style="width: 220px; height: auto; display: block; margin: 0 auto 12px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));">
+
+           <h1 style="font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22px; color: #1a1a1a; letter-spacing: -0.3px; margin: 0;">
+            Cairostudiokit
+        </h1>
+        <p style="font-family: 'Inter', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 2.5px; color: #999; margin-top: 4px;">
+            Herramientas de Gestión Creativa
+        </p>
+</div>
 
         <!-- Mostrar mensajes de error (flash) -->
         {% with messages = get_flashed_messages() %}
@@ -133,10 +141,10 @@
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
-            <button type="submit" class="btn-login">Acceder al Kit</button>
+            <button type="submit" class="btn-login">Acceder</button>
         </form>
         <div class="footer-text">
-            v0.1 · Entorno de pruebas
+            v0.1 · Entorno de pruebas - Powered by TraviesoWorks 
         </div>
     </div>
 </body>
