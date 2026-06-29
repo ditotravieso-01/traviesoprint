@@ -1,170 +1,114 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Calculadora de Etiquetas – CairoStudio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="https://portal.cairostudio.cu/logo.png">
-    <style>
-        :root {
-            --bg: #ffffff; --text: #1a1a1a; --card: #f8f9fa; --border: #dee2e6;
-            --primary: #0d6efd; --primary-hover: #0b5ed7; --result-bg: #e9ecef;
-            --error-bg: #f8d7da; --info: #6c757d;
-        }
-        .dark-mode {
-            --bg: #212529; --text: #f1f3f5; --card: #343a40; --border: #495057;
-            --primary: #3b82f6; --primary-hover: #2563eb; --result-bg: #495057;
-            --error-bg: #842029; --info: #adb5bd;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background-color: var(--bg); color: var(--text);
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; padding: 1rem;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .container {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 16px; padding: 2rem; max-width: 650px; width: 100%;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        }
-        .logo-title {
-            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;
-        }
-        .logo-title img { height: 45px; }
-        .logo-title span { font-size: 1.6rem; font-weight: bold; }
-        .info { color: var(--info); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.4; }
-        form { display: flex; flex-direction: column; gap: 0.8rem; }
-        label { font-weight: 600; margin-top: 0.5rem; display: flex; align-items: center; gap: 0.3rem; }
-        input[type="number"], input[type="text"] {
-            padding: 0.65rem 0.75rem; border: 1px solid var(--border);
-            border-radius: 10px; background: var(--bg); color: var(--text); font-size: 1rem;
-            transition: border 0.2s;
-        }
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(13,110,253,0.15); }
-        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
-        .checkbox-group input { width: auto; }
-        button[type="submit"] {
-            background: var(--primary); color: #fff; border: none; padding: 0.75rem;
-            border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer;
-            transition: background 0.2s; margin-top: 0.5rem;
-        }
-        button[type="submit"]:hover { background: var(--primary-hover); }
-        hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
-        .result, .error {
-            margin-top: 1.2rem; padding: 1rem; border-radius: 10px;
-            line-height: 1.5; background: var(--result-bg);
-        }
-        .error { background: var(--error-bg); }
-        footer { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; }
-        footer a { color: var(--primary); text-decoration: none; }
-        #theme-toggle {
-            background: none; border: 1px solid var(--border); border-radius: 50%;
-            width: 40px; height: 40px; font-size: 1.4rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            margin-left: auto; transition: background 0.2s;
-        }
-        #theme-toggle:hover { background: var(--result-bg); }
-        @media print {
-            @page { margin: 0.5cm; }
-            body { background: white !important; color: black !important; }
-            .container { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 100% !important; }
-            form, .info, hr, h3, label, input, select, button[type="submit"], .checkbox-group, #theme-toggle, footer {
-                display: none !important;
-            }
-            .logo-title img { height: 35px; }
-            .logo-title span { font-size: 18pt; }
-            .result { background: none !important; padding: 0 !important; font-size: 14pt; }
-            .result button { display: none !important; }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo-title">
-            <img src="https://kit.cairostudio.cu/logo.png" alt="CairoStudio">
-            <span>Calculadora de Etiquetas</span>
-            <button id="theme-toggle" onclick="toggleDark()" title="Modo oscuro">
-                <span id="theme-icon">🌙</span>
+{% extends "base.html" %}
+
+{% block title %}Calculadora de Etiquetas · CairoStudio{% endblock %}
+
+{% block nav_items %}
+    <a href="{{ url_for('home.home') }}" class="nav-item">
+        <span class="icon">📊</span> Dashboard
+    </a>
+    <a href="{{ url_for('etiquetas.index') }}" class="nav-item active">
+        <span class="icon">🏷️</span> Etiquetas
+    </a>
+    <a href="#" class="nav-item">
+        <span class="icon">📐</span> Carteles
+    </a>
+    <a href="#" class="nav-item">
+        <span class="icon">👥</span> Clientes
+    </a>
+    <a href="#" class="nav-item">
+        <span class="icon">📝</span> Notas
+    </a>
+    <a href="#" class="nav-item">
+        <span class="icon">📦</span> Órdenes
+    </a>
+{% endblock %}
+
+{% block page_title %}📐 Calculadora de Etiquetas{% endblock %}
+
+{% block content %}
+
+<div class="content-card" style="padding: 30px 35px;">
+
+    <!-- Título principal con estilo Clásico Elegante -->
+    <div style="font-family: 'Inter', sans-serif; font-weight: 400; font-size: 14px; color: #777; margin-top: 2px; border-bottom: 1px solid #eee; padding-bottom: 12px;">
+        Rollo de 1.3 m · Marca de corte 20 mm
+   </div>
+    
+
+    <!-- Formulario (estructura vertical) -->
+    <form method="POST" action="{{ url_for('etiquetas.index') }}" style="margin-top: 20px;">
+
+        <!-- Ancho -->
+        <div style="margin-bottom: 16px;">
+            <label for="ancho" style="display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">Ancho de la etiqueta (cm)</label>
+            <input type="number" step="0.01" id="ancho" name="ancho" value="{{ ancho }}" placeholder="ej. 10" required
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border 0.2s;">
+        </div>
+
+        <!-- Alto -->
+        <div style="margin-bottom: 16px;">
+            <label for="alto" style="display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">Alto de la etiqueta (cm)</label>
+            <input type="number" step="0.01" id="alto" name="alto" value="{{ alto }}" placeholder="ej. 15" required
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border 0.2s;">
+        </div>
+
+        <!-- Precio -->
+        <div style="margin-bottom: 16px;">
+            <label for="precio" style="display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">Precio por m² (USD)</label>
+            <input type="number" step="0.01" id="precio" name="precio" value="{{ precio }}" placeholder="10.00"
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border 0.2s;">
+        </div>
+
+        <!-- Cantidad deseada -->
+        <div style="margin-bottom: 16px;">
+            <label for="cantidad" style="display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">Cantidad de etiquetas deseada</label>
+            <input type="number" step="1" id="cantidad" name="cantidad" value="{{ cantidad }}" placeholder="ej. 500"
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border 0.2s;">
+            <small style="color: #999; display: block; margin-top: 4px;">Déjalo vacío si usas área.</small>
+        </div>
+
+        <!-- Área (m²) -->
+        <div style="margin-bottom: 16px;">
+            <label for="area" style="display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px;">Área (m²)</label>
+            <input type="number" step="0.01" id="area" name="area" value="{{ area }}" placeholder="ej. 2.5"
+                   style="width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border 0.2s;">
+            <small style="color: #999; display: block; margin-top: 4px;">Déjalo vacío si usas cantidad.</small>
+        </div>
+
+        <!-- Checkboxes -->
+        <div style="display: flex; flex-wrap: wrap; gap: 16px; margin: 16px 0 20px 0;">
+            <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" name="mesa" value="1" {{ mesa_checked }}> Margen de mesa (2 mm)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" name="girar" value="1" {{ girar_checked }}> Girar 90° (manual)
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-weight: 400; font-size: 14px; cursor: pointer;">
+                <input type="checkbox" name="auto_girar" value="1" {{ auto_girar_checked }}> 🔄 Auto-girar (elige mejor orientación)
+            </label>
+        </div>
+
+        <!-- Botón Calcular -->
+        <div style="margin-top: 8px;">
+            <button type="submit" style="background: #1a1a1a; color: white; border: none; padding: 12px 28px; border-radius: 30px; font-weight: 600; font-size: 16px; cursor: pointer; transition: background 0.2s;">
+                Calcular
             </button>
         </div>
-        <p class="info">
-            Papel: 1.3 m ancho. 1 m² rinde ≈ 1.3 m × 0.77 m.<br>
-            Las marcas de corte (20 mm) reducen el ancho útil.
-        </p>
+    </form>
 
-        <form method="POST">
-            <label>📏 Ancho de etiqueta (cm):</label>
-            <input type="number" step="any" name="ancho" value="{{ ancho }}" placeholder="Ej: 9.0" required>
-
-            <label>📐 Alto de etiqueta (cm):</label>
-            <input type="number" step="any" name="alto" value="{{ alto }}" placeholder="Ej: 6.0" required>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="girar" name="girar" value="1" {{ girar_checked }}>
-                <label for="girar">🔄 Girar etiqueta 90° (intercambia ancho por alto)</label>
-            </div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="auto_girar" name="auto_girar" value="1" {{ auto_girar_checked }}>
-                <label for="auto_girar">🤖 Modo automático (elige la mejor orientación)</label>
-            </div>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="mesa" name="mesa" value="1" {{ mesa_checked }}>
-                <label for="mesa">➕ Añadir 2 mm por mesa de trabajo (margen de corte)</label>
-            </div>
-
-            <label>💰 Precio por m² (USD):</label>
-            <input type="number" step="any" name="precio" value="{{ precio }}" placeholder="10.0" required>
-
-            <hr>
-            <h3>🔽 Calcular por:</h3>
-            <label>📦 Cantidad de etiquetas deseada:</label>
-            <input type="number" step="any" name="cantidad" placeholder="Dejar en blanco si usas Área" value="{{ cantidad }}">
-
-            <label>📏 Área total (m²):</label>
-            <input type="number" step="any" name="area" placeholder="1.0" value="{{ area }}">
-
-            <button type="submit">Calcular</button>
-        </form>
-
-        {% if resultado %}
-        <div class="result">
-            {{ resultado|safe }}
-            <div style="text-align: right; margin-top: 1rem;">
-                <button onclick="window.print()" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                    🖨️ Imprimir / Guardar como PDF
-                </button>
-            </div>
-        </div>
-        {% endif %}
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <footer><a href="https://kit.cairostudio.cu/">← Volver al inicio</a></footer>
+    <!-- Mensaje de error -->
+    {% if error %}
+    <div style="margin-top: 24px; padding: 14px 18px; background: #fee2e2; color: #991b1b; border-radius: 8px; border-left: 4px solid #dc2626; font-size: 14px;">
+        {{ error|safe }}
     </div>
+    {% endif %}
 
-    <script>
-        function toggleDark() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
-        }
-        (function() {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const stored = localStorage.getItem('theme');
-            const darkMode = stored ? stored === 'dark' : prefersDark;
-            if (darkMode) {
-                document.body.classList.add('dark-mode');
-                document.getElementById('theme-icon').textContent = '☀️';
-            } else {
-                document.getElementById('theme-icon').textContent = '🌙';
-            }
-        })();
-    </script>
-</body>
-</html>
+    <!-- Resultado -->
+    {% if resultado %}
+    <div style="margin-top: 24px; padding: 18px 22px; background: #f8f6f4; border-radius: 12px; border-left: 4px solid #1a1a1a; line-height: 1.8; font-size: 15px;">
+        {{ resultado|safe }}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
