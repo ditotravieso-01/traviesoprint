@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 from .config import Config
 
@@ -30,8 +30,10 @@ def create_app():
     # Registrar los blueprints
     from .auth import auth_bp
     from .home import home_bp
+    from .modulos.etiquetas import etiquetas_bp
 
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(home_bp)  # La raíz '/' la maneja home_bp
+    app.register_blueprint(etiquetas_bp)
 
     return app

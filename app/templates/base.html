@@ -33,7 +33,7 @@
                 <a href="{{ url_for('home.home') }}" class="nav-item active">
                     <span class="icon">📊</span> Dashboard
                 </a>
-                <a href="#" class="nav-item">
+                <a href="{{ url_for('etiquetas.index') }}" class="nav-item">
                     <span class="icon">🏷️</span> Etiquetas
                 </a>
                 <a href="#" class="nav-item">
@@ -52,7 +52,13 @@
         </nav>
 
         <div class="sidebar-footer">
-            v0.1 · Interno
+            <a href="{{ url_for('auth.logout') }}"
+               style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 13px; display: block; margin-top: 10px; transition: color 0.2s;">
+        🔒 Cerrar sesión
+            </a>
+            <div style="margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.2);">
+                v0.1 · Interno
+            </div>
         </div>
     </aside>
 

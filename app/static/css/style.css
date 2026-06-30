@@ -94,7 +94,7 @@ body {
     width: 40px;
     height: 40px;
     object-fit: contain;
-    filter: brightness(0) invert(1); /* Si tu logo es oscuro, lo vuelve blanco. Si no, quita esta línea */
+    /* filter: brightness(0) invert(1); */
 }
 
 .logo-text {
