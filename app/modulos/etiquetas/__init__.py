@@ -178,17 +178,32 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
                 • Etiquetas extra: {etiquetas_extra}<br>
                 • Filas extra: {filas_extra}
                 """
+
         else:
-            area_total = float(area_str)
-            largo_total_mm = (area_total / (ANCHO_PAPEL_MM / 1000.0)) * 1000.0
-            filas = int(largo_total_mm // alto_efectivo)
+            # --- MODO ÁREA (modificado para paños completos) ---
+            area_total_ingresada = float(area_str)
+            metros_completos = int(area_total_ingresada)  # Parte entera
+            area_resto = area_total_ingresada - metros_completos
+
+            # Filas de los metros completos
+            filas = metros_completos * filas_por_metro
+
+            # Filas del área fraccionaria (si existe)
+            if area_resto > 0:
+                largo_resto_mm = (area_resto / (ANCHO_PAPEL_MM / 1000.0)) * 1000.0
+                filas_resto = int(largo_resto_mm // alto_efectivo)
+                filas += filas_resto
+
             cantidad_etiq = filas * columnas
+            # El área total real (para mostrar en resultado y precio) sigue siendo el área ingresada
+            area_total = area_total_ingresada
             precio_total = area_total * precio_m2
             filas_usadas = filas
             celdas_totales = columnas * filas_usadas
-            es_completo = False
+            es_completo = False  # Porque puede haber fracción
+
             resultado = f"""
-            <strong>📊 Distribución en {area_total} m²:</strong><br>
+            <strong>📊 Distribución en {area_total:.2f} m²:</strong><br>
             {mensaje_orientacion}<br>
             • Ancho útil: {ancho_util_mm/10:.2f} cm, Columnas: {columnas}<br>
             • Alto por etiqueta: {alto_efectivo/10:.2f} cm, Filas: {filas}<br>
@@ -196,7 +211,7 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
             • Precio: <strong>${precio_total:.2f} USD</strong>
             """
             detalles = f"""
-            • Modo: Área ({area_total} m²)<br>
+            • Modo: Área ({area_total:.2f} m²)<br>
             • Columnas: {columnas}<br>
             • Filas totales: {filas}<br>
             • Alto por etiqueta: {alto_efectivo/10:.2f} cm<br>
@@ -204,6 +219,8 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
             • Margen de mesa: {'Sí (2mm)' if mesa_activo else 'No'}<br>
             • Orientación: {orientacion_texto}
             """
+            area = area_str
+            cantidad = ""  # Limpiamos el campo cantidad
 
         simData = {
             'columnas': columnas,
