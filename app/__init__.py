@@ -38,14 +38,17 @@ def create_app():
     from .home import home_bp
     app.register_blueprint(home_bp)
 
+    from .modulos.clientes import clientes_bp
+    app.register_blueprint(clientes_bp)
+
     from .modulos.etiquetas import etiquetas_bp
     app.register_blueprint(etiquetas_bp)
 
+    from .modulos.carteles import carteles_bp
+    app.register_blueprint(carteles_bp)
+
     from .modulos.ordenes import ordenes_bp
     app.register_blueprint(ordenes_bp)
-
-    from .modulos.clientes import clientes_bp
-    app.register_blueprint(clientes_bp)
 
     # ... (añade aquí el resto de blueprints que tengas)
 

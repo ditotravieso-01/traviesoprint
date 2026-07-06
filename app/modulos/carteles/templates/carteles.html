@@ -1,160 +1,740 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Calculadora de Lona – CairoStudio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="https://portal.cairostudio.cu/logo.png">
-    <style>
-        :root {
-            --bg: #ffffff; --text: #1a1a1a; --card: #f8f9fa; --border: #dee2e6;
-            --primary: #198754; --primary-hover: #157347; --result-bg: #e9ecef;
-            --error-bg: #f8d7da; --info: #6c757d;
-        }
-        .dark-mode {
-            --bg: #212529; --text: #f1f3f5; --card: #343a40; --border: #495057;
-            --primary: #198754; --primary-hover: #146c43; --result-bg: #495057;
-            --error-bg: #842029; --info: #adb5bd;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            font-family: system-ui, -apple-system, sans-serif;
-            background: var(--bg); color: var(--text);
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; padding: 1rem;
-            transition: background 0.3s, color 0.3s;
-        }
-        .container {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 16px; padding: 2rem; max-width: 650px; width: 100%;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
-        }
-        .logo-title {
-            display: flex; align-items: center; gap: 0.8rem; margin-bottom: 0.5rem;
-        }
-        .logo-title img { height: 45px; }
-        .logo-title span { font-size: 1.6rem; font-weight: bold; }
-        .info { color: var(--info); font-size: 0.9rem; margin-bottom: 1.5rem; line-height: 1.4; }
-        form { display: flex; flex-direction: column; gap: 0.8rem; }
-        label { font-weight: 600; margin-top: 0.5rem; }
-        input[type="number"], select {
-            padding: 0.65rem; border: 1px solid var(--border); border-radius: 10px;
-            background: var(--bg); color: var(--text); font-size: 1rem; width: 100%;
-        }
-        input:focus, select:focus {
-            outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(25,135,84,0.15);
-        }
-        .checkbox-group { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
-        .checkbox-group input { width: auto; }
-        button[type="submit"] {
-            background: var(--primary); color: white; border: none; padding: 0.75rem;
-            border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 0.5rem;
-        }
-        button[type="submit"]:hover { background: var(--primary-hover); }
-        hr { border: none; border-top: 1px solid var(--border); margin: 1rem 0; }
-        .result, .error {
-            margin-top: 1.2rem; padding: 1rem; border-radius: 10px;
-            background: var(--result-bg); line-height: 1.5;
-        }
-        .error { background: var(--error-bg); }
-        footer { margin-top: 1.5rem; text-align: center; font-size: 0.9rem; }
-        footer a { color: var(--primary); text-decoration: none; }
-        #theme-toggle {
-            background: none; border: 1px solid var(--border); border-radius: 50%;
-            width: 40px; height: 40px; font-size: 1.4rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            margin-left: auto; transition: background 0.2s;
-        }
-        #theme-toggle:hover { background: var(--result-bg); }
+{% extends "base.html" %}
 
-        /* Estilos de impresión */
-        @media print {
-            @page { margin: 0.5cm; }
-            body { background: white !important; color: black !important; }
-            .container { box-shadow: none !important; border: none !important; padding: 0 !important; max-width: 100% !important; }
-            form, .info, hr, h3, label, input, select, button[type="submit"], .checkbox-group, #theme-toggle, footer {
-                display: none !important;
-            }
-            .logo-title img { height: 35px; }
-            .logo-title span { font-size: 18pt; }
-            .result { background: none !important; padding: 0 !important; font-size: 14pt; }
-            .result button { display: none !important; }
+{% block title %}Calculadora de Carteles · CairoStudio{% endblock %}
+
+{% block page_title %}📐 Calculadora de Carteles / Lona{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<style>
+    .calc-container {
+        display: flex;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    .calc-form {
+        flex: 1;
+        min-width: 300px;
+    }
+    .calc-result {
+        flex: 1;
+        min-width: 300px;
+    }
+    .form-section {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e8e0da;
+    }
+    .form-section h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        margin-bottom: 14px;
+        color: #1a1a1a;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .form-group {
+        margin-bottom: 14px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    .form-group input, .form-group select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+        background: #fafafa;
+        transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+        border-color: #1a1a1a;
+        outline: none;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 12px 0 16px 0;
+    }
+    .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 400;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .btn {
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 16px;
+        font-family: 'Inter', sans-serif;
+    }
+    .btn-primary {
+        background: #1a1a1a;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #ccc;
+        color: #333;
+    }
+    .btn-outline:hover {
+        border-color: #888;
+        background: #f5f5f5;
+    }
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #059669;
+    }
+    .result-box {
+        background: #f8f6f4;
+        padding: 18px 22px;
+        border-radius: 12px;
+        border-left: 4px solid #1a1a1a;
+        line-height: 1.8;
+        font-size: 15px;
+        min-height: 120px;
+        margin-bottom: 16px;
+    }
+    .canvas-wrapper {
+        border: 1px solid #e0d8d0;
+        border-radius: 12px;
+        padding: 8px;
+        background: white;
+        margin-top: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+    canvas {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        background: #fcfcfc;
+    }
+    .file-upload-area {
+        border: 2px dashed #ddd;
+        border-radius: 12px;
+        padding: 16px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        background: #fafafa;
+        margin-top: 8px;
+    }
+    .file-upload-area:hover {
+        border-color: #1a1a1a;
+    }
+    .file-upload-area input[type="file"] {
+        display: none;
+    }
+    .file-name {
+        font-size: 13px;
+        color: #555;
+        font-style: italic;
+    }
+    .history-panel {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 400px;
+        height: 100%;
+        background: white;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        padding: 30px 20px;
+        transition: right 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+    }
+    .history-panel.open {
+        right: 0;
+    }
+    .history-panel h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .history-panel .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #888;
+    }
+    .history-item {
+        border-bottom: 1px solid #eee;
+        padding: 10px 0;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .history-item:hover {
+        background: #f5f5f5;
+    }
+    .history-item .date {
+        color: #999;
+        font-size: 11px;
+    }
+    .history-item .result {
+        font-weight: 600;
+    }
+    .badge {
+        background: #1a1a1a;
+        color: white;
+        border-radius: 12px;
+        padding: 2px 8px;
+        font-size: 11px;
+    }
+    @media (max-width: 768px) {
+        .calc-container {
+            flex-direction: column;
         }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="logo-title">
-            <img src="https://portal.cairostudio.cu/logo.png" alt="CairoStudio">
-            <span>Lona / Merma</span>
-            <button id="theme-toggle" onclick="toggleDark()" title="Modo oscuro">
-                <span id="theme-icon">🌙</span>
-            </button>
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+        .history-panel {
+            width: 300px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <h3 style="font-family:'Playfair Display', serif; font-size:22px; margin:0;">🧮 Calculadora de Carteles / Lona</h3>
+        <div>
+            <button class="btn btn-outline" onclick="toggleHistory()"><i class="fas fa-history"></i> Historial <span class="badge" id="historyCount">0</span></button>
+            <button class="btn btn-outline" onclick="toggleFavoritos()"><i class="fas fa-star"></i> Favoritos</button>
         </div>
-        <p class="info">
-            Ancho máximo del rollo: <strong>1.34 m (134 cm)</strong>.<br>
-            Introduce las dimensiones de la pieza y el material.
-        </p>
-
-        <form method="POST">
-            <label>📏 Ancho de la pieza (cm):</label>
-            <input type="number" step="any" name="ancho" value="{{ ancho }}" placeholder="Ej: 120" required>
-
-            <label>📐 Alto de la pieza (cm):</label>
-            <input type="number" step="any" name="alto" value="{{ alto }}" placeholder="Ej: 80" required>
-
-            <div class="checkbox-group">
-                <input type="checkbox" id="girar" name="girar" value="1" {{ girar_checked }}>
-                <label for="girar">🔄 Girar 90° (intercambia ancho y alto)</label>
-            </div>
-
-            <label>🧵 Material:</label>
-            <select name="material" required>
-                {% for mat, precios in materiales.items() %}
-                <option value="{{ mat }}" {% if mat == material %}selected{% endif %}>
-                    {{ mat }} (impr ${{ precios.impresion }}/m², merma ${{ precios.merma }}/m²)
-                </option>
-                {% endfor %}
-            </select>
-
-            <button type="submit">Calcular</button>
-        </form>
-
-        {% if resultado %}
-        <div class="result">
-            {{ resultado|safe }}
-            <div style="text-align: right; margin-top: 1rem;">
-                <button onclick="window.print()" style="background: var(--primary); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                    🖨️ Imprimir / Guardar como PDF
-                </button>
-            </div>
-        </div>
-        {% endif %}
-        {% if error %}
-        <div class="error">{{ error }}</div>
-        {% endif %}
-
-        <footer><a href="https://kit.cairostudio.cu/">← Volver al inicio</a></footer>
     </div>
 
-    <script>
-        function toggleDark() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('theme', isDark ? 'dark' : 'light');
-            document.getElementById('theme-icon').textContent = isDark ? '☀️' : '🌙';
+    <!-- Variables ocultas para simulación -->
+    <div id="simData" style="display:none;"
+         data-ancho="{{ simData.anchoCm }}"
+         data-alto="{{ simData.altoCm }}"
+         data-material="{{ simData.material }}"
+         data-area="{{ simData.areaM2 }}"
+         data-merma="{{ simData.mermaM2 }}"
+         data-costo-total="{{ simData.costoTotal }}"
+         data-girar="{{ 'true' if simData.girar else 'false' }}">
+    </div>
+
+    <div class="calc-container">
+        <!-- FORMULARIO -->
+        <div class="calc-form">
+            <form id="calcForm" onsubmit="return false;">
+                <div class="form-section">
+                    <h4>📐 Dimensiones</h4>
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="ancho">Ancho (cm)</label>
+                            <input type="number" step="0.1" id="ancho" name="ancho" value="{{ ancho or '' }}" placeholder="ej. 100" required oninput="calcularEnVivo()">
+                        </div>
+                        <div class="form-group">
+                            <label for="alto">Alto (cm)</label>
+                            <input type="number" step="0.1" id="alto" name="alto" value="{{ alto or '' }}" placeholder="ej. 200" required oninput="calcularEnVivo()">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="material">Material</label>
+                        <select id="material" name="material" onchange="calcularEnVivo()">
+                            {% for key, mat in materiales.items() %}
+                                <option value="{{ key }}" {% if material == key %}selected{% endif %}>{{ mat.nombre }} (impresión: ${{ mat.impresion }}/m², merma: ${{ mat.merma }}/m²)</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="checkbox-group">
+                        <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (intercambiar ancho/alto)</label>
+                    </div>
+                    <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#888;"></i>
+                        <p style="color:#666; margin:4px 0;">Subir imagen/PDF para extraer medidas (opcional)</p>
+                        <input type="file" id="fileInput" accept=".pdf,.jpg,.png" onchange="handleFileUpload(event)">
+                        <span class="file-name" id="fileName">Ningún archivo</span>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h4>⚙️ Acciones</h4>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" onclick="calcularEnVivo()"><i class="fas fa-calculator"></i> Calcular</button>
+                        <button type="button" class="btn btn-outline" onclick="limpiarCampos()"><i class="fas fa-undo"></i> Limpiar</button>
+                        <button type="button" class="btn btn-outline" onclick="guardarFavorito()"><i class="fas fa-star"></i> Guardar favorito</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- RESULTADOS Y SIMULACIÓN -->
+        <div class="calc-result">
+            <div class="form-section">
+                <h4>📊 Resultado</h4>
+                <div id="resultDisplay" class="result-box">
+                    {% if resultado %}
+                        {{ resultado|safe }}
+                    {% else %}
+                        <p style="color:#999;">Introduce las dimensiones y haz clic en "Calcular".</p>
+                    {% endif %}
+                </div>
+                <div id="errorDisplay" style="color:#991b1b; background:#fee2e2; padding:10px; border-radius:8px; display:none; margin-bottom:12px;"></div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                    <button class="btn btn-outline" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h4>🖨️ Simulación en rollo (134 cm)</h4>
+                <div class="canvas-wrapper">
+                    <canvas id="simCanvas" width="600" height="300"></canvas>
+                </div>
+                <p style="font-size:12px; color:#999; text-align:center; margin-top:6px;">
+                    El rectángulo azul representa la pieza, el área gris la merma lateral.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PANEL DE HISTORIAL -->
+<div class="history-panel" id="historyPanel">
+    <h3>
+        📋 Historial
+        <button class="close-btn" onclick="toggleHistory()">✕</button>
+    </h3>
+    <div id="historyList"></div>
+    <button class="btn btn-outline" onclick="limpiarHistorial()" style="width:100%; margin-top:12px;">Limpiar historial</button>
+</div>
+
+<!-- PANEL DE FAVORITOS (modal simple) -->
+<div class="modal-overlay" id="favoritosModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
+    <div style="background:white; border-radius:20px; padding:30px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
+        <h3 style="font-family:'Playfair Display', serif; display:flex; justify-content:space-between; align-items:center;">
+            ⭐ Favoritos
+            <button onclick="toggleFavoritos()" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
+        </h3>
+        <div id="favoritosList"></div>
+        <button class="btn btn-outline" onclick="toggleFavoritos()" style="margin-top:12px;">Cerrar</button>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- JAVASCRIPT -->
+<!-- ========================================== -->
+<script>
+    // =============================================
+    // VARIABLES GLOBALES
+    // =============================================
+    let pdfImage = null;
+    let currentScale = 1.0;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+    let dragStartX, dragStartY;
+
+    // =============================================
+    // CÁLCULO EN VIVO (AJAX)
+    // =============================================
+    function calcularEnVivo() {
+        const form = document.getElementById('calcForm');
+        const formData = new FormData(form);
+        const ancho = formData.get('ancho') || '';
+        const alto = formData.get('alto') || '';
+        if (!ancho || !alto) {
+            document.getElementById('resultDisplay').innerHTML = '<p style="color:#999;">Introduce ancho y alto.</p>';
+            document.getElementById('errorDisplay').style.display = 'none';
+            drawSimulation(0, 0, 'Vinilo', false);
+            return;
         }
-        (function() {
-            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            const stored = localStorage.getItem('theme');
-            const darkMode = stored ? stored === 'dark' : prefersDark;
-            if (darkMode) {
-                document.body.classList.add('dark-mode');
-                document.getElementById('theme-icon').textContent = '☀️';
-            } else {
-                document.getElementById('theme-icon').textContent = '🌙';
+
+        fetch("{{ url_for('carteles.calcular_ajax') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('errorDisplay').style.display = 'block';
+                document.getElementById('errorDisplay').textContent = data.error;
+                document.getElementById('resultDisplay').innerHTML = '';
+                return;
             }
-        })();
-    </script>
-</body>
-</html>
+            document.getElementById('errorDisplay').style.display = 'none';
+            document.getElementById('resultDisplay').innerHTML = data.resultado;
+            // Actualizar simulación
+            const sim = data.simData;
+            drawSimulation(sim.anchoCm, sim.altoCm, sim.material, sim.girar);
+            // Actualizar historial
+            cargarHistorial();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+        });
+    }
+
+    // =============================================
+    // DIBUJAR SIMULACIÓN EN CANVAS
+    // =============================================
+    function drawSimulation(anchoCm, altoCm, material, girar) {
+        const canvas = document.getElementById('simCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#f8f6f4';
+        ctx.fillRect(0, 0, w, h);
+
+        if (anchoCm <= 0 || altoCm <= 0) {
+            ctx.fillStyle = '#999';
+            ctx.font = '16px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Calcula para ver la simulación', w/2, h/2);
+            return;
+        }
+
+        const anchoRolloCm = 134;
+        const margin = 20;
+        const scale = (w - 2 * margin) / anchoRolloCm;
+        const anchoPx = anchoCm * scale;
+        const altoPx = altoCm * scale;
+        const totalAltoPx = altoPx; // solo una pieza
+
+        // Posicionar la pieza en el centro del rollo
+        const offsetX = (w - anchoPx) / 2;
+        const offsetY = (h - altoPx) / 2;
+
+        // Dibujar área de merma (gris)
+        ctx.fillStyle = '#e0d8d0';
+        ctx.fillRect(0, 0, w, h);
+
+        // Dibujar la pieza (azul)
+        ctx.fillStyle = '#1a73e8';
+        ctx.shadowColor = 'rgba(0,0,0,0.1)';
+        ctx.shadowBlur = 8;
+        ctx.fillRect(offsetX, offsetY, anchoPx, altoPx);
+        ctx.shadowBlur = 0;
+
+        // Borde de la pieza
+        ctx.strokeStyle = '#0d47a1';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(offsetX, offsetY, anchoPx, altoPx);
+
+        // Texto informativo
+        ctx.fillStyle = '#fff';
+        ctx.font = '14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${anchoCm} cm`, offsetX + anchoPx/2, offsetY + altoPx/2 - 8);
+        ctx.fillText(`${altoCm} cm`, offsetX + anchoPx/2, offsetY + altoPx/2 + 16);
+        if (girar) {
+            ctx.fillStyle = '#ffeb3b';
+            ctx.font = '12px sans-serif';
+            ctx.fillText('↻ Girada', offsetX + anchoPx/2, offsetY + altoPx/2 + 36);
+        }
+
+        // Línea del ancho del rollo
+        ctx.strokeStyle = '#1a1a1a';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(margin, margin, w - 2*margin, h - 2*margin);
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Rollo 134 cm`, w/2, h - 8);
+
+        // Área de merma (texto)
+        const mermaCm2 = (anchoRolloCm - anchoCm) * altoCm;
+        const mermaM2 = mermaCm2 / 10000;
+        ctx.fillStyle = '#555';
+        ctx.font = '11px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Merma: ${mermaM2.toFixed(4)} m²`, 10, h - 10);
+    }
+
+    // =============================================
+    // EXPORTAR A PDF (usando pdfmake)
+    // =============================================
+    function exportPDF() {
+        const ancho = document.getElementById('ancho').value || 'N/A';
+        const alto = document.getElementById('alto').value || 'N/A';
+        const material = document.getElementById('material').value || 'N/A';
+        const resultado = document.getElementById('resultDisplay').innerHTML;
+
+        // Extraer datos del resultado (simple)
+        const areaMatch = resultado.match(/(\d+\.?\d*)\s*m²/);
+        const area = areaMatch ? areaMatch[1] : 'N/A';
+        const costoMatch = resultado.match(/\$(\d+\.?\d*)/);
+        const costo = costoMatch ? costoMatch[1] : 'N/A';
+
+        const docDefinition = {
+            content: [
+                { text: 'CairoStudio - Calculadora de Carteles', style: 'header' },
+                { text: `Fecha: ${new Date().toLocaleString()}`, style: 'subheader' },
+                { text: 'Resultado del cálculo', style: 'section' },
+                { text: `Ancho: ${ancho} cm`, style: 'item' },
+                { text: `Alto: ${alto} cm`, style: 'item' },
+                { text: `Material: ${material}`, style: 'item' },
+                { text: `Área: ${area} m²`, style: 'item' },
+                { text: `Costo total: $${costo} USD`, style: 'item' }
+            ],
+            styles: {
+                header: { fontSize: 22, bold: true, margin: [0, 0, 0, 16] },
+                subheader: { fontSize: 14, color: '#888', margin: [0, 0, 0, 16] },
+                section: { fontSize: 16, bold: true, margin: [0, 12, 0, 8] },
+                item: { fontSize: 13, margin: [0, 4, 0, 4] }
+            }
+        };
+        pdfMake.createPdf(docDefinition).download('Calculo_Carteles.pdf');
+    }
+
+    // =============================================
+    // HISTORIAL
+    // =============================================
+    function cargarHistorial() {
+        fetch("{{ url_for('carteles.get_historial') }}")
+        .then(response => response.json())
+        .then(data => {
+            const count = data.length;
+            document.getElementById('historyCount').textContent = count;
+            const list = document.getElementById('historyList');
+            if (count === 0) {
+                list.innerHTML = '<p style="color:#999; text-align:center; padding:20px 0;">No hay cálculos guardados.</p>';
+                return;
+            }
+            list.innerHTML = data.map(item => `
+                <div class="history-item" onclick="cargarDesdeHistorial('${item.ancho}', '${item.alto}', '${item.material}', '${item.girar}')">
+                    <div class="date">${new Date(item.fecha).toLocaleString()}</div>
+                    <div class="result">${item.ancho}×${item.alto} cm · ${item.material} · $${item.costo.toFixed(2)}</div>
+                </div>
+            `).join('');
+        });
+    }
+
+    function cargarDesdeHistorial(ancho, alto, material, girar) {
+        document.getElementById('ancho').value = ancho;
+        document.getElementById('alto').value = alto;
+        document.getElementById('material').value = material;
+        document.getElementById('girar').checked = girar === 'true';
+        calcularEnVivo();
+        toggleHistory();
+    }
+
+    function limpiarHistorial() {
+        if (!confirm('¿Limpiar todo el historial?')) return;
+        fetch("{{ url_for('carteles.limpiar_historial') }}", { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+            cargarHistorial();
+        });
+    }
+
+    function toggleHistory() {
+        document.getElementById('historyPanel').classList.toggle('open');
+        if (document.getElementById('historyPanel').classList.contains('open')) {
+            cargarHistorial();
+        }
+    }
+
+    // =============================================
+    // FAVORITOS
+    // =============================================
+    function guardarFavorito() {
+        const nombre = prompt('Nombre para este favorito:');
+        if (!nombre) return;
+        const form = document.getElementById('calcForm');
+        const formData = new FormData(form);
+        formData.append('nombre', nombre);
+
+        fetch("{{ url_for('carteles.favoritos') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Favorito guardado.');
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+
+    function cargarFavoritos() {
+        fetch("{{ url_for('carteles.favoritos') }}")
+        .then(response => response.json())
+        .then(data => {
+            const list = document.getElementById('favoritosList');
+            if (data.length === 0) {
+                list.innerHTML = '<p style="color:#999; text-align:center; padding:20px 0;">No hay favoritos.</p>';
+                return;
+            }
+            list.innerHTML = data.map(f => `
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px 0;">
+                    <div>
+                        <strong>${f.nombre}</strong><br>
+                        <span style="font-size:13px; color:#666;">${f.ancho}×${f.alto} cm · ${f.material}</span>
+                    </div>
+                    <button onclick="cargarFavorito(${f.id})" class="btn btn-primary btn-sm">Cargar</button>
+                    <button onclick="eliminarFavorito(${f.id})" class="btn btn-outline btn-sm" style="color:#dc2626;">✕</button>
+                </div>
+            `).join('');
+        });
+    }
+
+    function cargarFavorito(id) {
+        fetch("{{ url_for('carteles.favoritos') }}")
+        .then(response => response.json())
+        .then(data => {
+            const fav = data.find(f => f.id === id);
+            if (fav) {
+                document.getElementById('ancho').value = fav.ancho;
+                document.getElementById('alto').value = fav.alto;
+                document.getElementById('material').value = fav.material;
+                document.getElementById('girar').checked = fav.girar;
+                calcularEnVivo();
+                toggleFavoritos();
+            }
+        });
+    }
+
+    function eliminarFavorito(id) {
+        if (!confirm('Eliminar este favorito?')) return;
+        fetch(`{{ url_for('carteles.eliminar_favorito', fav_id=0) }}`.replace('0', id), { method: 'DELETE' })
+        .then(response => response.json())
+        .then(data => {
+            cargarFavoritos();
+        });
+    }
+
+    function toggleFavoritos() {
+        const modal = document.getElementById('favoritosModal');
+        if (modal.style.display === 'flex') {
+            modal.style.display = 'none';
+        } else {
+            modal.style.display = 'flex';
+            cargarFavoritos();
+        }
+    }
+
+    // =============================================
+    // CARGA DE ARCHIVOS (extraer medidas)
+    // =============================================
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        document.getElementById('fileName').textContent = file.name;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (file.type === 'application/pdf') {
+                // Usar PDF.js para extraer medidas de la primera página (en puntos)
+                const typedarray = new Uint8Array(this.result);
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                    pdf.getPage(1).then(function(page) {
+                        const viewport = page.getViewport({ scale: 1.0 });
+                        const widthCm = viewport.width * 0.0352778;
+                        const heightCm = viewport.height * 0.0352778;
+                        document.getElementById('ancho').value = widthCm.toFixed(1);
+                        document.getElementById('alto').value = heightCm.toFixed(1);
+                        document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
+                        calcularEnVivo();
+                    });
+                });
+            } else {
+                // Para imágenes, intentar leer dimensiones (placeholder)
+                const img = new Image();
+                img.onload = function() {
+                    const widthCm = img.width / 37.795; // px a cm (aprox)
+                    const heightCm = img.height / 37.795;
+                    document.getElementById('ancho').value = widthCm.toFixed(1);
+                    document.getElementById('alto').value = heightCm.toFixed(1);
+                    document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
+                    calcularEnVivo();
+                };
+                img.src = URL.createObjectURL(file);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // =============================================
+    // LIMPIAR CAMPOS
+    // =============================================
+    function limpiarCampos() {
+        document.getElementById('ancho').value = '';
+        document.getElementById('alto').value = '';
+        document.getElementById('girar').checked = false;
+        document.getElementById('resultDisplay').innerHTML = '<p style="color:#999;">Introduce las dimensiones y haz clic en "Calcular".</p>';
+        document.getElementById('errorDisplay').style.display = 'none';
+        drawSimulation(0, 0, 'Vinilo', false);
+    }
+
+    // =============================================
+    // INICIALIZACIÓN
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        cargarHistorial();
+        // Dibujar simulación inicial si hay datos
+        const simData = document.getElementById('simData');
+        if (simData) {
+            const ancho = parseFloat(simData.dataset.ancho) || 0;
+            const alto = parseFloat(simData.dataset.alto) || 0;
+            const material = simData.dataset.material || 'Vinilo';
+            const girar = simData.dataset.girar === 'true';
+            drawSimulation(ancho, alto, material, girar);
+        }
+    });
+
+    // Cerrar modal de favoritos al hacer clic fuera
+    document.getElementById('favoritosModal').addEventListener('click', function(e) {
+        if (e.target === this) toggleFavoritos();
+    });
+
+    // =============================================
+    // PDF.JS CONFIG
+    // =============================================
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+</script>
+{% endblock %}

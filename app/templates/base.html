@@ -47,8 +47,12 @@
                     <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint == 'etiquetas.index' %}active{% endif %}">
                         <span class="icon">🏷️</span> Etiquetas
                     </a>
-                    <a href="#" class="nav-item">
-                        <span class="icon">📐</span> Carteles (próximamente)
+                {% endif %}
+
+                <!-- Carteles (solo para roles que los necesiten) -->
+                {% if current_user.role in ['admin', 'operario', 'disenador'] %}
+                    <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint == 'carteles.index' %}active{% endif %}">
+                        <span class="icon">📐</span> Carteles
                     </a>
                 {% endif %}
 
