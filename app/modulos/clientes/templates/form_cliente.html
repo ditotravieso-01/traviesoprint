@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if edit else 'Nuevo' }} Cliente · CairoStudio{% endblock %}
+
+{% block page_title %}{{ '✏️ Editar' if edit else '📄 Nuevo' }} Cliente{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== ESTILOS PARA EL FORMULARIO ===== */
+    .form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+    .form-section {
+        background: white;
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e8e0da;
+    }
+    .form-section h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        margin-bottom: 16px;
+        color: #1a1a1a;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 15px;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: #1a1a1a;
+        outline: none;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+    .form-group .help-text {
+        color: #999;
+        font-size: 12px;
+        margin-top: 4px;
+        display: block;
+    }
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .btn {
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 16px;
+    }
+    .btn-primary {
+        background: #1a1a1a;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #ccc;
+        color: #333;
+    }
+    .btn-outline:hover {
+        border-color: #888;
+        background: #f5f5f5;
+    }
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #059669;
+    }
+
+    @media (max-width: 768px) {
+        .form-grid-2 {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <form method="POST" action="{{ url_for('clientes.create_client') if not edit else url_for('clientes.edit_client', client_id=client_data.id) }}">
+
+        <!-- ==========================================
+        SECCIÓN 1: DATOS PRINCIPALES
+        ========================================== -->
+        <div class="form-section">
+            <h4>📋 Datos del Cliente</h4>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="referencia">Referencia *</label>
+                    <input type="text" id="referencia" name="referencia" value="{{ client_data.referencia if client_data else '' }}" placeholder="Ej. Ca00001" required>
+                    <span class="help-text">Código único del cliente (ej. Ca00001)</span>
+                </div>
+                <div class="form-group">
+                    <label for="nombre">Nombre completo *</label>
+                    <input type="text" id="nombre" name="nombre" value="{{ client_data.nombre if client_data else '' }}" placeholder="Nombre del cliente" required>
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="telefono">Teléfono / Móvil</label>
+                    <input type="text" id="telefono" name="telefono" value="{{ client_data.telefono if client_data else '' }}" placeholder="Ej. +53 5XXXXXXX">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" value="{{ client_data.email if client_data else '' }}" placeholder="cliente@email.com">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="direccion">Dirección</label>
+                <textarea id="direccion" name="direccion" rows="2" placeholder="Dirección completa del cliente">{{ client_data.direccion if client_data else '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- ==========================================
+        SECCIÓN 2: INFORMACIÓN ADICIONAL
+        ========================================== -->
+        <div class="form-section">
+            <h4>🏷️ Información adicional</h4>
+            <div class="form-group">
+                <label for="etiquetas">Etiquetas (separadas por coma)</label>
+                <input type="text" id="etiquetas" name="etiquetas" value="{{ client_data.etiquetas if client_data else '' }}" placeholder="Ej. Comercializa Agua, Cliente VIP">
+                <span class="help-text">Categorías o etiquetas para clasificar al cliente</span>
+            </div>
+            <div class="form-group">
+                <label for="gustos">Gustos / Pedidos recurrentes</label>
+                <textarea id="gustos" name="gustos" rows="2" placeholder="Qué productos pide regularmente, preferencias, etc.">{{ client_data.gustos if client_data else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="notas">Notas adicionales</label>
+                <textarea id="notas" name="notas" rows="2" placeholder="Observaciones, incidencias, etc.">{{ client_data.notas if client_data else '' }}</textarea>
+            </div>
+        </div>
+
+        <!-- ==========================================
+        SECCIÓN 3: DATOS DE NEGOCIO
+        ========================================== -->
+        <div class="form-section">
+            <h4>💰 Datos de negocio</h4>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="pedidos_venta">Nº de pedidos de venta</label>
+                    <input type="number" id="pedidos_venta" name="pedidos_venta" value="{{ client_data.pedidos_venta if client_data else 0 }}" step="1">
+                    <span class="help-text">Total de pedidos realizados (aproximado)</span>
+                </div>
+                <div class="form-group">
+                    <label for="total_facturado">Total facturado (USD)</label>
+                    <input type="number" step="0.01" id="total_facturado" name="total_facturado" value="{{ client_data.total_facturado if client_data else 0.0 }}">
+                    <span class="help-text">Monto total facturado (aproximado)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==========================================
+        BOTONES
+        ========================================== -->
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {{ 'Actualizar' if edit else 'Guardar' }} cliente
+            </button>
+            <a href="{{ url_for('clientes.list_clients') }}" class="btn btn-outline">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+
+    </form>
+</div>
+
+<!-- ==========================================
+JAVASCRIPT (mejoras de usabilidad)
+========================================== -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-mayúsculas en referencia
+        const refInput = document.getElementById('referencia');
+        if (refInput) {
+            refInput.addEventListener('blur', function() {
+                // Convertir a formato CaXXXX (primera letra mayúscula, resto sin espacios)
+                let val = this.value.trim();
+                if (val) {
+                    // Si no empieza con "Ca", lo añadimos
+                    if (!/^Ca/i.test(val)) {
+                        val = 'Ca' + val;
+                    }
+                    // Asegurar que la C sea mayúscula y la a minúscula
+                    val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
+                    // Eliminar espacios
+                    val = val.replace(/\s/g, '');
+                    this.value = val;
+                }
+            });
+        }
+
+        // Validación de teléfono (opcional)
+        const phoneInput = document.getElementById('telefono');
+        if (phoneInput) {
+            phoneInput.addEventListener('blur', function() {
+                let val = this.value.trim();
+                if (val && !/^\+?[0-9\s\-()]{7,15}$/.test(val)) {
+                    // Solo advertencia, no bloqueamos
+                    console.log('Formato de teléfono no estándar');
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

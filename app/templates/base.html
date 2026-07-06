@@ -35,6 +35,13 @@
                     <span class="icon">📊</span> Dashboard
                 </a>
 
+                <!-- Clientes (solo admin y comercial) -->
+                {% if current_user.role in ['comercial', 'admin'] %}
+                    <a href="{{ url_for('clientes.list_clients') }}" class="nav-item {% if request.endpoint == 'clientes.list_clients' %}active{% endif %}">
+                        <span class="icon">👥</span> Clientes
+                    </a>
+                {% endif %}
+
                 <!-- Calculadoras (solo para roles que las necesiten) -->
                 {% if current_user.role in ['admin', 'operario', 'disenador'] %}
                     <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint == 'etiquetas.index' %}active{% endif %}">

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Clientes · CairoStudio{% endblock %}
+
+{% block page_title %}📤 Importar Clientes desde Excel{% endblock %}
+
+{% block content %}
+<div class="content-card" style="max-width:600px; margin:0 auto;">
+    <p style="color:#666; margin-bottom:16px;">
+        Sube un archivo Excel (.xlsx o .xls) con las columnas: <strong>Referencia, Nombre completo, Móvil, Etiquetas, Número de pedidos de venta, Total facturado</strong>.
+    </p>
+    <form method="POST" action="{{ url_for('clientes.import_clients') }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file">Archivo Excel</label>
+            <input type="file" id="file" name="file" accept=".xlsx,.xls" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Importar</button>
+        <a href="{{ url_for('clientes.list_clients') }}" class="btn btn-outline">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

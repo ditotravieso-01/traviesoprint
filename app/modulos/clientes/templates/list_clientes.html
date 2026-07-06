@@ -1,8 +1,57 @@
 {% extends "base.html" %}
+
 {% block title %}Clientes · CairoStudio{% endblock %}
-{% block page_title %}👥 Lista de Clientes{% endblock %}
+
+{% block page_title %}👥 Clientes{% endblock %}
+
 {% block content %}
 <div class="content-card">
-    <p>✅ Esta es la plantilla de clientes (nuevo nombre).</p>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <form method="GET" action="{{ url_for('clientes.list_clients') }}" style="display:flex; gap:8px; flex:1;">
+            <input type="text" name="search" placeholder="Buscar por nombre, referencia, teléfono..." value="{{ search }}" style="flex:1; padding:8px 14px; border:1px solid #ddd; border-radius:8px;">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+        <a href="{{ url_for('clientes.create_client') }}" class="btn btn-success">+ Nuevo</a>
+        <a href="{{ url_for('clientes.import_clients') }}" class="btn btn-outline">Importar Excel</a>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+                <tr style="border-bottom:2px solid #ddd; text-align:left;">
+                    <th style="padding:8px 0;">Ref.</th>
+                    <th style="padding:8px 0;">Nombre</th>
+                    <th style="padding:8px 0;">Teléfono</th>
+                    <th style="padding:8px 0;">Etiquetas</th>
+                    <th style="padding:8px 0;">Pedidos</th>
+                    <th style="padding:8px 0;">Total</th>
+                    <th style="padding:8px 0;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px 0;">{{ client.referencia }}</td>
+                    <td style="padding:8px 0;"><strong>{{ client.nombre }}</strong></td>
+                    <td style="padding:8px 0;">{{ client.telefono or '-' }}</td>
+                    <td style="padding:8px 0;">{{ client.etiquetas or '-' }}</td>
+                    <td style="padding:8px 0;">{{ client.pedidos_venta }}</td>
+                    <td style="padding:8px 0;">${{ client.total_facturado }}</td>
+                    <td style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-outline btn-sm">Editar</a>
+                        {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('clientes.delete_client', client_id=client.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                            <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626;">Eliminar</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if clients|length == 0 %}
+        <p style="color:#999; text-align:center; padding:20px 0;">No hay clientes. Importa desde Excel o crea uno.</p>
+    {% endif %}
 </div>
 {% endblock %}
