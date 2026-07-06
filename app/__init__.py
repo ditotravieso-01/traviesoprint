@@ -42,7 +42,10 @@ def create_app():
     app.register_blueprint(etiquetas_bp)
 
     from .modulos.ordenes import ordenes_bp
-    app.register_blueprint(ordenes_bp)   # <-- Asegurar que existe
+    app.register_blueprint(ordenes_bp)
+
+    from .modulos.clientes import clientes_bp
+    app.register_blueprint(clientes_bp)
 
     # ... (añade aquí el resto de blueprints que tengas)
 
