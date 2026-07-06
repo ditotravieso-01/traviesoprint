@@ -6,25 +6,83 @@
 
 {% block content %}
 <div class="content-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <form method="GET" action="{{ url_for('clientes.list_clients') }}" style="display:flex; gap:8px; flex:1;">
-            <input type="text" name="search" placeholder="Buscar por nombre, referencia, teléfono..." value="{{ search }}" style="flex:1; padding:8px 14px; border:1px solid #ddd; border-radius:8px;">
-            <button type="submit" class="btn btn-primary">Buscar</button>
+    <!-- BARRA DE FILTROS Y ACCIONES -->
+    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;">
+        <form method="GET" action="{{ url_for('clientes.list_clients') }}" style="display:flex; flex-wrap:wrap; gap:8px; flex:1; align-items:center;">
+            <input type="text" name="search" placeholder="Buscar..." value="{{ search }}" style="flex:1; min-width:150px; padding:8px 14px; border:1px solid #ddd; border-radius:8px;">
+            <select name="tipo_cliente" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                <option value="">Todos los tipos</option>
+                {% for tipo in tipos %}
+                    <option value="{{ tipo }}" {% if tipo_cliente == tipo %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+            <select name="sector" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                <option value="">Todos los sectores</option>
+                {% for sec in sectores %}
+                    <option value="{{ sec }}" {% if sector == sec %}selected{% endif %}>{{ sec }}</option>
+                {% endfor %}
+            </select>
+            <select name="frecuencia" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
+                <option value="">Todas las frecuencias</option>
+                {% for freq in frecuencias %}
+                    <option value="{{ freq }}" {% if frecuencia == freq %}selected{% endif %}>{{ freq }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">Filtrar</button>
         </form>
-        <a href="{{ url_for('clientes.create_client') }}" class="btn btn-success">+ Nuevo</a>
-        <a href="{{ url_for('clientes.import_clients') }}" class="btn btn-outline">Importar Excel</a>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <a href="{{ url_for('clientes.create_client') }}" class="btn btn-success">+ Nuevo</a>
+            <a href="{{ url_for('clientes.import_clients') }}" class="btn btn-outline">Importar</a>
+            <a href="{{ url_for('clientes.export_excel', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" class="btn btn-outline">📊 Exportar Excel</a>
+        </div>
     </div>
 
+    <!-- TABLA DE CLIENTES -->
     <div style="overflow-x:auto;">
         <table style="width:100%; border-collapse:collapse; font-size:14px;">
             <thead>
                 <tr style="border-bottom:2px solid #ddd; text-align:left;">
-                    <th style="padding:8px 0;">Ref.</th>
-                    <th style="padding:8px 0;">Nombre</th>
-                    <th style="padding:8px 0;">Teléfono</th>
+                    <th style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.list_clients', order_by='referencia', order_dir='desc' if order_by=='referencia' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
+                            Ref.
+                            {% if order_by == 'referencia' %}
+                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.list_clients', order_by='nombre', order_dir='desc' if order_by=='nombre' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
+                            Nombre
+                            {% if order_by == 'nombre' %}
+                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.list_clients', order_by='telefono', order_dir='desc' if order_by=='telefono' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
+                            Teléfono
+                            {% if order_by == 'telefono' %}
+                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
                     <th style="padding:8px 0;">Etiquetas</th>
-                    <th style="padding:8px 0;">Pedidos</th>
-                    <th style="padding:8px 0;">Total</th>
+                    <th style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.list_clients', order_by='pedidos_venta', order_dir='desc' if order_by=='pedidos_venta' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
+                            Pedidos
+                            {% if order_by == 'pedidos_venta' %}
+                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th style="padding:8px 0;">
+                        <a href="{{ url_for('clientes.list_clients', order_by='total_facturado', order_dir='desc' if order_by=='total_facturado' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
+                            Total
+                            {% if order_by == 'total_facturado' %}
+                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+                            {% endif %}
+                        </a>
+                    </th>
                     <th style="padding:8px 0;">Acciones</th>
                 </tr>
             </thead>
@@ -38,10 +96,11 @@
                     <td style="padding:8px 0;">{{ client.pedidos_venta }}</td>
                     <td style="padding:8px 0;">${{ client.total_facturado }}</td>
                     <td style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-outline btn-sm">Editar</a>
+                        <a href="{{ url_for('clientes.detail_client', client_id=client.id) }}" class="btn btn-outline btn-sm" title="Ver detalle"><i class="fas fa-eye"></i></a>
+                        <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i></a>
                         {% if current_user.role == 'admin' %}
                         <form method="POST" action="{{ url_for('clientes.delete_client', client_id=client.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
-                            <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626;">Eliminar</button>
+                            <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626;"><i class="fas fa-trash-alt"></i></button>
                         </form>
                         {% endif %}
                     </td>
@@ -51,7 +110,7 @@
         </table>
     </div>
     {% if clients|length == 0 %}
-        <p style="color:#999; text-align:center; padding:20px 0;">No hay clientes. Importa desde Excel o crea uno.</p>
+        <p style="color:#999; text-align:center; padding:20px 0;">No hay clientes.</p>
     {% endif %}
 </div>
 {% endblock %}

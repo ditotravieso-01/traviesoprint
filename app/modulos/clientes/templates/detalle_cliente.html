@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle de Cliente · CairoStudio{% endblock %}
+
+{% block page_title %}👤 Detalle de {{ client.nombre }}{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+        <div>
+            <h2 style="font-family:'Playfair Display', serif; font-size:24px; margin:0;">{{ client.referencia }} - {{ client.nombre }}</h2>
+            <p style="color:#666; margin:4px 0 0 0;">Creado: {{ client.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-primary"><i class="fas fa-edit"></i> Editar</a>
+            <a href="{{ url_for('clientes.list_clients') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid #eee; padding-top:16px;">
+        <!-- Columna izquierda -->
+        <div>
+            <h4 style="margin-bottom:8px;">📋 Información básica</h4>
+            <dl style="display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:14px;">
+                <dt style="color:#888;">Referencia</dt><dd>{{ client.referencia }}</dd>
+                <dt style="color:#888;">Nombre</dt><dd>{{ client.nombre }}</dd>
+                <dt style="color:#888;">Teléfono</dt><dd>{{ client.telefono or '-' }}</dd>
+                <dt style="color:#888;">Email</dt><dd>{{ client.email or '-' }}</dd>
+                <dt style="color:#888;">Dirección</dt><dd>{{ client.direccion or '-' }}</dd>
+                <dt style="color:#888;">Etiquetas</dt><dd>{{ client.etiquetas or '-' }}</dd>
+            </dl>
+        </div>
+
+        <!-- Columna derecha -->
+        <div>
+            <h4 style="margin-bottom:8px;">👤 Datos personales</h4>
+            <dl style="display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:14px;">
+                <dt style="color:#888;">Carnet identidad</dt><dd>{{ client.carnet_identidad or '-' }}</dd>
+                <dt style="color:#888;">Fecha nacimiento</dt><dd>{{ client.fecha_nacimiento.strftime('%d/%m/%Y') if client.fecha_nacimiento else '-' }}</dd>
+                <dt style="color:#888;">Tipo cliente</dt><dd>{{ client.tipo_cliente or '-' }}</dd>
+                <dt style="color:#888;">Sector</dt><dd>{{ client.sector or '-' }}</dd>
+            </dl>
+        </div>
+
+        <!-- Fila completa para preferencias y negocio -->
+        <div style="grid-column:1/-1; border-top:1px solid #eee; padding-top:16px;">
+            <h4 style="margin-bottom:8px;">🎯 Preferencias y negocio</h4>
+            <dl style="display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:14px;">
+                <dt style="color:#888;">Preferencias diseño</dt><dd>{{ client.preferencias_diseno or '-' }}</dd>
+                <dt style="color:#888;">Método pago favorito</dt><dd>{{ client.metodo_pago_favorito or '-' }}</dd>
+                <dt style="color:#888;">Referido por</dt><dd>{{ client.referido_por or '-' }}</dd>
+                <dt style="color:#888;">Frecuencia pedido</dt><dd>{{ client.frecuencia_pedido or '-' }}</dd>
+                <dt style="color:#888;">Último pedido</dt><dd>{{ client.ultimo_pedido.strftime('%d/%m/%Y') if client.ultimo_pedido else '-' }}</dd>
+                <dt style="color:#888;">Gustos / Recurrentes</dt><dd>{{ client.gustos or '-' }}</dd>
+                <dt style="color:#888;">Notas</dt><dd>{{ client.notas or '-' }}</dd>
+                <dt style="color:#888;">Observaciones internas</dt><dd>{{ client.observaciones_internas or '-' }}</dd>
+            </dl>
+        </div>
+
+        <!-- Métricas -->
+        <div style="grid-column:1/-1; border-top:1px solid #eee; padding-top:16px;">
+            <h4 style="margin-bottom:8px;">📊 Historial y métricas</h4>
+            <dl style="display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:14px;">
+                <dt style="color:#888;">Pedidos de venta</dt><dd>{{ client.pedidos_venta }}</dd>
+                <dt style="color:#888;">Total facturado</dt><dd>${{ client.total_facturado }}</dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

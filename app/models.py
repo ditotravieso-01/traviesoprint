@@ -122,6 +122,19 @@ class Client(db.Model):
     total_facturado = db.Column(db.Float, default=0.0)
     gustos = db.Column(db.Text)
     notas = db.Column(db.Text)
+
+    # NUEVOS CAMPOS
+    carnet_identidad = db.Column(db.String(20))
+    fecha_nacimiento = db.Column(db.Date)
+    tipo_cliente = db.Column(db.String(30), default='persona')  # persona, empresa, emprendimiento
+    sector = db.Column(db.String(50))
+    preferencias_diseno = db.Column(db.Text)
+    metodo_pago_favorito = db.Column(db.String(30))
+    referido_por = db.Column(db.String(100))
+    frecuencia_pedido = db.Column(db.String(30))  # semanal, quincenal, mensual, esporadico
+    ultimo_pedido = db.Column(db.Date)
+    observaciones_internas = db.Column(db.Text)
+
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
