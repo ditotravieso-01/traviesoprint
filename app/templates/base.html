@@ -10,6 +10,7 @@
 
     <!-- Bloque para CSS adicional (por si un módulo necesita algo extra) -->
     {% block extra_css %}{% endblock %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 
@@ -28,27 +29,47 @@
         </div>
 
         <nav class="nav-menu">
-            <!-- El bloque 'nav_items' permite a cada página resaltar su ítem activo -->
-            {% block nav_items %}
-                <a href="{{ url_for('home.home') }}" class="nav-item active">
+            {% if current_user.is_authenticated %}
+                <!-- Dashboard (visible para todos) -->
+                <a href="{{ url_for('home.home') }}" class="nav-item {% if request.endpoint == 'home.home' %}active{% endif %}">
                     <span class="icon">📊</span> Dashboard
                 </a>
-                <a href="{{ url_for('etiquetas.index') }}" class="nav-item">
-                    <span class="icon">🏷️</span> Etiquetas
+
+                <!-- Calculadoras (solo para roles que las necesiten) -->
+                {% if current_user.role in ['admin', 'operario', 'disenador'] %}
+                    <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint == 'etiquetas.index' %}active{% endif %}">
+                        <span class="icon">🏷️</span> Etiquetas
+                    </a>
+                    <a href="#" class="nav-item">
+                        <span class="icon">📐</span> Carteles (próximamente)
+                    </a>
+                {% endif %}
+
+                <!-- Órdenes de trabajo (solo admin, comercial y odalys) -->
+                {% if current_user.role in ['admin', 'comercial', 'odalys'] %}
+                    <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint == 'ordenes.list_orders' %}active{% endif %}">
+                        <span class="icon">📋</span> Órdenes de Trabajo
+                    </a>
+                {% endif %}
+
+                <!-- Administración (solo admin) -->
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('auth.admin_users') }}" class="nav-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
+                        <span class="icon">⚙️</span> Usuarios
+                    </a>
+                {% endif %}
+
+                <!-- Cerrar sesión (visible para todos) -->
+                <a href="{{ url_for('auth.logout') }}" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
+                    <span class="icon">🚪</span> Cerrar sesión
                 </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">📐</span> Carteles
+            {% else %}
+                <!-- Si no está autenticado, mostrar solo login -->
+                <a href="{{ url_for('auth.login') }}" class="nav-item">
+                    <span class="icon">🔑</span> Iniciar sesión
                 </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">👥</span> Clientes
-                </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">📝</span> Notas
-                </a>
-                <a href="#" class="nav-item">
-                    <span class="icon">📦</span> Órdenes
-                </a>
-            {% endblock %}
+            {% endif %}
+
         </nav>
 
         <div class="sidebar-footer">
@@ -68,11 +89,36 @@
         <!-- Header superior -->
         <header class="main-header">
             <h1>{% block page_title %}Bienvenido{% endblock %}</h1>
-            <div class="user-badge">
-                <span>{% block user_name %}Admin{% endblock %}</span>
-                <div class="user-avatar">A</div>
+            <div class="user-badge" style="position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="toggleUserMenu(event)">
+                <span>{{ current_user.username }}</span>
+                <div class="user-avatar" style="background: #1a1a1a; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
+                    {{ current_user.username[0]|upper }}
+                </div>
+                <!-- Dropdown -->
+                <div id="userMenu" style="display: none; position: absolute; right: 0; top: 45px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); min-width: 180px; z-index: 1000;">
+                    <a href="{{ url_for('auth.profile') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; transition: background 0.2s;">
+                        <i class="fas fa-user"></i> Mi perfil
+                    </a>
+                    <a href="{{ url_for('auth.change_password') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; transition: background 0.2s;">
+                        <i class="fas fa-key"></i> Cambiar contraseña
+                    </a>
+                    <a href="{{ url_for('auth.logout') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; transition: background 0.2s;">
+                        <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                    </a>
+                </div>
             </div>
         </header>
+
+        <!-- Mensajes flash (se muestran en todas las páginas) -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div style="margin-bottom: 20px;">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
 
         <!-- Contenido dinámico (lo que cada página inyecta) -->
         {% block content %}
@@ -88,6 +134,20 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     <!-- Bloque para scripts adicionales de cada página -->
     {% block extra_js %}{% endblock %}
+    <script>
+    function toggleUserMenu(event) {
+        event.stopPropagation();
+        const menu = document.getElementById('userMenu');
+        menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+    }
+    // Cerrar menú al hacer clic fuera
+    document.addEventListener('click', function(e) {
+        const menu = document.getElementById('userMenu');
+        if (menu && !menu.contains(e.target)) {
+            menu.style.display = 'none';
+        }
+    });
+    </script>
 
 </body>
 </html>

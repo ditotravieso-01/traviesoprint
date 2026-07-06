@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Usuarios · CairoStudio{% endblock %}
+
+{% block page_title %}👥 Gestión de Usuarios{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-crear {
+        background: #1a1a1a;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 500;
+        margin-bottom: 16px;
+    }
+    .btn-crear:hover {
+        background: #333;
+    }
+    .btn-accion {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 13px;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+    .btn-accion:hover {
+        background: #f0f0f0;
+    }
+    .btn-accion.danger:hover {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    .btn-accion.warning:hover {
+        background: #fef3c7;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+        <p style="color:#666; margin:0;">
+            Usuarios autenticados vía Active Directory. Asigna roles para controlar el acceso a los módulos.
+            Los usuarios se crean automáticamente al primer inicio de sesión.
+        </p>
+        <button class="btn-crear" onclick="openCreateUserModal()">
+            <i class="fas fa-plus"></i> Crear usuario local
+        </button>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; margin-top:8px; min-width:700px;">
+            <thead>
+                <tr style="border-bottom:2px solid #ddd; text-align:left;">
+                    <th style="padding:10px 0;">Usuario</th>
+                    <th style="padding:10px 0;">Email</th>
+                    <th style="padding:10px 0;">Rol actual</th>
+                    <th style="padding:10px 0;">Estado</th>
+                    <th style="padding:10px 0;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:10px 0;">
+                        {{ user.username }}
+                        {% if user.is_ldap_user() %}
+                            <span style="font-size:10px; background:#e8e0d8; padding:2px 8px; border-radius:10px; margin-left:6px;">AD</span>
+                        {% else %}
+                            <span style="font-size:10px; background:#d0c8c0; padding:2px 8px; border-radius:10px; margin-left:6px;">local</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:10px 0;">
+                        {% if user.is_ldap_user() %}
+                            {{ user.email or '-' }}
+                        {% else %}
+                            <form method="POST" action="{{ url_for('auth.admin_update_email', user_id=user.id) }}" style="display:flex; gap:4px; align-items:center;">
+                                <input type="email" name="email" value="{{ user.email or '' }}" style="flex:1; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px; min-width:120px;">
+                                <button type="submit" style="background:none; border:none; cursor:pointer; color:#1a1a1a; font-size:14px;" title="Actualizar email">
+                                    <i class="fas fa-save"></i>
+                                </button>
+                            </form>
+                        {% endif %}
+                    </td>
+                    <td style="padding:10px 0;">
+                        <form method="POST" action="{{ url_for('auth.admin_change_role', user_id=user.id) }}" style="display:inline;">
+                            <select name="role" onchange="this.form.submit()" style="padding:4px 8px; border-radius:12px; border:1px solid #ddd; background:white; cursor:pointer;">
+                                <option value="operario" {% if user.role=='operario' %}selected{% endif %}>Operario</option>
+                                <option value="disenador" {% if user.role=='disenador' %}selected{% endif %}>Diseñador</option>
+                                <option value="comercial" {% if user.role=='comercial' %}selected{% endif %}>Comercial</option>
+                                <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Administrador</option>
+                            </select>
+                        </form>
+                    </td>
+                    <td style="padding:10px 0;">
+                        {% if user.is_active %}
+                            <span style="color:#10b981; font-weight:500;">Activo</span>
+                        {% else %}
+                            <span style="color:#dc2626; font-weight:500;">Inactivo</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:10px 0;">
+                        <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                            <!-- Resetear contraseña (solo locales) -->
+                            {% if not user.is_ldap_user() %}
+                                <a href="{{ url_for('auth.admin_reset_password', user_id=user.id) }}" class="btn-accion warning" title="Resetear contraseña">
+                                    <i class="fas fa-key"></i> Resetear pass
+                                </a>
+                            {% endif %}
+
+                            <!-- Activar/Desactivar -->
+                            <form method="POST" action="{{ url_for('auth.admin_toggle_user', user_id=user.id) }}" style="display:inline;">
+                                <button type="submit" class="btn-accion" onclick="return confirm('¿Confirmar acción?')">
+                                    {% if user.is_active %}
+                                        <i class="fas fa-ban"></i> Desactivar
+                                    {% else %}
+                                        <i class="fas fa-check-circle"></i> Activar
+                                    {% endif %}
+                                </button>
+                            </form>
+
+                            <!-- Eliminar (solo locales y no el propio admin) -->
+                            {% if not user.is_ldap_user() and user.id != current_user.id %}
+                                <form method="POST" action="{{ url_for('auth.admin_delete_user', user_id=user.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente a {{ user.username }}? Esta acción no se puede deshacer.')">
+                                    <button type="submit" class="btn-accion danger">
+                                        <i class="fas fa-trash-alt"></i> Eliminar
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <p style="color:#999; font-size:13px; margin-top:16px;">
+        <i class="fas fa-info-circle"></i> Los usuarios de AD se crean automáticamente al iniciar sesión. 
+        Los usuarios locales (como 'admin') son de respaldo.
+    </p>
+</div>
+
+<!-- ===== MODAL CREAR USUARIO ===== -->
+<div class="modal-overlay" id="createUserModal">
+    <div class="modal-box">
+        <button class="close-modal" onclick="closeCreateUserModal()">✕</button>
+        <h3>➕ Crear usuario local</h3>
+        <p style="color:#666; font-size:14px; margin-bottom:12px;">
+            Crea un usuario local (no LDAP). El usuario podrá iniciar sesión con esta contraseña.
+        </p>
+        <form id="createUserForm" method="POST" action="{{ url_for('auth.admin_create_user') }}">
+            <div class="form-group">
+                <label for="new_username">Usuario *</label>
+                <input type="text" id="new_username" name="username" required placeholder="ej. juan.perez">
+            </div>
+            <div class="form-group">
+                <label for="new_email">Email</label>
+                <input type="email" id="new_email" name="email" placeholder="ej. juan@cairostudio.cu">
+            </div>
+            <div class="form-group">
+                <label for="new_password">Contraseña *</label>
+                <input type="password" id="new_password" name="password" required placeholder="Mínimo 6 caracteres" minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="new_role">Rol</label>
+                <select id="new_role" name="role">
+                    <option value="operario">Operario</option>
+                    <option value="disenador">Diseñador</option>
+                    <option value="comercial">Comercial</option>
+                    <option value="admin">Administrador</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="submit" class="btn">Crear usuario</button>
+                <button type="button" class="btn btn-secondary" onclick="closeCreateUserModal()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCreateUserModal() {
+        document.getElementById('createUserModal').classList.add('active');
+        document.getElementById('createUserForm').reset();
+    }
+    function closeCreateUserModal() {
+        document.getElementById('createUserModal').classList.remove('active');
+    }
+    // Cerrar modal al hacer clic fuera
+    document.getElementById('createUserModal').addEventListener('click', function(e) {
+        if (e.target === this) closeCreateUserModal();
+    });
+</script>
+{% endblock %}

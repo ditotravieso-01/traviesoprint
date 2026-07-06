@@ -1,39 +1,49 @@
 from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 from .config import Config
 
-# Instancia global de SQLAlchemy
+
+# Instancias globales
 db = SQLAlchemy()
+login_manager = LoginManager()
+login_manager.login_view = 'auth.login'
+login_manager.login_message = 'Por favor, inicia sesión para acceder.'
+login_manager.login_message_category = 'warning'
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    # Inicializar SQLAlchemy con la app
     db.init_app(app)
+    login_manager.init_app(app)
 
-    # Importar los modelos para que SQLAlchemy los conozca
+    # Importar modelos (para que SQLAlchemy los conozca)
     from . import models
 
-    # Crear las tablas en la base de datos (si no existen)
+    # Crear tablas si no existen
     with app.app_context():
         db.create_all()
-        # Crear un usuario administrador por defecto si no existe
-        admin_user = models.User.query.filter_by(username='admin').first()
-        if not admin_user:
-            admin = models.User(username='admin')
-            admin.set_password('admin')  # Contraseña: admin
-            db.session.add(admin)
-            db.session.commit()
-            print("✅ Usuario 'admin' creado con contraseña 'admin'")
+        # Crear usuario admin local por defecto si no existe
+        from .services.auth_service import AuthService
+        admin = models.User.query.filter_by(username='admin').first()
+        if not admin:
+            AuthService.create_local_admin('admin', 'admin')
+            print('✅ Usuario admin creado por defecto (admin/admin)')
 
-    # Registrar los blueprints
+    # Registrar blueprints
     from .auth import auth_bp
-    from .home import home_bp
-    from .modulos.etiquetas import etiquetas_bp
-
     app.register_blueprint(auth_bp, url_prefix='/auth')
-    app.register_blueprint(home_bp)  # La raíz '/' la maneja home_bp
+
+    from .home import home_bp
+    app.register_blueprint(home_bp)
+
+    from .modulos.etiquetas import etiquetas_bp
     app.register_blueprint(etiquetas_bp)
+
+    from .modulos.ordenes import ordenes_bp
+    app.register_blueprint(ordenes_bp)   # <-- Asegurar que existe
+
+    # ... (añade aquí el resto de blueprints que tengas)
 
     return app

@@ -315,3 +315,108 @@ body {
         display: none;
     }
 }
+
+/* ===== MODALES ===== */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+.modal-overlay.active {
+    display: flex;
+}
+.modal-box {
+    background: white;
+    border-radius: 20px;
+    padding: 30px 35px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal-box .close-modal {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #888;
+}
+.modal-box h3 {
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 12px;
+}
+.modal-box .form-group {
+    margin-bottom: 14px;
+}
+.modal-box label {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 4px;
+}
+.modal-box input,
+.modal-box select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fafafa;
+}
+.modal-box .btn {
+    padding: 10px 24px;
+    border-radius: 30px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    background: #1a1a1a;
+    color: white;
+    margin-right: 8px;
+}
+.modal-box .btn-secondary {
+    background: transparent;
+    border: 1px solid #ccc;
+    color: #333;
+}
+.modal-box .btn-secondary:hover {
+    background: #f5f5f5;
+}
+
+/* ===== ALERTAS ===== */
+.alert {
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    border-left: 4px solid transparent;
+}
+.alert-success {
+    background: #d1fae5;
+    color: #065f46;
+    border-left-color: #10b981;
+}
+.alert-danger {
+    background: #fee2e2;
+    color: #991b1b;
+    border-left-color: #dc2626;
+}
+.alert-warning {
+    background: #fef3c7;
+    color: #92400e;
+    border-left-color: #f59e0b;
+}
+.alert-info {
+    background: #dbeafe;
+    color: #1e40af;
+    border-left-color: #3b82f6;
+}

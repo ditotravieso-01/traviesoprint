@@ -6,35 +6,66 @@
     <title>Iniciar Sesión · CairoStudio</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
     <style>
-        /* Reset y estilos */
+        /* ===== RESET ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
             font-family: 'Inter', sans-serif;
-            background: #f4f0ed;
+            background: #1a1a1a;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
         }
-        .login-container {
-            background: white;
-            max-width: 420px;
+
+        /* ===== FONDO CON OVERLAY OSCURO ===== */
+        .login-page {
             width: 100%;
-            padding: 48px 40px;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+            max-width: 700px;
+            min-height: 550px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 30px;
+            background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+                              url('{{ url_for('static', filename='img/fondo_login.jpg') }}');
+            background-size: cover;
+            background-position: center;
+            border-radius: 24px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
         }
+
+        /* ===== TARJETA DE LOGIN ===== */
+        .login-card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(8px);
+            padding: 40px 35px;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            max-width: 400px;
+            width: 100%;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        /* ===== LOGO ===== */
         .login-logo {
             text-align: center;
-            margin-bottom: 36px;
+            margin-bottom: 28px;
+        }
+        .login-logo img {
+            width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto 12px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.08));
         }
         .login-logo h1 {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
-            font-size: 28px;
+            font-size: 26px;
             color: #1a1a1a;
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
         }
         .login-logo p {
             font-family: 'Inter', sans-serif;
@@ -42,17 +73,19 @@
             text-transform: uppercase;
             letter-spacing: 2px;
             color: #888;
-            margin-top: 4px;
+            margin-top: 2px;
         }
+
+        /* ===== FORMULARIO ===== */
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
         .form-group label {
             display: block;
-            font-size: 14px;
             font-weight: 600;
+            font-size: 14px;
             color: #333;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .form-group input {
             width: 100%;
@@ -61,8 +94,8 @@
             border-radius: 12px;
             font-size: 16px;
             font-family: 'Inter', sans-serif;
-            transition: border-color 0.2s;
             background: #fafafa;
+            transition: border-color 0.2s, background 0.2s;
         }
         .form-group input:focus {
             outline: none;
@@ -70,6 +103,21 @@
             background: white;
             box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
         }
+
+        .remember-me {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #555;
+            margin: 12px 0 8px;
+        }
+        .remember-me input {
+            width: 18px;
+            height: 18px;
+            accent-color: #1a1a1a;
+        }
+
         .btn-login {
             width: 100%;
             padding: 14px;
@@ -81,7 +129,7 @@
             font-weight: 600;
             font-family: 'Inter', sans-serif;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: background 0.2s, transform 0.1s;
             margin-top: 8px;
         }
         .btn-login:hover {
@@ -89,63 +137,114 @@
             transform: translateY(-1px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
+
+        /* ===== ALERTAS (FLASH) ===== */
         .alert {
-            background: #fee2e2;
-            color: #991b1b;
             padding: 12px 16px;
             border-radius: 12px;
             font-size: 14px;
-            margin-bottom: 20px;
-            border-left: 4px solid #dc2626;
+            margin-bottom: 16px;
+            border-left: 4px solid transparent;
         }
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left-color: #10b981;
+        }
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left-color: #dc2626;
+        }
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-left-color: #f59e0b;
+        }
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left-color: #3b82f6;
+        }
+
+        /* ===== FOOTER ===== */
         .footer-text {
             text-align: center;
-            margin-top: 24px;
+            margin-top: 20px;
             font-size: 13px;
             color: #999;
             border-top: 1px solid #eee;
-            padding-top: 20px;
+            padding-top: 16px;
+        }
+        .version-info {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #bbb;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 500px) {
+            .login-page {
+                padding: 20px 15px;
+                min-height: 450px;
+            }
+            .login-card {
+                padding: 30px 20px;
+            }
+            .login-logo img {
+                width: 60px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="login-container">
-       <div class="login-logo">
-           <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" 
-           alt="CairoStudio Grupo Creativo" 
-           style="width: 220px; height: auto; display: block; margin: 0 auto 12px; filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));">
 
-           <h1 style="font-family: 'Playfair Display', serif; font-weight: 700; font-size: 22px; color: #1a1a1a; letter-spacing: -0.3px; margin: 0;">
-            Cairostudiokit
-        </h1>
-        <p style="font-family: 'Inter', sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 2.5px; color: #999; margin-top: 4px;">
-            Herramientas de Gestión Creativa
-        </p>
-</div>
+    <div class="login-page">
+        <div class="login-card">
 
-        <!-- Mostrar mensajes de error (flash) -->
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                <div class="alert">
-                    {{ messages[0] }}
+            <!-- LOGO -->
+            <div class="login-logo">
+                <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" alt="CairoStudio Grupo Creativo">
+                <h1>CAIROSTUDIOKIT</h1>
+                <p>HERRAMIENTAS DE GESTIÓN CREATIVA</p>
+            </div>
+
+            <!-- MENSAJES FLASH -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <!-- FORMULARIO DE LOGIN -->
+            <form method="POST" action="{{ url_for('auth.login') }}">
+                <div class="form-group">
+                    <label for="username">Usuario</label>
+                    <input type="text" id="username" name="username" placeholder="ej. juan.perez" required autofocus>
                 </div>
-            {% endif %}
-        {% endwith %}
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" placeholder="••••••••" required>
+                </div>
+                <div class="remember-me">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Recordarme</label>
+                </div>
+                <button type="submit" class="btn-login">Acceder</button>
+            </form>
 
-        <form method="POST" action="{{ url_for('auth.login') }}">
-            <div class="form-group">
-                <label for="username">Usuario</label>
-                <input type="text" id="username" name="username" placeholder="admin" required autofocus>
+            <div class="footer-text">
+                Sistema interno · Autenticación mediante Active Directory
             </div>
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" name="password" placeholder="••••••••" required>
+            <div class="version-info">
+                v0.2 · Entorno de Pruebas - Powered by TraviesoWorks
             </div>
-            <button type="submit" class="btn-login">Acceder</button>
-        </form>
-        <div class="footer-text">
-            v0.1 · Entorno de pruebas - Powered by TraviesoWorks 
+
         </div>
     </div>
+
 </body>
 </html>

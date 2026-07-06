@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Órdenes de Trabajo · CairoStudio{% endblock %}
+
+{% block page_title %}📋 Órdenes de Trabajo{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <p style="color:#666; margin:0;">Lista completa de órdenes de trabajo. <span class="badge" style="background:#1a1a1a; color:white; padding:2px 10px; border-radius:20px;">{{ orders|length }}</span></p>
+        <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
+    </div>
+
+    <div style="overflow-x:auto;">
+        <table class="table" style="width:100%; border-collapse:collapse; font-size:14px;">
+            <thead>
+                <tr style="border-bottom:2px solid #ddd; text-align:left;">
+                    <th style="padding:8px 0;">N° Orden</th>
+                    <th style="padding:8px 0;">Cliente</th>
+                    <th style="padding:8px 0;">Proyecto</th>
+                    <th style="padding:8px 0;">Prioridad</th>
+                    <th style="padding:8px 0;">Factura</th>
+                    <th style="padding:8px 0;">Entrada</th>
+                    <th style="padding:8px 0;">Columna</th>
+                    <th style="padding:8px 0;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr style="border-bottom:1px solid #eee;">
+                    <td style="padding:8px 0;"><strong>{{ order.order_num }}</strong></td>
+                    <td style="padding:8px 0;">{{ order.client }}</td>
+                    <td style="padding:8px 0;">{{ order.proyecto or '-' }}</td>
+                    <td style="padding:8px 0;">
+                        <span class="badge" style="background:{% if order.priority == 'urgente' %}#dc2626{% elif order.priority == 'critica' %}#f59e0b{% else %}#888{% endif %}; color:white;">
+                            {{ order.priority }}
+                        </span>
+                    </td>
+                    <td style="padding:8px 0;">{{ order.invoice or '-' }}</td>
+                    <td style="padding:8px 0;">
+                        {% if order.entrada_ok %}
+                            <span class="badge" style="background:#10b981; color:white;">✅ OK</span>
+                        {% else %}
+                            <span class="badge" style="background:#f59e0b; color:white;">⏳ Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding:8px 0;">{{ order.column }}</td>
+                    <td style="padding:8px 0;">
+                        {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin'] %}
+                            <form method="POST" action="{{ url_for('ordenes.marcar_entrada', order_id=order.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Entrada</button>
+                            </form>
+                        {% endif %}
+                        {% if current_user.role in ['comercial', 'admin'] %}
+                            <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
+                                <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                        {% endif %}
+                        {% if current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">
+                                <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if orders|length == 0 %}
+        <p style="color:#999; text-align:center; padding:20px 0;">No hay órdenes aún. Crea una nueva.</p>
+    {% endif %}
+</div>
+{% endblock %}

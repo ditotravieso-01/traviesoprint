@@ -12,4 +12,9 @@ class Config:
     
     # Desactivamos el seguimiento de modificaciones para ahorrar recursos
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
+
+    # ===== CONFIGURACIÓN LDAP =====
+    LDAP_ENABLED = os.environ.get('LDAP_ENABLED', 'False') == 'True'
+    LDAP_SERVER = os.environ.get('LDAP_SERVER', 'dc.cairostudio.cu')
+    LDAP_BASE_DN = os.environ.get('LDAP_BASE_DN', 'dc=cairostudio,dc=cu')
+    LDAP_DOMAIN = os.environ.get('LDAP_DOMAIN', 'cairostudio.cu')

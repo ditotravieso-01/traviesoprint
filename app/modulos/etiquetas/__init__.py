@@ -1,4 +1,5 @@
 from flask import Blueprint, request, render_template, jsonify
+from flask_login import login_required 
 import math
 
 # ==========================================
@@ -250,6 +251,7 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
 # RUTA PRINCIPAL (GET y POST)
 # ==========================================
 @etiquetas_bp.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     ancho = ''
     alto = ''
@@ -326,6 +328,7 @@ def index():
 # ENDPOINT PARA CÁLCULO EN VIVO (AJAX)
 # ==========================================
 @etiquetas_bp.route('/calcular', methods=['POST'])
+@login_required
 def calcular_ajax():
     try:
         ancho_cm = float(request.form.get('ancho', 0))
