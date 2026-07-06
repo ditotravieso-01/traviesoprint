@@ -16,11 +16,11 @@
     }
     .calc-form {
         flex: 1;
-        min-width: 300px;
+        min-width: 280px;
     }
     .calc-result {
         flex: 1;
-        min-width: 300px;
+        min-width: 280px;
     }
     .form-section {
         background: white;
@@ -53,7 +53,8 @@
         color: #333;
         margin-bottom: 4px;
     }
-    .form-group input, .form-group select {
+    .form-group input,
+    .form-group select {
         width: 100%;
         padding: 10px 14px;
         border: 1px solid #ddd;
@@ -62,7 +63,8 @@
         background: #fafafa;
         transition: border-color 0.2s;
     }
-    .form-group input:focus, .form-group select:focus {
+    .form-group input:focus,
+    .form-group select:focus {
         border-color: #1a1a1a;
         outline: none;
         background: white;
@@ -151,6 +153,7 @@
         height: auto;
         border-radius: 8px;
         background: #fcfcfc;
+        cursor: default;
     }
     .file-upload-area {
         border: 2px dashed #ddd;
@@ -251,15 +254,20 @@
         </div>
     </div>
 
-    <!-- Variables ocultas para simulación -->
+    <!-- Datos de simulación (se pasan desde el backend) -->
     <div id="simData" style="display:none;"
-         data-ancho="{{ simData.anchoCm }}"
-         data-alto="{{ simData.altoCm }}"
+         data-ancho-efectivo="{{ simData.anchoEfectivo }}"
+         data-alto-efectivo="{{ simData.altoEfectivo }}"
          data-material="{{ simData.material }}"
          data-area="{{ simData.areaM2 }}"
          data-merma="{{ simData.mermaM2 }}"
          data-costo-total="{{ simData.costoTotal }}"
-         data-girar="{{ 'true' if simData.girar else 'false' }}">
+         data-girar="{{ 'true' if simData.girar else 'false' }}"
+         data-cantidad="{{ simData.cantidad }}"
+         data-ancho-rollo="{{ simData.anchoRollo }}"
+         data-cols="{{ simData.cols }}"
+         data-filas="{{ simData.filas }}"
+         data-orientacion="{{ simData.orientacion }}">
     </div>
 
     <div class="calc-container">
@@ -279,6 +287,17 @@
                         </div>
                     </div>
                     <div class="form-group">
+                        <label for="cantidad">Cantidad de piezas</label>
+                        <input type="number" id="cantidad" name="cantidad" value="{{ cantidad or 1 }}" min="1" step="1" oninput="calcularEnVivo()">
+                    </div>
+                    <div class="form-group">
+                        <label for="ancho_rollo">Ancho del rollo</label>
+                        <select id="ancho_rollo" name="ancho_rollo" onchange="calcularEnVivo()">
+                            <option value="134.0" {% if ancho_rollo == 134.0 %}selected{% endif %}>134 cm</option>
+                            <option value="100.0" {% if ancho_rollo == 100.0 %}selected{% endif %}>100 cm</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
                         <label for="material">Material</label>
                         <select id="material" name="material" onchange="calcularEnVivo()">
                             {% for key, mat in materiales.items() %}
@@ -288,6 +307,9 @@
                     </div>
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (intercambiar ancho/alto)</label>
+                        <span style="font-size:13px; color:#888; margin-left:8px;">
+                            <i class="fas fa-info-circle"></i> Para varias piezas, se distribuyen automáticamente en el rollo.
+                        </span>
                     </div>
                     <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
                         <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#888;"></i>
@@ -326,19 +348,20 @@
             </div>
 
             <div class="form-section">
-                <h4>🖨️ Simulación en rollo (134 cm)</h4>
+                <h4>🖨️ Simulación en el rollo</h4>
                 <div class="canvas-wrapper">
                     <canvas id="simCanvas" width="600" height="300"></canvas>
                 </div>
                 <p style="font-size:12px; color:#999; text-align:center; margin-top:6px;">
-                    El rectángulo azul representa la pieza, el área gris la merma lateral.
+                    Distribución: {{ simData.cols }} columna(s) × {{ simData.filas }} fila(s)
+                    {% if 'girada' in simData.orientacion %} (giradas){% endif %}
                 </p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- PANEL DE HISTORIAL -->
+<!-- PANEL DE HISTORIAL Y FAVORITOS (igual) -->
 <div class="history-panel" id="historyPanel">
     <h3>
         📋 Historial
@@ -348,7 +371,6 @@
     <button class="btn btn-outline" onclick="limpiarHistorial()" style="width:100%; margin-top:12px;">Limpiar historial</button>
 </div>
 
-<!-- PANEL DE FAVORITOS (modal simple) -->
 <div class="modal-overlay" id="favoritosModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
     <div style="background:white; border-radius:20px; padding:30px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
         <h3 style="font-family:'Playfair Display', serif; display:flex; justify-content:space-between; align-items:center;">
@@ -361,17 +383,36 @@
 </div>
 
 <!-- ========================================== -->
-<!-- JAVASCRIPT -->
+<!-- JAVASCRIPT (VERSIÓN CORREGIDA)            -->
 <!-- ========================================== -->
 <script>
     // =============================================
     // VARIABLES GLOBALES
     // =============================================
-    let pdfImage = null;
-    let currentScale = 1.0;
-    let offsetX = 0, offsetY = 0;
-    let isDragging = false;
-    let dragStartX, dragStartY;
+    let uploadedImage = null;
+    let currentScale = 1.0;  // para futuros zooms, sin implementar
+
+    // =============================================
+    // OBTENER DATOS DE SIMULACIÓN
+    // =============================================
+    function getSimData() {
+        const el = document.getElementById('simData');
+        if (!el) return null;
+        return {
+            anchoEfectivo: parseFloat(el.dataset.anchoEfectivo) || 0,
+            altoEfectivo: parseFloat(el.dataset.altoEfectivo) || 0,
+            material: el.dataset.material || 'Vinilo',
+            area: parseFloat(el.dataset.area) || 0,
+            merma: parseFloat(el.dataset.merma) || 0,
+            costoTotal: parseFloat(el.dataset.costoTotal) || 0,
+            girar: el.dataset.girar === 'true',
+            cantidad: parseInt(el.dataset.cantidad) || 1,
+            anchoRollo: parseFloat(el.dataset.anchoRollo) || 134,
+            cols: parseInt(el.dataset.cols) || 1,
+            filas: parseInt(el.dataset.filas) || 1,
+            orientacion: el.dataset.orientacion || 'normal'
+        };
+    }
 
     // =============================================
     // CÁLCULO EN VIVO (AJAX)
@@ -384,7 +425,7 @@
         if (!ancho || !alto) {
             document.getElementById('resultDisplay').innerHTML = '<p style="color:#999;">Introduce ancho y alto.</p>';
             document.getElementById('errorDisplay').style.display = 'none';
-            drawSimulation(0, 0, 'Vinilo', false);
+            drawSimulation(0, 0, 1, 134, 1, 1, 'normal');
             return;
         }
 
@@ -402,10 +443,13 @@
             }
             document.getElementById('errorDisplay').style.display = 'none';
             document.getElementById('resultDisplay').innerHTML = data.resultado;
-            // Actualizar simulación
             const sim = data.simData;
-            drawSimulation(sim.anchoCm, sim.altoCm, sim.material, sim.girar);
-            // Actualizar historial
+            // Dibujar simulación con los valores efectivos
+            drawSimulation(
+                sim.anchoEfectivo, sim.altoEfectivo,
+                sim.cantidad, sim.anchoRollo,
+                sim.cols, sim.filas, sim.orientacion
+            );
             cargarHistorial();
         })
         .catch(error => {
@@ -414,9 +458,9 @@
     }
 
     // =============================================
-    // DIBUJAR SIMULACIÓN EN CANVAS
+    // DIBUJAR SIMULACIÓN EN CANVAS (CORREGIDA)
     // =============================================
-    function drawSimulation(anchoCm, altoCm, material, girar) {
+    function drawSimulation(anchoEfectivo, altoEfectivo, cantidad, anchoRollo, cols, filas, orientacion) {
         const canvas = document.getElementById('simCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -426,7 +470,7 @@
         ctx.fillStyle = '#f8f6f4';
         ctx.fillRect(0, 0, w, h);
 
-        if (anchoCm <= 0 || altoCm <= 0) {
+        if (anchoEfectivo <= 0 || altoEfectivo <= 0 || cols === 0 || filas === 0) {
             ctx.fillStyle = '#999';
             ctx.font = '16px sans-serif';
             ctx.textAlign = 'center';
@@ -434,99 +478,142 @@
             return;
         }
 
-        const anchoRolloCm = 134;
         const margin = 20;
-        const scale = (w - 2 * margin) / anchoRolloCm;
-        const anchoPx = anchoCm * scale;
-        const altoPx = altoCm * scale;
-        const totalAltoPx = altoPx; // solo una pieza
+        const scale = (w - 2 * margin) / anchoRollo;
 
-        // Posicionar la pieza en el centro del rollo
-        const offsetX = (w - anchoPx) / 2;
-        const offsetY = (h - altoPx) / 2;
+        const piezaAnchoPx = anchoEfectivo * scale;
+        const piezaAltoPx = altoEfectivo * scale;
 
-        // Dibujar área de merma (gris)
+        const totalWidth = anchoRollo * scale;
+        const totalHeight = filas * piezaAltoPx;
+        const offsetX = (w - totalWidth) / 2;
+        const offsetY = (h - totalHeight) / 2;
+
+        // Fondo (merma)
         ctx.fillStyle = '#e0d8d0';
-        ctx.fillRect(0, 0, w, h);
+        ctx.fillRect(offsetX, offsetY, totalWidth, totalHeight);
 
-        // Dibujar la pieza (azul)
-        ctx.fillStyle = '#1a73e8';
-        ctx.shadowColor = 'rgba(0,0,0,0.1)';
-        ctx.shadowBlur = 8;
-        ctx.fillRect(offsetX, offsetY, anchoPx, altoPx);
-        ctx.shadowBlur = 0;
+        // Calcular última fila
+        const ultima_fila = cantidad % cols;
+        const filas_completas = (ultima_fila === 0) ? filas : filas - 1;
+        const piezas_ultima_fila = (ultima_fila === 0) ? cols : ultima_fila;
 
-        // Borde de la pieza
-        ctx.strokeStyle = '#0d47a1';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(offsetX, offsetY, anchoPx, altoPx);
-
-        // Texto informativo
-        ctx.fillStyle = '#fff';
-        ctx.font = '14px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${anchoCm} cm`, offsetX + anchoPx/2, offsetY + altoPx/2 - 8);
-        ctx.fillText(`${altoCm} cm`, offsetX + anchoPx/2, offsetY + altoPx/2 + 16);
-        if (girar) {
-            ctx.fillStyle = '#ffeb3b';
-            ctx.font = '12px sans-serif';
-            ctx.fillText('↻ Girada', offsetX + anchoPx/2, offsetY + altoPx/2 + 36);
+        // Dibujar filas completas
+        for (let r = 0; r < filas_completas; r++) {
+            for (let c = 0; c < cols; c++) {
+                const idx = r * cols + c;
+                if (idx >= cantidad) break;
+                const x = offsetX + c * piezaAnchoPx;
+                const y = offsetY + r * piezaAltoPx;
+                dibujarPieza(ctx, x, y, piezaAnchoPx, piezaAltoPx, idx + 1);
+            }
         }
 
-        // Línea del ancho del rollo
+        // Dibujar última fila
+        if (ultima_fila !== 0 && filas_completas < filas) {
+            const r = filas_completas;
+            for (let c = 0; c < piezas_ultima_fila; c++) {
+                const idx = r * cols + c;
+                if (idx >= cantidad) break;
+                const x = offsetX + c * piezaAnchoPx;
+                const y = offsetY + r * piezaAltoPx;
+                dibujarPieza(ctx, x, y, piezaAnchoPx, piezaAltoPx, idx + 1);
+            }
+        }
+
+        // Borde del rollo
         ctx.strokeStyle = '#1a1a1a';
-        ctx.lineWidth = 1;
+        ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
-        ctx.strokeRect(margin, margin, w - 2*margin, h - 2*margin);
+        ctx.strokeRect(offsetX, offsetY, totalWidth, totalHeight);
         ctx.setLineDash([]);
+
+        // Información
         ctx.fillStyle = '#1a1a1a';
         ctx.font = '11px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(`Rollo 134 cm`, w/2, h - 8);
-
-        // Área de merma (texto)
-        const mermaCm2 = (anchoRolloCm - anchoCm) * altoCm;
-        const mermaM2 = mermaCm2 / 10000;
+        ctx.fillText(`Rollo ${anchoRollo} cm`, w/2, h - 10);
         ctx.fillStyle = '#555';
-        ctx.font = '11px sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(`Merma: ${mermaM2.toFixed(4)} m²`, 10, h - 10);
+        ctx.fillText(`Distribución: ${cols}×${filas}`, 10, h - 10);
+        if (orientacion && orientacion.includes('girada')) {
+            ctx.fillText('(giradas)', 10, h - 25);
+        }
     }
 
     // =============================================
-    // EXPORTAR A PDF (usando pdfmake)
+    // FUNCIÓN AUXILIAR PARA DIBUJAR UNA PIEZA
     // =============================================
-    function exportPDF() {
-        const ancho = document.getElementById('ancho').value || 'N/A';
-        const alto = document.getElementById('alto').value || 'N/A';
-        const material = document.getElementById('material').value || 'N/A';
-        const resultado = document.getElementById('resultDisplay').innerHTML;
+    function dibujarPieza(ctx, x, y, ancho, alto, numero) {
+        // Si hay una imagen cargada, dibujarla en TODAS las piezas
+        if (uploadedImage) {
+            ctx.drawImage(uploadedImage, x, y, ancho, alto);
+        } else {
+            ctx.fillStyle = '#1a73e8';
+            ctx.shadowColor = 'rgba(0,0,0,0.1)';
+            ctx.shadowBlur = 6;
+            ctx.fillRect(x, y, ancho, alto);
+            ctx.shadowBlur = 0;
+        }
+        ctx.strokeStyle = '#0d47a1';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, ancho, alto);
+        ctx.fillStyle = '#fff';
+        ctx.font = '10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${numero}`, x + ancho/2, y + alto/2 + 4);
+    }
 
-        // Extraer datos del resultado (simple)
-        const areaMatch = resultado.match(/(\d+\.?\d*)\s*m²/);
-        const area = areaMatch ? areaMatch[1] : 'N/A';
-        const costoMatch = resultado.match(/\$(\d+\.?\d*)/);
-        const costo = costoMatch ? costoMatch[1] : 'N/A';
+    // =============================================
+    // CARGA DE ARCHIVOS
+    // =============================================
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        document.getElementById('fileName').textContent = file.name;
 
-        const docDefinition = {
-            content: [
-                { text: 'CairoStudio - Calculadora de Carteles', style: 'header' },
-                { text: `Fecha: ${new Date().toLocaleString()}`, style: 'subheader' },
-                { text: 'Resultado del cálculo', style: 'section' },
-                { text: `Ancho: ${ancho} cm`, style: 'item' },
-                { text: `Alto: ${alto} cm`, style: 'item' },
-                { text: `Material: ${material}`, style: 'item' },
-                { text: `Área: ${area} m²`, style: 'item' },
-                { text: `Costo total: $${costo} USD`, style: 'item' }
-            ],
-            styles: {
-                header: { fontSize: 22, bold: true, margin: [0, 0, 0, 16] },
-                subheader: { fontSize: 14, color: '#888', margin: [0, 0, 0, 16] },
-                section: { fontSize: 16, bold: true, margin: [0, 12, 0, 8] },
-                item: { fontSize: 13, margin: [0, 4, 0, 4] }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (file.type === 'application/pdf') {
+                const typedarray = new Uint8Array(this.result);
+                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                    pdf.getPage(1).then(function(page) {
+                        const viewport = page.getViewport({ scale: 1.0 });
+                        const widthCm = viewport.width * 0.0352778;
+                        const heightCm = viewport.height * 0.0352778;
+                        document.getElementById('ancho').value = widthCm.toFixed(1);
+                        document.getElementById('alto').value = heightCm.toFixed(1);
+                        document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
+                        // Renderizar PDF en canvas offscreen para simulación
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const scale = 1.0;
+                        const scaledViewport = page.getViewport({ scale: scale });
+                        canvas.width = scaledViewport.width;
+                        canvas.height = scaledViewport.height;
+                        page.render({ canvasContext: ctx, viewport: scaledViewport }).promise.then(() => {
+                            uploadedImage = canvas;
+                            // Forzar redibujado de la simulación
+                            calcularEnVivo();
+                        });
+                    });
+                });
+            } else {
+                // Imagen
+                const img = new Image();
+                img.onload = function() {
+                    const widthCm = img.width / 37.795;
+                    const heightCm = img.height / 37.795;
+                    document.getElementById('ancho').value = widthCm.toFixed(1);
+                    document.getElementById('alto').value = heightCm.toFixed(1);
+                    document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
+                    uploadedImage = img;
+                    calcularEnVivo();
+                };
+                img.src = URL.createObjectURL(file);
             }
         };
-        pdfMake.createPdf(docDefinition).download('Calculo_Carteles.pdf');
+        reader.readAsArrayBuffer(file);
     }
 
     // =============================================
@@ -536,27 +623,27 @@
         fetch("{{ url_for('carteles.get_historial') }}")
         .then(response => response.json())
         .then(data => {
-            const count = data.length;
-            document.getElementById('historyCount').textContent = count;
+            document.getElementById('historyCount').textContent = data.length;
             const list = document.getElementById('historyList');
-            if (count === 0) {
+            if (data.length === 0) {
                 list.innerHTML = '<p style="color:#999; text-align:center; padding:20px 0;">No hay cálculos guardados.</p>';
                 return;
             }
             list.innerHTML = data.map(item => `
-                <div class="history-item" onclick="cargarDesdeHistorial('${item.ancho}', '${item.alto}', '${item.material}', '${item.girar}')">
+                <div class="history-item" onclick="cargarDesdeHistorial('${item.ancho}', '${item.alto}', '${item.material}', '${item.girar}', '${item.cantidad}')">
                     <div class="date">${new Date(item.fecha).toLocaleString()}</div>
-                    <div class="result">${item.ancho}×${item.alto} cm · ${item.material} · $${item.costo.toFixed(2)}</div>
+                    <div class="result">${item.ancho}×${item.alto} cm · ${item.material} · $${item.costo.toFixed(2)} (${item.cantidad} pzs)</div>
                 </div>
             `).join('');
         });
     }
 
-    function cargarDesdeHistorial(ancho, alto, material, girar) {
+    function cargarDesdeHistorial(ancho, alto, material, girar, cantidad) {
         document.getElementById('ancho').value = ancho;
         document.getElementById('alto').value = alto;
         document.getElementById('material').value = material;
         document.getElementById('girar').checked = girar === 'true';
+        document.getElementById('cantidad').value = cantidad;
         calcularEnVivo();
         toggleHistory();
     }
@@ -595,6 +682,7 @@
         .then(data => {
             if (data.success) {
                 alert('Favorito guardado.');
+                cargarFavoritos();
             } else {
                 alert('Error: ' + data.error);
             }
@@ -614,7 +702,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eee; padding:8px 0;">
                     <div>
                         <strong>${f.nombre}</strong><br>
-                        <span style="font-size:13px; color:#666;">${f.ancho}×${f.alto} cm · ${f.material}</span>
+                        <span style="font-size:13px; color:#666;">${f.ancho}×${f.alto} cm · ${f.material} (${f.cantidad} pzs)</span>
                     </div>
                     <button onclick="cargarFavorito(${f.id})" class="btn btn-primary btn-sm">Cargar</button>
                     <button onclick="eliminarFavorito(${f.id})" class="btn btn-outline btn-sm" style="color:#dc2626;">✕</button>
@@ -633,6 +721,7 @@
                 document.getElementById('alto').value = fav.alto;
                 document.getElementById('material').value = fav.material;
                 document.getElementById('girar').checked = fav.girar;
+                document.getElementById('cantidad').value = fav.cantidad;
                 calcularEnVivo();
                 toggleFavoritos();
             }
@@ -659,44 +748,34 @@
     }
 
     // =============================================
-    // CARGA DE ARCHIVOS (extraer medidas)
+    // EXPORTAR PDF
     // =============================================
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        document.getElementById('fileName').textContent = file.name;
+    function exportPDF() {
+        const ancho = document.getElementById('ancho').value || 'N/A';
+        const alto = document.getElementById('alto').value || 'N/A';
+        const material = document.getElementById('material').value || 'N/A';
+        const cantidad = document.getElementById('cantidad').value || '1';
+        const resultado = document.getElementById('resultDisplay').innerHTML;
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            if (file.type === 'application/pdf') {
-                // Usar PDF.js para extraer medidas de la primera página (en puntos)
-                const typedarray = new Uint8Array(this.result);
-                pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
-                    pdf.getPage(1).then(function(page) {
-                        const viewport = page.getViewport({ scale: 1.0 });
-                        const widthCm = viewport.width * 0.0352778;
-                        const heightCm = viewport.height * 0.0352778;
-                        document.getElementById('ancho').value = widthCm.toFixed(1);
-                        document.getElementById('alto').value = heightCm.toFixed(1);
-                        document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
-                        calcularEnVivo();
-                    });
-                });
-            } else {
-                // Para imágenes, intentar leer dimensiones (placeholder)
-                const img = new Image();
-                img.onload = function() {
-                    const widthCm = img.width / 37.795; // px a cm (aprox)
-                    const heightCm = img.height / 37.795;
-                    document.getElementById('ancho').value = widthCm.toFixed(1);
-                    document.getElementById('alto').value = heightCm.toFixed(1);
-                    document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm)`;
-                    calcularEnVivo();
-                };
-                img.src = URL.createObjectURL(file);
+        const docDefinition = {
+            content: [
+                { text: 'CairoStudio - Calculadora de Carteles', style: 'header' },
+                { text: `Fecha: ${new Date().toLocaleString()}`, style: 'subheader' },
+                { text: 'Resultado del cálculo', style: 'section' },
+                { text: `Ancho: ${ancho} cm`, style: 'item' },
+                { text: `Alto: ${alto} cm`, style: 'item' },
+                { text: `Cantidad: ${cantidad} piezas`, style: 'item' },
+                { text: `Material: ${material}`, style: 'item' },
+                { text: resultado.replace(/<[^>]*>/g, ''), style: 'item' }
+            ],
+            styles: {
+                header: { fontSize: 22, bold: true, margin: [0, 0, 0, 16] },
+                subheader: { fontSize: 14, color: '#888', margin: [0, 0, 0, 16] },
+                section: { fontSize: 16, bold: true, margin: [0, 12, 0, 8] },
+                item: { fontSize: 13, margin: [0, 4, 0, 4] }
             }
         };
-        reader.readAsArrayBuffer(file);
+        pdfMake.createPdf(docDefinition).download('Calculo_Carteles.pdf');
     }
 
     // =============================================
@@ -705,10 +784,12 @@
     function limpiarCampos() {
         document.getElementById('ancho').value = '';
         document.getElementById('alto').value = '';
+        document.getElementById('cantidad').value = '1';
         document.getElementById('girar').checked = false;
         document.getElementById('resultDisplay').innerHTML = '<p style="color:#999;">Introduce las dimensiones y haz clic en "Calcular".</p>';
         document.getElementById('errorDisplay').style.display = 'none';
-        drawSimulation(0, 0, 'Vinilo', false);
+        uploadedImage = null;
+        drawSimulation(0, 0, 1, 134, 1, 1, 'normal');
     }
 
     // =============================================
@@ -716,14 +797,14 @@
     // =============================================
     document.addEventListener('DOMContentLoaded', function() {
         cargarHistorial();
-        // Dibujar simulación inicial si hay datos
-        const simData = document.getElementById('simData');
-        if (simData) {
-            const ancho = parseFloat(simData.dataset.ancho) || 0;
-            const alto = parseFloat(simData.dataset.alto) || 0;
-            const material = simData.dataset.material || 'Vinilo';
-            const girar = simData.dataset.girar === 'true';
-            drawSimulation(ancho, alto, material, girar);
+        // Dibujar simulación con los datos iniciales
+        const data = getSimData();
+        if (data) {
+            drawSimulation(
+                data.anchoEfectivo, data.altoEfectivo,
+                data.cantidad, data.anchoRollo,
+                data.cols, data.filas, data.orientacion
+            );
         }
     });
 
@@ -732,9 +813,6 @@
         if (e.target === this) toggleFavoritos();
     });
 
-    // =============================================
-    // PDF.JS CONFIG
-    // =============================================
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 </script>
 {% endblock %}
