@@ -1,21 +1,24 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
 from app.models import Order, User
 from app import db
+from weasyprint import HTML
 import json
 from datetime import datetime
+import tempfile
+import os
 
 ordenes_bp = Blueprint('ordenes', __name__, url_prefix='/ordenes', template_folder='templates')
 
 # ==========================================
-# DECORADOR DE PERMISOS (solo comercial o admin)
+# DECORADOR DE PERMISOS
 # ==========================================
 def comercial_or_admin_required(func):
     from functools import wraps
     @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin']:
-            flash('No tienes permiso para acceder a esta sección.', 'danger')
+            flash('No tienes permiso.', 'danger')
             return redirect(url_for('home.home'))
         return func(*args, **kwargs)
     return wrapper
@@ -28,7 +31,7 @@ def comercial_or_admin_required(func):
 @comercial_or_admin_required
 def list_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
-    return render_template('list.html', orders=orders)
+    return render_template('list_ordenes.html', orders=orders)
 
 # ==========================================
 # CREAR ORDEN
@@ -38,7 +41,6 @@ def list_orders():
 @comercial_or_admin_required
 def create_order():
     if request.method == 'POST':
-        # Recoger datos del formulario
         order_num = request.form.get('order_num')
         date = request.form.get('date')
         client = request.form.get('client')
@@ -50,32 +52,27 @@ def create_order():
         descripcion = request.form.get('descripcion')
         incidencias = request.form.get('incidencias')
 
-        # Validaciones básicas
         if not order_num or not client or not date:
             flash('N° de orden, Cliente y Fecha son obligatorios.', 'danger')
-            return render_template('form.html', form_data=request.form)
+            return render_template('form_orden.html', form_data=request.form)
 
-        # Procesar materiales (checkboxes + cantidades)
         materiales = {}
         for key in request.form:
             if key.startswith('mat_') and request.form.get(key) == 'on':
-                mat_name = key[4:]  # eliminar 'mat_'
+                mat_name = key[4:]
                 cant_key = f'cant_{mat_name}'
                 cantidad = request.form.get(cant_key, '1')
                 materiales[mat_name] = cantidad
 
-        # Procesar servicios (checkboxes)
         servicios = []
         for key in request.form:
             if key.startswith('serv_') and request.form.get(key) == 'on':
                 serv_name = key[5:]
                 servicios.append(serv_name)
-        # Servicio "Otros"
         otros = request.form.get('servicios_otros', '').strip()
         if otros:
             servicios.append(f'Otros: {otros}')
 
-        # Crear orden
         order = Order(
             order_num=order_num,
             date=datetime.strptime(date, '%Y-%m-%d'),
@@ -96,18 +93,10 @@ def create_order():
         order.add_history(f'Creada por {current_user.username}')
         db.session.add(order)
         db.session.commit()
-
-        # Guardar archivos adjuntos
-        uploaded_files = save_uploaded_files(request.files.getlist('files[]'), order.id)
-        if uploaded_files:
-            order.add_history(f'Archivos adjuntos: {", ".join(uploaded_files)}')
-            db.session.commit()
-
         flash(f'Orden {order_num} creada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
-    # GET: mostrar formulario vacío
-    return render_template('form.html', form_data=None)
+    return render_template('form_orden.html', form_data=None)
 
 # ==========================================
 # EDITAR ORDEN
@@ -119,7 +108,6 @@ def edit_order(order_id):
     order = Order.query.get_or_404(order_id)
 
     if request.method == 'POST':
-        # Actualizar campos
         order.order_num = request.form.get('order_num')
         order.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
         order.client = request.form.get('client')
@@ -131,7 +119,6 @@ def edit_order(order_id):
         order.descripcion = request.form.get('descripcion')
         order.incidencias = request.form.get('incidencias')
 
-        # Materiales
         materiales = {}
         for key in request.form:
             if key.startswith('mat_') and request.form.get(key) == 'on':
@@ -141,7 +128,6 @@ def edit_order(order_id):
                 materiales[mat_name] = cantidad
         order.materiales = json.dumps(materiales)
 
-        # Servicios
         servicios = []
         for key in request.form:
             if key.startswith('serv_') and request.form.get(key) == 'on':
@@ -157,7 +143,6 @@ def edit_order(order_id):
         flash('Orden actualizada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
-    # GET: mostrar formulario con datos existentes
     form_data = {
         'order_num': order.order_num,
         'date': order.date.strftime('%Y-%m-%d') if order.date else '',
@@ -172,7 +157,7 @@ def edit_order(order_id):
         'materiales': order.get_materiales(),
         'servicios': order.get_servicios()
     }
-    return render_template('form.html', form_data=form_data, edit=True, order=order)
+    return render_template('form_orden.html', form_data=form_data, edit=True, order=order)
 
 # ==========================================
 # MARCAR ENTRADA AL SISTEMA
@@ -181,7 +166,6 @@ def edit_order(order_id):
 @login_required
 def marcar_entrada(order_id):
     order = Order.query.get_or_404(order_id)
-    # Solo comercial, odalys o admin pueden marcar entrada
     if current_user.role not in ['comercial', 'odalys', 'admin']:
         flash('No tienes permiso para marcar entrada.', 'danger')
         return redirect(url_for('ordenes.list_orders'))
@@ -204,60 +188,22 @@ def delete_order(order_id):
     if current_user.role != 'admin':
         flash('Solo administradores pueden eliminar órdenes.', 'danger')
         return redirect(url_for('ordenes.list_orders'))
-
     order = Order.query.get_or_404(order_id)
     db.session.delete(order)
     db.session.commit()
     flash('Orden eliminada permanentemente.', 'success')
     return redirect(url_for('ordenes.list_orders'))
 
-import os
-from werkzeug.utils import secure_filename
-from flask import current_app
-
-# Configuración para subida de archivos
-UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads', 'ordenes')
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'ai', 'cdr', 'eps', 'svg'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-def save_uploaded_files(files, order_id):
-    """Guarda los archivos subidos en la carpeta correspondiente."""
-    if not files:
-        return []
-    saved_files = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            # Crear carpeta por orden
-            order_folder = os.path.join(UPLOAD_FOLDER, str(order_id))
-            os.makedirs(order_folder, exist_ok=True)
-            filepath = os.path.join(order_folder, filename)
-            file.save(filepath)
-            saved_files.append(filename)
-    return saved_files
-
-from flask import send_file
-from weasyprint import HTML
-import tempfile
-import os
-
+# ==========================================
+# GENERAR PDF DE LA ORDEN
+# ==========================================
 @ordenes_bp.route('/pdf/<int:order_id>')
 @login_required
 def generar_pdf(order_id):
-    """Genera un PDF bonito de la orden usando WeasyPrint."""
     order = Order.query.get_or_404(order_id)
-    
-    # Renderizar la plantilla HTML con los datos de la orden
     html_content = render_template('pdf_orden.html', order=order)
-    
-    # Generar PDF desde HTML
     pdf_file = HTML(string=html_content).write_pdf()
-    
-    # Guardar en un archivo temporal para enviar
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as f:
         f.write(pdf_file)
         temp_path = f.name
-    
     return send_file(temp_path, as_attachment=True, download_name=f'Orden_{order.order_num}.pdf', mimetype='application/pdf')

@@ -105,3 +105,24 @@ class Order(db.Model):
     def __repr__(self):
         return f'<Order {self.order_num}>'
     
+
+# ==========================================
+# MODELO DE CLIENTES
+# ==========================================
+class Client(db.Model):
+    __tablename__ = 'clients'
+    id = db.Column(db.Integer, primary_key=True)
+    referencia = db.Column(db.String(50), unique=True, nullable=False)
+    nombre = db.Column(db.String(150), nullable=False)
+    telefono = db.Column(db.String(50))
+    email = db.Column(db.String(120))
+    direccion = db.Column(db.Text)
+    etiquetas = db.Column(db.String(200))
+    pedidos_venta = db.Column(db.Integer, default=0)
+    total_facturado = db.Column(db.Float, default=0.0)
+    gustos = db.Column(db.Text)
+    notas = db.Column(db.Text)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
