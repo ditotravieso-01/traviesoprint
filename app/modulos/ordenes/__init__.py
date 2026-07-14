@@ -1,12 +1,14 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app
 from flask_login import login_required, current_user
-from app.models import Order, User
+from app.models import Order, User, ArchivoAdjunto, Client
 from app import db
 from weasyprint import HTML
 import json
 from datetime import datetime
 import tempfile
 import os
+import uuid
+from werkzeug.utils import secure_filename
 
 ordenes_bp = Blueprint('ordenes', __name__, url_prefix='/ordenes', template_folder='templates')
 
@@ -34,6 +36,24 @@ def list_orders():
     return render_template('list_ordenes.html', orders=orders)
 
 # ==========================================
+# FUNCIÓN AUXILIAR PARA GUARDAR ARCHIVO
+# ==========================================
+def guardar_archivo(orden_id, archivo):
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+    orden_folder = os.path.join(upload_folder, 'ordenes', str(orden_id))
+    os.makedirs(orden_folder, exist_ok=True)
+
+    nombre_original = secure_filename(archivo.filename)
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    uuid_part = str(uuid.uuid4())[:8]
+    nombre_guardado = f"{timestamp}_{uuid_part}_{nombre_original}"
+    ruta_relativa = os.path.join('ordenes', str(orden_id), nombre_guardado)
+    ruta_absoluta = os.path.join(upload_folder, ruta_relativa)
+
+    archivo.save(ruta_absoluta)
+    return ruta_relativa
+
+# ==========================================
 # CREAR ORDEN
 # ==========================================
 @ordenes_bp.route('/crear', methods=['GET', 'POST'])
@@ -50,20 +70,12 @@ def create_order():
         tipo_proyecto = request.form.get('tipo_proyecto')
         priority = request.form.get('priority')
         descripcion = request.form.get('descripcion')
-        incidencias = request.form.get('incidencias')
 
         if not order_num or not client or not date:
             flash('N° de orden, Cliente y Fecha son obligatorios.', 'danger')
             return render_template('form_orden.html', form_data=request.form)
 
-        materiales = {}
-        for key in request.form:
-            if key.startswith('mat_') and request.form.get(key) == 'on':
-                mat_name = key[4:]
-                cant_key = f'cant_{mat_name}'
-                cantidad = request.form.get(cant_key, '1')
-                materiales[mat_name] = cantidad
-
+        # Servicios
         servicios = []
         for key in request.form:
             if key.startswith('serv_') and request.form.get(key) == 'on':
@@ -82,21 +94,82 @@ def create_order():
             invoice=invoice,
             tipo_proyecto=tipo_proyecto,
             priority=priority,
-            materiales=json.dumps(materiales),
-            servicios=json.dumps(servicios),
             descripcion=descripcion,
-            incidencias=incidencias,
             column='pendiente',
             entrada_ok=False,
             created_by_id=current_user.id
         )
+        order.set_servicios(servicios)
         order.add_history(f'Creada por {current_user.username}')
         db.session.add(order)
+        db.session.flush()
+
+        # Procesar líneas
+        nombres_visibles = request.form.getlist('nombres_visibles[]')
+        materiales = request.form.getlist('materiales[]')
+        cantidades = request.form.getlist('cantidades[]')
+        unidades = request.form.getlist('unidades[]')
+        archivos = request.files.getlist('archivos_nuevos[]')
+
+        for i, nombre_visible in enumerate(nombres_visibles):
+            if not nombre_visible.strip():
+                continue
+            material = materiales[i] if i < len(materiales) else ''
+            cantidad_str = cantidades[i] if i < len(cantidades) else ''
+            unidad = unidades[i] if i < len(unidades) else 'm'
+            cantidad = None
+            if cantidad_str.strip():
+                try:
+                    cantidad = float(cantidad_str)
+                except ValueError:
+                    cantidad = None
+
+            archivo = None
+            if i < len(archivos):
+                archivo = archivos[i]
+                if not archivo.filename:
+                    archivo = None
+
+            adjunto = ArchivoAdjunto(
+                orden_id=order.id,
+                nombre_original=archivo.filename if archivo else '',
+                nombre_visible=nombre_visible.strip(),
+                material=material.strip() if material else None,
+                cantidad=cantidad,
+                unidad=unidad
+            )
+            if archivo:
+                ruta = guardar_archivo(order.id, archivo)
+                adjunto.ruta = ruta
+            else:
+                adjunto.ruta = None
+            db.session.add(adjunto)
+
         db.session.commit()
         flash(f'Orden {order_num} creada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
-    return render_template('form_orden.html', form_data=None)
+    # GET: mostrar formulario
+    lista_materiales = [
+        'Vinilo blanco brillo', 'Vinilo mate', 'Vinilo corte color', 'dorado',
+        'Vinilo transparente/brillo', 'Vinilo transparente/mate', 'wallpaper',
+        'Vinilo microperforado', 'Vinilo esmerilado', 'Papel fotografico brillo',
+        'Papel fotografico mate', 'Vinilo fondo negro', 'Papel back lite',
+        'Lona laminada', 'Lona microperforada'
+    ]
+    servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
+
+    # Obtener lista de clientes para autocompletado
+    clients_list = Client.query.order_by(Client.nombre).all()
+    clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
+
+    return render_template('form_orden.html',
+                           form_data=None,
+                           lista_materiales=lista_materiales,
+                           servicios_disponibles=servicios_disponibles,
+                           clients_list=clients_data,
+                           edit=False,
+                           order=None)
 
 # ==========================================
 # EDITAR ORDEN
@@ -108,6 +181,7 @@ def edit_order(order_id):
     order = Order.query.get_or_404(order_id)
 
     if request.method == 'POST':
+        # Actualizar datos básicos
         order.order_num = request.form.get('order_num')
         order.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
         order.client = request.form.get('client')
@@ -117,17 +191,8 @@ def edit_order(order_id):
         order.tipo_proyecto = request.form.get('tipo_proyecto')
         order.priority = request.form.get('priority')
         order.descripcion = request.form.get('descripcion')
-        order.incidencias = request.form.get('incidencias')
 
-        materiales = {}
-        for key in request.form:
-            if key.startswith('mat_') and request.form.get(key) == 'on':
-                mat_name = key[4:]
-                cant_key = f'cant_{mat_name}'
-                cantidad = request.form.get(cant_key, '1')
-                materiales[mat_name] = cantidad
-        order.materiales = json.dumps(materiales)
-
+        # Servicios
         servicios = []
         for key in request.form:
             if key.startswith('serv_') and request.form.get(key) == 'on':
@@ -136,13 +201,76 @@ def edit_order(order_id):
         otros = request.form.get('servicios_otros', '').strip()
         if otros:
             servicios.append(f'Otros: {otros}')
-        order.servicios = json.dumps(servicios)
+        order.set_servicios(servicios)
+
+        # Actualizar líneas existentes
+        existing_ids = request.form.getlist('archivo_ids[]')
+        for archivo_id in existing_ids:
+            archivo = ArchivoAdjunto.query.get(int(archivo_id))
+            if archivo and archivo.orden_id == order.id:
+                nombre_visible = request.form.get(f'nombre_visible_{archivo_id}')
+                if nombre_visible:
+                    archivo.nombre_visible = nombre_visible.strip()
+                material = request.form.get(f'material_{archivo_id}')
+                if material is not None:
+                    archivo.material = material.strip() if material.strip() else None
+                cantidad = request.form.get(f'cantidad_{archivo_id}')
+                if cantidad:
+                    try:
+                        archivo.cantidad = float(cantidad)
+                    except ValueError:
+                        archivo.cantidad = None
+                unidad = request.form.get(f'unidad_{archivo_id}')
+                if unidad:
+                    archivo.unidad = unidad
+
+        # Añadir nuevas líneas
+        nombres_visibles = request.form.getlist('nombres_visibles[]')
+        materiales = request.form.getlist('materiales[]')
+        cantidades = request.form.getlist('cantidades[]')
+        unidades = request.form.getlist('unidades[]')
+        archivos = request.files.getlist('archivos_nuevos[]')
+
+        for i, nombre_visible in enumerate(nombres_visibles):
+            if not nombre_visible.strip():
+                continue
+            material = materiales[i] if i < len(materiales) else ''
+            cantidad_str = cantidades[i] if i < len(cantidades) else ''
+            unidad = unidades[i] if i < len(unidades) else 'm'
+            cantidad = None
+            if cantidad_str.strip():
+                try:
+                    cantidad = float(cantidad_str)
+                except ValueError:
+                    cantidad = None
+
+            archivo = None
+            if i < len(archivos):
+                archivo = archivos[i]
+                if not archivo.filename:
+                    archivo = None
+
+            adjunto = ArchivoAdjunto(
+                orden_id=order.id,
+                nombre_original=archivo.filename if archivo else '',
+                nombre_visible=nombre_visible.strip(),
+                material=material.strip() if material else None,
+                cantidad=cantidad,
+                unidad=unidad
+            )
+            if archivo:
+                ruta = guardar_archivo(order.id, archivo)
+                adjunto.ruta = ruta
+            else:
+                adjunto.ruta = None
+            db.session.add(adjunto)
 
         order.add_history(f'Editada por {current_user.username}')
         db.session.commit()
         flash('Orden actualizada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
+    # GET: cargar datos
     form_data = {
         'order_num': order.order_num,
         'date': order.date.strftime('%Y-%m-%d') if order.date else '',
@@ -153,11 +281,51 @@ def edit_order(order_id):
         'tipo_proyecto': order.tipo_proyecto,
         'priority': order.priority,
         'descripcion': order.descripcion,
-        'incidencias': order.incidencias,
-        'materiales': order.get_materiales(),
         'servicios': order.get_servicios()
     }
-    return render_template('form_orden.html', form_data=form_data, edit=True, order=order)
+    lista_materiales = [
+        'Vinilo blanco brillo', 'Vinilo mate', 'Vinilo corte color', 'dorado',
+        'Vinilo transparente/brillo', 'Vinilo transparente/mate', 'wallpaper',
+        'Vinilo microperforado', 'Vinilo esmerilado', 'Papel fotografico brillo',
+        'Papel fotografico mate', 'Vinilo fondo negro', 'Papel back lite',
+        'Lona laminada', 'Lona microperforada'
+    ]
+    servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
+
+    # Obtener lista de clientes para autocompletado
+    clients_list = Client.query.order_by(Client.nombre).all()
+    clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
+
+    return render_template('form_orden.html',
+                           form_data=form_data,
+                           lista_materiales=lista_materiales,
+                           servicios_disponibles=servicios_disponibles,
+                           clients_list=clients_data,
+                           edit=True,
+                           order=order)
+
+# ==========================================
+# ELIMINAR ARCHIVO ADJUNTO
+# ==========================================
+@ordenes_bp.route('/archivo/eliminar/<int:archivo_id>', methods=['POST'])
+@login_required
+@comercial_or_admin_required
+def eliminar_archivo(archivo_id):
+    archivo = ArchivoAdjunto.query.get_or_404(archivo_id)
+    if current_user.role not in ['admin'] and archivo.orden.created_by_id != current_user.id:
+        flash('No tienes permiso para eliminar este archivo.', 'danger')
+        return redirect(url_for('ordenes.edit_order', order_id=archivo.orden_id))
+
+    if archivo.ruta:
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+        ruta_absoluta = os.path.join(upload_folder, archivo.ruta)
+        if os.path.exists(ruta_absoluta):
+            os.remove(ruta_absoluta)
+
+    db.session.delete(archivo)
+    db.session.commit()
+    flash('Línea eliminada.', 'success')
+    return redirect(url_for('ordenes.edit_order', order_id=archivo.orden_id))
 
 # ==========================================
 # MARCAR ENTRADA AL SISTEMA
@@ -180,7 +348,7 @@ def marcar_entrada(order_id):
     return redirect(url_for('ordenes.list_orders'))
 
 # ==========================================
-# ELIMINAR ORDEN (solo admin)
+# ELIMINAR ORDEN
 # ==========================================
 @ordenes_bp.route('/eliminar/<int:order_id>', methods=['POST'])
 @login_required
@@ -189,19 +357,29 @@ def delete_order(order_id):
         flash('Solo administradores pueden eliminar órdenes.', 'danger')
         return redirect(url_for('ordenes.list_orders'))
     order = Order.query.get_or_404(order_id)
+
+    for archivo in order.archivos:
+        if archivo.ruta:
+            upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+            ruta_absoluta = os.path.join(upload_folder, archivo.ruta)
+            if os.path.exists(ruta_absoluta):
+                os.remove(ruta_absoluta)
+
     db.session.delete(order)
     db.session.commit()
     flash('Orden eliminada permanentemente.', 'success')
     return redirect(url_for('ordenes.list_orders'))
 
 # ==========================================
-# GENERAR PDF DE LA ORDEN
+# GENERAR PDF
 # ==========================================
 @ordenes_bp.route('/pdf/<int:order_id>')
 @login_required
 def generar_pdf(order_id):
     order = Order.query.get_or_404(order_id)
-    html_content = render_template('pdf_orden.html', order=order)
+    # Pasar la fecha actual para el pie de página
+    now = datetime.now()
+    html_content = render_template('pdf_orden.html', order=order, now=now)
     pdf_file = HTML(string=html_content).write_pdf()
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as f:
         f.write(pdf_file)

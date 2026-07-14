@@ -6,266 +6,58 @@
 
 {% block extra_css %}
 <style>
-    /* ===== MEJORAS DE ESTILO ===== */
-    .form-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-    .form-section {
-        background: white;
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #e8e0da;
-    }
-    .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        margin-bottom: 16px;
-        color: #1a1a1a;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
-    }
-    .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-    .form-group {
-        margin-bottom: 16px;
-    }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
-    }
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 15px;
-        background: #fafafa;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        border-color: #1a1a1a;
-        outline: none;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
-    }
-    .form-group textarea {
-        resize: vertical;
-        min-height: 60px;
-    }
-    .checkbox-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 20px;
-        align-items: center;
-    }
-    .checkbox-grid label {
-        font-weight: 400;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-    }
-    .checkbox-grid input[type="checkbox"],
-    .checkbox-grid input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #1a1a1a;
-    }
-    .material-row {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 4px;
-    }
-    .material-row input[type="text"] {
-        width: 70px;
-        padding: 4px 6px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        font-size: 13px;
-        background: #fafafa;
-    }
-    .material-row input[type="text"]:focus {
-        border-color: #1a1a1a;
-        outline: none;
-        background: white;
-    }
-    .material-row label {
-        font-weight: 400;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        cursor: pointer;
-    }
-    .material-row input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #1a1a1a;
-    }
+    .form-container { max-width: 1000px; margin: 0 auto; }
+    .form-section { background: white; border-radius: 16px; padding: 24px 28px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e8e0da; }
+    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 16px; color: #1a1a1a; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #1a1a1a; outline: none; background: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .checkbox-grid { display: flex; flex-wrap: wrap; gap: 12px 20px; align-items: center; }
+    .checkbox-grid label { font-weight: 400; font-size: 14px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .checkbox-grid input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1a1a1a; }
+    .btn { padding: 10px 24px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-primary { background: #1a1a1a; color: white; }
+    .btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .btn-outline { background: transparent; border: 1px solid #ccc; color: #333; }
+    .btn-outline:hover { border-color: #888; background: #f5f5f5; }
+    .btn-pdf { background: #dc2626; color: white; }
+    .btn-pdf:hover { background: #b91c1c; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; justify-content: space-between; }
+    .btn-group .left-buttons, .btn-group .right-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
+    .file-upload-area { border: 2px dashed #ddd; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; background: #fafafa; margin-top: 8px; }
+    .file-upload-area:hover { border-color: #1a1a1a; }
+    .file-upload-area input[type="file"] { display: none; }
 
-    /* ===== BOTONES ===== */
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 20px;
-        justify-content: space-between;
-    }
-    .btn-group .left-buttons {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .btn-group .right-buttons {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .btn {
-        padding: 10px 24px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-    }
-    .btn-primary {
-        background: #1a1a1a;
-        color: white;
-    }
-    .btn-primary:hover {
-        background: #333;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #ccc;
-        color: #333;
-    }
-    .btn-outline:hover {
-        border-color: #888;
-        background: #f5f5f5;
-    }
-    .btn-whatsapp {
-        background: #25D366;
-        color: white;
-    }
-    .btn-whatsapp:hover {
-        background: #1DA851;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(37, 211, 102, 0.3);
-    }
-    .btn-pdf {
-        background: #dc2626;
-        color: white;
-    }
-    .btn-pdf:hover {
-        background: #b91c1c;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
-    }
+    .lineas-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    .lineas-table th { background: #f8f6f4; text-align: left; padding: 8px 6px; font-weight: 600; font-size: 13px; border-bottom: 2px solid #e8e0da; }
+    .lineas-table td { padding: 6px; vertical-align: middle; border-bottom: 1px solid #eee; }
+    .lineas-table input, .lineas-table select { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; background: #fafafa; }
+    .lineas-table input:focus, .lineas-table select:focus { border-color: #1a1a1a; outline: none; background: white; }
+    .lineas-table .btn-eliminar { background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px; }
+    .lineas-table .btn-eliminar:hover { background: #b91c1c; }
+    .lineas-table .file-info { font-size: 12px; color: #666; display: block; }
+    .lineas-table .file-info a { color: #1a1a1a; text-decoration: underline; }
+    .lineas-table .file-input-wrapper { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .lineas-table .file-input-wrapper input[type="file"] { width: auto; padding: 4px; background: transparent; border: none; }
 
-    /* ===== CLIENTE AUTOCOMPLETE ===== */
-    .client-search {
-        position: relative;
-    }
-    .client-search .suggestions {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        background: white;
-        border: 1px solid #ddd;
-        border-top: none;
-        border-radius: 0 0 8px 8px;
-        max-height: 150px;
-        overflow-y: auto;
-        z-index: 100;
-        display: none;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .client-search .suggestions .suggestion-item {
-        padding: 8px 14px;
-        cursor: pointer;
-        transition: background 0.1s;
-    }
-    .client-search .suggestions .suggestion-item:hover {
-        background: #f4f0ed;
-    }
+    .client-select-wrapper { position: relative; }
+    .client-select-wrapper input[type="text"] { width: 100%; }
+    .client-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .client-suggestions .suggestion-item { padding: 8px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid #f0ece8; }
+    .client-suggestions .suggestion-item:hover { background: #f4f0ed; }
+    .client-suggestions .suggestion-item .client-detail { font-size: 12px; color: #888; }
 
-    /* ===== ARCHIVOS ADJUNTOS ===== */
-    .file-upload-area {
-        border: 2px dashed #ddd;
-        border-radius: 12px;
-        padding: 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: border-color 0.2s;
-        background: #fafafa;
-        margin-top: 8px;
-    }
-    .file-upload-area:hover {
-        border-color: #1a1a1a;
-    }
-    .file-upload-area input[type="file"] {
-        display: none;
-    }
-    .file-list {
-        margin-top: 12px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-    }
-    .file-tag {
-        background: #f0ece8;
-        padding: 4px 12px;
-        border-radius: 20px;
-        font-size: 13px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .file-tag .remove-file {
-        cursor: pointer;
-        color: #dc2626;
-        font-weight: 700;
-    }
-
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 768px) {
-        .form-grid-2 {
-            grid-template-columns: 1fr;
-        }
-        .checkbox-grid {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 8px;
-        }
-        .btn-group {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .btn-group .left-buttons,
-        .btn-group .right-buttons {
-            justify-content: center;
-        }
-    }
+    @media (max-width: 768px) { .form-grid-2 { grid-template-columns: 1fr; } .btn-group { flex-direction: column; align-items: stretch; } .btn-group .left-buttons, .btn-group .right-buttons { justify-content: center; } .lineas-table { font-size: 13px; } .lineas-table input, .lineas-table select { font-size: 13px; padding: 4px; } }
 </style>
 {% endblock %}
 
@@ -273,9 +65,7 @@
 <div class="form-container">
     <form method="POST" action="{{ url_for('ordenes.create_order') if not edit else url_for('ordenes.edit_order', order_id=order.id) }}" enctype="multipart/form-data" id="orderForm">
 
-        <!-- ==========================================
-        SECCIÓN 1: DATOS GENERALES
-        ========================================== -->
+        <!-- ===== DATOS GENERALES ===== -->
         <div class="form-section">
             <h4>📋 Datos Generales</h4>
             <div class="form-grid-2">
@@ -289,11 +79,11 @@
                 </div>
             </div>
             <div class="form-grid-2">
-                <div class="form-group client-search">
+                <div class="form-group client-select-wrapper">
                     <label for="client">Cliente *</label>
-                    <input type="text" id="client" name="client" value="{{ form_data.client if form_data else '' }}" placeholder="Buscar o escribir..." required autocomplete="off">
-                    <div class="suggestions" id="clientSuggestions"></div>
-                    <small style="color:#999;">Escribe para buscar clientes (próximamente desde el módulo de clientes)</small>
+                    <input type="text" id="client" name="client" value="{{ form_data.client if form_data else '' }}" placeholder="Buscar o escribir nombre..." required autocomplete="off">
+                    <div class="client-suggestions" id="clientSuggestions"></div>
+                    <small style="color:#999;">Escribe para buscar clientes existentes o escribe un nuevo nombre</small>
                 </div>
                 <div class="form-group">
                     <label for="solicitado">Solicitado por</label>
@@ -312,9 +102,7 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 2: TIPO Y PRIORIDAD
-        ========================================== -->
+        <!-- ===== TIPO Y PRIORIDAD ===== -->
         <div class="form-section">
             <h4>🎯 Tipo y Prioridad</h4>
             <div class="form-grid-2">
@@ -338,101 +126,113 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 3: MATERIALES Y SERVICIOS
-        ========================================== -->
+        <!-- ===== SERVICIOS ===== -->
         <div class="form-section">
-            <h4>🧵 Materiales y Servicios</h4>
+            <h4>🛠 Servicios</h4>
             <div class="form-group">
-                <label>Lista de materiales</label>
-                <div class="form-grid-2">
-                    {% set materials = [
-                        ('Vinilo blanco brillo', 'm'),
-                        ('Vinilo mate', 'm'),
-                        ('Vinilo corte color', 'color'),
-                        ('Vinilo transparente/brillo', 'm'),
-                        ('Vinilo transparente/mate', 'm'),
-                        ('Papel fotog. brillo', 'm'),
-                        ('Papel fotog. mate', 'm'),
-                        ('Lona laminada', 'm'),
-                        ('Lona microperforada', 'm'),
-                        ('PVC', 'mm'),
-                        ('Acrílico transparente', ''),
-                        ('Acrílico color', ''),
-                        ('Doble contacto', ''),
-                        ('Transformador', ''),
-                        ('LED', ''),
-                        ('Ojetes plásticos', 'tipo'),
-                        ('Ojetes metálicos dorados', ''),
-                        ('Ojetes metálicos plateados', ''),
-                        ('Embellecedores dorados', ''),
-                        ('Embellecedores plateados', ''),
-                        ('Embellecedores negros', '')
-                    ] %}
-                    {% for mat, unidad in materials %}
-                        {% set mat_key = mat|replace(' ', '_')|replace('/', '_') %}
-                        {% set checked = form_data and form_data.materiales and mat in form_data.materiales %}
-                        <div class="material-row">
-                            <label>
-                                <input type="checkbox" name="mat_{{ mat_key }}" id="mat_{{ mat_key }}" {% if checked %}checked{% endif %}>
-                                {{ mat }}
-                            </label>
-                            <input type="text" name="cant_{{ mat_key }}" placeholder="{{ unidad or 'cant' }}" value="{{ form_data.materiales[mat] if form_data and form_data.materiales and mat in form_data.materiales else '' }}">
-                        </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Servicios</label>
                 <div class="checkbox-grid">
-                    {% set servicios_list = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería'] %}
-                    {% for serv in servicios_list %}
-                        <label>
-                            <input type="checkbox" name="serv_{{ serv }}" {% if form_data and form_data.servicios and serv in form_data.servicios %}checked{% endif %}>
-                            {{ serv }}
-                        </label>
+                    {% for serv in servicios_disponibles %}
+                    <label>
+                        <input type="checkbox" name="serv_{{ serv }}" {% if form_data and form_data.servicios and serv in form_data.servicios %}checked{% endif %}>
+                        {{ serv }}
+                    </label>
                     {% endfor %}
                     <label>
                         <input type="checkbox" name="serv_Otros" id="serv_otros_check" {% if form_data and form_data.servicios and 'Otros:' in form_data.servicios|join %}checked{% endif %}>
                         Otros
                     </label>
-                    <input type="text" id="servicios_otros" name="servicios_otros" placeholder="Especificar otros" value="{{ form_data.servicios|select('search', 'Otros:')|first|replace('Otros: ', '') if form_data and form_data.servicios else '' }}" style="width:150px;">
+                    <input type="text" id="servicios_otros" name="servicios_otros" placeholder="Especificar otros"
+                           value="{% if form_data and form_data.servicios %}{% for s in form_data.servicios %}{% if 'Otros:' in s %}{{ s.split(':',1)[1].strip() }}{% endif %}{% endfor %}{% endif %}"
+                           style="width:150px; display:none;">
                 </div>
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 4: DESCRIPCIÓN E INCIDENCIAS
-        ========================================== -->
+        <!-- ===== DESCRIPCIÓN ===== -->
         <div class="form-section">
-            <h4>📝 Descripción e Incidencias</h4>
+            <h4>📝 Descripción</h4>
             <div class="form-group">
                 <label for="descripcion">Descripción (tamaño, sabor, volúmen, gramaje, etc.)</label>
                 <textarea id="descripcion" name="descripcion" rows="4" placeholder="Ej. Etiqueta shampoo de romero ------1m">{{ form_data.descripcion if form_data else '' }}</textarea>
             </div>
-            <div class="form-group">
-                <label for="incidencias">Incidencias</label>
-                <textarea id="incidencias" name="incidencias" rows="2" placeholder="Notas adicionales...">{{ form_data.incidencias if form_data else '' }}</textarea>
-            </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 5: ARCHIVOS ADJUNTOS
-        ========================================== -->
+        <!-- ===== ARCHIVOS Y LÍNEAS ===== -->
         <div class="form-section">
-            <h4>📎 Archivos adjuntos</h4>
+            <h4>📎 Archivos y Líneas de trabajo</h4>
+            <p style="color:#666; font-size:14px;">Añade ítems (con o sin archivo) y asigna material, cantidad y unidad. <span style="color:#dc2626;">*</span> obligatorio</p>
+
+            <button type="button" class="btn btn-primary" onclick="agregarLinea()" style="margin-bottom:12px;">
+                <i class="fas fa-plus"></i> Añadir línea
+            </button>
+
+            <table class="lineas-table" id="tablaLineas">
+                <thead>
+                    <tr>
+                        <th style="width:20%;">Nombre visible *</th>
+                        <th style="width:20%;">Material *</th>
+                        <th style="width:12%;">Cantidad *</th>
+                        <th style="width:12%;">Unidad</th>
+                        <th style="width:22%;">Archivo adjunto</th>
+                        <th style="width:14%;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="cuerpoLineas">
+                    <!-- Líneas existentes (en edición) -->
+                    {% if edit and order.archivos %}
+                        {% for archivo in order.archivos %}
+                        <tr class="linea-fila" data-id="{{ archivo.id }}">
+                            <td>
+                                <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
+                                <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
+                            </td>
+                            <td>
+                                <select name="material_{{ archivo.id }}" required>
+                                    <option value="">-- Seleccionar --</option>
+                                    {% for mat in lista_materiales %}
+                                    <option value="{{ mat }}" {% if archivo.material == mat %}selected{% endif %}>{{ mat }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" name="cantidad_{{ archivo.id }}" value="{{ archivo.cantidad if archivo.cantidad is not none else '' }}" placeholder="Cantidad" required>
+                            </td>
+                            <td>
+                                <select name="unidad_{{ archivo.id }}">
+                                    <option value="m" {% if archivo.unidad == 'm' %}selected{% endif %}>metros</option>
+                                    <option value="unidades" {% if archivo.unidad == 'unidades' %}selected{% endif %}>unidades</option>
+                                </select>
+                            </td>
+                            <td>
+                                {% if archivo.ruta %}
+                                    <span class="file-info">
+                                        <a href="{{ url_for('static', filename='uploads/' + archivo.ruta) }}" target="_blank">{{ archivo.nombre_original }}</a>
+                                    </span>
+                                {% else %}
+                                    <span class="file-info" style="color:#999;">Sin archivo</span>
+                                {% endif %}
+                                <span style="font-size:11px; color:#888;">(original: {{ archivo.nombre_original }})</span>
+                            </td>
+                            <td>
+                                <form method="POST" action="{{ url_for('ordenes.eliminar_archivo', archivo_id=archivo.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta línea?')">
+                                    <button type="submit" class="btn-eliminar"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+
+            <!-- Área de arrastre -->
             <div class="file-upload-area" id="fileDropArea">
                 <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:#888;"></i>
-                <p style="color:#666; margin-top:4px;">Arrastra aquí los archivos o haz clic para seleccionar</p>
-                <input type="file" id="fileInput" name="files[]" multiple accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg">
+                <p style="color:#666; margin-top:4px;">Arrastra aquí los archivos para crear líneas automáticamente</p>
+                <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx">
             </div>
-            <div class="file-list" id="fileList"></div>
         </div>
 
-        <!-- ==========================================
-        BOTONES DE ACCIÓN
-        ========================================== -->
+        <!-- ===== BOTONES ===== -->
         <div class="btn-group">
             <div class="left-buttons">
                 <button type="submit" class="btn btn-primary">
@@ -447,9 +247,6 @@
                     <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank">
                         <i class="fas fa-file-pdf"></i> Exportar PDF
                     </a>
-                    <button type="button" class="btn btn-whatsapp" onclick="sendWhatsApp()">
-                        <i class="fab fa-whatsapp"></i> Enviar por WhatsApp
-                    </button>
                 {% endif %}
             </div>
         </div>
@@ -459,311 +256,177 @@
 
 <script>
 // =============================================
-// FUNCIONES AUXILIARES (globales)
+// FUNCIONES PARA GESTIONAR LÍNEAS DINÁMICAS
 // =============================================
-function getMaterialesText() {
-    const materialRows = document.querySelectorAll('.material-row');
-    let texts = [];
-    materialRows.forEach(row => {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        const input = row.querySelector('input[type="text"]');
-        if (checkbox && checkbox.checked) {
-            const label = row.querySelector('label')?.textContent.trim() || '';
-            const value = input ? input.value || '1' : '1';
-            texts.push(`${label} (${value})`);
-        }
-    });
-    return texts.join(', ');
+
+let nuevaLineaCounter = 0;
+const listaMateriales = {{ lista_materiales|tojson }};
+
+function agregarLinea() {
+    const tbody = document.getElementById('cuerpoLineas');
+    const row = document.createElement('tr');
+    row.className = 'linea-fila';
+    row.dataset.nuevo = 'true';
+
+    const idx = nuevaLineaCounter++;
+
+    let options = '<option value="">-- Seleccionar --</option>';
+    for (let mat of listaMateriales) {
+        options += `<option value="${mat}">${mat}</option>`;
+    }
+
+    row.innerHTML = `
+        <td>
+            <input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required>
+        </td>
+        <td>
+            <select name="materiales[]" required>
+                ${options}
+            </select>
+        </td>
+        <td>
+            <input type="number" step="0.01" name="cantidades[]" placeholder="Cantidad" required>
+        </td>
+        <td>
+            <select name="unidades[]">
+                <option value="m" selected>metros</option>
+                <option value="unidades">unidades</option>
+            </select>
+        </td>
+        <td>
+            <div class="file-input-wrapper">
+                <input type="file" name="archivos_nuevos[]" accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx" onchange="mostrarNombreArchivo(this)">
+                <span class="file-info" style="font-size:12px; color:#888;">Ninguno</span>
+            </div>
+        </td>
+        <td>
+            <button type="button" class="btn-eliminar" onclick="eliminarLinea(this)"><i class="fas fa-trash-alt"></i></button>
+        </td>
+    `;
+    tbody.appendChild(row);
 }
 
-function getServiciosText() {
-    const servCheckboxes = document.querySelectorAll('input[name^="serv_"]:checked');
-    let texts = [];
-    servCheckboxes.forEach(cb => {
-        if (cb.id === 'serv_otros_check') {
-            const otros = document.getElementById('servicios_otros').value.trim();
-            if (otros) texts.push(`Otros: ${otros}`);
-        } else {
-            const label = cb.closest('label')?.textContent.trim() || cb.name.replace('serv_', '');
-            texts.push(label);
-        }
-    });
-    return texts.join(', ');
+function eliminarLinea(btn) {
+    const row = btn.closest('tr');
+    if (row) {
+        row.remove();
+    }
 }
 
-// =============================================
-// EXPORTAR A PDF (Estilo Corporativo Premium)
-// =============================================
-function exportPDF() {
-    // Recoger datos del formulario
-    const orderNum = document.getElementById('order_num').value || 'N/A';
-    const client = document.getElementById('client').value || 'N/A';
-    const date = document.getElementById('date').value || 'N/A';
-    const solicitado = document.getElementById('solicitado').value || 'N/A';
-    const proyecto = document.getElementById('proyecto').value || 'N/A';
-    const invoice = document.getElementById('invoice').value || 'N/A';
-    const desc = document.getElementById('descripcion').value || 'Sin descripción';
-    const incidencias = document.getElementById('incidencias').value || 'Ninguna';
-    const tipoProyecto = document.querySelector('input[name="tipo_proyecto"]:checked')?.value || 'grafica';
-    const priority = document.querySelector('input[name="priority"]:checked')?.value || 'normal';
-
-    // Materiales
-    const materiales = [];
-    document.querySelectorAll('.material-row').forEach(row => {
-        const checkbox = row.querySelector('input[type="checkbox"]');
-        const input = row.querySelector('input[type="text"]');
-        if (checkbox && checkbox.checked) {
-            const label = row.querySelector('label')?.textContent.trim() || '';
-            const value = input ? input.value || '1' : '1';
-            materiales.push({ label, value });
-        }
-    });
-
-    // Servicios
-    const servicios = [];
-    document.querySelectorAll('input[name^="serv_"]:checked').forEach(cb => {
-        if (cb.id === 'serv_otros_check') {
-            const otros = document.getElementById('servicios_otros').value.trim();
-            if (otros) servicios.push(`Otros: ${otros}`);
-        } else {
-            const label = cb.closest('label')?.textContent.trim() || cb.name.replace('serv_', '');
-            servicios.push(label);
-        }
-    });
-
-    // Logo en base64 (opcional)
-    const logoBase64 = ''; // <-- Pon aquí tu logo en base64
-
-    // =============================================
-    // DEFINICIÓN DEL PDF (CON ESTILO PREMIUM)
-    // =============================================
-    const docDefinition = {
-        pageSize: 'A4',
-        pageMargins: [40, 60, 40, 60],
-        header: function() {
-            const headerColumns = [];
-            if (logoBase64) {
-                headerColumns.push({
-                    image: logoBase64,
-                    width: 60,
-                    margin: [0, 0, 10, 0]
-                });
-            }
-            headerColumns.push({
-                text: 'CAIROSTUDIO\nGRUPO CREATIVO',
-                style: 'headerTitle'
-            });
-            headerColumns.push({
-                text: 'ORDEN DE TRABAJO',
-                style: 'headerSubtitle',
-                alignment: 'right'
-            });
-            return {
-                columns: headerColumns,
-                margin: [40, 20, 40, 10],
-                columnGap: 10
-            };
-        },
-        content: [
-            // Línea decorativa
-            {
-                canvas: [{ type: 'line', x1: 0, y1: 0, x2: 515, y2: 0, lineWidth: 2, color: '#2c2c2c' }],
-                margin: [0, 0, 0, 20]
-            },
-            // Tabla de datos generales
-            {
-                layout: {
-                    hLineWidth: function(i, node) {
-                        return (i === 0 || i === node.table.body.length) ? 1.5 : 0.5;
-                    },
-                    vLineWidth: function(i, node) {
-                        return (i === 0 || i === node.table.widths.length) ? 1.5 : 0.5;
-                    },
-                    hLineColor: function(i, node) { return '#cccccc'; },
-                    vLineColor: function(i, node) { return '#cccccc'; },
-                    paddingLeft: function(i, node) { return 10; },
-                    paddingRight: function(i, node) { return 10; },
-                    paddingTop: function(i, node) { return 8; },
-                    paddingBottom: function(i, node) { return 8; },
-                    fillColor: function(i, node) {
-                        return (i % 2 === 0) ? '#fcfcfc' : '#f8f6f4';
-                    }
-                },
-                table: {
-                    widths: ['30%', '70%'],
-                    body: [
-                        [{ text: 'N° de Orden', style: 'labelCell' }, { text: orderNum, style: 'valueCell' }],
-                        [{ text: 'Cliente', style: 'labelCell' }, { text: client, style: 'valueCell' }],
-                        [{ text: 'Fecha de emisión', style: 'labelCell' }, { text: date, style: 'valueCell' }],
-                        [{ text: 'Solicitado por', style: 'labelCell' }, { text: solicitado, style: 'valueCell' }],
-                        [{ text: 'Proyecto', style: 'labelCell' }, { text: proyecto, style: 'valueCell' }],
-                        [{ text: 'Factura', style: 'labelCell' }, { text: invoice, style: 'valueCell' }],
-                        [{ text: 'Tipo', style: 'labelCell' }, { text: tipoProyecto, style: 'valueCell' }],
-                        [{ text: 'Prioridad', style: 'labelCell' }, { text: priority, style: 'valueCell' }]
-                    ]
-                },
-                margin: [0, 0, 0, 20]
-            },
-            // Descripción
-            { text: 'DESCRIPCIÓN', style: 'sectionTitle' },
-            { text: desc || 'Sin descripción', style: 'normalText', margin: [0, 6, 0, 16] },
-            // Materiales
-            ...(materiales.length > 0 ? [
-                { text: 'MATERIALES', style: 'sectionTitle' },
-                {
-                    layout: {
-                        hLineWidth: function(i, node) { return (i === 0 || i === node.table.body.length) ? 1 : 0.5; },
-                        vLineWidth: function(i, node) { return (i === 0 || i === node.table.widths.length) ? 1 : 0.5; },
-                        hLineColor: function(i, node) { return '#cccccc'; },
-                        vLineColor: function(i, node) { return '#cccccc'; },
-                        paddingLeft: function(i, node) { return 8; },
-                        paddingRight: function(i, node) { return 8; },
-                        paddingTop: function(i, node) { return 6; },
-                        paddingBottom: function(i, node) { return 6; },
-                        fillColor: function(i, node) {
-                            return (i % 2 === 0) ? '#fcfcfc' : '#f8f6f4';
-                        }
-                    },
-                    table: {
-                        widths: ['*', 'auto'],
-                        body: [
-                            [{ text: 'Material', style: 'tableHeader' }, { text: 'Cantidad', style: 'tableHeader' }],
-                            ...materiales.map(m => [
-                                { text: m.label, style: 'tableCell' },
-                                { text: m.value, style: 'tableCell' }
-                            ])
-                        ]
-                    },
-                    margin: [0, 6, 0, 16]
-                }
-            ] : []),
-            // Servicios
-            ...(servicios.length > 0 ? [
-                { text: 'SERVICIOS', style: 'sectionTitle' },
-                {
-                    columns: servicios.map(s => ({
-                        text: s,
-                        style: 'badge',
-                        margin: [0, 2, 12, 2]
-                    })),
-                    margin: [0, 6, 0, 16],
-                    columnGap: 8
-                }
-            ] : []),
-            // Incidencias
-            { text: 'INCIDENCIAS', style: 'sectionTitle' },
-            { text: incidencias || 'Ninguna', style: 'normalText', margin: [0, 6, 0, 16] },
-            // Pie de página
-            {
-                text: 'Documento generado desde CairoStudio Kit',
-                style: 'footer',
-                alignment: 'center',
-                margin: [0, 40, 0, 0]
-            }
-        ],
-        styles: {
-            headerTitle: {
-                fontSize: 24,
-                bold: true,
-                color: '#2c2c2c',
-                lineHeight: 1.2
-            },
-            headerSubtitle: {
-                fontSize: 16,
-                bold: true,
-                color: '#a8854f'
-            },
-            labelCell: {
-                fontSize: 12,
-                bold: true,
-                color: '#2c2c2c',
-                fillColor: '#fcfcfc'
-            },
-            valueCell: {
-                fontSize: 12,
-                color: '#2c2c2c'
-            },
-            sectionTitle: {
-                fontSize: 14,
-                bold: true,
-                color: '#2c2c2c',
-                margin: [0, 12, 0, 4],
-                decoration: 'underline',
-                decorationColor: '#e0d8d0'
-            },
-            normalText: {
-                fontSize: 12,
-                color: '#333333',
-                lineHeight: 1.5
-            },
-            tableHeader: {
-                bold: true,
-                fontSize: 12,
-                fillColor: '#e8e0d8',
-                color: '#2c2c2c',
-                margin: [6, 8, 6, 8]
-            },
-            tableCell: {
-                fontSize: 12,
-                margin: [6, 6, 6, 6]
-            },
-            badge: {
-                fontSize: 12,
-                bold: true,
-                color: '#2c2c2c',
-                background: '#e8e0d8',
-                padding: [6, 14, 6, 14],
-                borderRadius: 4,
-                margin: [0, 2, 12, 2]
-            },
-            footer: {
-                fontSize: 10,
-                color: '#999999',
-                italics: true
-            }
-        },
-        defaultStyle: {
-            font: 'Roboto'
-        }
-    };
-
-    // Generar y descargar PDF
-    pdfMake.createPdf(docDefinition).download(`Orden_${orderNum}.pdf`);
+function mostrarNombreArchivo(input) {
+    const parent = input.closest('.file-input-wrapper');
+    const span = parent.querySelector('.file-info');
+    if (input.files && input.files[0]) {
+        span.textContent = input.files[0].name;
+    } else {
+        span.textContent = 'Ninguno';
+    }
 }
 
 // =============================================
-// ENVIAR POR WHATSAPP
-// =============================================
-function sendWhatsApp() {
-    const orderNum = document.getElementById('order_num').value || 'N/A';
-    const client = document.getElementById('client').value || 'N/A';
-    const project = document.getElementById('proyecto').value || 'N/A';
-    const desc = document.getElementById('descripcion').value || 'Sin descripción';
-    const materiales = getMaterialesText() || 'Ninguno';
-    const servicios = getServiciosText() || 'Ninguno';
-
-    const message = `📋 *Orden de Trabajo CairoStudio*
-    N° Orden: ${orderNum}
-    Cliente: ${client}
-    Proyecto: ${project}
-    Descripción: ${desc}
-    Materiales: ${materiales}
-    Servicios: ${servicios}
-    ---
-    Enlace de seguimiento: próximamente`;
-
-    const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
-}
-
-// =============================================
-// INICIALIZACIÓN (autocompletado, archivos, etc.)
+// ARRASTRE DE ARCHIVOS CON NOMBRE VISIBLE
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // --- Cliente autocomplete ---
+    const dropArea = document.getElementById('fileDropArea');
+    const fileInput = document.getElementById('fileInput');
+
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropArea.style.borderColor = '#1a1a1a';
+        dropArea.style.background = '#f0ece8';
+    });
+    dropArea.addEventListener('dragleave', () => {
+        dropArea.style.borderColor = '#ddd';
+        dropArea.style.background = '#fafafa';
+    });
+    dropArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropArea.style.borderColor = '#ddd';
+        dropArea.style.background = '#fafafa';
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            for (let file of files) {
+                agregarLineaDesdeArchivo(file);
+            }
+        }
+    });
+    fileInput.addEventListener('change', (e) => {
+        const files = e.target.files;
+        if (files.length > 0) {
+            for (let file of files) {
+                agregarLineaDesdeArchivo(file);
+            }
+        }
+        fileInput.value = '';
+    });
+
+    function agregarLineaDesdeArchivo(file) {
+        // Nombre sin extensión para el campo visible
+        const nombreSinExt = file.name.replace(/\.[^/.]+$/, '');
+        const tbody = document.getElementById('cuerpoLineas');
+        const row = document.createElement('tr');
+        row.className = 'linea-fila';
+        row.dataset.nuevo = 'true';
+
+        const idx = nuevaLineaCounter++;
+
+        let options = '<option value="">-- Seleccionar --</option>';
+        for (let mat of listaMateriales) {
+            options += `<option value="${mat}">${mat}</option>`;
+        }
+
+        row.innerHTML = `
+            <td>
+                <input type="text" name="nombres_visibles[]" value="${nombreSinExt}" placeholder="Nombre visible" required>
+            </td>
+            <td>
+                <select name="materiales[]" required>
+                    ${options}
+                </select>
+            </td>
+            <td>
+                <input type="number" step="0.01" name="cantidades[]" placeholder="Cantidad" required>
+            </td>
+            <td>
+                <select name="unidades[]">
+                    <option value="m" selected>metros</option>
+                    <option value="unidades">unidades</option>
+                </select>
+            </td>
+            <td>
+                <div class="file-input-wrapper">
+                    <input type="file" name="archivos_nuevos[]" accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx" onchange="mostrarNombreArchivo(this)" style="display:none;">
+                    <span class="file-info" style="font-size:12px; color:#1a1a1a;">${file.name}</span>
+                    <span style="font-size:11px; color:#888;"> (${(file.size / 1024).toFixed(1)} KB)</span>
+                </div>
+            </td>
+            <td>
+                <button type="button" class="btn-eliminar" onclick="eliminarLinea(this)"><i class="fas fa-trash-alt"></i></button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+});
+
+// =============================================
+// FECHA ACTUAL POR DEFECTO
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const dateInput = document.getElementById('date');
+    if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+});
+
+// =============================================
+// AUTOCOMPLETADO DE CLIENTES (preparado para integración)
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
     const clientInput = document.getElementById('client');
     const suggestionsDiv = document.getElementById('clientSuggestions');
-    const sampleClients = ['Amándome Cosmética', 'Cliente A', 'Cliente B', 'Cliente C', 'Cliente D'];
+    const clientsList = {{ clients_list|tojson if clients_list else [] }};
 
     clientInput.addEventListener('input', function() {
         const value = this.value.toLowerCase().trim();
@@ -771,13 +434,20 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestionsDiv.style.display = 'none';
             return;
         }
-        const matches = sampleClients.filter(c => c.toLowerCase().includes(value));
+        const matches = clientsList.filter(c => 
+            c.nombre.toLowerCase().includes(value) || 
+            (c.referencia && c.referencia.toLowerCase().includes(value))
+        );
         if (matches.length === 0) {
             suggestionsDiv.style.display = 'none';
             return;
         }
-        suggestionsDiv.innerHTML = matches.map(m =>
-            `<div class="suggestion-item" onclick="selectClient('${m}')">${m}</div>`
+        suggestionsDiv.innerHTML = matches.map(c => 
+            `<div class="suggestion-item" onclick="selectClient('${c.nombre}')">
+                <strong>${c.nombre}</strong>
+                ${c.referencia ? `<span class="client-detail">Ref: ${c.referencia}</span>` : ''}
+                ${c.telefono ? `<span class="client-detail">📞 ${c.telefono}</span>` : ''}
+            </div>`
         ).join('');
         suggestionsDiv.style.display = 'block';
     });
@@ -792,67 +462,20 @@ document.addEventListener('DOMContentLoaded', function() {
             suggestionsDiv.style.display = 'none';
         }
     });
+});
 
-    // --- Archivos adjuntos ---
-    const fileDropArea = document.getElementById('fileDropArea');
-    const fileInput = document.getElementById('fileInput');
-    const fileList = document.getElementById('fileList');
-    let selectedFiles = [];
-
-    fileDropArea.addEventListener('click', () => fileInput.click());
-    fileDropArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        fileDropArea.style.borderColor = '#1a1a1a';
-        fileDropArea.style.background = '#f0ece8';
-    });
-    fileDropArea.addEventListener('dragleave', () => {
-        fileDropArea.style.borderColor = '#ddd';
-        fileDropArea.style.background = '#fafafa';
-    });
-    fileDropArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        fileDropArea.style.borderColor = '#ddd';
-        fileDropArea.style.background = '#fafafa';
-        handleFiles(e.dataTransfer.files);
-    });
-    fileInput.addEventListener('change', (e) => {
-        handleFiles(e.target.files);
-        fileInput.value = '';
-    });
-
-    function handleFiles(files) {
-        for (let file of files) {
-            if (!selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                selectedFiles.push(file);
-            }
-        }
-        renderFileList();
-    }
-
-    function renderFileList() {
-        fileList.innerHTML = selectedFiles.map((file, index) =>
-            `<span class="file-tag">
-                <i class="fas fa-file"></i> ${file.name} (${(file.size / 1024).toFixed(1)} KB)
-                <span class="remove-file" onclick="removeFile(${index})">×</span>
-            </span>`
-        ).join('');
-    }
-
-    window.removeFile = function(index) {
-        selectedFiles.splice(index, 1);
-        renderFileList();
-    };
-    renderFileList();
-
-    // --- Mostrar/ocultar "Otros" servicios ---
-    const check = document.getElementById('serv_otros_check');
+// =============================================
+// MOSTRAR/OCULTAR "Otros" SERVICIOS
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const checkOtros = document.getElementById('serv_otros_check');
     const inputOtros = document.getElementById('servicios_otros');
-    if (check && inputOtros) {
-        function toggle() {
-            inputOtros.style.display = check.checked ? 'inline-block' : 'none';
+    if (checkOtros && inputOtros) {
+        function toggleOtros() {
+            inputOtros.style.display = checkOtros.checked ? 'inline-block' : 'none';
         }
-        check.addEventListener('change', toggle);
-        toggle();
+        checkOtros.addEventListener('change', toggleOtros);
+        toggleOtros();
     }
 });
 </script>

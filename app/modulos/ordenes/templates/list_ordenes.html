@@ -18,10 +18,8 @@
                     <th style="padding:8px 0;">N° Orden</th>
                     <th style="padding:8px 0;">Cliente</th>
                     <th style="padding:8px 0;">Proyecto</th>
-                    <th style="padding:8px 0;">Prioridad</th>
-                    <th style="padding:8px 0;">Factura</th>
+                    <th style="padding:8px 0;">Líneas</th>
                     <th style="padding:8px 0;">Entrada</th>
-                    <th style="padding:8px 0;">Columna</th>
                     <th style="padding:8px 0;">Acciones</th>
                 </tr>
             </thead>
@@ -32,11 +30,9 @@
                     <td style="padding:8px 0;">{{ order.client }}</td>
                     <td style="padding:8px 0;">{{ order.proyecto or '-' }}</td>
                     <td style="padding:8px 0;">
-                        <span class="badge" style="background:{% if order.priority == 'urgente' %}#dc2626{% elif order.priority == 'critica' %}#f59e0b{% else %}#888{% endif %}; color:white;">
-                            {{ order.priority }}
-                        </span>
+                        {% set lineas = order.archivos|length %}
+                        {{ lineas }} {% if lineas == 1 %}línea{% else %}líneas{% endif %}
                     </td>
-                    <td style="padding:8px 0;">{{ order.invoice or '-' }}</td>
                     <td style="padding:8px 0;">
                         {% if order.entrada_ok %}
                             <span class="badge" style="background:#10b981; color:white;">✅ OK</span>
@@ -44,7 +40,6 @@
                             <span class="badge" style="background:#f59e0b; color:white;">⏳ Pendiente</span>
                         {% endif %}
                     </td>
-                    <td style="padding:8px 0;">{{ order.column }}</td>
                     <td style="padding:8px 0;">
                         {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin'] %}
                             <form method="POST" action="{{ url_for('ordenes.marcar_entrada', order_id=order.id) }}" style="display:inline;">
@@ -53,7 +48,7 @@
                         {% endif %}
                         {% if current_user.role in ['comercial', 'admin'] %}
                             <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
-                                <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                            <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
                         {% endif %}
                         {% if current_user.role == 'admin' %}
                             <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">

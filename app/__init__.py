@@ -1,10 +1,9 @@
-from flask import Flask, app
+import os  # <--- AGREGAR ESTA LÍNEA
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from .config import Config
 
-
-# Instancias globales
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -15,16 +14,18 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
+    # Configuración de carpeta de subida
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static', 'uploads')
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
     db.init_app(app)
     login_manager.init_app(app)
 
-    # Importar modelos (para que SQLAlchemy los conozca)
+    # Importar modelos
     from . import models
 
-    # Crear tablas si no existen
     with app.app_context():
         db.create_all()
-        # Crear usuario admin local por defecto si no existe
         from .services.auth_service import AuthService
         admin = models.User.query.filter_by(username='admin').first()
         if not admin:
@@ -49,7 +50,5 @@ def create_app():
 
     from .modulos.ordenes import ordenes_bp
     app.register_blueprint(ordenes_bp)
-
-    # ... (añade aquí el resto de blueprints que tengas)
 
     return app
