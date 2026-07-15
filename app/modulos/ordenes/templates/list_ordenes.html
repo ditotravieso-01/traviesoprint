@@ -27,12 +27,9 @@
                 {% for order in orders %}
                 <tr style="border-bottom:1px solid #eee;">
                     <td style="padding:8px 0;"><strong>{{ order.order_num }}</strong></td>
-                    <td style="padding:8px 0;">{{ order.client }}</td>
+                    <td style="padding:8px 0;">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
                     <td style="padding:8px 0;">{{ order.proyecto or '-' }}</td>
-                    <td style="padding:8px 0;">
-                        {% set lineas = order.archivos|length %}
-                        {{ lineas }} {% if lineas == 1 %}línea{% else %}líneas{% endif %}
-                    </td>
+                    <td style="padding:8px 0;">{{ order.archivos|length }}</td>
                     <td style="padding:8px 0;">
                         {% if order.entrada_ok %}
                             <span class="badge" style="background:#10b981; color:white;">✅ OK</span>

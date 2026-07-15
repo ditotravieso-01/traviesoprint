@@ -9,8 +9,14 @@
     <div class="form-section">
         <h4>Subir archivo Excel</h4>
         <p style="color:#666;">Selecciona un archivo .xlsx o .xls con los datos de clientes.</p>
-        <p style="color:#666; font-size:13px;">El archivo debe tener una columna <strong>"Nombre"</strong> como mínimo. 
-        Si la columna <strong>"Referencia"</strong> existe, se usará para detectar duplicados; si no, se usará el nombre exacto.</p>
+        <p style="color:#666; font-size:13px;">
+            El archivo debe tener una columna <strong>"Nombre"</strong> como mínimo. 
+            Si la columna <strong>"Referencia"</strong> existe, se usará para detectar duplicados; 
+            si no, se usará el nombre exacto para sobreescribir.
+        </p>
+        <p style="color:#666; font-size:13px;">
+            <strong>Nuevo campo:</strong> puedes incluir una columna "Comercial" para asignar el comercial del cliente.
+        </p>
         <form method="POST" enctype="multipart/form-data">
             <div class="form-group">
                 <input type="file" name="archivo" accept=".xlsx,.xls" required>
@@ -21,6 +27,7 @@
     </div>
     <div style="margin-top:20px;">
         <a href="{{ url_for('clientes.exportar_todos') }}" class="btn btn-outline"><i class="fas fa-download"></i> Descargar plantilla de ejemplo</a>
+        <small style="display:block; margin-top:8px; color:#888;">La plantilla contiene todos los campos disponibles para importar.</small>
     </div>
 </div>
 {% endblock %}

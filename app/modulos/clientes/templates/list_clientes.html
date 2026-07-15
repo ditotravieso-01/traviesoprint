@@ -4,113 +4,150 @@
 
 {% block page_title %}👥 Clientes{% endblock %}
 
+{% block extra_css %}
+<style>
+    .table-clientes th, .table-clientes td { vertical-align: middle; }
+    .table-clientes .checkbox-col { width: 40px; text-align: center; }
+    .acciones-masivas { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 16px; background: #f8f6f4; padding: 12px 16px; border-radius: 8px; }
+    .acciones-masivas select, .acciones-masivas button { padding: 6px 12px; border-radius: 6px; border: 1px solid #ddd; }
+    .acciones-masivas button { background: #1a1a1a; color: white; cursor: pointer; }
+    .acciones-masivas button:hover { background: #333; }
+    .badge-tipo { padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+    .badge-persona { background: #e0f2fe; color: #0369a1; }
+    .badge-empresa { background: #fef3c7; color: #b45309; }
+    .badge-emprendimiento { background: #d1fae5; color: #065f46; }
+    .pagination { display: flex; justify-content: center; gap: 6px; margin-top: 20px; }
+    .pagination a, .pagination span { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; text-decoration: none; color: #333; }
+    .pagination .active { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+    .pagination .disabled { color: #aaa; pointer-events: none; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="content-card">
-    <!-- BARRA DE FILTROS Y ACCIONES -->
-    <div style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-bottom:16px;">
-        <form method="GET" action="{{ url_for('clientes.list_clients') }}" style="display:flex; flex-wrap:wrap; gap:8px; flex:1; align-items:center;">
-            <input type="text" name="search" placeholder="Buscar..." value="{{ search }}" style="flex:1; min-width:150px; padding:8px 14px; border:1px solid #ddd; border-radius:8px;">
-            <select name="tipo_cliente" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                <option value="">Todos los tipos</option>
-                {% for tipo in tipos %}
-                    <option value="{{ tipo }}" {% if tipo_cliente == tipo %}selected{% endif %}>{{ tipo }}</option>
-                {% endfor %}
-            </select>
-            <select name="sector" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                <option value="">Todos los sectores</option>
-                {% for sec in sectores %}
-                    <option value="{{ sec }}" {% if sector == sec %}selected{% endif %}>{{ sec }}</option>
-                {% endfor %}
-            </select>
-            <select name="frecuencia" style="padding:8px 12px; border:1px solid #ddd; border-radius:8px;">
-                <option value="">Todas las frecuencias</option>
-                {% for freq in frecuencias %}
-                    <option value="{{ freq }}" {% if frecuencia == freq %}selected{% endif %}>{{ freq }}</option>
-                {% endfor %}
-            </select>
-            <button type="submit" class="btn btn-primary">Filtrar</button>
-        </form>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a href="{{ url_for('clientes.create_client') }}" class="btn btn-success">+ Nuevo</a>
-            <a href="{{ url_for('clientes.import_clients') }}" class="btn btn-outline">Importar</a>
-            <a href="{{ url_for('clientes.export_excel', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" class="btn btn-outline">📊 Exportar Excel</a>
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div style="display:flex; gap:8px; align-items:center;">
+            <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nuevo cliente</a>
+            <a href="{{ url_for('clientes.importar_clientes') }}" class="btn btn-outline"><i class="fas fa-file-import"></i> Importar</a>
+            <a href="{{ url_for('clientes.exportar_todos') }}" class="btn btn-outline"><i class="fas fa-file-export"></i> Exportar todos</a>
         </div>
+        <form method="GET" action="{{ url_for('clientes.list_clientes') }}" style="display:flex; gap:8px; flex-wrap:wrap;">
+            <input type="text" name="search" placeholder="Buscar..." value="{{ search }}" style="padding:6px 12px; border-radius:6px; border:1px solid #ddd;">
+            <select name="tipo" style="padding:6px 12px; border-radius:6px; border:1px solid #ddd;">
+                <option value="">Todos los tipos</option>
+                {% for t in tipos %}
+                    <option value="{{ t }}" {% if tipo == t %}selected{% endif %}>{{ t|capitalize }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary" style="padding:6px 16px;">Filtrar</button>
+        </form>
     </div>
 
-    <!-- TABLA DE CLIENTES -->
-    <div style="overflow-x:auto;">
-        <table style="width:100%; border-collapse:collapse; font-size:14px;">
-            <thead>
-                <tr style="border-bottom:2px solid #ddd; text-align:left;">
-                    <th style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.list_clients', order_by='referencia', order_dir='desc' if order_by=='referencia' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
-                            Ref.
-                            {% if order_by == 'referencia' %}
-                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
+    <form method="POST" action="{{ url_for('clientes.accion_masiva') }}" id="formAccionMasiva">
+        <div class="acciones-masivas">
+            <span style="font-weight:600;">Seleccionados:</span>
+            <select name="accion" required>
+                <option value="">-- Acción --</option>
+                <option value="eliminar">Eliminar</option>
+                <option value="exportar">Exportar</option>
+            </select>
+            <button type="submit">Aplicar</button>
+            <span style="margin-left:10px; font-size:13px; color:#666;" id="contadorSeleccionados">0 seleccionados</span>
+        </div>
+
+        <div style="overflow-x:auto;">
+            <table class="table table-clientes" style="width:100%; border-collapse:collapse; font-size:14px;">
+                <thead>
+                    <tr style="border-bottom:2px solid #ddd; text-align:left;">
+                        <th class="checkbox-col"><input type="checkbox" id="seleccionarTodos" onclick="toggleAll(this)"></th>
+                        <th style="padding:8px 0;">Referencia</th>
+                        <th style="padding:8px 0;">Nombre</th>
+                        <th style="padding:8px 0;">Teléfono</th>
+                        <th style="padding:8px 0;">Tipo</th>
+                        <th style="padding:8px 0;">Comercial</th>
+                        <th style="padding:8px 0;">Pedidos</th>
+                        <th style="padding:8px 0;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr style="border-bottom:1px solid #eee;">
+                        <td class="checkbox-col">
+                            <input type="checkbox" name="ids[]" value="{{ cliente.id }}" class="checkbox-item" onchange="actualizarContador()">
+                        </td>
+                        <td style="padding:8px 0;"><strong>{{ cliente.referencia }}</strong></td>
+                        <td style="padding:8px 0;"><a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}">{{ cliente.nombre }}</a></td>
+                        <td style="padding:8px 0;">{{ cliente.telefono or '-' }}</td>
+                        <td style="padding:8px 0;">
+                            <span class="badge-tipo {% if cliente.tipo_cliente == 'persona' %}badge-persona{% elif cliente.tipo_cliente == 'empresa' %}badge-empresa{% else %}badge-emprendimiento{% endif %}">
+                                {{ cliente.tipo_cliente or 'persona' }}
+                            </span>
+                        </td>
+                        <td style="padding:8px 0;">{{ cliente.comercial or '-' }}</td>
+                        <td style="padding:8px 0;">{{ cliente.orders|length }}</td>
+                        <td style="padding:8px 0;">
+                            <a href="{{ url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
+                            <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+                            {% if current_user.role == 'admin' and not cliente.orders %}
+                                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                                </form>
                             {% endif %}
-                        </a>
-                    </th>
-                    <th style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.list_clients', order_by='nombre', order_dir='desc' if order_by=='nombre' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
-                            Nombre
-                            {% if order_by == 'nombre' %}
-                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.list_clients', order_by='telefono', order_dir='desc' if order_by=='telefono' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
-                            Teléfono
-                            {% if order_by == 'telefono' %}
-                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th style="padding:8px 0;">Etiquetas</th>
-                    <th style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.list_clients', order_by='pedidos_venta', order_dir='desc' if order_by=='pedidos_venta' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
-                            Pedidos
-                            {% if order_by == 'pedidos_venta' %}
-                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.list_clients', order_by='total_facturado', order_dir='desc' if order_by=='total_facturado' and order_dir=='asc' else 'asc', search=search, tipo_cliente=tipo_cliente, sector=sector, frecuencia=frecuencia) }}" style="text-decoration:none; color:inherit;">
-                            Total
-                            {% if order_by == 'total_facturado' %}
-                                <span>{{ '↑' if order_dir == 'asc' else '↓' }}</span>
-                            {% endif %}
-                        </a>
-                    </th>
-                    <th style="padding:8px 0;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for client in clients %}
-                <tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:8px 0;">{{ client.referencia }}</td>
-                    <td style="padding:8px 0;"><strong>{{ client.nombre }}</strong></td>
-                    <td style="padding:8px 0;">{{ client.telefono or '-' }}</td>
-                    <td style="padding:8px 0;">{{ client.etiquetas or '-' }}</td>
-                    <td style="padding:8px 0;">{{ client.pedidos_venta }}</td>
-                    <td style="padding:8px 0;">${{ client.total_facturado }}</td>
-                    <td style="padding:8px 0;">
-                        <a href="{{ url_for('clientes.detail_client', client_id=client.id) }}" class="btn btn-outline btn-sm" title="Ver detalle"><i class="fas fa-eye"></i></a>
-                        <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-edit"></i></a>
-                        {% if current_user.role == 'admin' %}
-                        <form method="POST" action="{{ url_for('clientes.delete_client', client_id=client.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
-                            <button type="submit" class="btn btn-outline btn-sm" style="color:#dc2626;"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% if clients|length == 0 %}
-        <p style="color:#999; text-align:center; padding:20px 0;">No hay clientes.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </form>
+
+    {% if clientes|length == 0 %}
+        <p style="color:#999; text-align:center; padding:20px 0;">No hay clientes. Crea uno nuevo o importa.</p>
     {% endif %}
+
+    <!-- Paginación -->
+    <div class="pagination">
+        {% if pagination.has_prev %}
+            <a href="{{ url_for('clientes.list_clientes', page=pagination.prev_num, search=search, tipo=tipo) }}">« Anterior</a>
+        {% else %}
+            <span class="disabled">« Anterior</span>
+        {% endif %}
+
+        {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+                {% if p == pagination.page %}
+                    <span class="active">{{ p }}</span>
+                {% else %}
+                    <a href="{{ url_for('clientes.list_clientes', page=p, search=search, tipo=tipo) }}">{{ p }}</a>
+                {% endif %}
+            {% else %}
+                <span>…</span>
+            {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+            <a href="{{ url_for('clientes.list_clientes', page=pagination.next_num, search=search, tipo=tipo) }}">Siguiente »</a>
+        {% else %}
+            <span class="disabled">Siguiente »</span>
+        {% endif %}
+    </div>
 </div>
+
+<script>
+function toggleAll(master) {
+    const checkboxes = document.querySelectorAll('.checkbox-item');
+    checkboxes.forEach(cb => cb.checked = master.checked);
+    actualizarContador();
+}
+
+function actualizarContador() {
+    const total = document.querySelectorAll('.checkbox-item:checked').length;
+    document.getElementById('contadorSeleccionados').textContent = total + ' seleccionados';
+}
+
+// Inicializar contador
+document.addEventListener('DOMContentLoaded', function() {
+    actualizarContador();
+});
+</script>
 {% endblock %}

@@ -39,7 +39,7 @@ def load_user(user_id):
 
 
 # ==========================================
-# MODELO DE ORDEN DE TRABAJO
+# MODELO DE ORDEN DE TRABAJO (con client_id)
 # ==========================================
 class Order(db.Model):
     __tablename__ = 'orders'
@@ -47,13 +47,16 @@ class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     order_num = db.Column(db.String(50), unique=True, nullable=False)
     date = db.Column(db.Date, nullable=False)
-    client = db.Column(db.String(150), nullable=False)
+    # Relación con cliente
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
+    client = db.relationship('Client', backref='orders', lazy=True)
+    # Otros campos
     solicitado = db.Column(db.String(100))
     proyecto = db.Column(db.String(100))
     invoice = db.Column(db.String(50))
     tipo_proyecto = db.Column(db.String(20), default='grafica')
     priority = db.Column(db.String(20), default='normal')
-    servicios = db.Column(db.Text, default='[]')   # Solo servicios, materiales eliminados
+    servicios = db.Column(db.Text, default='[]')
     descripcion = db.Column(db.Text)
     column = db.Column(db.String(30), default='pendiente')
     entrada_ok = db.Column(db.Boolean, default=False)
@@ -84,7 +87,7 @@ class Order(db.Model):
 
 
 # ==========================================
-# MODELO DE ARCHIVO ADJUNTO (con material)
+# MODELO DE ARCHIVO ADJUNTO
 # ==========================================
 class ArchivoAdjunto(db.Model):
     __tablename__ = 'archivo_adjunto'
@@ -93,7 +96,7 @@ class ArchivoAdjunto(db.Model):
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     nombre_original = db.Column(db.String(255), nullable=False)
     nombre_visible = db.Column(db.String(255), nullable=False)
-    material = db.Column(db.String(100), nullable=True)   # Nuevo campo
+    material = db.Column(db.String(100), nullable=True)
     ruta = db.Column(db.String(500), nullable=True)
     cantidad = db.Column(db.Float, nullable=True)
     unidad = db.Column(db.String(20), nullable=True)
@@ -112,7 +115,7 @@ class ArchivoAdjunto(db.Model):
 
 
 # ==========================================
-# MODELO DE CLIENTES (sin cambios)
+# MODELO DE CLIENTES
 # ==========================================
 class Client(db.Model):
     __tablename__ = 'clients'
@@ -127,6 +130,7 @@ class Client(db.Model):
     total_facturado = db.Column(db.Float, default=0.0)
     gustos = db.Column(db.Text)
     notas = db.Column(db.Text)
+    comercial = db.Column(db.String(100), nullable=True)
     carnet_identidad = db.Column(db.String(20))
     fecha_nacimiento = db.Column(db.Date)
     tipo_cliente = db.Column(db.String(30), default='persona')

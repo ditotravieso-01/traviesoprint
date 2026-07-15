@@ -32,6 +32,8 @@
     .btn-sm { padding: 4px 12px; font-size: 12px; }
     .btn-success { background: #10b981; color: white; }
     .btn-success:hover { background: #059669; }
+    .btn-crear-cliente { background: #10b981; color: white; border: none; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; margin-left: 8px; white-space: nowrap; }
+    .btn-crear-cliente:hover { background: #059669; }
     .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; justify-content: space-between; }
     .btn-group .left-buttons, .btn-group .right-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
     .file-upload-area { border: 2px dashed #ddd; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; background: #fafafa; margin-top: 8px; }
@@ -50,14 +52,27 @@
     .lineas-table .file-input-wrapper { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .lineas-table .file-input-wrapper input[type="file"] { width: auto; padding: 4px; background: transparent; border: none; }
 
-    .client-select-wrapper { position: relative; }
-    .client-select-wrapper input[type="text"] { width: 100%; }
-    .client-suggestions { position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 1000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .client-suggestions .suggestion-item { padding: 8px 14px; cursor: pointer; transition: background 0.1s; border-bottom: 1px solid #f0ece8; }
-    .client-suggestions .suggestion-item:hover { background: #f4f0ed; }
-    .client-suggestions .suggestion-item .client-detail { font-size: 12px; color: #888; }
+    .client-select-wrapper { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .client-select-wrapper input[type="text"] { flex: 1; }
 
-    @media (max-width: 768px) { .form-grid-2 { grid-template-columns: 1fr; } .btn-group { flex-direction: column; align-items: stretch; } .btn-group .left-buttons, .btn-group .right-buttons { justify-content: center; } .lineas-table { font-size: 13px; } .lineas-table input, .lineas-table select { font-size: 13px; padding: 4px; } }
+    /* MODAL */
+    .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
+    .modal-content { background: white; margin: 5% auto; padding: 24px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 16px; }
+    .modal-header h3 { margin: 0; }
+    .modal-close { cursor: pointer; font-size: 28px; color: #888; line-height: 1; }
+    .modal-close:hover { color: #333; }
+    .modal .form-group { margin-bottom: 12px; }
+
+    @media (max-width: 768px) {
+        .form-grid-2 { grid-template-columns: 1fr; }
+        .btn-group { flex-direction: column; align-items: stretch; }
+        .btn-group .left-buttons, .btn-group .right-buttons { justify-content: center; }
+        .lineas-table { font-size: 13px; }
+        .lineas-table input, .lineas-table select { font-size: 13px; padding: 4px; }
+        .client-select-wrapper { flex-direction: column; align-items: stretch; }
+        .btn-crear-cliente { margin-left: 0; }
+    }
 </style>
 {% endblock %}
 
@@ -65,7 +80,9 @@
 <div class="form-container">
     <form method="POST" action="{{ url_for('ordenes.create_order') if not edit else url_for('ordenes.edit_order', order_id=order.id) }}" enctype="multipart/form-data" id="orderForm">
 
-        <!-- ===== DATOS GENERALES ===== -->
+        <!-- ==========================================
+        SECCIÓN 1: DATOS GENERALES
+        ========================================== -->
         <div class="form-section">
             <h4>📋 Datos Generales</h4>
             <div class="form-grid-2">
@@ -79,11 +96,19 @@
                 </div>
             </div>
             <div class="form-grid-2">
-                <div class="form-group client-select-wrapper">
-                    <label for="client">Cliente *</label>
-                    <input type="text" id="client" name="client" value="{{ form_data.client if form_data else '' }}" placeholder="Buscar o escribir nombre..." required autocomplete="off">
-                    <div class="client-suggestions" id="clientSuggestions"></div>
-                    <small style="color:#999;">Escribe para buscar clientes existentes o escribe un nuevo nombre</small>
+                <div class="form-group">
+                    <label for="client_name">Cliente *</label>
+                    <div class="client-select-wrapper">
+                        <input type="hidden" id="client_id" name="client_id" value="{{ form_data.client_id if form_data else '' }}">
+                        <input type="text" id="client_name" name="client_name" value="{{ form_data.client_nombre if form_data else '' }}" placeholder="Buscar o escribir nombre..." required autocomplete="off" list="clientesList">
+                        <datalist id="clientesList">
+                            {% for c in clients_list %}
+                                <option value="{{ c.nombre }}" data-id="{{ c.id }}"></option>
+                            {% endfor %}
+                        </datalist>
+                        <button type="button" class="btn-crear-cliente" onclick="abrirModalCliente()"><i class="fas fa-plus"></i> Nuevo</button>
+                    </div>
+                    <small style="color:#999;">Escribe para buscar clientes existentes o haz clic en "Nuevo" para crear</small>
                 </div>
                 <div class="form-group">
                     <label for="solicitado">Solicitado por</label>
@@ -102,7 +127,9 @@
             </div>
         </div>
 
-        <!-- ===== TIPO Y PRIORIDAD ===== -->
+        <!-- ==========================================
+        SECCIÓN 2: TIPO Y PRIORIDAD
+        ========================================== -->
         <div class="form-section">
             <h4>🎯 Tipo y Prioridad</h4>
             <div class="form-grid-2">
@@ -126,7 +153,9 @@
             </div>
         </div>
 
-        <!-- ===== SERVICIOS ===== -->
+        <!-- ==========================================
+        SECCIÓN 3: SERVICIOS
+        ========================================== -->
         <div class="form-section">
             <h4>🛠 Servicios</h4>
             <div class="form-group">
@@ -148,7 +177,9 @@
             </div>
         </div>
 
-        <!-- ===== DESCRIPCIÓN ===== -->
+        <!-- ==========================================
+        SECCIÓN 4: DESCRIPCIÓN
+        ========================================== -->
         <div class="form-section">
             <h4>📝 Descripción</h4>
             <div class="form-group">
@@ -157,7 +188,9 @@
             </div>
         </div>
 
-        <!-- ===== ARCHIVOS Y LÍNEAS ===== -->
+        <!-- ==========================================
+        SECCIÓN 5: ARCHIVOS Y LÍNEAS
+        ========================================== -->
         <div class="form-section">
             <h4>📎 Archivos y Líneas de trabajo</h4>
             <p style="color:#666; font-size:14px;">Añade ítems (con o sin archivo) y asigna material, cantidad y unidad. <span style="color:#dc2626;">*</span> obligatorio</p>
@@ -232,7 +265,9 @@
             </div>
         </div>
 
-        <!-- ===== BOTONES ===== -->
+        <!-- ==========================================
+        BOTONES DE ACCIÓN
+        ========================================== -->
         <div class="btn-group">
             <div class="left-buttons">
                 <button type="submit" class="btn btn-primary">
@@ -254,11 +289,142 @@
     </form>
 </div>
 
+<!-- ==========================================
+MODAL PARA CREAR CLIENTE
+========================================== -->
+<div id="modalCliente" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Nuevo Cliente</h3>
+            <span class="modal-close" onclick="cerrarModalCliente()">&times;</span>
+        </div>
+        <form id="formNuevoCliente">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="nuevo_cliente_nombre" required class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="text" id="nuevo_cliente_telefono" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="nuevo_cliente_email" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>Dirección</label>
+                <input type="text" id="nuevo_cliente_direccion" class="form-control">
+            </div>
+            <div style="display:flex; gap:8px; margin-top:12px;">
+                <button type="button" class="btn btn-primary" onclick="guardarNuevoCliente()">Guardar cliente</button>
+                <button type="button" class="btn btn-outline" onclick="cerrarModalCliente()">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <script>
 // =============================================
-// FUNCIONES PARA GESTIONAR LÍNEAS DINÁMICAS
+// SELECCIÓN DE CLIENTE (autocomplete + datalist)
 // =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    const clientNameInput = document.getElementById('client_name');
+    const clientIdInput = document.getElementById('client_id');
+    const datalist = document.getElementById('clientesList');
 
+    clientNameInput.addEventListener('input', function() {
+        const value = this.value.trim();
+        let found = false;
+        for (let option of datalist.options) {
+            if (option.value === value) {
+                clientIdInput.value = option.dataset.id;
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            clientIdInput.value = '';
+        }
+    });
+
+    clientNameInput.addEventListener('blur', function() {
+        const value = this.value.trim();
+        let found = false;
+        for (let option of datalist.options) {
+            if (option.value === value) {
+                clientIdInput.value = option.dataset.id;
+                found = true;
+                break;
+            }
+        }
+        if (!found && value !== '') {
+            clientIdInput.value = '';
+        }
+    });
+});
+
+// =============================================
+// MODAL PARA CREAR CLIENTE
+// =============================================
+function abrirModalCliente() {
+    document.getElementById('modalCliente').style.display = 'block';
+}
+
+function cerrarModalCliente() {
+    document.getElementById('modalCliente').style.display = 'none';
+    document.getElementById('formNuevoCliente').reset();
+}
+
+function guardarNuevoCliente() {
+    const nombre = document.getElementById('nuevo_cliente_nombre').value.trim();
+    if (!nombre) {
+        alert('El nombre es obligatorio');
+        return;
+    }
+    const telefono = document.getElementById('nuevo_cliente_telefono').value.trim();
+    const email = document.getElementById('nuevo_cliente_email').value.trim();
+    const direccion = document.getElementById('nuevo_cliente_direccion').value.trim();
+
+    fetch('{{ url_for("ordenes.crear_cliente_ajax") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ nombre, telefono, email, direccion })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            alert(data.error);
+            return;
+        }
+        // Agregar al datalist
+        const datalist = document.getElementById('clientesList');
+        const option = document.createElement('option');
+        option.value = data.nombre;
+        option.dataset.id = data.id;
+        datalist.appendChild(option);
+
+        // Seleccionar el cliente recién creado
+        document.getElementById('client_name').value = data.nombre;
+        document.getElementById('client_id').value = data.id;
+
+        cerrarModalCliente();
+    })
+    .catch(error => {
+        alert('Error al crear el cliente: ' + error);
+    });
+}
+
+// Cerrar modal al hacer clic fuera
+window.onclick = function(event) {
+    const modal = document.getElementById('modalCliente');
+    if (event.target === modal) {
+        cerrarModalCliente();
+    }
+}
+
+// =============================================
+// FUNCIONES PARA LÍNEAS DINÁMICAS
+// =============================================
 let nuevaLineaCounter = 0;
 const listaMateriales = {{ lista_materiales|tojson }};
 
@@ -362,7 +528,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     function agregarLineaDesdeArchivo(file) {
-        // Nombre sin extensión para el campo visible
         const nombreSinExt = file.name.replace(/\.[^/.]+$/, '');
         const tbody = document.getElementById('cuerpoLineas');
         const row = document.createElement('tr');
@@ -418,50 +583,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
     }
-});
-
-// =============================================
-// AUTOCOMPLETADO DE CLIENTES (preparado para integración)
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
-    const clientInput = document.getElementById('client');
-    const suggestionsDiv = document.getElementById('clientSuggestions');
-    const clientsList = {{ clients_list|tojson if clients_list else [] }};
-
-    clientInput.addEventListener('input', function() {
-        const value = this.value.toLowerCase().trim();
-        if (value.length < 1) {
-            suggestionsDiv.style.display = 'none';
-            return;
-        }
-        const matches = clientsList.filter(c => 
-            c.nombre.toLowerCase().includes(value) || 
-            (c.referencia && c.referencia.toLowerCase().includes(value))
-        );
-        if (matches.length === 0) {
-            suggestionsDiv.style.display = 'none';
-            return;
-        }
-        suggestionsDiv.innerHTML = matches.map(c => 
-            `<div class="suggestion-item" onclick="selectClient('${c.nombre}')">
-                <strong>${c.nombre}</strong>
-                ${c.referencia ? `<span class="client-detail">Ref: ${c.referencia}</span>` : ''}
-                ${c.telefono ? `<span class="client-detail">📞 ${c.telefono}</span>` : ''}
-            </div>`
-        ).join('');
-        suggestionsDiv.style.display = 'block';
-    });
-
-    window.selectClient = function(name) {
-        clientInput.value = name;
-        suggestionsDiv.style.display = 'none';
-    };
-
-    document.addEventListener('click', function(e) {
-        if (e.target !== clientInput) {
-            suggestionsDiv.style.display = 'none';
-        }
-    });
 });
 
 // =============================================

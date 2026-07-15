@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Order, User, ArchivoAdjunto, Client
 from app import db
@@ -63,7 +63,7 @@ def create_order():
     if request.method == 'POST':
         order_num = request.form.get('order_num')
         date = request.form.get('date')
-        client = request.form.get('client')
+        client_id = request.form.get('client_id')
         solicitado = request.form.get('solicitado')
         proyecto = request.form.get('proyecto')
         invoice = request.form.get('invoice')
@@ -71,8 +71,14 @@ def create_order():
         priority = request.form.get('priority')
         descripcion = request.form.get('descripcion')
 
-        if not order_num or not client or not date:
+        if not order_num or not client_id or not date:
             flash('N° de orden, Cliente y Fecha son obligatorios.', 'danger')
+            return render_template('form_orden.html', form_data=request.form)
+
+        # Validar que el cliente existe
+        client = Client.query.get(client_id)
+        if not client:
+            flash('Cliente no encontrado.', 'danger')
             return render_template('form_orden.html', form_data=request.form)
 
         # Servicios
@@ -88,7 +94,7 @@ def create_order():
         order = Order(
             order_num=order_num,
             date=datetime.strptime(date, '%Y-%m-%d'),
-            client=client,
+            client_id=client_id,
             solicitado=solicitado,
             proyecto=proyecto,
             invoice=invoice,
@@ -184,7 +190,13 @@ def edit_order(order_id):
         # Actualizar datos básicos
         order.order_num = request.form.get('order_num')
         order.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
-        order.client = request.form.get('client')
+        client_id = request.form.get('client_id')
+        if client_id:
+            client = Client.query.get(client_id)
+            if client:
+                order.client_id = client_id
+            else:
+                flash('Cliente no encontrado.', 'danger')
         order.solicitado = request.form.get('solicitado')
         order.proyecto = request.form.get('proyecto')
         order.invoice = request.form.get('invoice')
@@ -274,7 +286,8 @@ def edit_order(order_id):
     form_data = {
         'order_num': order.order_num,
         'date': order.date.strftime('%Y-%m-%d') if order.date else '',
-        'client': order.client,
+        'client_id': order.client_id,
+        'client_nombre': order.client.nombre if order.client else '',
         'solicitado': order.solicitado,
         'proyecto': order.proyecto,
         'invoice': order.invoice,
@@ -292,7 +305,6 @@ def edit_order(order_id):
     ]
     servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
 
-    # Obtener lista de clientes para autocompletado
     clients_list = Client.query.order_by(Client.nombre).all()
     clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
 
@@ -303,6 +315,33 @@ def edit_order(order_id):
                            clients_list=clients_data,
                            edit=True,
                            order=order)
+
+
+# ==========================================
+# CREAR CLIENTE VÍA AJAX (desde la orden)
+# ==========================================
+@ordenes_bp.route('/crear-cliente-ajax', methods=['POST'])
+@login_required
+@comercial_or_admin_required
+def crear_cliente_ajax():
+    data = request.get_json()
+    nombre = data.get('nombre', '').strip()
+    if not nombre:
+        return jsonify({'error': 'El nombre es obligatorio'}), 400
+
+    # Generar referencia automática
+    referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    # Crear cliente
+    cliente = Client(
+        referencia=referencia,
+        nombre=nombre,
+        telefono=data.get('telefono', ''),
+        email=data.get('email', ''),
+        direccion=data.get('direccion', '')
+    )
+    db.session.add(cliente)
+    db.session.commit()
+    return jsonify({'id': cliente.id, 'nombre': cliente.nombre})
 
 # ==========================================
 # ELIMINAR ARCHIVO ADJUNTO
@@ -377,7 +416,6 @@ def delete_order(order_id):
 @login_required
 def generar_pdf(order_id):
     order = Order.query.get_or_404(order_id)
-    # Pasar la fecha actual para el pie de página
     now = datetime.now()
     html_content = render_template('pdf_orden.html', order=order, now=now)
     pdf_file = HTML(string=html_content).write_pdf()

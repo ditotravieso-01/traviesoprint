@@ -1,292 +1,125 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Editar' if edit else 'Nuevo' }} Cliente · CairoStudio{% endblock %}
+{% block title %}{{ 'Editar' if cliente else 'Nuevo' }} Cliente · CairoStudio{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if edit else '📄 Nuevo' }} Cliente{% endblock %}
-
-{% block extra_css %}
-<style>
-    .form-container {
-        max-width: 900px;
-        margin: 0 auto;
-    }
-    .form-section {
-        background: white;
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #e8e0da;
-    }
-    .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        margin-bottom: 16px;
-        color: #1a1a1a;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
-    }
-    .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-    .form-group {
-        margin-bottom: 16px;
-    }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
-    }
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 15px;
-        background: #fafafa;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        border-color: #1a1a1a;
-        outline: none;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
-    }
-    .form-group textarea {
-        resize: vertical;
-        min-height: 60px;
-    }
-    .help-text {
-        color: #999;
-        font-size: 12px;
-        margin-top: 4px;
-        display: block;
-    }
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-    }
-    .btn {
-        padding: 10px 24px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        font-family: 'Inter', sans-serif;
-        font-size: 16px;
-    }
-    .btn-primary {
-        background: #1a1a1a;
-        color: white;
-    }
-    .btn-primary:hover {
-        background: #333;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #ccc;
-        color: #333;
-    }
-    .btn-outline:hover {
-        border-color: #888;
-        background: #f5f5f5;
-    }
-    .btn-success {
-        background: #10b981;
-        color: white;
-    }
-    .btn-success:hover {
-        background: #059669;
-    }
-    @media (max-width: 768px) {
-        .form-grid-2 {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
-{% endblock %}
+{% block page_title %}{{ '✏️ Editar' if cliente else '📄 Nuevo' }} Cliente{% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <form method="POST" action="{{ url_for('clientes.create_client') if not edit else url_for('clientes.edit_client', client_id=client.id) }}">
-
-        <!-- SECCIÓN 1: DATOS BÁSICOS -->
+<div class="form-container" style="max-width:800px; margin:0 auto;">
+    <form method="POST" action="{{ url_for('clientes.crear_cliente') if not cliente else url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="form-card">
         <div class="form-section">
             <h4>📋 Datos básicos</h4>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="referencia">Referencia *</label>
-                    <input type="text" id="referencia" name="referencia" value="{{ client_data.referencia if client_data else '' }}" placeholder="Ej. Ca00001" required>
-                    <span class="help-text">Código único del cliente</span>
+                    <label for="referencia">Referencia</label>
+                    <input type="text" id="referencia" name="referencia" value="{{ cliente.referencia if cliente else '' }}" placeholder="Opcional, se genera automáticamente">
                 </div>
                 <div class="form-group">
-                    <label for="nombre">Nombre completo *</label>
-                    <input type="text" id="nombre" name="nombre" value="{{ client_data.nombre if client_data else '' }}" placeholder="Nombre del cliente" required>
+                    <label for="nombre">Nombre *</label>
+                    <input type="text" id="nombre" name="nombre" value="{{ cliente.nombre if cliente else '' }}" required>
                 </div>
             </div>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="telefono">Teléfono / Móvil</label>
-                    <input type="text" id="telefono" name="telefono" value="{{ client_data.telefono if client_data else '' }}" placeholder="+53 5XXXXXXX">
+                    <label for="telefono">Teléfono</label>
+                    <input type="text" id="telefono" name="telefono" value="{{ cliente.telefono if cliente else '' }}">
                 </div>
                 <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" id="email" name="email" value="{{ client_data.email if client_data else '' }}" placeholder="cliente@email.com">
+                    <input type="email" id="email" name="email" value="{{ cliente.email if cliente else '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label for="direccion">Dirección</label>
-                <textarea id="direccion" name="direccion" rows="2" placeholder="Dirección completa">{{ client_data.direccion if client_data else '' }}</textarea>
+                <input type="text" id="direccion" name="direccion" value="{{ cliente.direccion if cliente else '' }}">
             </div>
         </div>
 
-        <!-- SECCIÓN 2: DATOS PERSONALES Y CONTACTO -->
         <div class="form-section">
-            <h4>👤 Datos personales</h4>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label for="carnet_identidad">Carnet de identidad / Cédula</label>
-                    <input type="text" id="carnet_identidad" name="carnet_identidad" value="{{ client_data.carnet_identidad if client_data else '' }}" placeholder="Número de identificación">
-                </div>
-                <div class="form-group">
-                    <label for="fecha_nacimiento">Fecha de nacimiento</label>
-                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ client_data.fecha_nacimiento if client_data else '' }}">
-                    <span class="help-text">Para enviar saludos personalizados</span>
-                </div>
-            </div>
+            <h4>👤 Datos personales / Empresa</h4>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label for="tipo_cliente">Tipo de cliente</label>
                     <select id="tipo_cliente" name="tipo_cliente">
-                        <option value="persona" {% if client_data.tipo_cliente == 'persona' %}selected{% endif %}>Persona natural</option>
-                        <option value="empresa" {% if client_data.tipo_cliente == 'empresa' %}selected{% endif %}>Empresa</option>
-                        <option value="emprendimiento" {% if client_data.tipo_cliente == 'emprendimiento' %}selected{% endif %}>Emprendimiento</option>
-                        <option value="" {% if not client_data.tipo_cliente %}selected{% endif %}>No especificado</option>
+                        <option value="persona" {% if cliente and cliente.tipo_cliente == 'persona' %}selected{% endif %}>Persona</option>
+                        <option value="empresa" {% if cliente and cliente.tipo_cliente == 'empresa' %}selected{% endif %}>Empresa</option>
+                        <option value="emprendimiento" {% if cliente and cliente.tipo_cliente == 'emprendimiento' %}selected{% endif %}>Emprendimiento</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="sector">Sector económico</label>
-                    <input type="text" id="sector" name="sector" value="{{ client_data.sector if client_data else '' }}" placeholder="Ej. Alimentación, Belleza, Comercio">
+                    <label for="carnet_identidad">Carnet / DNI</label>
+                    <input type="text" id="carnet_identidad" name="carnet_identidad" value="{{ cliente.carnet_identidad if cliente else '' }}">
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label for="fecha_nacimiento">Fecha de nacimiento</label>
+                    <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value="{{ cliente.fecha_nacimiento.strftime('%Y-%m-%d') if cliente and cliente.fecha_nacimiento else '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="sector">Sector / Rubro</label>
+                    <input type="text" id="sector" name="sector" value="{{ cliente.sector if cliente else '' }}">
                 </div>
             </div>
         </div>
 
-        <!-- SECCIÓN 3: PREFERENCIAS Y NEGOCIO -->
         <div class="form-section">
-            <h4>🎯 Preferencias y negocio</h4>
-            <div class="form-group">
-                <label for="preferencias_diseno">Preferencias de diseño</label>
-                <textarea id="preferencias_diseno" name="preferencias_diseno" rows="2" placeholder="Colores, estilos, tipografías que prefiere...">{{ client_data.preferencias_diseno if client_data else '' }}</textarea>
-                <span class="help-text">Para ofrecer recomendaciones personalizadas</span>
-            </div>
+            <h4>🛒 Datos comerciales</h4>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="metodo_pago_favorito">Método de pago favorito</label>
-                    <select id="metodo_pago_favorito" name="metodo_pago_favorito">
-                        <option value="">Seleccionar</option>
-                        <option value="transferencia" {% if client_data.metodo_pago_favorito == 'transferencia' %}selected{% endif %}>Transferencia</option>
-                        <option value="efectivo" {% if client_data.metodo_pago_favorito == 'efectivo' %}selected{% endif %}>Efectivo</option>
-                        <option value="tarjeta" {% if client_data.metodo_pago_favorito == 'tarjeta' %}selected{% endif %}>Tarjeta</option>
-                        <option value="otros" {% if client_data.metodo_pago_favorito == 'otros' %}selected{% endif %}>Otros</option>
-                    </select>
+                    <label for="comercial">Comercial asignado</label>
+                    <input type="text" id="comercial" name="comercial" value="{{ cliente.comercial if cliente else '' }}" placeholder="Nombre del comercial">
                 </div>
+                <div class="form-group">
+                    <label for="metodo_pago_favorito">Método de pago favorito</label>
+                    <input type="text" id="metodo_pago_favorito" name="metodo_pago_favorito" value="{{ cliente.metodo_pago_favorito if cliente else '' }}">
+                </div>
+            </div>
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label for="frecuencia_pedido">Frecuencia de pedido</label>
                     <select id="frecuencia_pedido" name="frecuencia_pedido">
-                        <option value="">Seleccionar</option>
-                        <option value="semanal" {% if client_data.frecuencia_pedido == 'semanal' %}selected{% endif %}>Semanal</option>
-                        <option value="quincenal" {% if client_data.frecuencia_pedido == 'quincenal' %}selected{% endif %}>Quincenal</option>
-                        <option value="mensual" {% if client_data.frecuencia_pedido == 'mensual' %}selected{% endif %}>Mensual</option>
-                        <option value="esporadico" {% if client_data.frecuencia_pedido == 'esporadico' %}selected{% endif %}>Esporádico</option>
+                        <option value="">-- Seleccionar --</option>
+                        <option value="semanal" {% if cliente and cliente.frecuencia_pedido == 'semanal' %}selected{% endif %}>Semanal</option>
+                        <option value="quincenal" {% if cliente and cliente.frecuencia_pedido == 'quincenal' %}selected{% endif %}>Quincenal</option>
+                        <option value="mensual" {% if cliente and cliente.frecuencia_pedido == 'mensual' %}selected{% endif %}>Mensual</option>
+                        <option value="esporadico" {% if cliente and cliente.frecuencia_pedido == 'esporadico' %}selected{% endif %}>Esporádico</option>
                     </select>
                 </div>
-            </div>
-            <div class="form-grid-2">
                 <div class="form-group">
                     <label for="referido_por">Referido por</label>
-                    <input type="text" id="referido_por" name="referido_por" value="{{ client_data.referido_por if client_data else '' }}" placeholder="Nombre de quien lo recomendó">
+                    <input type="text" id="referido_por" name="referido_por" value="{{ cliente.referido_por if cliente else '' }}">
                 </div>
-                <div class="form-group">
-                    <label for="ultimo_pedido">Último pedido</label>
-                    <input type="date" id="ultimo_pedido" name="ultimo_pedido" value="{{ client_data.ultimo_pedido if client_data else '' }}">
-                </div>
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h4>📝 Notas y preferencias</h4>
+            <div class="form-group">
+                <label for="gustos">Gustos</label>
+                <textarea id="gustos" name="gustos" rows="2">{{ cliente.gustos if cliente else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="preferencias_diseno">Preferencias de diseño</label>
+                <textarea id="preferencias_diseno" name="preferencias_diseno" rows="2">{{ cliente.preferencias_diseno if cliente else '' }}</textarea>
             </div>
             <div class="form-group">
                 <label for="observaciones_internas">Observaciones internas</label>
-                <textarea id="observaciones_internas" name="observaciones_internas" rows="2" placeholder="Notas del equipo (no se muestran al cliente)">{{ client_data.observaciones_internas if client_data else '' }}</textarea>
+                <textarea id="observaciones_internas" name="observaciones_internas" rows="2">{{ cliente.observaciones_internas if cliente else '' }}</textarea>
+            </div>
+            <div class="form-group">
+                <label for="notas">Notas</label>
+                <textarea id="notas" name="notas" rows="2">{{ cliente.notas if cliente else '' }}</textarea>
             </div>
         </div>
 
-        <!-- SECCIÓN 4: HISTORIAL Y MÉTRICAS -->
-        <div class="form-section">
-            <h4>📊 Historial y métricas</h4>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label for="gustos">Gustos / Pedidos recurrentes</label>
-                    <textarea id="gustos" name="gustos" rows="2" placeholder="Productos que pide regularmente">{{ client_data.gustos if client_data else '' }}</textarea>
-                    <span class="help-text">Para ofrecer sugerencias personalizadas</span>
-                </div>
-                <div class="form-group">
-                    <label for="notas">Notas adicionales</label>
-                    <textarea id="notas" name="notas" rows="2" placeholder="Observaciones generales">{{ client_data.notas if client_data else '' }}</textarea>
-                </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label for="pedidos_venta">Nº de pedidos de venta</label>
-                    <input type="number" id="pedidos_venta" name="pedidos_venta" value="{{ client_data.pedidos_venta if client_data else 0 }}" step="1">
-                </div>
-                <div class="form-group">
-                    <label for="total_facturado">Total facturado (USD)</label>
-                    <input type="number" step="0.01" id="total_facturado" name="total_facturado" value="{{ client_data.total_facturado if client_data else 0.0 }}">
-                </div>
-            </div>
-        </div>
-
-        <!-- BOTONES -->
         <div class="btn-group">
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> {{ 'Actualizar' if edit else 'Guardar' }} cliente
-            </button>
-            <a href="{{ url_for('clientes.list_clients') }}" class="btn btn-outline">
-                <i class="fas fa-times"></i> Cancelar
-            </a>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ 'Actualizar' if cliente else 'Crear' }} cliente</button>
+            <a href="{{ url_for('clientes.list_clientes') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
+            {% if cliente %}
+                <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline"><i class="fas fa-eye"></i> Ver detalle</a>
+            {% endif %}
         </div>
-
     </form>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Auto-mayúsculas en referencia
-        const refInput = document.getElementById('referencia');
-        if (refInput) {
-            refInput.addEventListener('blur', function() {
-                let val = this.value.trim();
-                if (val) {
-                    if (!/^Ca/i.test(val)) {
-                        val = 'Ca' + val;
-                    }
-                    val = val.charAt(0).toUpperCase() + val.slice(1).toLowerCase();
-                    val = val.replace(/\s/g, '');
-                    this.value = val;
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}

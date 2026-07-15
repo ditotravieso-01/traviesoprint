@@ -251,7 +251,7 @@
         <div class="data-grid">
             <div class="data-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num }}</span></div>
             <div class="data-item"><span class="label">Fecha</span><span class="value">{{ order.date.strftime('%d/%m/%Y') if order.date else '-' }}</span></div>
-            <div class="data-item"><span class="label">Cliente</span><span class="value">{{ order.client }}</span></div>
+            <div class="data-item"><span class="label">Cliente</span><span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></div>
             <div class="data-item"><span class="label">Solicitado</span><span class="value">{{ order.solicitado or '-' }}</span></div>
             <div class="data-item"><span class="label">Proyecto</span><span class="value">{{ order.proyecto or '-' }}</span></div>
             <div class="data-item"><span class="label">Factura</span><span class="value">{{ order.invoice or '-' }}</span></div>

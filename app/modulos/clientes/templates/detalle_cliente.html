@@ -1,70 +1,243 @@
 {% extends "base.html" %}
 
-{% block title %}Detalle de Cliente · CairoStudio{% endblock %}
+{% block title %}{{ cliente.nombre }} · CairoStudio{% endblock %}
 
-{% block page_title %}👤 Detalle de {{ client.nombre }}{% endblock %}
+{% block page_title %}<i class="fas fa-user-circle"></i> {{ cliente.nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-header {
+        background: linear-gradient(135deg, #f8f6f4 0%, #f0ece8 100%);
+        border-radius: 16px;
+        padding: 24px 28px;
+        margin-bottom: 24px;
+        border-left: 6px solid #a8854f;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+    .profile-header .info h2 {
+        margin: 0 0 4px 0;
+        font-size: 26px;
+        font-family: 'Playfair Display', serif;
+    }
+    .profile-header .info .ref {
+        color: #888;
+        font-size: 14px;
+    }
+    .profile-header .info .badge-tipo {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-top: 4px;
+    }
+    .profile-header .stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+    }
+    .profile-header .stats .stat-item {
+        text-align: center;
+        background: white;
+        padding: 8px 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        min-width: 80px;
+    }
+    .profile-header .stats .stat-item .number {
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a1a1a;
+    }
+    .profile-header .stats .stat-item .label {
+        font-size: 11px;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .profile-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .profile-actions .btn {
+        padding: 6px 16px;
+        font-size: 13px;
+    }
+    .detail-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e8e0da;
+    }
+    .detail-card h4 {
+        margin: 0 0 12px 0;
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 8px;
+    }
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 30px;
+    }
+    .detail-item {
+        display: flex;
+        padding: 4px 0;
+        border-bottom: 1px solid #f5f2ef;
+    }
+    .detail-item .label {
+        font-weight: 600;
+        color: #555;
+        width: 120px;
+        flex-shrink: 0;
+        font-size: 13px;
+    }
+    .detail-item .value {
+        color: #1a1a1a;
+        font-size: 14px;
+    }
+    .orders-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .orders-table th { background: #f8f6f4; text-align: left; padding: 8px 12px; font-weight: 600; border-bottom: 2px solid #e8e0da; }
+    .orders-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
+    .badge-prioridad { padding: 2px 10px; border-radius: 12px; font-size: 12px; color: white; }
+    .badge-urgente { background: #dc2626; }
+    .badge-normal { background: #888; }
+    .badge-critica { background: #f59e0b; }
+    .badge-estado { padding: 2px 10px; border-radius: 12px; font-size: 12px; }
+    .badge-ok { background: #10b981; color: white; }
+    .badge-pendiente { background: #f59e0b; color: white; }
+
+    @media (max-width: 768px) {
+        .profile-header { flex-direction: column; align-items: stretch; }
+        .profile-header .stats { justify-content: flex-start; }
+        .detail-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="content-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
-        <div>
-            <h2 style="font-family:'Playfair Display', serif; font-size:24px; margin:0;">{{ client.referencia }} - {{ client.nombre }}</h2>
-            <p style="color:#666; margin:4px 0 0 0;">Creado: {{ client.created_at.strftime('%d/%m/%Y %H:%M') }}</p>
-        </div>
-        <div style="display:flex; gap:8px;">
-            <a href="{{ url_for('clientes.edit_client', client_id=client.id) }}" class="btn btn-primary"><i class="fas fa-edit"></i> Editar</a>
-            <a href="{{ url_for('clientes.list_clients') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-        </div>
-    </div>
-
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; border-top:1px solid #eee; padding-top:16px;">
-        <!-- Columna izquierda -->
-        <div>
-            <h4 style="margin-bottom:8px;">📋 Información básica</h4>
-            <dl style="display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:14px;">
-                <dt style="color:#888;">Referencia</dt><dd>{{ client.referencia }}</dd>
-                <dt style="color:#888;">Nombre</dt><dd>{{ client.nombre }}</dd>
-                <dt style="color:#888;">Teléfono</dt><dd>{{ client.telefono or '-' }}</dd>
-                <dt style="color:#888;">Email</dt><dd>{{ client.email or '-' }}</dd>
-                <dt style="color:#888;">Dirección</dt><dd>{{ client.direccion or '-' }}</dd>
-                <dt style="color:#888;">Etiquetas</dt><dd>{{ client.etiquetas or '-' }}</dd>
-            </dl>
-        </div>
-
-        <!-- Columna derecha -->
-        <div>
-            <h4 style="margin-bottom:8px;">👤 Datos personales</h4>
-            <dl style="display:grid; grid-template-columns:120px 1fr; gap:4px 12px; font-size:14px;">
-                <dt style="color:#888;">Carnet identidad</dt><dd>{{ client.carnet_identidad or '-' }}</dd>
-                <dt style="color:#888;">Fecha nacimiento</dt><dd>{{ client.fecha_nacimiento.strftime('%d/%m/%Y') if client.fecha_nacimiento else '-' }}</dd>
-                <dt style="color:#888;">Tipo cliente</dt><dd>{{ client.tipo_cliente or '-' }}</dd>
-                <dt style="color:#888;">Sector</dt><dd>{{ client.sector or '-' }}</dd>
-            </dl>
-        </div>
-
-        <!-- Fila completa para preferencias y negocio -->
-        <div style="grid-column:1/-1; border-top:1px solid #eee; padding-top:16px;">
-            <h4 style="margin-bottom:8px;">🎯 Preferencias y negocio</h4>
-            <dl style="display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:14px;">
-                <dt style="color:#888;">Preferencias diseño</dt><dd>{{ client.preferencias_diseno or '-' }}</dd>
-                <dt style="color:#888;">Método pago favorito</dt><dd>{{ client.metodo_pago_favorito or '-' }}</dd>
-                <dt style="color:#888;">Referido por</dt><dd>{{ client.referido_por or '-' }}</dd>
-                <dt style="color:#888;">Frecuencia pedido</dt><dd>{{ client.frecuencia_pedido or '-' }}</dd>
-                <dt style="color:#888;">Último pedido</dt><dd>{{ client.ultimo_pedido.strftime('%d/%m/%Y') if client.ultimo_pedido else '-' }}</dd>
-                <dt style="color:#888;">Gustos / Recurrentes</dt><dd>{{ client.gustos or '-' }}</dd>
-                <dt style="color:#888;">Notas</dt><dd>{{ client.notas or '-' }}</dd>
-                <dt style="color:#888;">Observaciones internas</dt><dd>{{ client.observaciones_internas or '-' }}</dd>
-            </dl>
-        </div>
-
-        <!-- Métricas -->
-        <div style="grid-column:1/-1; border-top:1px solid #eee; padding-top:16px;">
-            <h4 style="margin-bottom:8px;">📊 Historial y métricas</h4>
-            <dl style="display:grid; grid-template-columns:140px 1fr; gap:4px 12px; font-size:14px;">
-                <dt style="color:#888;">Pedidos de venta</dt><dd>{{ client.pedidos_venta }}</dd>
-                <dt style="color:#888;">Total facturado</dt><dd>${{ client.total_facturado }}</dd>
-            </dl>
+<div class="profile-header">
+    <div class="info">
+        <h2>{{ cliente.nombre }}</h2>
+        <div class="ref">Referencia: {{ cliente.referencia }}</div>
+        <span class="badge-tipo {% if cliente.tipo_cliente == 'persona' %}badge-persona{% elif cliente.tipo_cliente == 'empresa' %}badge-empresa{% else %}badge-emprendimiento{% endif %}" style="background:{% if cliente.tipo_cliente == 'persona' %}#e0f2fe; color:#0369a1{% elif cliente.tipo_cliente == 'empresa' %}#fef3c7; color:#b45309{% else %}#d1fae5; color:#065f46{% endif %};">
+            {{ cliente.tipo_cliente or 'persona' }}
+        </span>
+        <div class="profile-actions">
+            <a href="{{ url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
+            <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
+            {% if current_user.role == 'admin' and not cliente.orders %}
+                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Eliminar</button>
+                </form>
+            {% endif %}
         </div>
     </div>
+    <div class="stats">
+        <div class="stat-item">
+            <div class="number">{{ total_pedidos }}</div>
+            <div class="label">Pedidos</div>
+        </div>
+        <div class="stat-item">
+            <div class="number">${{ "%.2f"|format(total_facturado) }}</div>
+            <div class="label">Facturado</div>
+        </div>
+        <div class="stat-item">
+            <div class="number">{{ ultimo_pedido.strftime('%d/%m/%Y') if ultimo_pedido else '-' }}</div>
+            <div class="label">Último pedido</div>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <h4>📋 Datos de contacto</h4>
+    <div class="detail-grid">
+        <div class="detail-item"><span class="label">Teléfono</span><span class="value">{{ cliente.telefono or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Email</span><span class="value">{{ cliente.email or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Dirección</span><span class="value">{{ cliente.direccion or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Comercial</span><span class="value">{{ cliente.comercial or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Carnet Identidad</span><span class="value">{{ cliente.carnet_identidad or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Fecha Nacimiento</span><span class="value">{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else '-' }}</span></div>
+        <div class="detail-item"><span class="label">Sector</span><span class="value">{{ cliente.sector or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Método Pago</span><span class="value">{{ cliente.metodo_pago_favorito or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Frecuencia Pedido</span><span class="value">{{ cliente.frecuencia_pedido or '-' }}</span></div>
+        <div class="detail-item"><span class="label">Referido por</span><span class="value">{{ cliente.referido_por or '-' }}</span></div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <h4>📝 Notas y preferencias</h4>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+        <div>
+            <strong style="font-size:13px; color:#555;">Gustos</strong>
+            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.gustos or 'Sin información' }}</p>
+        </div>
+        <div>
+            <strong style="font-size:13px; color:#555;">Preferencias de diseño</strong>
+            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.preferencias_diseno or 'Sin información' }}</p>
+        </div>
+        <div style="grid-column: 1 / -1;">
+            <strong style="font-size:13px; color:#555;">Observaciones internas</strong>
+            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.observaciones_internas or 'Sin observaciones' }}</p>
+        </div>
+        <div style="grid-column: 1 / -1;">
+            <strong style="font-size:13px; color:#555;">Notas</strong>
+            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.notas or 'Sin notas' }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="detail-card">
+    <h4>📦 Órdenes de trabajo</h4>
+    {% if orders %}
+        <table class="orders-table">
+            <thead>
+                <tr>
+                    <th>N° Orden</th>
+                    <th>Fecha</th>
+                    <th>Proyecto</th>
+                    <th>Prioridad</th>
+                    <th>Entrada</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><strong>{{ order.order_num }}</strong></td>
+                    <td>{{ order.date.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ order.proyecto or '-' }}</td>
+                    <td>
+                        <span class="badge-prioridad {% if order.priority == 'urgente' %}badge-urgente{% elif order.priority == 'critica' %}badge-critica{% else %}badge-normal{% endif %}">
+                            {{ order.priority or 'normal' }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if order.entrada_ok %}
+                            <span class="badge-estado badge-ok">OK</span>
+                        {% else %}
+                            <span class="badge-estado badge-pendiente">Pendiente</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
+                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p style="color:#999; text-align:center; padding:12px 0;">Este cliente no tiene órdenes de trabajo.</p>
+    {% endif %}
 </div>
 {% endblock %}
