@@ -37,6 +37,15 @@ def list_clientes():
     per_page = 40
     search = request.args.get('search', '').strip()
     tipo = request.args.get('tipo', '').strip()
+    sort_by = request.args.get('sort_by', 'nombre')  # columna por defecto
+    order = request.args.get('order', 'asc')  # asc o desc
+
+    # Validar sort_by permitidos
+    allowed_sort = ['referencia', 'nombre', 'telefono', 'tipo_cliente', 'comercial', 'pedidos']
+    if sort_by not in allowed_sort:
+        sort_by = 'nombre'
+    if order not in ['asc', 'desc']:
+        order = 'asc'
 
     query = Client.query
     if search:
@@ -51,10 +60,27 @@ def list_clientes():
     if tipo:
         query = query.filter_by(tipo_cliente=tipo)
 
-    pagination = query.order_by(Client.nombre.asc()).paginate(page=page, per_page=per_page, error_out=False)
+    # Ordenamiento
+    if sort_by == 'pedidos':
+        # Subconsulta para contar órdenes
+        from sqlalchemy import func
+        subq = db.session.query(Order.client_id, func.count(Order.id).label('num_orders')).group_by(Order.client_id).subquery()
+        query = query.outerjoin(subq, Client.id == subq.c.client_id)
+        if order == 'asc':
+            query = query.order_by(db.func.coalesce(subq.c.num_orders, 0).asc())
+        else:
+            query = query.order_by(db.func.coalesce(subq.c.num_orders, 0).desc())
+    else:
+        # Orden directo por columna
+        column = getattr(Client, sort_by)
+        if order == 'asc':
+            query = query.order_by(column.asc())
+        else:
+            query = query.order_by(column.desc())
+
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     clientes = pagination.items
 
-    # Obtener lista de tipos para el filtro
     tipos = db.session.query(Client.tipo_cliente).distinct().all()
     tipos = [t[0] for t in tipos if t[0]]
 
@@ -63,7 +89,9 @@ def list_clientes():
                            pagination=pagination,
                            search=search,
                            tipo=tipo,
-                           tipos=tipos)
+                           tipos=tipos,
+                           sort_by=sort_by,
+                           order=order)
 
 # ==========================================
 # DETALLE DEL CLIENTE (CON ÓRDENES ASOCIADAS)
@@ -73,20 +101,34 @@ def list_clientes():
 @comercial_or_admin_required
 def detalle_cliente(cliente_id):
     cliente = Client.query.get_or_404(cliente_id)
-    # Obtener órdenes asociadas (ordenadas por fecha descendente)
     orders = Order.query.filter_by(client_id=cliente.id).order_by(Order.date.desc()).all()
 
-    # Calcular estadísticas
+    # Estadísticas
     total_pedidos = len(orders)
-    total_facturado = sum(o.invoice_amount for o in orders if hasattr(o, 'invoice_amount') and o.invoice_amount) or 0
+    total_facturado = sum(float(o.total_facturado) if hasattr(o, 'total_facturado') and o.total_facturado else 0 for o in orders) or 0
     ultimo_pedido = orders[0].date if orders else None
+
+    # Datos para el gráfico: agrupar pedidos por mes
+    from collections import defaultdict
+    from datetime import datetime
+    meses = defaultdict(int)
+    for order in orders:
+        if order.date:
+            mes_key = order.date.strftime('%Y-%m')
+            meses[mes_key] += 1
+
+    # Ordenar por fecha
+    chart_labels = sorted(meses.keys())
+    chart_data = [meses[m] for m in chart_labels]
 
     return render_template('detalle_cliente.html',
                            cliente=cliente,
                            orders=orders,
                            total_pedidos=total_pedidos,
                            total_facturado=total_facturado,
-                           ultimo_pedido=ultimo_pedido)
+                           ultimo_pedido=ultimo_pedido,
+                           chart_labels=chart_labels,
+                           chart_data=chart_data)
 
 # ==========================================
 # CREAR / EDITAR CLIENTE (formulario)
@@ -103,6 +145,42 @@ def crear_cliente():
 def editar_cliente(cliente_id):
     cliente = Client.query.get_or_404(cliente_id)
     return _form_cliente(cliente)
+
+@clientes_bp.route('/duplicar/<int:cliente_id>')
+@login_required
+@comercial_or_admin_required
+def duplicar_cliente(cliente_id):
+    cliente = Client.query.get_or_404(cliente_id)
+    # Crear una copia en memoria (sin ID)
+    nuevo_cliente = Client()
+    # Copiar todos los campos excepto id, referencia, created_at, updated_at
+    for column in cliente.__table__.columns:
+        if column.name not in ['id', 'referencia', 'created_at', 'updated_at', 'created_by_id']:
+            setattr(nuevo_cliente, column.name, getattr(cliente, column.name))
+    # Generar nueva referencia
+    nuevo_cliente.referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}{Client.query.count()+1}"
+    # Limpiar el nombre para evitar duplicados exactos
+    nuevo_cliente.nombre = f"{cliente.nombre} (copia)"
+
+    # Guardar en la sesión para pre-llenar el formulario
+    # Usamos un formulario GET con parámetros
+    return redirect(url_for('clientes.crear_cliente', **{
+        'nombre': nuevo_cliente.nombre,
+        'telefono': nuevo_cliente.telefono or '',
+        'email': nuevo_cliente.email or '',
+        'direccion': nuevo_cliente.direccion or '',
+        'tipo_cliente': nuevo_cliente.tipo_cliente or 'persona',
+        'carnet_identidad': nuevo_cliente.carnet_identidad or '',
+        'sector': nuevo_cliente.sector or '',
+        'comercial': nuevo_cliente.comercial or '',
+        'metodo_pago_favorito': nuevo_cliente.metodo_pago_favorito or '',
+        'frecuencia_pedido': nuevo_cliente.frecuencia_pedido or '',
+        'referido_por': nuevo_cliente.referido_por or '',
+        'gustos': nuevo_cliente.gustos or '',
+        'preferencias_diseno': nuevo_cliente.preferencias_diseno or '',
+        'observaciones_internas': nuevo_cliente.observaciones_internas or '',
+        'notas': nuevo_cliente.notas or '',
+    }))
 
 def _form_cliente(cliente=None):
     if request.method == 'POST':
@@ -143,7 +221,7 @@ def _form_cliente(cliente=None):
             'referido_por': request.form.get('referido_por', '').strip(),
             'frecuencia_pedido': request.form.get('frecuencia_pedido', '').strip(),
             'observaciones_internas': request.form.get('observaciones_internas', '').strip(),
-            'comercial': request.form.get('comercial', '').strip(),  # NUEVO
+            'comercial': request.form.get('comercial', '').strip(),
         }
         # Fecha de nacimiento (si se proporciona)
         fecha_nac = request.form.get('fecha_nacimiento')
@@ -168,7 +246,26 @@ def _form_cliente(cliente=None):
         db.session.commit()
         return redirect(url_for('clientes.detalle_cliente', cliente_id=(cliente.id if cliente else nuevo.id)))
 
-    # GET - mostrar formulario
+    # ==========================================
+    # GET: si hay parámetros en la URL y es modo creación (cliente None)
+    # ==========================================
+    if not cliente and request.args:
+        # Crear un objeto cliente temporal para pre-llenar el formulario
+        temp_cliente = Client()
+        for key, value in request.args.items():
+            if hasattr(temp_cliente, key):
+                # Manejar fecha de nacimiento
+                if key == 'fecha_nacimiento' and value:
+                    try:
+                        setattr(temp_cliente, key, datetime.strptime(value, '%Y-%m-%d').date())
+                    except:
+                        pass
+                else:
+                    setattr(temp_cliente, key, value)
+        # Asegurar que 'nombre' se asigne correctamente (ya viene en args)
+        return render_template('form_cliente.html', cliente=temp_cliente)
+
+    # GET normal (sin parámetros o modo edición)
     return render_template('form_cliente.html', cliente=cliente)
 
 # ==========================================

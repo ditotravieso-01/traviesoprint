@@ -9,6 +9,7 @@ import tempfile
 import os
 import uuid
 from werkzeug.utils import secure_filename
+from app.services.notification_service import notificar_usuarios
 
 ordenes_bp = Blueprint('ordenes', __name__, url_prefix='/ordenes', template_folder='templates')
 
@@ -110,6 +111,26 @@ def create_order():
         db.session.add(order)
         db.session.flush()
 
+        # ==========================================
+        # NOTIFICACIONES
+        # ==========================================
+        usuarios_notificar = request.form.getlist('usuarios_notificar[]')
+        usuarios_ids = [int(id) for id in usuarios_notificar if id.isdigit()]
+
+        if client.comercial:
+            comercial_user = User.query.filter_by(username=client.comercial).first()
+            if comercial_user:
+                usuarios_ids.append(comercial_user.id)
+
+        if current_user.id not in usuarios_ids:
+            usuarios_ids.append(current_user.id)
+
+        mensaje = f'Nueva orden {order.order_num} creada por {current_user.username}'
+        enlace = url_for('ordenes.edit_order', order_id=order.id, _external=True)
+
+        if usuarios_ids:
+            notificar_usuarios(usuarios_ids, mensaje, 'orden_creada', order.id, enlace)
+
         # Procesar líneas
         nombres_visibles = request.form.getlist('nombres_visibles[]')
         materiales = request.form.getlist('materiales[]')
@@ -165,15 +186,18 @@ def create_order():
     ]
     servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
 
-    # Obtener lista de clientes para autocompletado
     clients_list = Client.query.order_by(Client.nombre).all()
     clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
+
+    # Obtener todos los usuarios activos para notificaciones
+    todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
 
     return render_template('form_orden.html',
                            form_data=None,
                            lista_materiales=lista_materiales,
                            servicios_disponibles=servicios_disponibles,
                            clients_list=clients_data,
+                           todos_usuarios=todos_usuarios,
                            edit=False,
                            order=None)
 
@@ -278,6 +302,27 @@ def edit_order(order_id):
             db.session.add(adjunto)
 
         order.add_history(f'Editada por {current_user.username}')
+
+        # ==========================================
+        # NOTIFICACIONES
+        # ==========================================
+        usuarios_notificar = request.form.getlist('usuarios_notificar[]')
+        usuarios_ids = [int(id) for id in usuarios_notificar if id.isdigit()]
+
+        if order.client and order.client.comercial:
+            comercial_user = User.query.filter_by(username=order.client.comercial).first()
+            if comercial_user:
+                usuarios_ids.append(comercial_user.id)
+
+        if current_user.id not in usuarios_ids:
+            usuarios_ids.append(current_user.id)
+
+        mensaje = f'Orden {order.order_num} actualizada por {current_user.username}'
+        enlace = url_for('ordenes.edit_order', order_id=order.id, _external=True)
+
+        if usuarios_ids:
+            notificar_usuarios(usuarios_ids, mensaje, 'orden_editada', order.id, enlace)
+
         db.session.commit()
         flash('Orden actualizada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
@@ -308,14 +353,17 @@ def edit_order(order_id):
     clients_list = Client.query.order_by(Client.nombre).all()
     clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
 
+    # Obtener todos los usuarios activos para notificaciones
+    todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
+
     return render_template('form_orden.html',
                            form_data=form_data,
                            lista_materiales=lista_materiales,
                            servicios_disponibles=servicios_disponibles,
                            clients_list=clients_data,
+                           todos_usuarios=todos_usuarios,
                            edit=True,
                            order=order)
-
 
 # ==========================================
 # CREAR CLIENTE VÍA AJAX (desde la orden)
@@ -329,9 +377,7 @@ def crear_cliente_ajax():
     if not nombre:
         return jsonify({'error': 'El nombre es obligatorio'}), 400
 
-    # Generar referencia automática
     referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-    # Crear cliente
     cliente = Client(
         referencia=referencia,
         nombre=nombre,

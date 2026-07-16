@@ -128,6 +128,25 @@
         </div>
 
         <!-- ==========================================
+        SECCIÓN: NOTIFICACIONES
+        ========================================== -->
+        <div class="form-section">
+            <h4>🔔 Notificaciones</h4>
+            <div class="form-group">
+                <label for="usuarios_notificar">Notificar a estos usuarios</label>
+                <select name="usuarios_notificar[]" id="usuarios_notificar" multiple style="width:100%; height:auto; min-height:80px;" class="form-control">
+                    {% for user in todos_usuarios %}
+                        <option value="{{ user.id }}" 
+                            {% if edit and order and user.id == order.created_by_id %}selected{% endif %}
+                            {% if not edit and user.id == current_user.id %}selected{% endif %}
+                        >{{ user.username }} ({{ user.role }})</option>
+                    {% endfor %}
+                </select>
+                <small style="color:#999;">Mantén presionado Ctrl/Cmd para seleccionar múltiples usuarios. Se notificará a los seleccionados además del comercial y al creador.</small>
+            </div>
+        </div>
+
+        <!-- ==========================================
         SECCIÓN 2: TIPO Y PRIORIDAD
         ========================================== -->
         <div class="form-section">

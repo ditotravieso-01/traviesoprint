@@ -113,6 +113,27 @@ class ArchivoAdjunto(db.Model):
             'unidad': self.unidad
         }
 
+# ==========================================
+# MODELO DE NOTIFICACIONES
+# ==========================================
+class Notificacion(db.Model):
+    __tablename__ = 'notificaciones'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    mensaje = db.Column(db.String(500), nullable=False)
+    tipo = db.Column(db.String(50), nullable=False)  # orden_creada, orden_editada, orden_estado
+    leida = db.Column(db.Boolean, default=False)
+    enlace = db.Column(db.String(200), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.now)
+    
+    usuario = db.relationship('User', foreign_keys=[usuario_id])
+    orden = db.relationship('Order', foreign_keys=[order_id])
+    
+    def __repr__(self):
+        return f'<Notificacion {self.id} - {self.usuario_id}>'
+
 
 # ==========================================
 # MODELO DE CLIENTES

@@ -1,8 +1,9 @@
 import os  # <--- AGREGAR ESTA LÍNEA
-from flask import Flask
+from flask import Flask, app
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from .config import Config
+
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -50,5 +51,8 @@ def create_app():
 
     from .modulos.ordenes import ordenes_bp
     app.register_blueprint(ordenes_bp)
+
+    from .modulos.notificaciones import notificaciones_bp
+    app.register_blueprint(notificaciones_bp)
 
     return app
