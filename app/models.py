@@ -1,8 +1,11 @@
 import json
 from datetime import datetime
 from flask_login import UserMixin
+from flask_login import current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login_manager
+from datetime import datetime
+
 
 # ==========================================
 # MODELO DE USUARIO
@@ -17,6 +20,7 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -51,6 +55,7 @@ class Order(db.Model):
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     client = db.relationship('Client', backref='orders', lazy=True)
     # Otros campos
+    fecha_entregado = db.Column(db.DateTime, nullable=True)
     solicitado = db.Column(db.String(100))
     proyecto = db.Column(db.String(100))
     invoice = db.Column(db.String(50))
@@ -68,6 +73,14 @@ class Order(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     archivos = db.relationship('ArchivoAdjunto', backref='orden', lazy=True, cascade='all, delete-orphan')
 
+    usuarios_notificados = db.Column(db.Text, default='[]')  # JSON con lista de IDs
+
+    def get_usuarios_notificados(self):
+        return json.loads(self.usuarios_notificados) if self.usuarios_notificados else []
+
+    def set_usuarios_notificados(self, data):
+        self.usuarios_notificados = json.dumps(data)
+
     def get_servicios(self):
         return json.loads(self.servicios) if self.servicios else []
 
@@ -78,10 +91,28 @@ class Order(db.Model):
         return json.loads(self.history) if self.history else []
 
     def add_history(self, entry):
+        """Añade una entrada al historial.
+        Si entry es un string, lo convierte a dict con fecha y usuario.
+        """
         hist = self.get_history()
+        if isinstance(entry, str):
+            entry = {
+                'mensaje': entry,
+                'fecha': datetime.now().isoformat(),
+                'usuario': current_user.username if hasattr(current_user, 'username') else 'Sistema'
+            }
+        elif isinstance(entry, dict):
+            # Asegurar que tiene fecha
+            if 'fecha' not in entry:
+                entry['fecha'] = datetime.now().isoformat()
+            if 'usuario' not in entry:
+                entry['usuario'] = current_user.username if hasattr(current_user, 'username') else 'Sistema'
         hist.append(entry)
         self.history = json.dumps(hist)
 
+    def get_history(self):
+        return json.loads(self.history) if self.history else []
+    
     def __repr__(self):
         return f'<Order {self.order_num}>'
 

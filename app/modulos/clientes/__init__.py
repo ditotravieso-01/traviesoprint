@@ -103,12 +103,11 @@ def detalle_cliente(cliente_id):
     cliente = Client.query.get_or_404(cliente_id)
     orders = Order.query.filter_by(client_id=cliente.id).order_by(Order.date.desc()).all()
 
-    # Estadísticas
     total_pedidos = len(orders)
     total_facturado = sum(float(o.total_facturado) if hasattr(o, 'total_facturado') and o.total_facturado else 0 for o in orders) or 0
     ultimo_pedido = orders[0].date if orders else None
 
-    # Datos para el gráfico: agrupar pedidos por mes
+    # Datos para el gráfico
     from collections import defaultdict
     from datetime import datetime
     meses = defaultdict(int)
@@ -116,10 +115,19 @@ def detalle_cliente(cliente_id):
         if order.date:
             mes_key = order.date.strftime('%Y-%m')
             meses[mes_key] += 1
-
-    # Ordenar por fecha
     chart_labels = sorted(meses.keys())
     chart_data = [meses[m] for m in chart_labels]
+
+    # Nombres de columnas para el workflow
+    columnas_nombres = {
+        'pendiente': 'Pendiente',
+        'por-preparar': 'Por preparar',
+        'preparados': 'Preparados',
+        'imprimir-hoy': 'Imprimir hoy',
+        'impreso-corte': 'Impreso y corte',
+        'listo': 'Listo',
+        'entregados': 'Entregados'
+    }
 
     return render_template('detalle_cliente.html',
                            cliente=cliente,
@@ -128,7 +136,8 @@ def detalle_cliente(cliente_id):
                            total_facturado=total_facturado,
                            ultimo_pedido=ultimo_pedido,
                            chart_labels=chart_labels,
-                           chart_data=chart_data)
+                           chart_data=chart_data,
+                           columnas_nombres=columnas_nombres)
 
 # ==========================================
 # CREAR / EDITAR CLIENTE (formulario)

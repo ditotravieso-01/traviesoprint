@@ -44,6 +44,7 @@
                             </form>
                         {% endif %}
                         {% if current_user.role in ['comercial', 'admin'] %}
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
                             <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
                             <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
                         {% endif %}

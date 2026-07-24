@@ -10,6 +10,7 @@ $(document).ready(function() {
             })
             .fail(function() {
                 console.error('Error al obtener contador de notificaciones');
+                $('#notificaciones-contador').hide();
             });
     }
 
@@ -19,7 +20,7 @@ $(document).ready(function() {
             .done(function(data) {
                 var html = '';
                 if (data.length === 0) {
-                    html = '<span class="dropdown-item-text" style="color:#888;">No hay notificaciones</span>';
+                    html = '<span class="dropdown-item-text" style="color:#888;">No tienes notificaciones</span>';
                 } else {
                     $.each(data, function(i, notif) {
                         var leida = notif.leida ? '' : '<strong>•</strong> ';
@@ -60,7 +61,7 @@ $(document).ready(function() {
             });
     });
 
-    // Al abrir el dropdown, cargar la lista
+    // Al hacer clic en la campana, cargar la lista
     $('#notificacionesDropdown').click(function(e) {
         e.preventDefault();
         cargarLista();

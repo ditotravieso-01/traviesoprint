@@ -27,6 +27,36 @@ def comercial_or_admin_required(func):
     return wrapper
 
 # ==========================================
+# FUNCIÓN AUXILIAR PARA OBTENER CONTEXTO DEL FORMULARIO
+# ==========================================
+def _get_form_context(form_data=None, edit=False, order=None):
+    """Retorna el contexto común para el formulario de órdenes"""
+    lista_materiales = [
+        'Vinilo blanco brillo', 'Vinilo mate', 'Vinilo corte color', 'dorado',
+        'Vinilo transparente/brillo', 'Vinilo transparente/mate', 'wallpaper',
+        'Vinilo microperforado', 'Vinilo esmerilado', 'Papel fotografico brillo',
+        'Papel fotografico mate', 'Vinilo fondo negro', 'Papel back lite',
+        'Lona laminada', 'Lona microperforada'
+    ]
+    servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
+
+    clients_list = Client.query.order_by(Client.nombre).all()
+    clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
+
+    todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
+
+    context = {
+        'lista_materiales': lista_materiales,
+        'servicios_disponibles': servicios_disponibles,
+        'clients_list': clients_data,
+        'todos_usuarios': todos_usuarios,
+        'edit': edit,
+        'order': order,
+        'form_data': form_data if form_data is not None else {}
+    }
+    return context
+
+# ==========================================
 # LISTAR ÓRDENES
 # ==========================================
 @ordenes_bp.route('/')
@@ -35,6 +65,15 @@ def comercial_or_admin_required(func):
 def list_orders():
     orders = Order.query.order_by(Order.created_at.desc()).all()
     return render_template('list_ordenes.html', orders=orders)
+
+# ==========================================
+# DETALLE DE ORDEN (SOLO LECTURA)
+# ==========================================
+@ordenes_bp.route('/detalle/<int:order_id>')
+@login_required  # ya no usa comercial_or_admin_required
+def detalle_order(order_id):
+    order = Order.query.get_or_404(order_id)
+    return render_template('detalle_orden.html', order=order)
 
 # ==========================================
 # FUNCIÓN AUXILIAR PARA GUARDAR ARCHIVO
@@ -72,15 +111,18 @@ def create_order():
         priority = request.form.get('priority')
         descripcion = request.form.get('descripcion')
 
+        # Validaciones
         if not order_num or not client_id or not date:
             flash('N° de orden, Cliente y Fecha son obligatorios.', 'danger')
-            return render_template('form_orden.html', form_data=request.form)
+            context = _get_form_context(form_data=request.form, edit=False, order=None)
+            return render_template('form_orden.html', **context)
 
         # Validar que el cliente existe
         client = Client.query.get(client_id)
         if not client:
             flash('Cliente no encontrado.', 'danger')
-            return render_template('form_orden.html', form_data=request.form)
+            context = _get_form_context(form_data=request.form, edit=False, order=None)
+            return render_template('form_orden.html', **context)
 
         # Servicios
         servicios = []
@@ -114,6 +156,7 @@ def create_order():
         # ==========================================
         # NOTIFICACIONES
         # ==========================================
+        usuarios_ids = []
         usuarios_notificar = request.form.getlist('usuarios_notificar[]')
         usuarios_ids = [int(id) for id in usuarios_notificar if id.isdigit()]
 
@@ -130,6 +173,9 @@ def create_order():
 
         if usuarios_ids:
             notificar_usuarios(usuarios_ids, mensaje, 'orden_creada', order.id, enlace)
+
+        # Guardar usuarios notificados
+        order.set_usuarios_notificados(usuarios_ids)
 
         # Procesar líneas
         nombres_visibles = request.form.getlist('nombres_visibles[]')
@@ -177,29 +223,8 @@ def create_order():
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
     # GET: mostrar formulario
-    lista_materiales = [
-        'Vinilo blanco brillo', 'Vinilo mate', 'Vinilo corte color', 'dorado',
-        'Vinilo transparente/brillo', 'Vinilo transparente/mate', 'wallpaper',
-        'Vinilo microperforado', 'Vinilo esmerilado', 'Papel fotografico brillo',
-        'Papel fotografico mate', 'Vinilo fondo negro', 'Papel back lite',
-        'Lona laminada', 'Lona microperforada'
-    ]
-    servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
-
-    clients_list = Client.query.order_by(Client.nombre).all()
-    clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
-
-    # Obtener todos los usuarios activos para notificaciones
-    todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
-
-    return render_template('form_orden.html',
-                           form_data=None,
-                           lista_materiales=lista_materiales,
-                           servicios_disponibles=servicios_disponibles,
-                           clients_list=clients_data,
-                           todos_usuarios=todos_usuarios,
-                           edit=False,
-                           order=None)
+    context = _get_form_context(form_data=None, edit=False, order=None)
+    return render_template('form_orden.html', **context)
 
 # ==========================================
 # EDITAR ORDEN
@@ -306,6 +331,7 @@ def edit_order(order_id):
         # ==========================================
         # NOTIFICACIONES
         # ==========================================
+        usuarios_ids = []
         usuarios_notificar = request.form.getlist('usuarios_notificar[]')
         usuarios_ids = [int(id) for id in usuarios_notificar if id.isdigit()]
 
@@ -322,6 +348,9 @@ def edit_order(order_id):
 
         if usuarios_ids:
             notificar_usuarios(usuarios_ids, mensaje, 'orden_editada', order.id, enlace)
+
+        # Guardar usuarios notificados
+        order.set_usuarios_notificados(usuarios_ids)
 
         db.session.commit()
         flash('Orden actualizada correctamente.', 'success')
@@ -341,29 +370,9 @@ def edit_order(order_id):
         'descripcion': order.descripcion,
         'servicios': order.get_servicios()
     }
-    lista_materiales = [
-        'Vinilo blanco brillo', 'Vinilo mate', 'Vinilo corte color', 'dorado',
-        'Vinilo transparente/brillo', 'Vinilo transparente/mate', 'wallpaper',
-        'Vinilo microperforado', 'Vinilo esmerilado', 'Papel fotografico brillo',
-        'Papel fotografico mate', 'Vinilo fondo negro', 'Papel back lite',
-        'Lona laminada', 'Lona microperforada'
-    ]
-    servicios_disponibles = ['Diseño', 'Rúter', 'Láser', 'Montaje', 'Herrería']
 
-    clients_list = Client.query.order_by(Client.nombre).all()
-    clients_data = [{'id': c.id, 'nombre': c.nombre, 'referencia': c.referencia, 'telefono': c.telefono} for c in clients_list]
-
-    # Obtener todos los usuarios activos para notificaciones
-    todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
-
-    return render_template('form_orden.html',
-                           form_data=form_data,
-                           lista_materiales=lista_materiales,
-                           servicios_disponibles=servicios_disponibles,
-                           clients_list=clients_data,
-                           todos_usuarios=todos_usuarios,
-                           edit=True,
-                           order=order)
+    context = _get_form_context(form_data=form_data, edit=True, order=order)
+    return render_template('form_orden.html', **context)
 
 # ==========================================
 # CREAR CLIENTE VÍA AJAX (desde la orden)
@@ -469,3 +478,56 @@ def generar_pdf(order_id):
         f.write(pdf_file)
         temp_path = f.name
     return send_file(temp_path, as_attachment=True, download_name=f'Orden_{order.order_num}.pdf', mimetype='application/pdf')
+
+@ordenes_bp.route('/detalle_json/<int:order_id>')
+@login_required
+def detalle_json(order_id):
+    order = Order.query.get_or_404(order_id)
+    data = {
+        'id': order.id,
+        'numero': order.order_num,
+        'cliente': order.client.nombre if order.client else 'Sin cliente',
+        'cliente_id': order.client.id if order.client else None,
+        'telefono_cliente': order.client.telefono if order.client and order.client.telefono else '',
+        'prioridad': order.priority,
+        'tipo': order.tipo_proyecto,
+        'columna': order.column,
+        'fecha_creacion': order.created_at.isoformat() if order.created_at else None,
+        'historial': order.get_history(),
+        'descripcion': order.descripcion,
+        'servicios': order.get_servicios() if hasattr(order, 'get_servicios') else [],
+        'materiales': order.get_materiales() if hasattr(order, 'get_materiales') else {},
+        'archivos': [{'nombre': a.nombre_visible, 'ruta': a.ruta} for a in order.archivos],
+        'fecha_entregado': order.fecha_entregado.isoformat() if order.fecha_entregado else None,
+        'entrada_ok': order.entrada_ok,
+        'proyecto': order.proyecto,
+        'solicitado': order.solicitado,
+        'invoice': order.invoice,
+    }
+    return jsonify(data)
+
+# ==========================================
+# DETALLE PARA MODAL (JSON)
+# ==========================================
+@ordenes_bp.route('/detalle_modal/<int:order_id>')
+@login_required
+def detalle_modal(order_id):
+    order = Order.query.get_or_404(order_id)
+    data = {
+        'order_num': order.order_num,
+        'client': order.client.nombre if order.client else 'Sin cliente',
+        'date': order.date.strftime('%d/%m/%Y') if order.date else '-',
+        'proyecto': order.proyecto,
+        'priority': order.priority,
+        'column': order.column,
+        'entrada_ok': order.entrada_ok,
+        'servicios': order.get_servicios(),
+        'descripcion': order.descripcion,
+        'lineas': [{
+            'nombre_visible': a.nombre_visible,
+            'material': a.material,
+            'cantidad': a.cantidad,
+            'unidad': a.unidad
+        } for a in order.archivos]
+    }
+    return jsonify(data)

@@ -134,15 +134,22 @@
             <h4>🔔 Notificaciones</h4>
             <div class="form-group">
                 <label for="usuarios_notificar">Notificar a estos usuarios</label>
-                <select name="usuarios_notificar[]" id="usuarios_notificar" multiple style="width:100%; height:auto; min-height:80px;" class="form-control">
+                <div style="display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
+                    <input type="text" id="buscarUsuario" placeholder="Buscar usuario..." style="flex: 1; padding: 6px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 150px;">
+                    <button type="button" class="btn btn-outline" onclick="seleccionarTodos()" style="padding: 6px 12px; border: 1px solid #ccc; background: #fafafa; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-check-double"></i> Todos
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="deseleccionarTodos()" style="padding: 6px 12px; border: 1px solid #ccc; background: #fafafa; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-times"></i> Ninguno
+                    </button>
+                </div>
+                <select name="usuarios_notificar[]" id="usuarios_notificar" multiple style="width:100%; height:auto; min-height:80px; padding: 6px;" class="form-control">
                     {% for user in todos_usuarios %}
-                        <option value="{{ user.id }}" 
-                            {% if edit and order and user.id == order.created_by_id %}selected{% endif %}
-                            {% if not edit and user.id == current_user.id %}selected{% endif %}
-                        >{{ user.username }} ({{ user.role }})</option>
+                        {% set selected = (edit and order and user.id in order.get_usuarios_notificados()) or (not edit and user.id == current_user.id) %}
+                        <option value="{{ user.id }}" {% if selected %}selected{% endif %}>{{ user.username }} ({{ user.role }})</option>
                     {% endfor %}
                 </select>
-                <small style="color:#999;">Mantén presionado Ctrl/Cmd para seleccionar múltiples usuarios. Se notificará a los seleccionados además del comercial y al creador.</small>
+                <small style="color:#999;">Mantén presionado Ctrl/Cmd para seleccionar múltiples. Usa el buscador para filtrar.</small>
             </div>
         </div>
 
@@ -342,6 +349,7 @@ MODAL PARA CREAR CLIENTE
     </div>
 </div>
 
+{% block extra_js %}
 <script>
 // =============================================
 // SELECCIÓN DE CLIENTE (autocomplete + datalist)
@@ -618,5 +626,40 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleOtros();
     }
 });
+
+// =============================================
+// NUEVO: BÚSQUEDA Y SELECCIÓN DE USUARIOS
+// =============================================
+document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda en el select de usuarios
+    const buscarInput = document.getElementById('buscarUsuario');
+    const selectUsuarios = document.getElementById('usuarios_notificar');
+
+    if (buscarInput && selectUsuarios) {
+        buscarInput.addEventListener('keyup', function() {
+            var filter = this.value.toLowerCase();
+            var options = selectUsuarios.options;
+            for (var i = 0; i < options.length; i++) {
+                var text = options[i].textContent.toLowerCase();
+                options[i].style.display = text.includes(filter) ? '' : 'none';
+            }
+        });
+    }
+});
+
+function seleccionarTodos() {
+    var select = document.getElementById('usuarios_notificar');
+    for (var i = 0; i < select.options.length; i++) {
+        select.options[i].selected = true;
+    }
+}
+
+function deseleccionarTodos() {
+    var select = document.getElementById('usuarios_notificar');
+    for (var i = 0; i < select.options.length; i++) {
+        select.options[i].selected = false;
+    }
+}
 </script>
+{% endblock %}
 {% endblock %}

@@ -223,6 +223,7 @@
                     <th>Fecha</th>
                     <th>Proyecto</th>
                     <th>Prioridad</th>
+                    <th>Estado</th>
                     <th>Entrada</th>
                     <th>Acciones</th>
                 </tr>
@@ -238,6 +239,7 @@
                             {{ order.priority or 'normal' }}
                         </span>
                     </td>
+                    <td>{{ columnas_nombres[order.column] or order.column }}</td>
                     <td>
                         {% if order.entrada_ok %}
                             <span class="badge-estado badge-ok">OK</span>
