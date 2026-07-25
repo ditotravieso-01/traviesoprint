@@ -2,58 +2,26 @@
 
 {% block title %}Workflow · CairoStudio{% endblock %}
 
-{% block page_title %}🌀 Workflow · Taller creativo{% endblock %}
+{% block page_title %}✦ Estudio Blanc · Kanban{% endblock %}
 
 {% block extra_css %}
 <style>
-    .filters-bar {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 12px 16px;
-        background: white;
-        border-radius: 12px;
-        border: 1px solid #e8e0da;
-        margin-bottom: 20px;
+    /* ============================================================ */
+    /* BASE DEL TEMA ESTUDIO BLANC */
+    /* ============================================================ */
+    body {
+        background: #f2f2f6;
+        color: #1c1c1e;
     }
-    .filters-bar input, .filters-bar select {
-        padding: 6px 12px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 13px;
-        background: #fafafa;
-        min-width: 120px;
-        flex: 1;
-    }
-    .filters-bar input:focus, .filters-bar select:focus {
-        outline: none;
-        border-color: #1a1a1a;
-        background: white;
-    }
-    .filters-bar .filter-group {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .filters-bar .filter-label {
-        font-weight: 600;
-        font-size: 13px;
-        color: #555;
-    }
-    .filters-bar .result-count {
-        font-size: 13px;
-        color: #888;
-        margin-left: auto;
-    }
-
     .kanban-container {
-        background: #f7f0e8;
-        border: 1px solid #e0d4c8;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(0,0,0,0.04);
         border-radius: 24px;
         padding: 20px;
         min-height: 500px;
+        box-shadow: 0 2px 20px rgba(0,0,0,0.02);
     }
     .board {
         display: flex;
@@ -62,60 +30,138 @@
         padding: 8px 4px 16px;
         min-height: 400px;
     }
+
+    /* ============================================================ */
+    /* FILTROS (adaptados al estilo) */
+    /* ============================================================ */
+    .filters-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+    }
+    .filters-bar input, .filters-bar select {
+        padding: 6px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 120px;
+        flex: 1;
+        font-family: 'Inter', sans-serif;
+    }
+    .filters-bar input:focus, .filters-bar select:focus {
+        outline: none;
+        border-color: #007aff;
+        box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+    }
+    .filters-bar .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filters-bar .filter-label { font-weight: 600; font-size: 13px; color: #8e8e93; }
+    .filters-bar .result-count { font-size: 13px; color: #8e8e93; margin-left: auto; }
+
+    /* ============================================================ */
+    /* COLUMNAS (Estudio Blanc) */
+    /* ============================================================ */
     .columna {
         flex: 0 0 250px;
         min-width: 220px;
-        border-radius: 16px;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-radius: 20px;
         padding: 14px 14px 10px;
-        border: 1px solid rgba(200,180,160,0.3);
-        background: rgba(255, 248, 240, 0.6);
-        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         display: flex;
         flex-direction: column;
+        position: relative;
+        overflow: hidden;
         cursor: default;
     }
-    .columna.drag-over { background: rgba(200,180,160,0.15); border-color: #a8854f; }
+    /* Borde superior de color por etapa */
+    .columna::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        border-radius: 20px 20px 0 0;
+    }
+    .columna.pendiente::after { background: #f1c40f; }
+    .columna.por-preparar::after { background: #e67e22; }
+    .columna.preparados::after { background: #3498db; }
+    .columna.imprimir-hoy::after { background: #e74c3c; }
+    .columna.impreso-corte::after { background: #9b59b6; }
+    .columna.listo::after { background: #27ae60; }
+    .columna.entregados::after { background: #f39c12; }
+
+    .columna:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+    }
+    .columna.drag-over {
+        background: rgba(0,122,255,0.04);
+        border-color: #007aff;
+    }
     .columna .cabecera {
         font-family: 'Playfair Display', serif;
         font-weight: 700;
-        font-size: 16px;
+        font-size: 17px;
+        color: #1c1c1e;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 2px solid rgba(200,180,160,0.2);
         padding-bottom: 6px;
         margin-bottom: 10px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         user-select: none;
     }
     .columna .cabecera .icono { font-size: 22px; margin-right: 4px; }
     .columna .cabecera .contador {
-        background: rgba(200,180,160,0.15);
+        background: rgba(0,0,0,0.04);
         padding: 0 12px;
         border-radius: 30px;
         font-size: 13px;
         font-weight: 600;
+        color: #1c1c1e;
     }
     .columna .card-list {
         min-height: 80px;
         flex: 1;
+        border-radius: 8px;
+        padding: 2px;
+        transition: all 0.3s;
     }
 
+    /* ============================================================ */
+    /* TARJETAS */
+    /* ============================================================ */
     .tarjeta {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(2px);
-        border-radius: 12px;
+        background: white;
+        border-radius: 14px;
         padding: 10px 12px;
         margin-bottom: 6px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-        border: 1px solid rgba(255,255,255,0.3);
-        transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
         cursor: pointer;
+        transition: all 0.2s;
+        color: #1c1c1e;
         position: relative;
     }
     .tarjeta:hover {
-        background: rgba(255,255,255,0.95);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        transform: translateY(-2px) scale(1.01);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
+        border-color: rgba(0,0,0,0.08);
     }
     .tarjeta .titulo {
         font-weight: 600;
@@ -128,7 +174,7 @@
     .tarjeta .titulo .order-num { flex-shrink: 0; }
     .tarjeta .sub {
         font-size: 11px;
-        color: #666;
+        color: #8e8e93;
         display: flex;
         justify-content: space-between;
         margin-top: 2px;
@@ -136,9 +182,9 @@
         gap: 4px;
     }
     .tarjeta .sub .cliente {
+        color: #1c1c1e;
         font-weight: 500;
         flex-shrink: 0;
-        color: #1a1a1a;
         cursor: pointer;
     }
     .tarjeta .sub .cliente:hover { text-decoration: underline; }
@@ -152,9 +198,9 @@
     }
     .tarjeta .sub .tiempo-columna {
         font-size: 10px;
-        color: #999;
+        color: #8e8e93;
         font-weight: 500;
-        background: #f0ece8;
+        background: rgba(0,0,0,0.04);
         padding: 1px 8px;
         border-radius: 30px;
         white-space: nowrap;
@@ -168,15 +214,17 @@
         align-items: center;
     }
     .tarjeta .btn-hecho {
-        background: rgba(0,0,0,0.06);
+        background: rgba(0,0,0,0.04);
         border: none;
         border-radius: 30px;
         padding: 1px 10px;
         font-size: 10px;
         cursor: pointer;
         white-space: nowrap;
+        color: #1c1c1e;
+        transition: background 0.2s;
     }
-    .tarjeta .btn-hecho:hover { background: rgba(0,0,0,0.12); }
+    .tarjeta .btn-hecho:hover { background: rgba(0,0,0,0.08); }
 
     .tarjeta .badge-tipo {
         font-size: 9px;
@@ -184,27 +232,20 @@
         text-transform: uppercase;
         padding: 1px 6px;
         border-radius: 4px;
-        background: #e8e0da;
-        color: #555;
+        background: rgba(0,0,0,0.04);
+        color: #8e8e93;
     }
     .badge-tipo.etiqueta { background: #dbeafe; color: #1e40af; }
     .badge-tipo.cartel { background: #fef3c7; color: #92400e; }
     .badge-tipo.otros { background: #e5e7eb; color: #4b5563; }
 
-    .columna.pendiente { background: #fcf6ed; border-color: #d8c8b8; }
-    .columna.por-preparar { background: #faf0e6; border-color: #d0c0b0; }
-    .columna.preparados { background: #f5ede4; border-color: #c8b8a8; }
-    .columna.imprimir-hoy { background: #f5e8d8; border-color: #c0b0a0; }
-    .columna.impreso-corte { background: #efe4d8; border-color: #b8a898; }
-    .columna.listo { background: #e8f0e0; border-color: #a0b090; }
-    .columna.entregados { background: #f0ece0; border-color: #c8b898; }
-
-    .prioridad.urgente { color: #c0392b; background: #fde8e5; }
-    .prioridad.normal { color: #7f8c8d; background: #ecf0f1; }
-    .prioridad.critica { color: #e67e22; background: #fdebd0; }
+    /* Prioridades */
+    .prioridad.urgente { color: #ff3b30; background: rgba(255,59,48,0.08); }
+    .prioridad.normal { color: #34c759; background: rgba(52,199,89,0.08); }
+    .prioridad.critica { color: #ff9500; background: rgba(255,149,0,0.08); }
 
     /* ============================================================ */
-    /* PANEL LATERAL - NEÓN OSCURO + BLOQUE FLOTANTE */
+    /* PANEL LATERAL (Estudio Blanc) */
     /* ============================================================ */
     .panel-overlay {
         position: fixed;
@@ -212,7 +253,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0,0,0,0.4);
+        background: rgba(0,0,0,0.2);
         z-index: 9998;
         display: none;
         backdrop-filter: blur(6px);
@@ -227,17 +268,19 @@
         width: 520px;
         max-width: 92vw;
         height: calc(100% - 40px);
-        background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
         border-radius: 32px 0 0 32px;
-        border-left: 4px solid #a8854f;
-        box-shadow: -12px 0 60px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.04);
+        border-left: 6px solid #a8854f; /* se sobreescribe con JS según la columna */
+        box-shadow: -12px 0 60px rgba(0,0,0,0.06);
         z-index: 9999;
         transition: right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         padding: 28px 30px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        color: #e8e0d8;
+        color: #1c1c1e;
     }
     .panel-lateral.open { right: 20px; }
 
@@ -245,7 +288,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         padding-bottom: 14px;
         margin-bottom: 20px;
         flex-shrink: 0;
@@ -254,7 +297,7 @@
         font-family: 'Playfair Display', serif;
         font-size: 24px;
         font-weight: 700;
-        color: #f0ece8;
+        color: #1c1c1e;
         margin: 0;
     }
     .panel-lateral .panel-close {
@@ -262,12 +305,12 @@
         cursor: pointer;
         background: none;
         border: none;
-        color: #888;
+        color: #8e8e93;
         transition: transform 0.3s, color 0.2s;
         line-height: 1;
     }
     .panel-lateral .panel-close:hover {
-        color: #a8854f;
+        color: #1c1c1e;
         transform: rotate(90deg);
     }
 
@@ -280,7 +323,7 @@
         width: 4px;
     }
     .panel-lateral .panel-body::-webkit-scrollbar-track {
-        background: rgba(255,255,255,0.03);
+        background: rgba(0,0,0,0.03);
         border-radius: 8px;
     }
     .panel-lateral .panel-body::-webkit-scrollbar-thumb {
@@ -293,29 +336,29 @@
         flex-direction: column;
         margin-bottom: 14px;
         padding: 6px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.04);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
     }
     .panel-lateral .campo .label {
         font-weight: 600;
         font-size: 11px;
-        color: #a8854f;
+        color: #8e8e93;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 2px;
     }
     .panel-lateral .campo .valor {
         font-size: 15px;
-        color: #f0ece8;
+        color: #1c1c1e;
         padding-top: 2px;
     }
     .panel-lateral .campo .valor a {
-        color: #a8854f;
+        color: #007aff;
         text-decoration: none;
         cursor: pointer;
         transition: color 0.2s;
     }
     .panel-lateral .campo .valor a:hover {
-        color: #c9a66a;
+        color: #0055b3;
         text-decoration: underline;
     }
     .panel-lateral .campo .valor .badge {
@@ -327,13 +370,14 @@
 
     .panel-lateral .seccion {
         margin-top: 18px;
-        border-top: 1px solid rgba(255,255,255,0.06);
+        border-top: 1px solid rgba(0,0,0,0.04);
         padding-top: 14px;
     }
     .panel-lateral .seccion h4 {
-        font-size: 14px;
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
         font-weight: 700;
-        color: #a8854f;
+        color: #1c1c1e;
         display: flex;
         align-items: center;
         gap: 8px;
@@ -342,13 +386,13 @@
     .panel-lateral .historial-item {
         font-size: 13px;
         padding: 6px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.04);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         display: flex;
         justify-content: space-between;
-        color: #ccc;
+        color: #1c1c1e;
     }
     .panel-lateral .historial-item .fecha {
-        color: #666;
+        color: #8e8e93;
         font-size: 12px;
     }
 
@@ -358,73 +402,68 @@
         flex-wrap: wrap;
         margin-top: 16px;
         padding-top: 16px;
-        border-top: 1px solid rgba(255,255,255,0.06);
+        border-top: 1px solid rgba(0,0,0,0.04);
         flex-shrink: 0;
     }
     .panel-lateral .panel-actions .btn {
-        background: #a8854f;
-        color: #1a1a1a;
+        padding: 8px 16px;
+        border-radius: 30px;
         border: none;
         font-weight: 600;
         font-size: 13px;
-        padding: 8px 16px;
-        border-radius: 30px;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         text-decoration: none;
+        background: #1c1c1e;
+        color: white;
     }
     .panel-lateral .panel-actions .btn:hover {
-        background: #c9a66a;
+        background: #333;
         transform: translateY(-1px);
     }
     .panel-lateral .panel-actions .btn-outline {
         background: transparent;
-        border: 1px solid rgba(255,255,255,0.15);
-        color: #ccc;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
     }
     .panel-lateral .panel-actions .btn-outline:hover {
-        border-color: #a8854f;
-        color: #a8854f;
-        background: transparent;
+        border-color: #007aff;
+        color: #007aff;
     }
     .panel-lateral .panel-actions .btn-success {
         background: #10b981;
         color: white;
     }
-    .panel-lateral .panel-actions .btn-success:hover {
-        background: #059669;
-    }
+    .panel-lateral .panel-actions .btn-success:hover { background: #059669; }
     .panel-lateral .panel-actions .btn-danger {
         background: #dc2626;
         color: white;
     }
-    .panel-lateral .panel-actions .btn-danger:hover {
-        background: #b91c1c;
-    }
+    .panel-lateral .panel-actions .btn-danger:hover { background: #b91c1c; }
     .panel-lateral .panel-actions .btn-whatsapp {
         background: #25D366;
         color: white;
     }
-    .panel-lateral .panel-actions .btn-whatsapp:hover {
-        background: #1DA851;
-    }
+    .panel-lateral .panel-actions .btn-whatsapp:hover { background: #1DA851; }
 
     .toast {
         position: fixed;
         bottom: 20px;
         right: 20px;
-        background: #1a1a1a;
+        background: #1c1c1e;
         color: white;
         padding: 10px 20px;
-        border-radius: 8px;
+        border-radius: 30px;
+        font-weight: 500;
         z-index: 10000;
         font-size: 14px;
         opacity: 0;
         transition: opacity 0.3s;
         pointer-events: none;
+        font-family: 'Inter', sans-serif;
     }
     .toast.show { opacity: 1; }
     .toast.success { background: #10b981; }
@@ -475,8 +514,8 @@
                 <option value="otro">Otro</option>
             </select>
         </div>
-        <button class="btn btn-sm" onclick="aplicarFiltros()" style="background:#1a1a1a;color:white;">Filtrar</button>
-        <button class="btn btn-sm btn-outline" onclick="limpiarFiltros()">Limpiar</button>
+        <button class="btn" onclick="aplicarFiltros()" style="background:#1c1c1e;color:white;border:none;border-radius:30px;padding:6px 16px;font-weight:600;cursor:pointer;">Filtrar</button>
+        <button class="btn" onclick="limpiarFiltros()" style="background:transparent;border:1px solid #d2d2d7;color:#1c1c1e;border-radius:30px;padding:6px 16px;font-weight:600;cursor:pointer;">Limpiar</button>
         <span class="result-count" id="resultCount"></span>
     </div>
 
@@ -514,6 +553,17 @@
     let puedeEliminar = false;
     let ordenesCache = [];
     let userRole = '';
+
+    // Mapeo de colores para el borde del panel lateral
+    const COLORES_POR_COLUMNA = {
+        'pendiente': '#f1c40f',
+        'por-preparar': '#e67e22',
+        'preparados': '#3498db',
+        'imprimir-hoy': '#e74c3c',
+        'impreso-corte': '#9b59b6',
+        'listo': '#27ae60',
+        'entregados': '#f39c12'
+    };
 
     // ============================================================
     // UTILIDADES
@@ -606,7 +656,6 @@
                 );
                 let url = 'https://api.whatsapp.com/send?text=' + mensaje;
                 if (telefono) {
-                    // Limpiar el número: eliminar espacios, guiones, etc.
                     const numLimpio = telefono.replace(/[\s\-\(\)\+]/g, '');
                     if (numLimpio.startsWith('53')) {
                         url = 'https://wa.me/' + numLimpio + '?text=' + mensaje;
@@ -680,7 +729,7 @@
         const panel = document.getElementById('panelLateral');
         const overlay = document.getElementById('panelOverlay');
         document.getElementById('panelTitulo').textContent = 'Cargando...';
-        document.getElementById('panelBody').innerHTML = '<div style="text-align:center;padding:20px;color:#888;">Cargando...</div>';
+        document.getElementById('panelBody').innerHTML = '<div style="text-align:center;padding:20px;color:#8e8e93;">Cargando...</div>';
         document.getElementById('panelActions').innerHTML = '';
         panel.classList.add('open');
         overlay.classList.add('active');
@@ -688,6 +737,10 @@
         fetch('/ordenes/detalle_json/' + id)
             .then(r => r.json())
             .then(data => {
+                // Aplicar color de borde según la columna actual
+                const color = COLORES_POR_COLUMNA[data.columna] || '#a8854f';
+                panel.style.borderLeftColor = color;
+
                 document.getElementById('panelTitulo').textContent = `📄 ${data.numero}`;
                 const body = document.getElementById('panelBody');
                 const historialHtml = (data.historial || []).slice(-10).reverse().map(h => {
@@ -893,7 +946,7 @@
                 animation: 150,
                 easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
                 onStart: function(evt) {
-                    evt.from.closest('.columna').style.background = '#f0ece8';
+                    evt.from.closest('.columna').style.transform = 'scale(0.98)';
                 },
                 onEnd: function(evt) {
                     const item = evt.item;
@@ -901,8 +954,8 @@
                     const nuevaColumna = evt.to.closest('.columna').dataset.columna;
                     const colOrigen = evt.from.closest('.columna');
                     const colDestino = evt.to.closest('.columna');
-                    colOrigen.style.background = '';
-                    colDestino.style.background = '';
+                    colOrigen.style.transform = '';
+                    colDestino.style.transform = '';
 
                     if (ordenId && nuevaColumna) {
                         const orden = obtenerOrden(ordenId);
@@ -961,7 +1014,7 @@
             if (e.key === 'Escape') cerrarPanel();
         });
 
-        console.log('🚀 Kanban integrado con panel neón oscuro + bloque flotante y WhatsApp con número de cliente.');
+        console.log('✦ Estudio Blanc aplicado al Workflow con panel lateral claro y acentos de color.');
     });
 </script>
 {% endblock %}

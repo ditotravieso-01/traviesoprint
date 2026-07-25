@@ -420,3 +420,25 @@ body {
     color: #1e40af;
     border-left-color: #3b82f6;
 }
+
+/* ============================================================ */
+/* ESTUDIO BLANC - ESTILOS BASE */
+/* ============================================================ */
+.estudio-blanc {
+    --bg-primary: #f2f2f6;
+    --bg-card: rgba(255,255,255,0.85);
+    --text-primary: #1c1c1e;
+    --text-secondary: #8e8e93;
+    --border-light: rgba(0,0,0,0.04);
+    --accent-blue: #007aff;
+    --shadow-sm: 0 2px 12px rgba(0,0,0,0.02);
+    --shadow-md: 0 8px 30px rgba(0,0,0,0.04);
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 12px;
+}
+
+/* Fuente elegante para títulos */
+.playfair {
+    font-family: 'Playfair Display', serif;
+}
