@@ -242,19 +242,19 @@
         </div>
         <div class="header-right">
             <div class="doc-title">ORDEN DE TRABAJO</div>
-            <div class="doc-sub">N° {{ order.order_num }}</div>
+            <div class="doc-sub">N° {{ order.order_num or 'Sin número' }}</div>
         </div>
     </div>
 
     <!-- ===== DATOS GENERALES ===== -->
     <div class="data-card">
         <div class="data-grid">
-            <div class="data-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num }}</span></div>
+            <div class="data-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num or 'Sin número' }}</span></div>
             <div class="data-item"><span class="label">Fecha</span><span class="value">{{ order.date.strftime('%d/%m/%Y') if order.date else '-' }}</span></div>
             <div class="data-item"><span class="label">Cliente</span><span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></div>
             <div class="data-item"><span class="label">Solicitado</span><span class="value">{{ order.solicitado or '-' }}</span></div>
             <div class="data-item"><span class="label">Proyecto</span><span class="value">{{ order.proyecto or '-' }}</span></div>
-            <div class="data-item"><span class="label">Factura</span><span class="value">{{ order.invoice or '-' }}</span></div>
+            <!-- Factura eliminada -->
             <div class="data-item"><span class="label">Tipo</span><span class="value">{{ order.tipo_proyecto or 'grafica' }}</span></div>
             <div class="data-item"><span class="label">Prioridad</span><span class="value">{{ order.priority or 'normal' }}</span></div>
         </div>

@@ -64,7 +64,7 @@ def admin_change_role(user_id):
         return redirect(url_for('home.home'))
     user = User.query.get_or_404(user_id)
     new_role = request.form.get('role')
-    if new_role in ['admin', 'operario', 'disenador', 'comercial']:
+    if new_role in ['admin', 'operario', 'disenador', 'comercial', 'economico']:
         user.role = new_role
         db.session.commit()
         flash(f'Rol de {user.username} actualizado a {new_role}.', 'success')

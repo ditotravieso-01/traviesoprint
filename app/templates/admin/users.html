@@ -95,6 +95,7 @@
                                 <option value="disenador" {% if user.role=='disenador' %}selected{% endif %}>Diseñador</option>
                                 <option value="comercial" {% if user.role=='comercial' %}selected{% endif %}>Comercial</option>
                                 <option value="admin" {% if user.role=='admin' %}selected{% endif %}>Administrador</option>
+                                <option value="economico" {% if user.role == 'economico' %}selected{% endif %}>Económico</option>
                             </select>
                         </form>
                     </td>
@@ -174,6 +175,7 @@
                     <option value="disenador">Diseñador</option>
                     <option value="comercial">Comercial</option>
                     <option value="admin">Administrador</option>
+                    <option value="economico">Económico</option>
                 </select>
             </div>
             <div style="display:flex; gap:8px; margin-top:8px;">

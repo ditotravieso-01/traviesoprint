@@ -49,7 +49,7 @@ class Order(db.Model):
     __tablename__ = 'orders'
 
     id = db.Column(db.Integer, primary_key=True)
-    order_num = db.Column(db.String(50), unique=True, nullable=False)
+    order_num = db.Column(db.String(50), unique=True, nullable=True)
     date = db.Column(db.Date, nullable=False)
     # Relación con cliente
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
@@ -58,7 +58,6 @@ class Order(db.Model):
     fecha_entregado = db.Column(db.DateTime, nullable=True)
     solicitado = db.Column(db.String(100))
     proyecto = db.Column(db.String(100))
-    invoice = db.Column(db.String(50))
     tipo_proyecto = db.Column(db.String(20), default='grafica')
     priority = db.Column(db.String(20), default='normal')
     servicios = db.Column(db.Text, default='[]')
@@ -197,3 +196,46 @@ class Client(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     created_by = db.relationship('User', foreign_keys=[created_by_id])
+
+
+# ==========================================
+# MODELO DE PRODUCTO (INVENTARIO)
+# ==========================================
+class Producto(db.Model):
+    __tablename__ = 'productos'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    tipo = db.Column(db.String(50))  # tinta, vinilo, pvc, lona, etc.
+    ubicacion = db.Column(db.String(50))  # almacen, garaje
+    unidad = db.Column(db.String(20))  # rollo, bote, plancha, unidad
+    costo = db.Column(db.Float, default=0.0)
+    stock = db.Column(db.Float, default=0.0)
+    stock_minimo = db.Column(db.Float, default=0.0)
+    stock_comprometido = db.Column(db.Float, default=0.0)
+    fecha_vencimiento = db.Column(db.Date, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Producto {self.nombre}>'
+
+# ==========================================
+# MODELO DE MOVIMIENTO (INVENTARIO)
+# ==========================================
+class Movimiento(db.Model):
+    __tablename__ = 'movimientos'
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)  # entrada, consumo, salida_ajuste, entrada_ajuste
+    cantidad = db.Column(db.Float, nullable=False)
+    fecha = db.Column(db.DateTime, default=datetime.utcnow)
+    comentario = db.Column(db.String(200))
+    orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+
+    producto = db.relationship('Producto', backref='movimientos')
+    orden = db.relationship('Order', backref='movimientos')
+    usuario = db.relationship('User', backref='movimientos')
+
+    def __repr__(self):
+        return f'<Movimiento {self.id} - {self.tipo}>'

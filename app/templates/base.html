@@ -39,28 +39,34 @@
                     </a>
                 {% endif %}
 
-                {% if current_user.role in ['admin', 'comercial', 'odalys'] %}
+                {% if current_user.role in ['admin', 'comercial', 'economico'] %}
                     <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint == 'ordenes.list_orders' %}active{% endif %}">
                         <span class="icon">📋</span> Órdenes de Trabajo
                     </a>
                 {% endif %}
 
                 <!-- Workflow (Kanban) - visible para roles que puedan usarlo -->
-                {% if current_user.role in ['admin', 'comercial', 'disenador', 'operario', 'odalys'] %}
+                {% if current_user.role in ['admin', 'comercial', 'disenador', 'operario', 'economico'] %}
                     <a href="{{ url_for('workflow.board') }}" class="nav-item {% if request.endpoint == 'workflow.board' %}active{% endif %}">
                         <span class="icon">📊</span> Workflow
                     </a>
                 {% endif %}
 
-                {% if current_user.role in ['admin', 'operario', 'comercial'] %}
+                {% if current_user.role in ['admin', 'operario', 'comercial', 'economico'] %}
                     <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint == 'etiquetas.index' %}active{% endif %}">
                         <span class="icon">🏷️</span> Etiquetas
                     </a>
                 {% endif %}
 
-                {% if current_user.role in ['admin', 'operario', 'comercial'] %}
+                {% if current_user.role in ['admin', 'operario', 'comercial', 'economico'] %}
                     <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint == 'carteles.index' %}active{% endif %}">
                         <span class="icon">📐</span> Carteles
+                    </a>
+                {% endif %}
+
+                {% if current_user.role in ['admin', 'economico'] %}
+                    <a href="{{ url_for('inventario.index') }}" class="nav-item {% if request.endpoint == 'inventario.index' %}active{% endif %}">
+                        <span class="icon">🧾</span> Inventario
                     </a>
                 {% endif %}
 

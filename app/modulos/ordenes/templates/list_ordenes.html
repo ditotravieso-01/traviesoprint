@@ -4,11 +4,56 @@
 
 {% block page_title %}📋 Órdenes de Trabajo{% endblock %}
 
+{% block extra_css %}
+<style>
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2);
+        z-index: 999;
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+        background: white;
+        border-radius: 24px;
+        padding: 28px 32px;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 12px; }
+    .modal .form-group label { display: block; font-weight: 600; font-size: 13px; color: #1c1c1e; margin-bottom: 2px; }
+    .modal .form-group input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+    }
+    .modal .form-group input:focus { outline: none; border-color: #007aff; }
+    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; float: right; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="content-card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
         <p style="color:#666; margin:0;">Lista completa de órdenes de trabajo. <span class="badge" style="background:#1a1a1a; color:white; padding:2px 10px; border-radius:20px;">{{ orders|length }}</span></p>
-        <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
+        {% if current_user.role in ['comercial', 'admin'] %}
+            <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
+        {% endif %}
     </div>
 
     <div style="overflow-x:auto;">
@@ -26,7 +71,7 @@
             <tbody>
                 {% for order in orders %}
                 <tr style="border-bottom:1px solid #eee;">
-                    <td style="padding:8px 0;"><strong>{{ order.order_num }}</strong></td>
+                    <td style="padding:8px 0;"><strong>{{ order.order_num or 'Sin número' }}</strong></td>
                     <td style="padding:8px 0;">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
                     <td style="padding:8px 0;">{{ order.proyecto or '-' }}</td>
                     <td style="padding:8px 0;">{{ order.archivos|length }}</td>
@@ -38,16 +83,19 @@
                         {% endif %}
                     </td>
                     <td style="padding:8px 0;">
-                        {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin'] %}
-                            <form method="POST" action="{{ url_for('ordenes.marcar_entrada', order_id=order.id) }}" style="display:inline;">
-                                <button type="submit" class="btn btn-success btn-sm">Entrada</button>
-                            </form>
+                        {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin', 'economico'] %}
+                            <button class="btn btn-success btn-sm" onclick="abrirModalEntrada({{ order.id }})">
+                                Entrada
+                            </button>
                         {% endif %}
+
+                        <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+
                         {% if current_user.role in ['comercial', 'admin'] %}
-                            <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
                             <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
                             <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
                         {% endif %}
+
                         {% if current_user.role == 'admin' %}
                             <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">
                                 <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
@@ -63,4 +111,46 @@
         <p style="color:#999; text-align:center; padding:20px 0;">No hay órdenes aún. Crea una nueva.</p>
     {% endif %}
 </div>
+
+<!-- MODAL para entrada -->
+<div class="modal-overlay" id="modalEntrada">
+    <div class="modal">
+        <button class="modal-close" onclick="cerrarModalEntrada()">&times;</button>
+        <h2>Marcar entrada al sistema</h2>
+        <form method="POST" id="formEntrada">
+            <div class="form-group">
+                <label>Número de orden de Odoo *</label>
+                <input type="text" id="odoo_order_num" name="odoo_order_num" placeholder="Ej. S03055" required>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="cerrarModalEntrada()">Cancelar</button>
+                <button type="submit" class="btn btn-success">Marcar entrada</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function abrirModalEntrada(orderId) {
+        const modal = document.getElementById('modalEntrada');
+        const form = document.getElementById('formEntrada');
+        form.action = '/ordenes/marcar-entrada/' + orderId;
+        document.getElementById('odoo_order_num').value = '';
+        modal.classList.add('active');
+    }
+
+    function cerrarModalEntrada() {
+        document.getElementById('modalEntrada').classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarModalEntrada();
+    });
+
+    document.getElementById('modalEntrada').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalEntrada();
+    });
+</script>
 {% endblock %}

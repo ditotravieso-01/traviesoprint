@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Inventario · CairoStudio{% endblock %}
+
+{% block page_title %}🧾 Inventario{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <h2>📦 Módulo de inventario</h2>
+    <p style="color:#8e8e93;">Esta es la vista inicial del módulo. Próximamente: gestión de productos, movimientos y merma.</p>
+    {% if productos %}
+        <ul>
+            {% for p in productos %}
+                <li>{{ p.nombre }} ({{ p.stock }} {{ p.unidad }})</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No hay productos registrados.</p>
+    {% endif %}
+</div>
+{% endblock %}

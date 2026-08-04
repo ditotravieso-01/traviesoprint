@@ -87,8 +87,8 @@
             <h4>📋 Datos Generales</h4>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="order_num">N° de Orden *</label>
-                    <input type="text" id="order_num" name="order_num" value="{{ form_data.order_num if form_data else '' }}" placeholder="Ej. ORD-2026-001" required>
+                    <label for="order_num">N° de Orden (opcional)</label>
+                    <input type="text" id="order_num" name="order_num" value="{{ form_data.order_num if form_data else '' }}" placeholder="Opcional, se asigna al entrar al sistema">
                 </div>
                 <div class="form-group">
                     <label for="date">Fecha de emisión *</label>
@@ -120,10 +120,7 @@
                     <label for="proyecto">Proyecto/Producto</label>
                     <input type="text" id="proyecto" name="proyecto" value="{{ form_data.proyecto if form_data else '' }}" placeholder="ETIQUETAS">
                 </div>
-                <div class="form-group">
-                    <label for="invoice">Factura</label>
-                    <input type="text" id="invoice" name="invoice" value="{{ form_data.invoice if form_data else '' }}" placeholder="F-2026-001">
-                </div>
+                <!-- Campo Factura ELIMINADO -->
             </div>
         </div>
 
@@ -349,7 +346,6 @@ MODAL PARA CREAR CLIENTE
     </div>
 </div>
 
-{% block extra_js %}
 <script>
 // =============================================
 // SELECCIÓN DE CLIENTE (autocomplete + datalist)
@@ -631,7 +627,6 @@ document.addEventListener('DOMContentLoaded', function() {
 // NUEVO: BÚSQUEDA Y SELECCIÓN DE USUARIOS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Búsqueda en el select de usuarios
     const buscarInput = document.getElementById('buscarUsuario');
     const selectUsuarios = document.getElementById('usuarios_notificar');
 
@@ -661,5 +656,4 @@ function deseleccionarTodos() {
     }
 }
 </script>
-{% endblock %}
 {% endblock %}

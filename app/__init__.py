@@ -58,4 +58,7 @@ def create_app():
     from .modulos.notificaciones import notificaciones_bp
     app.register_blueprint(notificaciones_bp)
 
+    from .modulos.inventario import inventario_bp
+    app.register_blueprint(inventario_bp)
+
     return app
