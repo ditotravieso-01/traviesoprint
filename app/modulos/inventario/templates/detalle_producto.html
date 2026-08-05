@@ -8,10 +8,13 @@
 <div class="content-card">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 20px;">
+            <p><strong>Categoría:</strong> {{ producto.categoria.nombre if producto.categoria else '—' }}</p>
             <p><strong>Tipo:</strong> {{ producto.tipo or '—' }}</p>
             <p><strong>Ubicación:</strong> {{ producto.ubicacion or '—' }}</p>
             <p><strong>Unidad:</strong> {{ producto.unidad or '—' }}</p>
-            <p><strong>Costo unitario:</strong> {{ producto.costo or '—' }} CUP</p>
+            <p><strong>Costo unitario:</strong> ${{ producto.costo|round(2) if producto.costo else '—' }}</p>
+            <p><strong>Ancho rollo:</strong> {{ producto.ancho_rollo|round(2) if producto.ancho_rollo else '—' }} m</p>
+            <p><strong>Largo rollo:</strong> {{ producto.largo_rollo|round(2) if producto.largo_rollo else '—' }} m</p>
             <p><strong>Stock actual:</strong> {{ producto.stock }}</p>
             <p><strong>Comprometido:</strong> {{ producto.stock_comprometido or 0 }}</p>
             <p><strong>Stock mínimo:</strong> {{ producto.stock_minimo or 0 }}</p>
@@ -67,7 +70,7 @@
                 <input type="number" step="0.01" name="cantidad" value="1" required />
             </div>
             <div class="form-group">
-                <label>Costo unitario (CUP)</label>
+                <label>Costo unitario (USD)</label>
                 <input type="number" step="0.01" name="costo" value="{{ producto.costo or 0 }}" />
             </div>
             <div class="form-group">
@@ -109,26 +112,12 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
-    function abrirModalCompra() {
-        document.getElementById('modalCompra').classList.add('active');
-    }
-
-    function abrirModalAjuste() {
-        document.getElementById('modalAjuste').classList.add('active');
-    }
-
-    function cerrarModal(id) {
-        document.getElementById(id).classList.remove('active');
-    }
-
+    function abrirModalCompra() { document.getElementById('modalCompra').classList.add('active'); }
+    function abrirModalAjuste() { document.getElementById('modalAjuste').classList.add('active'); }
+    function cerrarModal(id) { document.getElementById(id).classList.remove('active'); }
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-        }
+        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     });
 </script>
 {% endblock %}

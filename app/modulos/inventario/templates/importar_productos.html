@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Importar Productos · Inventario{% endblock %}
+
+{% block page_title %}📤 Importar Productos{% endblock %}
+
+{% block content %}
+<div style="max-width:600px; margin:0 auto;">
+    <div class="form-section">
+        <h4>Subir archivo Excel</h4>
+        <p style="color:#666;">Selecciona un archivo .xlsx o .xls con los datos de productos.</p>
+        <p style="color:#666; font-size:13px;">El archivo debe tener una columna <strong>"Nombre"</strong> como mínimo. 
+        Las columnas reconocibles son: Nombre, Tipo, Ubicación, Unidad, Costo, Stock, Stock Mínimo, Stock Comprometido, Fecha Vencimiento, Categoría, Ancho Rollo, Largo Rollo.</p>
+        <form method="POST" enctype="multipart/form-data">
+            <div class="form-group">
+                <input type="file" name="archivo" accept=".xlsx,.xls" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-upload"></i> Importar</button>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

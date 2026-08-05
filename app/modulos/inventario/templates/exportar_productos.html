@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Exportar Productos · Inventario{% endblock %}
+
+{% block page_title %}📤 Exportar Productos{% endblock %}
+
+{% block content %}
+<div style="max-width:700px; margin:0 auto;">
+    <div class="form-section">
+        <h4>Seleccionar columnas a exportar</h4>
+        <form method="POST" action="{{ url_for('inventario.exportar_productos') }}">
+            <div class="form-group">
+                <label>Filtrar por categoría (opcional)</label>
+                <select name="categoria_id">
+                    <option value="">Todas</option>
+                    {% for cat in categorias %}
+                    <option value="{{ cat.id }}">{{ cat.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                {% for col in columnas %}
+                <label style="display:flex; align-items:center; gap:6px;">
+                    <input type="checkbox" name="columnas" value="{{ col.id }}" checked>
+                    {{ col.label }}
+                </label>
+                {% endfor %}
+            </div>
+            <div style="margin-top:16px;">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-download"></i> Exportar</button>
+                <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -36,10 +36,6 @@
     .btn-crear-cliente:hover { background: #059669; }
     .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; justify-content: space-between; }
     .btn-group .left-buttons, .btn-group .right-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
-    .file-upload-area { border: 2px dashed #ddd; border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: border-color 0.2s; background: #fafafa; margin-top: 8px; }
-    .file-upload-area:hover { border-color: #1a1a1a; }
-    .file-upload-area input[type="file"] { display: none; }
-
     .lineas-table { width: 100%; border-collapse: collapse; margin-top: 12px; }
     .lineas-table th { background: #f8f6f4; text-align: left; padding: 8px 6px; font-weight: 600; font-size: 13px; border-bottom: 2px solid #e8e0da; }
     .lineas-table td { padding: 6px; vertical-align: middle; border-bottom: 1px solid #eee; }
@@ -47,15 +43,8 @@
     .lineas-table input:focus, .lineas-table select:focus { border-color: #1a1a1a; outline: none; background: white; }
     .lineas-table .btn-eliminar { background: #dc2626; color: white; border: none; border-radius: 4px; padding: 4px 10px; cursor: pointer; font-size: 14px; }
     .lineas-table .btn-eliminar:hover { background: #b91c1c; }
-    .lineas-table .file-info { font-size: 12px; color: #666; display: block; }
-    .lineas-table .file-info a { color: #1a1a1a; text-decoration: underline; }
-    .lineas-table .file-input-wrapper { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .lineas-table .file-input-wrapper input[type="file"] { width: auto; padding: 4px; background: transparent; border: none; }
-
     .client-select-wrapper { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .client-select-wrapper input[type="text"] { flex: 1; }
-
-    /* MODAL */
     .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
     .modal-content { background: white; margin: 5% auto; padding: 24px; border-radius: 12px; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 16px; }
@@ -64,15 +53,18 @@
     .modal-close:hover { color: #333; }
     .modal .form-group { margin-bottom: 12px; }
 
-    .producto-item {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        margin-bottom: 6px;
-    }
-    .producto-item select { flex: 2; }
-    .producto-item input[type="number"] { flex: 1; }
-
+    .etiquetas-params-row { background: #f8f8fc; }
+    .etiquetas-params { padding: 10px 14px; margin: 4px 0; border-left: 3px solid #b8860b; background: white; border-radius: 6px; display: none; }
+    .etiquetas-params.visible { display: block; }
+    .etiquetas-params .form-grid-2 { gap: 8px; }
+    .etiquetas-params .form-group { margin-bottom: 8px; }
+    .etiquetas-params .form-group label { font-size: 12px; }
+    .etiquetas-params .form-group input, .etiquetas-params .form-group select { font-size: 13px; padding: 4px 8px; }
+    .calc-result-linea { display: flex; flex-wrap: wrap; gap: 0.8rem; background: #fafafa; padding: 0.5rem 0.8rem; border-radius: 8px; margin-top: 0.4rem; font-size: 0.8rem; }
+    .calc-result-linea .item { display: flex; flex-direction: column; min-width: 80px; }
+    .calc-result-linea .label { font-size: 0.6rem; color: #6b6b7a; text-transform: uppercase; letter-spacing: 0.3px; }
+    .calc-result-linea .value { font-weight: 600; font-size: 0.9rem; color: #1e1e2a; }
+    .calc-result-linea .value.unidad { color: #2b7a4b; }
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; }
         .btn-group { flex-direction: column; align-items: stretch; }
@@ -81,9 +73,6 @@
         .lineas-table input, .lineas-table select { font-size: 13px; padding: 4px; }
         .client-select-wrapper { flex-direction: column; align-items: stretch; }
         .btn-crear-cliente { margin-left: 0; }
-        .producto-item { flex-wrap: wrap; }
-        .producto-item select { flex: 1 1 100%; }
-        .producto-item input[type="number"] { flex: 1 1 50%; }
     }
 </style>
 {% endblock %}
@@ -124,56 +113,16 @@
                 </div>
                 <div class="form-group">
                     <label for="solicitado">Solicitado por</label>
-                    <input type="text" id="solicitado" name="solicitado" value="{{ form_data.solicitado if form_data else '' }}" placeholder="Cliente / Comercial">
+                    <select id="solicitado" name="solicitado">
+                        <option value="cliente" {% if form_data and form_data.solicitado == 'cliente' %}selected{% endif %}>Cliente</option>
+                        <option value="comercial" {% if form_data and form_data.solicitado == 'comercial' %}selected{% endif %}>Comercial</option>
+                    </select>
                 </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label for="proyecto">Proyecto/Producto</label>
-                    <input type="text" id="proyecto" name="proyecto" value="{{ form_data.proyecto if form_data else '' }}" placeholder="ETIQUETAS">
-                </div>
-                <!-- Campo Factura ELIMINADO -->
             </div>
         </div>
 
         <!-- ==========================================
-        SECCIÓN 2: MATERIALES (INVENTARIO)
-        ========================================== -->
-        <div class="form-section">
-            <h4>📦 Materiales (Inventario)</h4>
-            <p style="color:#666; font-size:14px;">Selecciona los productos que se usarán en esta orden y sus cantidades estimadas.</p>
-            <div id="productos-container">
-                {% if edit and form_data.productos_asociados %}
-                    {% for item in form_data.productos_asociados %}
-                    <div class="producto-item">
-                        <select name="productos_ids[]" class="form-control">
-                            <option value="">-- Seleccionar --</option>
-                            {% for p in productos %}
-                            <option value="{{ p.id }}" {% if p.id == item.producto_id %}selected{% endif %}>{{ p.nombre }} (stock: {{ p.stock }})</option>
-                            {% endfor %}
-                        </select>
-                        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" value="{{ item.cantidad }}" required />
-                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="producto-item">
-                        <select name="productos_ids[]" class="form-control">
-                            <option value="">-- Seleccionar --</option>
-                            {% for p in productos %}
-                            <option value="{{ p.id }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
-                            {% endfor %}
-                        </select>
-                        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" required />
-                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                {% endif %}
-            </div>
-            <button type="button" class="btn btn-outline btn-sm" onclick="agregarProductoItem()"><i class="fas fa-plus"></i> Añadir material</button>
-        </div>
-
-        <!-- ==========================================
-        SECCIÓN: NOTIFICACIONES
+        SECCIÓN 2: NOTIFICACIONES
         ========================================== -->
         <div class="form-section">
             <h4>🔔 Notificaciones</h4>
@@ -249,22 +198,11 @@
         </div>
 
         <!-- ==========================================
-        SECCIÓN 5: DESCRIPCIÓN
-        ========================================== -->
-        <div class="form-section">
-            <h4>📝 Descripción</h4>
-            <div class="form-group">
-                <label for="descripcion">Descripción (tamaño, sabor, volúmen, gramaje, etc.)</label>
-                <textarea id="descripcion" name="descripcion" rows="4" placeholder="Ej. Etiqueta shampoo de romero ------1m">{{ form_data.descripcion if form_data else '' }}</textarea>
-            </div>
-        </div>
-
-        <!-- ==========================================
-        SECCIÓN 6: ARCHIVOS Y LÍNEAS
+        SECCIÓN 5: ARCHIVOS Y LÍNEAS DE TRABAJO
         ========================================== -->
         <div class="form-section">
             <h4>📎 Archivos y Líneas de trabajo</h4>
-            <p style="color:#666; font-size:14px;">Añade ítems (con o sin archivo) y asigna material, cantidad y unidad. <span style="color:#dc2626;">*</span> obligatorio</p>
+            <p style="color:#666; font-size:14px;">Añade ítems y selecciona un producto del inventario (stock > 0).</p>
 
             <button type="button" class="btn btn-primary" onclick="agregarLinea()" style="margin-bottom:12px;">
                 <i class="fas fa-plus"></i> Añadir línea
@@ -273,12 +211,12 @@
             <table class="lineas-table" id="tablaLineas">
                 <thead>
                     <tr>
-                        <th style="width:20%;">Nombre visible *</th>
-                        <th style="width:20%;">Material *</th>
+                        <th style="width:18%;">Nombre visible *</th>
+                        <th style="width:18%;">Material (Producto) *</th>
                         <th style="width:12%;">Cantidad *</th>
                         <th style="width:12%;">Unidad</th>
-                        <th style="width:22%;">Archivo adjunto</th>
-                        <th style="width:14%;">Acciones</th>
+                        <th style="width:18%;">Proyecto/Producto</th>
+                        <th style="width:12%;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="cuerpoLineas">
@@ -291,10 +229,10 @@
                                 <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
                             </td>
                             <td>
-                                <select name="material_{{ archivo.id }}" required>
+                                <select name="producto_{{ archivo.id }}" required>
                                     <option value="">-- Seleccionar --</option>
-                                    {% for mat in lista_materiales %}
-                                    <option value="{{ mat }}" {% if archivo.material == mat %}selected{% endif %}>{{ mat }}</option>
+                                    {% for p in productos %}
+                                    <option value="{{ p.id }}" {% if archivo.producto_id == p.id %}selected{% endif %} data-ancho="{{ p.ancho_rollo or '' }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
                                     {% endfor %}
                                 </select>
                             </td>
@@ -308,14 +246,12 @@
                                 </select>
                             </td>
                             <td>
-                                {% if archivo.ruta %}
-                                    <span class="file-info">
-                                        <a href="{{ url_for('static', filename='uploads/' + archivo.ruta) }}" target="_blank">{{ archivo.nombre_original }}</a>
-                                    </span>
+                                {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                                    <span class="badge" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
+                                    <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="edit-{{ archivo.id }}">📐 Ocultar</button>
                                 {% else %}
-                                    <span class="file-info" style="color:#999;">Sin archivo</span>
+                                    <span style="color:#999;">Otros</span>
                                 {% endif %}
-                                <span style="font-size:11px; color:#888;">(original: {{ archivo.nombre_original }})</span>
                             </td>
                             <td>
                                 <form method="POST" action="{{ url_for('ordenes.eliminar_archivo', archivo_id=archivo.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta línea?')">
@@ -323,16 +259,62 @@
                                 </form>
                             </td>
                         </tr>
+                        <!-- Si la línea tiene parámetros de etiquetas, mostrarlos (editables) -->
+                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                            {% set params = archivo.get_parametros_etiqueta() %}
+                            <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="edit-{{ archivo.id }}">
+                                <td colspan="6">
+                                    <div class="etiquetas-params visible" style="display:block;">
+                                        <div class="form-grid-2">
+                                            <div class="form-group">
+                                                <label>Ancho (cm)</label>
+                                                <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.ancho if params else 10 }}">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Alto (cm)</label>
+                                                <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.alto if params else 10 }}">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Ancho de rollo (m)</label>
+                                            <input type="number" step="0.01" min="0.01" class="ancho_rollo_edit" name="ancho_rollo_edit[]" value="{{ params.ancho_rollo if params else '' }}" placeholder="Automático del producto" disabled>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Precio por m² (USD)</label>
+                                            <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}">
+                                        </div>
+                                        <div class="checkbox-grid">
+                                            <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %}> Margen de mesa (2 mm)</label>
+                                            <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %}> Girar 90° (manual)</label>
+                                            <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %}> 🧠 Modo Inteligente</label>
+                                        </div>
+                                        <div class="calc-result-linea">
+                                            <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display_edit">{% if params and params.etiquetas_por_m2 %}{{ params.etiquetas_por_m2 }}{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display_edit">{% if params and params.area_m2 %}{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) }} m{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display_edit">{% if params and params.area_m2 %}{{ params.area_m2|round(2) }} m²{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display_edit">{% if params and params.costo_estimado %}${{ params.costo_estimado|round(2) }}{% else %}—{% endif %}</span></div>
+                                        </div>
+                                        <div style="margin-top:4px;">
+                                            <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="edit-{{ archivo.id }}">Ocultar</button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endif %}
                         {% endfor %}
                     {% endif %}
                 </tbody>
             </table>
+        </div>
 
-            <!-- Área de arrastre -->
-            <div class="file-upload-area" id="fileDropArea">
-                <i class="fas fa-cloud-upload-alt" style="font-size:24px; color:#888;"></i>
-                <p style="color:#666; margin-top:4px;">Arrastra aquí los archivos para crear líneas automáticamente</p>
-                <input type="file" id="fileInput" multiple accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx">
+        <!-- ==========================================
+        SECCIÓN 6: TENER EN CUENTA
+        ========================================== -->
+        <div class="form-section">
+            <h4>📝 Tener en cuenta</h4>
+            <div class="form-group">
+                <label for="descripcion">Observaciones, instrucciones especiales, etc.</label>
+                <textarea id="descripcion" name="descripcion" rows="4" placeholder="Ej. Revisar color, acabado mate, etc.">{{ form_data.descripcion if form_data else '' }}</textarea>
             </div>
         </div>
 
@@ -360,9 +342,7 @@
     </form>
 </div>
 
-<!-- ==========================================
-MODAL PARA CREAR CLIENTE
-========================================== -->
+<!-- MODAL CLIENTE -->
 <div id="modalCliente" class="modal">
     <div class="modal-content">
         <div class="modal-header">
@@ -396,7 +376,7 @@ MODAL PARA CREAR CLIENTE
 
 <script>
 // =============================================
-// SELECCIÓN DE CLIENTE (autocomplete + datalist)
+// SELECCIÓN DE CLIENTE
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     const clientNameInput = document.getElementById('client_name');
@@ -435,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =============================================
-// MODAL PARA CREAR CLIENTE
+// MODAL CLIENTE
 // =============================================
 function abrirModalCliente() {
     document.getElementById('modalCliente').style.display = 'block';
@@ -467,17 +447,13 @@ function guardarNuevoCliente() {
             alert(data.error);
             return;
         }
-        // Agregar al datalist
         const datalist = document.getElementById('clientesList');
         const option = document.createElement('option');
         option.value = data.nombre;
         option.dataset.id = data.id;
         datalist.appendChild(option);
-
-        // Seleccionar el cliente recién creado
         document.getElementById('client_name').value = data.nombre;
         document.getElementById('client_id').value = data.id;
-
         cerrarModalCliente();
     })
     .catch(error => {
@@ -485,7 +461,6 @@ function guardarNuevoCliente() {
     });
 }
 
-// Cerrar modal al hacer clic fuera
 window.onclick = function(event) {
     const modal = document.getElementById('modalCliente');
     if (event.target === modal) {
@@ -497,19 +472,22 @@ window.onclick = function(event) {
 // FUNCIONES PARA LÍNEAS DINÁMICAS
 // =============================================
 let nuevaLineaCounter = 0;
-const listaMateriales = {{ lista_materiales|tojson }};
+const productosData = {{ productos|tojson }};
 
 function agregarLinea() {
     const tbody = document.getElementById('cuerpoLineas');
+    const idx = nuevaLineaCounter++;
+    const paramsId = 'params-' + idx;
+
+    // Fila principal
     const row = document.createElement('tr');
     row.className = 'linea-fila';
     row.dataset.nuevo = 'true';
+    row.dataset.paramsId = paramsId;
 
-    const idx = nuevaLineaCounter++;
-
-    let options = '<option value="">-- Seleccionar --</option>';
-    for (let mat of listaMateriales) {
-        options += `<option value="${mat}">${mat}</option>`;
+    let prodOptions = '<option value="">-- Seleccionar --</option>';
+    for (let p of productosData) {
+        prodOptions += `<option value="${p.id}" data-ancho="${p.ancho_rollo || ''}">${p.nombre} (stock: ${p.stock})</option>`;
     }
 
     row.innerHTML = `
@@ -517,174 +495,274 @@ function agregarLinea() {
             <input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required>
         </td>
         <td>
-            <select name="materiales[]" required>
-                ${options}
+            <select name="productos_ids[]" class="producto-select" required>
+                ${prodOptions}
             </select>
         </td>
         <td>
             <input type="number" step="0.01" name="cantidades[]" placeholder="Cantidad" required>
         </td>
         <td>
-            <select name="unidades[]">
+            <select name="unidades[]" class="unidad-select">
                 <option value="m" selected>metros</option>
                 <option value="unidades">unidades</option>
             </select>
         </td>
         <td>
-            <div class="file-input-wrapper">
-                <input type="file" name="archivos_nuevos[]" accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx" onchange="mostrarNombreArchivo(this)">
-                <span class="file-info" style="font-size:12px; color:#888;">Ninguno</span>
-            </div>
+            <select name="proyecto_linea[]" class="proyecto-linea" data-params-id="${paramsId}">
+                <option value="otros">Otros</option>
+                <option value="etiquetas">Etiquetas</option>
+                <option value="cartel">Cartel</option>
+            </select>
+            <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="${paramsId}" style="display:none; margin-left:4px;">📐</button>
         </td>
         <td>
             <button type="button" class="btn-eliminar" onclick="eliminarLinea(this)"><i class="fas fa-trash-alt"></i></button>
         </td>
     `;
     tbody.appendChild(row);
+
+    // Fila de parámetros de etiquetas (inicialmente oculta)
+    const paramsRow = document.createElement('tr');
+    paramsRow.className = 'etiquetas-params-row';
+    paramsRow.dataset.paramsId = paramsId;
+    paramsRow.dataset.paramsRow = 'true';
+    paramsRow.style.display = 'none';
+
+    paramsRow.innerHTML = `
+        <td colspan="6">
+            <div class="etiquetas-params" id="etiquetas-params-${paramsId}">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Ancho (cm)</label>
+                        <input type="number" step="0.01" min="0.01" class="ancho_etiqueta" name="ancho_etiqueta[]" value="10">
+                    </div>
+                    <div class="form-group">
+                        <label>Alto (cm)</label>
+                        <input type="number" step="0.01" min="0.01" class="alto_etiqueta" name="alto_etiqueta[]" value="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Ancho de rollo (m)</label>
+                    <input type="number" step="0.01" min="0.01" class="ancho_rollo_display" value="" placeholder="Automático del producto" disabled>
+                </div>
+                <div class="form-group">
+                    <label>Precio por m² (USD)</label>
+                    <input type="number" step="0.01" min="0" class="precio_etiqueta" name="precio_etiqueta[]" value="10">
+                </div>
+                <div class="checkbox-grid">
+                    <label><input type="checkbox" class="mesa_etiqueta" name="mesa_etiqueta[]" value="1" checked> Margen de mesa (2 mm)</label>
+                    <label><input type="checkbox" class="girar_etiqueta" name="girar_etiqueta[]" value="1"> Girar 90° (manual)</label>
+                    <label><input type="checkbox" class="auto_girar_etiqueta" name="auto_girar_etiqueta[]" value="1"> 🧠 Modo Inteligente</label>
+                </div>
+                <div class="calc-result-linea">
+                    <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display">—</span></div>
+                    <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display">—</span></div>
+                    <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display">—</span></div>
+                    <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display">—</span></div>
+                </div>
+                <div style="margin-top:4px;">
+                    <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="${paramsId}">Ocultar</button>
+                </div>
+            </div>
+        </td>
+    `;
+
+    if (row.nextSibling) {
+        tbody.insertBefore(paramsRow, row.nextSibling);
+    } else {
+        tbody.appendChild(paramsRow);
+    }
+
+    // ------ REFERENCIAS A ELEMENTOS ------
+    const proyectoSelect = row.querySelector('.proyecto-linea');
+    const cantidadInput = row.querySelector('input[name="cantidades[]"]');
+    const unidadSelect = row.querySelector('.unidad-select');
+    const productoSelect = row.querySelector('.producto-select');
+    const toggleBtn = row.querySelector('.toggle-etiquetas');
+    const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+    const anchoInput = paramsDiv.querySelector('.ancho_etiqueta');
+    const altoInput = paramsDiv.querySelector('.alto_etiqueta');
+    const precioInput = paramsDiv.querySelector('.precio_etiqueta');
+    const anchoRolloDisplay = paramsDiv.querySelector('.ancho_rollo_display');
+    const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta');
+    const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
+    const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
+
+    // Función para mostrar el bloque de etiquetas
+    function mostrarBloque() {
+        paramsRow.style.display = 'table-row';
+        paramsDiv.classList.add('visible');
+        paramsDiv.style.display = 'block';
+        toggleBtn.style.display = 'inline-block';
+        toggleBtn.textContent = '📐 Ocultar';
+        // Actualizar ancho de rollo y calcular
+        actualizarAnchoRollo(paramsRow);
+        setTimeout(() => triggerCalculo(), 100);
+    }
+
+    // Función para ocultar el bloque de etiquetas
+    function ocultarBloque() {
+        paramsRow.style.display = 'none';
+        paramsDiv.classList.remove('visible');
+        paramsDiv.style.display = 'none';
+        toggleBtn.textContent = '📐';
+        // Limpiar resultados
+        limpiarResultados(paramsRow);
+    }
+
+    // Función que dispara el cálculo
+    function triggerCalculo() {
+        if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
+            console.log('Trigger cálculo automático para paramsId:', paramsId);
+            calcularLinea(paramsRow);
+        }
+    }
+
+    // Evento change del select "Proyecto/Producto"
+    proyectoSelect.addEventListener('change', function(e) {
+        if (this.value === 'etiquetas') {
+            mostrarBloque();
+        } else {
+            ocultarBloque();
+        }
+    });
+
+    // Evento click del botón toggle (📐)
+    toggleBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (paramsRow.style.display === 'none') {
+            mostrarBloque();
+        } else {
+            ocultarBloque();
+        }
+    });
+
+    // Evento click del botón "Ocultar" dentro del bloque
+    paramsRow.querySelector('.ocultar-etiquetas').addEventListener('click', function(e) {
+        e.preventDefault();
+        ocultarBloque();
+    });
+
+    // Eventos de inputs para triggerCalculo (NO modifican los inputs principales)
+    cantidadInput.addEventListener('input', triggerCalculo);
+    cantidadInput.addEventListener('change', triggerCalculo);
+    unidadSelect.addEventListener('change', triggerCalculo);
+    productoSelect.addEventListener('change', function() {
+        actualizarAnchoRollo(paramsRow);
+        triggerCalculo();
+    });
+    anchoInput.addEventListener('input', triggerCalculo);
+    anchoInput.addEventListener('change', triggerCalculo);
+    altoInput.addEventListener('input', triggerCalculo);
+    altoInput.addEventListener('change', triggerCalculo);
+    precioInput.addEventListener('input', triggerCalculo);
+    precioInput.addEventListener('change', triggerCalculo);
+    mesaCheck.addEventListener('change', triggerCalculo);
+    girarCheck.addEventListener('change', triggerCalculo);
+    autoGirarCheck.addEventListener('change', triggerCalculo);
+
+    // Función para actualizar el ancho de rollo según el producto seleccionado
+    function actualizarAnchoRollo(paramsRow) {
+        const productoSelect = paramsRow.closest('tr').previousElementSibling.querySelector('.producto-select');
+        const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_display');
+        if (productoSelect && anchoRolloDisplay) {
+            const selected = productoSelect.options[productoSelect.selectedIndex];
+            const ancho = selected.getAttribute('data-ancho') || '1.3';
+            anchoRolloDisplay.value = ancho;
+        }
+    }
+
+    console.log('Línea agregada con paramsId:', paramsId);
 }
 
 function eliminarLinea(btn) {
     const row = btn.closest('tr');
     if (row) {
+        const paramsId = row.dataset.paramsId;
+        const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
+        if (paramsRow) paramsRow.remove();
         row.remove();
     }
 }
 
-function mostrarNombreArchivo(input) {
-    const parent = input.closest('.file-input-wrapper');
-    const span = parent.querySelector('.file-info');
-    if (input.files && input.files[0]) {
-        span.textContent = input.files[0].name;
-    } else {
-        span.textContent = 'Ninguno';
-    }
-}
-
 // =============================================
-// ARRASTRE DE ARCHIVOS CON NOMBRE VISIBLE
+// DELEGACIÓN DE EVENTOS para botones "toggle" y "ocultar" en edición
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    const dropArea = document.getElementById('fileDropArea');
-    const fileInput = document.getElementById('fileInput');
-
-    dropArea.addEventListener('click', () => fileInput.click());
-    dropArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        dropArea.style.borderColor = '#1a1a1a';
-        dropArea.style.background = '#f0ece8';
-    });
-    dropArea.addEventListener('dragleave', () => {
-        dropArea.style.borderColor = '#ddd';
-        dropArea.style.background = '#fafafa';
-    });
-    dropArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropArea.style.borderColor = '#ddd';
-        dropArea.style.background = '#fafafa';
-        const files = e.dataTransfer.files;
-        if (files.length > 0) {
-            for (let file of files) {
-                agregarLineaDesdeArchivo(file);
+    // Toggle para líneas existentes en edición
+    document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
+        const toggleBtn = e.target.closest('.toggle-etiquetas');
+        if (toggleBtn) {
+            e.preventDefault();
+            const paramsId = toggleBtn.dataset.paramsId;
+            const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
+            const mainRow = toggleBtn.closest('tr.linea-fila');
+            if (mainRow && paramsRow) {
+                const isVisible = paramsRow.style.display !== 'none';
+                if (isVisible) {
+                    paramsRow.style.display = 'none';
+                    const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+                    if (paramsDiv) {
+                        paramsDiv.classList.remove('visible');
+                        paramsDiv.style.display = 'none';
+                    }
+                    toggleBtn.textContent = '📐 Ver';
+                } else {
+                    paramsRow.style.display = 'table-row';
+                    const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+                    if (paramsDiv) {
+                        paramsDiv.classList.add('visible');
+                        paramsDiv.style.display = 'block';
+                        // Al abrir, actualizar ancho de rollo y recalcular
+                        const productoSelect = mainRow.querySelector('.producto-select') || mainRow.querySelector('select[name^="producto_"]');
+                        if (productoSelect) {
+                            const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_display') || paramsRow.querySelector('.ancho_rollo_edit');
+                            if (anchoRolloDisplay) {
+                                const selected = productoSelect.options[productoSelect.selectedIndex];
+                                const ancho = selected.getAttribute('data-ancho') || '1.3';
+                                anchoRolloDisplay.value = ancho;
+                            }
+                        }
+                        setTimeout(() => calcularLinea(paramsRow), 100);
+                    }
+                    toggleBtn.textContent = '📐 Ocultar';
+                }
             }
         }
     });
-    fileInput.addEventListener('change', (e) => {
-        const files = e.target.files;
-        if (files.length > 0) {
-            for (let file of files) {
-                agregarLineaDesdeArchivo(file);
+
+    // Ocultar para líneas en edición (botón dentro del bloque)
+    document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
+        const ocultarBtn = e.target.closest('.ocultar-etiquetas');
+        if (ocultarBtn) {
+            e.preventDefault();
+            const paramsId = ocultarBtn.dataset.paramsId;
+            const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
+            if (paramsRow) {
+                paramsRow.style.display = 'none';
+                const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+                if (paramsDiv) {
+                    paramsDiv.classList.remove('visible');
+                    paramsDiv.style.display = 'none';
+                }
+                const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+                if (mainRow) {
+                    const toggleBtn = mainRow.querySelector('.toggle-etiquetas');
+                    if (toggleBtn) toggleBtn.textContent = '📐 Ver';
+                }
             }
         }
-        fileInput.value = '';
     });
 
-    function agregarLineaDesdeArchivo(file) {
-        const nombreSinExt = file.name.replace(/\.[^/.]+$/, '');
-        const tbody = document.getElementById('cuerpoLineas');
-        const row = document.createElement('tr');
-        row.className = 'linea-fila';
-        row.dataset.nuevo = 'true';
-
-        const idx = nuevaLineaCounter++;
-
-        let options = '<option value="">-- Seleccionar --</option>';
-        for (let mat of listaMateriales) {
-            options += `<option value="${mat}">${mat}</option>`;
-        }
-
-        row.innerHTML = `
-            <td>
-                <input type="text" name="nombres_visibles[]" value="${nombreSinExt}" placeholder="Nombre visible" required>
-            </td>
-            <td>
-                <select name="materiales[]" required>
-                    ${options}
-                </select>
-            </td>
-            <td>
-                <input type="number" step="0.01" name="cantidades[]" placeholder="Cantidad" required>
-            </td>
-            <td>
-                <select name="unidades[]">
-                    <option value="m" selected>metros</option>
-                    <option value="unidades">unidades</option>
-                </select>
-            </td>
-            <td>
-                <div class="file-input-wrapper">
-                    <input type="file" name="archivos_nuevos[]" accept=".pdf,.jpg,.png,.ai,.cdr,.eps,.svg,.docx,.xlsx" onchange="mostrarNombreArchivo(this)" style="display:none;">
-                    <span class="file-info" style="font-size:12px; color:#1a1a1a;">${file.name}</span>
-                    <span style="font-size:11px; color:#888;"> (${(file.size / 1024).toFixed(1)} KB)</span>
-                </div>
-            </td>
-            <td>
-                <button type="button" class="btn-eliminar" onclick="eliminarLinea(this)"><i class="fas fa-trash-alt"></i></button>
-            </td>
-        `;
-        tbody.appendChild(row);
-    }
-});
-
-// =============================================
-// GESTIÓN DE MATERIALES (PRODUCTOS)
-// =============================================
-function agregarProductoItem() {
-    const container = document.getElementById('productos-container');
-    const div = document.createElement('div');
-    div.className = 'producto-item';
-    // Usar las opciones del primer select como plantilla
-    const firstSelect = container.querySelector('select[name="productos_ids[]"]');
-    const optionsHtml = firstSelect ? firstSelect.innerHTML : '';
-    div.innerHTML = `
-        <select name="productos_ids[]" class="form-control">
-            ${optionsHtml}
-        </select>
-        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" required />
-        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
-    `;
-    container.appendChild(div);
-}
-
-function eliminarProductoItem(btn) {
-    const item = btn.closest('.producto-item');
-    if (item) item.remove();
-}
-
-// =============================================
-// FECHA ACTUAL POR DEFECTO
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
+    // Inicialización: fecha actual
     const dateInput = document.getElementById('date');
     if (dateInput && !dateInput.value) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
     }
-});
 
-// =============================================
-// MOSTRAR/OCULTAR "Otros" SERVICIOS
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar "Otros" en servicios
     const checkOtros = document.getElementById('serv_otros_check');
     const inputOtros = document.getElementById('servicios_otros');
     if (checkOtros && inputOtros) {
@@ -694,15 +772,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkOtros.addEventListener('change', toggleOtros);
         toggleOtros();
     }
-});
 
-// =============================================
-// BÚSQUEDA Y SELECCIÓN DE USUARIOS
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
+    // Búsqueda de usuarios
     const buscarInput = document.getElementById('buscarUsuario');
     const selectUsuarios = document.getElementById('usuarios_notificar');
-
     if (buscarInput && selectUsuarios) {
         buscarInput.addEventListener('keyup', function() {
             var filter = this.value.toLowerCase();
@@ -713,7 +786,146 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    console.log('DOM cargado - eventos delegados configurados');
 });
+
+// =============================================
+// FUNCIONES AUXILIARES PARA RESULTADOS
+// =============================================
+function limpiarResultados(paramsRow) {
+    const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+    if (paramsDiv) {
+        paramsDiv.querySelector('.etiquetas_por_m2_display').textContent = '—';
+        paramsDiv.querySelector('.consumo_m_display').textContent = '—';
+        paramsDiv.querySelector('.area_m2_display').textContent = '—';
+        paramsDiv.querySelector('.costo_estimado_display').textContent = '—';
+        // También para edición
+        const editDisplay = paramsDiv.querySelector('.etiquetas_por_m2_display_edit');
+        if (editDisplay) {
+            editDisplay.textContent = '—';
+            paramsDiv.querySelector('.consumo_m_display_edit').textContent = '—';
+            paramsDiv.querySelector('.area_m2_display_edit').textContent = '—';
+            paramsDiv.querySelector('.costo_estimado_display_edit').textContent = '—';
+        }
+    }
+}
+
+// =============================================
+// CÁLCULO AUTOMÁTICO DE ETIQUETAS
+// =============================================
+function calcularLinea(paramsRow) {
+    if (!paramsRow) return;
+    const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+    if (!paramsDiv) return;
+
+    // Determinar si es edición o nueva línea
+    const isEdit = paramsRow.dataset.paramsId && paramsRow.dataset.paramsId.startsWith('edit-');
+    const prefix = isEdit ? '_edit' : '';
+
+    // Recolectar valores
+    const ancho = paramsDiv.querySelector(`.ancho_etiqueta${prefix}`).value;
+    const alto = paramsDiv.querySelector(`.alto_etiqueta${prefix}`).value;
+    const precio = paramsDiv.querySelector(`.precio_etiqueta${prefix}`).value || '10';
+    const mesa = paramsDiv.querySelector(`.mesa_etiqueta${prefix}`).checked ? '1' : '0';
+    const girar = paramsDiv.querySelector(`.girar_etiqueta${prefix}`).checked ? '1' : '0';
+    const auto_girar = paramsDiv.querySelector(`.auto_girar_etiqueta${prefix}`).checked ? '1' : '0';
+
+    // Obtener línea principal
+    const paramsId = paramsRow.dataset.paramsId;
+    const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+    if (!mainRow) {
+        console.error('No se encontró la línea principal para paramsId:', paramsId);
+        return;
+    }
+
+    const cantidadInput = mainRow.querySelector('input[name="cantidades[]"]');
+    const unidadSelect = mainRow.querySelector('select[name="unidades[]"]');
+    const productoSelect = mainRow.querySelector('select[name="productos_ids[]"]') || mainRow.querySelector('select[name^="producto_"]');
+    if (!cantidadInput || !unidadSelect || !productoSelect) {
+        console.error('Faltan campos en la línea principal');
+        return;
+    }
+
+    // Obtener cantidad y unidad ORIGINALES (las que el usuario ingresó)
+    const cantidad = cantidadInput.value;
+    const unidad = unidadSelect.value;
+    const selectedOption = productoSelect.options[productoSelect.selectedIndex];
+    const anchoRollo = selectedOption.getAttribute('data-ancho') || '1.3';
+    let tipo_rollo = '1.3m';
+    if (parseFloat(anchoRollo) <= 1.0) tipo_rollo = '1m';
+
+    if (!ancho || !alto || !cantidad) {
+        limpiarResultados(paramsRow);
+        return;
+    }
+
+    // Construir FormData
+    const formData = new FormData();
+    formData.append('ancho', ancho);
+    formData.append('alto', alto);
+    formData.append('tipo_rollo', tipo_rollo);
+    formData.append('precio', precio);
+    formData.append('mesa', mesa);
+    formData.append('girar', girar);
+    formData.append('auto_girar', auto_girar);
+
+    if (unidad === 'unidades') {
+        formData.append('cantidad', cantidad);
+        formData.append('area', '');
+    } else {
+        // Convertir metros lineales a área (m²)
+        const area = parseFloat(cantidad) * parseFloat(anchoRollo);
+        formData.append('area', area.toFixed(4));
+        formData.append('cantidad', '');
+    }
+
+    console.log('Enviando cálculo:', Object.fromEntries(formData));
+
+    // Llamada AJAX al endpoint de etiquetas
+    fetch("{{ url_for('etiquetas.calcular_ajax') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Respuesta del cálculo:', data);
+        if (data.error) {
+            paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
+            paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = data.error;
+            paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
+            paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
+            return;
+        }
+        const simData = data.simData;
+        const areaTotal = simData.areaTotal || 0;
+        const etiquetasPorM2 = simData.columnas * simData.filasPorMetro || 0;
+        const precioUnitario = parseFloat(precio) || 10;
+        const areaRedondeada = Math.round(areaTotal * 100) / 100;
+        const costoEstimado = areaRedondeada * precioUnitario;
+        const anchoRolloM = parseFloat(anchoRollo) || 1.3;
+        const metrosLineales = areaTotal / anchoRolloM;
+
+        // Actualizar nombre visible si está vacío (solo si está vacío)
+        const nombreInput = mainRow.querySelector('input[name="nombres_visibles[]"]');
+        if (nombreInput && !nombreInput.value.trim()) {
+            nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
+        }
+
+        // Mostrar resultados en el bloque de parámetros (sin modificar los inputs principales)
+        paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = etiquetasPorM2 || '—';
+        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = metrosLineales ? metrosLineales.toFixed(2) + ' m' : '—';
+        paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = areaTotal ? areaTotal.toFixed(2) + ' m²' : '—';
+        paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = costoEstimado ? '$' + costoEstimado.toFixed(2) : '—';
+    })
+    .catch(error => {
+        console.error('Error al calcular:', error);
+        paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
+        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = 'Error de conexión';
+        paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
+        paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
+    });
+}
 
 function seleccionarTodos() {
     var select = document.getElementById('usuarios_notificar');

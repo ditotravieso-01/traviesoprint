@@ -1,6 +1,12 @@
 from flask import Blueprint, request, render_template, jsonify
-from flask_login import login_required 
+from flask_login import login_required
 import math
+from app.services.calculadora_etiquetas import (
+    calcular_metros_desde_unidades,
+    calcular_unidades_desde_metros,
+    MARGEN_CORTE_MM,
+    MARGEN_MESA_MM
+)
 
 # ==========================================
 # CONSTANTES
@@ -17,8 +23,6 @@ ROLLOS = {
         'nombre': 'Rollo 1 m'
     }
 }
-MARCA_CORTE_DEFAULT = 20.0
-MARGEN_MESA_MM = 2.0
 PRECIO_POR_DEFECTO = 10.0
 
 # ==========================================
@@ -27,7 +31,7 @@ PRECIO_POR_DEFECTO = 10.0
 etiquetas_bp = Blueprint('etiquetas', __name__, url_prefix='/etiquetas', template_folder='templates')
 
 # ==========================================
-# FUNCIÓN AUXILIAR DE CÁLCULO
+# FUNCIÓN AUXILIAR DE CÁLCULO (adaptada para usar el servicio)
 # ==========================================
 def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto_girar_activo,
                    cantidad_str, area_str, tipo_rollo):
@@ -63,13 +67,15 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
         ancho_mm = ancho_cm * 10.0
         alto_mm = alto_cm * 10.0
 
-        ancho_util_mm = ANCHO_PAPEL_MM - 2 * MARCA_CORTE_DEFAULT
+        ancho_util_mm = ANCHO_PAPEL_MM - 2 * MARGEN_CORTE_MM
         if ancho_util_mm <= 0:
             raise ValueError("Marca de corte demasiado grande para el papel.")
 
         orientacion_texto = "normal"
         mensaje_orientacion = ""
 
+        # Usar lógica de orientación (auto_girar, girar manual, etc.)
+        # (código existente, ligeramente adaptado para usar las constantes del servicio)
         if auto_girar_activo:
             # Normal
             ancho_eff_norm = ancho_mm + (MARGEN_MESA_MM if mesa_activo else 0)

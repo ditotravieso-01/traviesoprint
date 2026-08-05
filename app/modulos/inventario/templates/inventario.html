@@ -6,57 +6,14 @@
 
 {% block extra_css %}
 <style>
-    .filters-bar {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 12px 16px;
-        background: rgba(255,255,255,0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-    }
-    .filters-bar input, .filters-bar select {
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
-        color: #1c1c1e;
-        min-width: 120px;
-        flex: 1;
-        font-family: 'Inter', sans-serif;
-    }
-    .filters-bar input:focus, .filters-bar select:focus {
-        outline: none;
-        border-color: #007aff;
-        box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
-    }
+    .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px; }
+    .filters-bar input, .filters-bar select { padding: 6px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; background: white; color: #1c1c1e; min-width: 120px; flex: 1; font-family: 'Inter', sans-serif; }
+    .filters-bar input:focus, .filters-bar select:focus { outline: none; border-color: #007aff; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
     .filters-bar .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .filters-bar .filter-label { font-weight: 600; font-size: 13px; color: #8e8e93; }
-
-    .btn {
-        padding: 8px 18px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: #1c1c1e;
-        color: white;
-    }
+    .btn { padding: 8px 18px; border-radius: 30px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: #1c1c1e; color: white; }
     .btn:hover { background: #333; transform: translateY(-1px); }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #d2d2d7;
-        color: #1c1c1e;
-    }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #007aff; color: #007aff; }
     .btn-success { background: #10b981; color: white; }
     .btn-success:hover { background: #059669; }
@@ -65,92 +22,33 @@
     .btn-danger { background: #dc2626; color: white; }
     .btn-danger:hover { background: #b91c1c; }
     .btn-sm { padding: 4px 12px; font-size: 12px; }
-
-    .card {
-        background: rgba(255,255,255,0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 18px 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-        margin-bottom: 16px;
-    }
-    .card h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        color: #1c1c1e;
-    }
-
+    .card { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 16px; padding: 18px 20px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02); margin-bottom: 16px; }
+    .card h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #1c1c1e; }
     .table-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th { text-align: left; padding: 8px 10px; font-weight: 600; color: #8e8e93; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
     td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.02); }
-
     .stock-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.04); border-radius: 4px; overflow: hidden; }
     .stock-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
     .fill-green { background: #10b981; }
     .fill-yellow { background: #f59e0b; }
     .fill-red { background: #dc2626; }
-
-    .badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 30px;
-        display: inline-block;
-    }
+    .badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
     .badge-critico { background: #fde8e5; color: #dc2626; }
     .badge-bajo { background: #fef3c7; color: #d97706; }
     .badge-normal { background: #d1fae5; color: #10b981; }
-
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.2);
-        z-index: 999;
-        backdrop-filter: blur(4px);
-        justify-content: center;
-        align-items: center;
-    }
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); z-index: 999; backdrop-filter: blur(4px); justify-content: center; align-items: center; }
     .modal-overlay.active { display: flex; }
-    .modal {
-        background: white;
-        border-radius: 24px;
-        padding: 28px 32px;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease;
-    }
-    @keyframes modalIn {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
+    .modal { background: white; border-radius: 24px; padding: 28px 32px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.08); animation: modalIn 0.3s ease; }
+    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
     .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
     .modal .form-group { margin-bottom: 12px; }
     .modal .form-group label { display: block; font-weight: 600; font-size: 13px; color: #1c1c1e; margin-bottom: 2px; }
-    .modal .form-group input, .modal .form-group select {
-        width: 100%;
-        padding: 8px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 14px;
-        background: white;
-    }
-    .modal .form-group input:focus, .modal .form-group select:focus {
-        outline: none;
-        border-color: #007aff;
-    }
+    .modal .form-group input, .modal .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
+    .modal .form-group input:focus, .modal .form-group select:focus { outline: none; border-color: #007aff; }
     .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
     .modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; float: right; }
-
-    @media (max-width: 768px) {
-        .filters-bar { flex-direction: column; align-items: stretch; }
-        .filters-bar input, .filters-bar select { min-width: unset; }
-    }
+    @media (max-width: 768px) { .filters-bar { flex-direction: column; align-items: stretch; } .filters-bar input, .filters-bar select { min-width: unset; } }
 </style>
 {% endblock %}
 
@@ -161,6 +59,27 @@
         <div style="display: flex; gap: 8px; flex-wrap: wrap;">
             <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
             <a href="{{ url_for('inventario.merma') }}" class="btn btn-warning"><i class="fas fa-chart-line"></i> Merma</a>
+            <a href="{{ url_for('inventario.exportar_productos') }}" class="btn btn-outline"><i class="fas fa-file-export"></i> Exportar</a>
+            <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-outline"><i class="fas fa-file-import"></i> Importar</a>
+            <a href="{{ url_for('inventario.exportar_movimientos') }}" class="btn btn-outline"><i class="fas fa-history"></i> Movimientos</a>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-outline"><i class="fas fa-tags"></i> Categorías</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="filters-bar">
+        <div class="filter-group">
+            <span class="filter-label">Categoría:</span>
+            <select name="categoria" id="filtroCategoria" onchange="aplicarFiltros()">
+                <option value="">Todas</option>
+                {% for cat in categorias %}
+                    <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">Buscar:</span>
+            <input type="text" id="filtroSearch" value="{{ search }}" placeholder="Nombre..." onkeyup="aplicarFiltros()">
         </div>
     </div>
     <div class="table-wrap">
@@ -168,6 +87,7 @@
             <thead>
                 <tr>
                     <th>Producto</th>
+                    <th>Categoría</th>
                     <th>Tipo</th>
                     <th>Ubicación</th>
                     <th>Unidad</th>
@@ -187,10 +107,11 @@
                 {% set color = '#dc2626' if critico else ('#f59e0b' if bajo else '#10b981') %}
                 <tr>
                     <td><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
-                    <td>{{ p.tipo }}</td>
-                    <td>{{ p.ubicacion }}</td>
-                    <td>{{ p.unidad }}</td>
-                    <td>{{ p.costo or '—' }}</td>
+                    <td>{{ p.categoria.nombre if p.categoria else '—' }}</td>
+                    <td>{{ p.tipo or '—' }}</td>
+                    <td>{{ p.ubicacion or '—' }}</td>
+                    <td>{{ p.unidad or '—' }}</td>
+                    <td>${{ p.costo|round(2) if p.costo else '—' }}</td>
                     <td>{{ p.stock }}</td>
                     <td>{{ p.stock_comprometido or 0 }}</td>
                     <td>
@@ -218,7 +139,6 @@
         <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
         <h2>Registrar compra</h2>
         <form method="POST" action="{{ url_for('inventario.comprar') }}">
-            <input type="hidden" id="compraProductoId" name="producto_id" />
             <div class="form-group">
                 <label>Producto</label>
                 <select id="compraProductoSelect" name="producto_id" required>
@@ -232,7 +152,7 @@
                 <input type="number" step="0.01" name="cantidad" value="1" required />
             </div>
             <div class="form-group">
-                <label>Costo unitario (CUP)</label>
+                <label>Costo unitario (USD)</label>
                 <input type="number" step="0.01" name="costo" value="0" />
             </div>
             <div class="form-group">
@@ -247,24 +167,24 @@
     </div>
 </div>
 
-{% endblock %}
-
-{% block extra_js %}
 <script>
+    function aplicarFiltros() {
+        const categoria = document.getElementById('filtroCategoria').value;
+        const search = document.getElementById('filtroSearch').value;
+        let url = window.location.pathname + '?';
+        if (categoria) url += 'categoria=' + categoria + '&';
+        if (search) url += 'search=' + encodeURIComponent(search);
+        window.location.href = url;
+    }
     function abrirModalCompra(productoId) {
         document.getElementById('compraProductoSelect').value = productoId;
-        document.getElementById('compraProductoId').value = productoId;
         document.getElementById('modalCompra').classList.add('active');
     }
-
     function cerrarModal(id) {
         document.getElementById(id).classList.remove('active');
     }
-
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-        }
+        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     });
 </script>
 {% endblock %}

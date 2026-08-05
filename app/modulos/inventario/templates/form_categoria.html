@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if categoria else 'Nueva' }} Categoría · Inventario{% endblock %}
+
+{% block page_title %}{{ '✏️ Editar' if categoria else '📄 Nueva' }} Categoría{% endblock %}
+
+{% block content %}
+<div style="max-width:600px; margin:0 auto;">
+    <div class="form-section">
+        <h4>{{ 'Editar categoría' if categoria else 'Nueva categoría' }}</h4>
+        <form method="POST">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" name="nombre" value="{{ categoria.nombre if categoria else '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <input type="text" name="descripcion" value="{{ categoria.descripcion if categoria else '' }}">
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ 'Actualizar' if categoria else 'Crear' }}</button>
+                <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

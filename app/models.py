@@ -1,11 +1,8 @@
 import json
 from datetime import datetime
-from flask_login import UserMixin
-from flask_login import current_user
+from flask_login import UserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login_manager
-from datetime import datetime
-
 
 # ==========================================
 # MODELO DE USUARIO
@@ -20,7 +17,6 @@ class User(UserMixin, db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-    
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -36,25 +32,36 @@ class User(UserMixin, db.Model):
     def __repr__(self):
         return f'<User {self.username} ({self.role})>'
 
-
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# ==========================================
+# MODELO DE CATEGORÍA (nuevo)
+# ==========================================
+class Categoria(db.Model):
+    __tablename__ = 'categorias'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    productos = db.relationship('Producto', backref='categoria', lazy=True)
+
+    def __repr__(self):
+        return f'<Categoria {self.nombre}>'
 
 # ==========================================
-# MODELO DE ORDEN DE TRABAJO (con client_id)
+# MODELO DE ORDEN DE TRABAJO
 # ==========================================
 class Order(db.Model):
     __tablename__ = 'orders'
-
     id = db.Column(db.Integer, primary_key=True)
     order_num = db.Column(db.String(50), unique=True, nullable=True)
     date = db.Column(db.Date, nullable=False)
-    # Relación con cliente
     client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False)
     client = db.relationship('Client', backref='orders', lazy=True)
-    # Otros campos
     fecha_entregado = db.Column(db.DateTime, nullable=True)
     solicitado = db.Column(db.String(100))
     proyecto = db.Column(db.String(100))
@@ -68,11 +75,9 @@ class Order(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     archivos = db.relationship('ArchivoAdjunto', backref='orden', lazy=True, cascade='all, delete-orphan')
-
-    usuarios_notificados = db.Column(db.Text, default='[]')  # JSON con lista de IDs
+    usuarios_notificados = db.Column(db.Text, default='[]')
 
     def get_usuarios_notificados(self):
         return json.loads(self.usuarios_notificados) if self.usuarios_notificados else []
@@ -90,9 +95,6 @@ class Order(db.Model):
         return json.loads(self.history) if self.history else []
 
     def add_history(self, entry):
-        """Añade una entrada al historial.
-        Si entry es un string, lo convierte a dict con fecha y usuario.
-        """
         hist = self.get_history()
         if isinstance(entry, str):
             entry = {
@@ -101,7 +103,6 @@ class Order(db.Model):
                 'usuario': current_user.username if hasattr(current_user, 'username') else 'Sistema'
             }
         elif isinstance(entry, dict):
-            # Asegurar que tiene fecha
             if 'fecha' not in entry:
                 entry['fecha'] = datetime.now().isoformat()
             if 'usuario' not in entry:
@@ -111,17 +112,15 @@ class Order(db.Model):
 
     def get_history(self):
         return json.loads(self.history) if self.history else []
-    
+
     def __repr__(self):
         return f'<Order {self.order_num}>'
-
 
 # ==========================================
 # MODELO DE ARCHIVO ADJUNTO
 # ==========================================
 class ArchivoAdjunto(db.Model):
     __tablename__ = 'archivo_adjunto'
-
     id = db.Column(db.Integer, primary_key=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     nombre_original = db.Column(db.String(255), nullable=False)
@@ -131,6 +130,9 @@ class ArchivoAdjunto(db.Model):
     cantidad = db.Column(db.Float, nullable=True)
     unidad = db.Column(db.String(20), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=True)
+    parametros_etiqueta = db.Column(db.Text, nullable=True)
+    producto = db.relationship('Producto', backref='archivos_asociados')
 
     def to_dict(self):
         return {
@@ -140,30 +142,35 @@ class ArchivoAdjunto(db.Model):
             'material': self.material,
             'ruta': self.ruta,
             'cantidad': self.cantidad,
-            'unidad': self.unidad
+            'unidad': self.unidad,
+            'producto_id': self.producto_id,
+            'parametros_etiqueta': self.parametros_etiqueta
         }
+
+    def get_parametros_etiqueta(self):
+        return json.loads(self.parametros_etiqueta) if self.parametros_etiqueta else None
+
+    def set_parametros_etiqueta(self, data):
+        self.parametros_etiqueta = json.dumps(data) if data else None
 
 # ==========================================
 # MODELO DE NOTIFICACIONES
 # ==========================================
 class Notificacion(db.Model):
     __tablename__ = 'notificaciones'
-    
     id = db.Column(db.Integer, primary_key=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
     mensaje = db.Column(db.String(500), nullable=False)
-    tipo = db.Column(db.String(50), nullable=False)  # orden_creada, orden_editada, orden_estado
+    tipo = db.Column(db.String(50), nullable=False)
     leida = db.Column(db.Boolean, default=False)
     enlace = db.Column(db.String(200), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.now)
-    
     usuario = db.relationship('User', foreign_keys=[usuario_id])
     orden = db.relationship('Order', foreign_keys=[order_id])
-    
+
     def __repr__(self):
         return f'<Notificacion {self.id} - {self.usuario_id}>'
-
 
 # ==========================================
 # MODELO DE CLIENTES
@@ -197,22 +204,25 @@ class Client(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     created_by = db.relationship('User', foreign_keys=[created_by_id])
 
-
 # ==========================================
-# MODELO DE PRODUCTO (INVENTARIO)
+# MODELO DE PRODUCTO (INVENTARIO) - MODIFICADO
 # ==========================================
 class Producto(db.Model):
     __tablename__ = 'productos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
-    tipo = db.Column(db.String(50))  # tinta, vinilo, pvc, lona, etc.
-    ubicacion = db.Column(db.String(50))  # almacen, garaje
-    unidad = db.Column(db.String(20))  # rollo, bote, plancha, unidad
+    tipo = db.Column(db.String(50))               # tinta, vinilo, pvc, lona, etc.
+    ubicacion = db.Column(db.String(50))          # almacen, garaje
+    unidad = db.Column(db.String(20))             # rollo, bote, plancha, unidad
     costo = db.Column(db.Float, default=0.0)
     stock = db.Column(db.Float, default=0.0)
     stock_minimo = db.Column(db.Float, default=0.0)
     stock_comprometido = db.Column(db.Float, default=0.0)
     fecha_vencimiento = db.Column(db.Date, nullable=True)
+    # NUEVOS CAMPOS
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    ancho_rollo = db.Column(db.Float, nullable=True)   # en metros
+    largo_rollo = db.Column(db.Float, nullable=True)   # en metros (informativo)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -232,7 +242,6 @@ class Movimiento(db.Model):
     comentario = db.Column(db.String(200))
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-
     producto = db.relationship('Producto', backref='movimientos')
     orden = db.relationship('Order', backref='movimientos')
     usuario = db.relationship('User', backref='movimientos')
@@ -249,11 +258,9 @@ class OrdenProducto(db.Model):
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)
-    cantidad_real = db.Column(db.Float, nullable=True)  # se llena al consumir
-
+    cantidad_real = db.Column(db.Float, nullable=True)
     orden = db.relationship('Order', backref='productos_asignados')
     producto = db.relationship('Producto', backref='ordenes_asignadas')
 
     def __repr__(self):
         return f'<OrdenProducto {self.orden_id} - {self.producto_id}>'
-

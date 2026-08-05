@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías · Inventario{% endblock %}
+
+{% block page_title %}🏷️ Categorías{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <p style="color:#666; margin:0;">Lista de categorías para organizar los productos.</p>
+        <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva categoría</a>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cat in categorias %}
+                <tr>
+                    <td><strong>{{ cat.nombre }}</strong></td>
+                    <td>{{ cat.descripcion or '—' }}</td>
+                    <td>
+                        <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
