@@ -4,18 +4,267 @@
 
 {% block page_title %}🧾 Inventario{% endblock %}
 
+{% block extra_css %}
+<style>
+    .filters-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 20px;
+    }
+    .filters-bar input, .filters-bar select {
+        padding: 6px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 120px;
+        flex: 1;
+        font-family: 'Inter', sans-serif;
+    }
+    .filters-bar input:focus, .filters-bar select:focus {
+        outline: none;
+        border-color: #007aff;
+        box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+    }
+    .filters-bar .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .filters-bar .filter-label { font-weight: 600; font-size: 13px; color: #8e8e93; }
+
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+    }
+    .btn:hover { background: #333; transform: translateY(-1px); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #007aff; color: #007aff; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+
+    .card {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 16px;
+    }
+    .card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #1c1c1e;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 8px 10px; font-weight: 600; color: #8e8e93; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.02); }
+
+    .stock-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.04); border-radius: 4px; overflow: hidden; }
+    .stock-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+    .fill-green { background: #10b981; }
+    .fill-yellow { background: #f59e0b; }
+    .fill-red { background: #dc2626; }
+
+    .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        display: inline-block;
+    }
+    .badge-critico { background: #fde8e5; color: #dc2626; }
+    .badge-bajo { background: #fef3c7; color: #d97706; }
+    .badge-normal { background: #d1fae5; color: #10b981; }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2);
+        z-index: 999;
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+        background: white;
+        border-radius: 24px;
+        padding: 28px 32px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 12px; }
+    .modal .form-group label { display: block; font-weight: 600; font-size: 13px; color: #1c1c1e; margin-bottom: 2px; }
+    .modal .form-group input, .modal .form-group select {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 14px;
+        background: white;
+    }
+    .modal .form-group input:focus, .modal .form-group select:focus {
+        outline: none;
+        border-color: #007aff;
+    }
+    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; float: right; }
+
+    @media (max-width: 768px) {
+        .filters-bar { flex-direction: column; align-items: stretch; }
+        .filters-bar input, .filters-bar select { min-width: unset; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="content-card">
-    <h2>📦 Módulo de inventario</h2>
-    <p style="color:#8e8e93;">Esta es la vista inicial del módulo. Próximamente: gestión de productos, movimientos y merma.</p>
-    {% if productos %}
-        <ul>
-            {% for p in productos %}
-                <li>{{ p.nombre }} ({{ p.stock }} {{ p.unidad }})</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No hay productos registrados.</p>
-    {% endif %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <h3>📦 Productos</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
+            <a href="{{ url_for('inventario.merma') }}" class="btn btn-warning"><i class="fas fa-chart-line"></i> Merma</a>
+        </div>
+    </div>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Ubicación</th>
+                    <th>Unidad</th>
+                    <th>Costo</th>
+                    <th>Stock</th>
+                    <th>Comprometido</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in productos %}
+                {% set critico = p.stock < p.stock_minimo %}
+                {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
+                {% set badgeClass = 'badge-critico' if critico else ('badge-bajo' if bajo else 'badge-normal') %}
+                {% set pct = (p.stock / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo > 0 else 100 %}
+                {% set color = '#dc2626' if critico else ('#f59e0b' if bajo else '#10b981') %}
+                <tr>
+                    <td><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
+                    <td>{{ p.tipo }}</td>
+                    <td>{{ p.ubicacion }}</td>
+                    <td>{{ p.unidad }}</td>
+                    <td>{{ p.costo or '—' }}</td>
+                    <td>{{ p.stock }}</td>
+                    <td>{{ p.stock_comprometido or 0 }}</td>
+                    <td>
+                        <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
+                        <div class="stock-bar"><div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div></div>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
+                        <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                        </form>
+                        <button class="btn btn-sm btn-outline" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
+
+<!-- Modal: Registrar compra -->
+<div class="modal-overlay" id="modalCompra">
+    <div class="modal">
+        <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
+        <h2>Registrar compra</h2>
+        <form method="POST" action="{{ url_for('inventario.comprar') }}">
+            <input type="hidden" id="compraProductoId" name="producto_id" />
+            <div class="form-group">
+                <label>Producto</label>
+                <select id="compraProductoSelect" name="producto_id" required>
+                    {% for p in productos %}
+                    <option value="{{ p.id }}">{{ p.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input type="number" step="0.01" name="cantidad" value="1" required />
+            </div>
+            <div class="form-group">
+                <label>Costo unitario (CUP)</label>
+                <input type="number" step="0.01" name="costo" value="0" />
+            </div>
+            <div class="form-group">
+                <label>Comentario</label>
+                <input type="text" name="comentario" placeholder="Ej. Compra mensual" />
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function abrirModalCompra(productoId) {
+        document.getElementById('compraProductoSelect').value = productoId;
+        document.getElementById('compraProductoId').value = productoId;
+        document.getElementById('modalCompra').classList.add('active');
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+    });
+</script>
 {% endblock %}

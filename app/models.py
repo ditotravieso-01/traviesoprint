@@ -239,3 +239,21 @@ class Movimiento(db.Model):
 
     def __repr__(self):
         return f'<Movimiento {self.id} - {self.tipo}>'
+
+# ==========================================
+# MODELO DE RELACIÓN ORDEN-PRODUCTO
+# ==========================================
+class OrdenProducto(db.Model):
+    __tablename__ = 'orden_producto'
+    id = db.Column(db.Integer, primary_key=True)
+    orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
+    cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)
+    cantidad_real = db.Column(db.Float, nullable=True)  # se llena al consumir
+
+    orden = db.relationship('Order', backref='productos_asignados')
+    producto = db.relationship('Producto', backref='ordenes_asignadas')
+
+    def __repr__(self):
+        return f'<OrdenProducto {self.orden_id} - {self.producto_id}>'
+

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}{{ producto.nombre }} · Inventario{% endblock %}
+
+{% block page_title %}📦 {{ producto.nombre }}{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 20px;">
+            <p><strong>Tipo:</strong> {{ producto.tipo or '—' }}</p>
+            <p><strong>Ubicación:</strong> {{ producto.ubicacion or '—' }}</p>
+            <p><strong>Unidad:</strong> {{ producto.unidad or '—' }}</p>
+            <p><strong>Costo unitario:</strong> {{ producto.costo or '—' }} CUP</p>
+            <p><strong>Stock actual:</strong> {{ producto.stock }}</p>
+            <p><strong>Comprometido:</strong> {{ producto.stock_comprometido or 0 }}</p>
+            <p><strong>Stock mínimo:</strong> {{ producto.stock_minimo or 0 }}</p>
+            {% if producto.fecha_vencimiento %}
+                <p><strong>Vence:</strong> {{ producto.fecha_vencimiento.strftime('%d/%m/%Y') }}</p>
+            {% endif %}
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
+            <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-edit"></i> Ajustar stock</button>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        </div>
+    </div>
+
+    <h3>📜 Movimientos recientes</h3>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Comentario</th>
+                    <th>Orden</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in movimientos %}
+                <tr>
+                    <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ m.tipo }}</td>
+                    <td>{{ m.cantidad }}</td>
+                    <td>{{ m.comentario or '-' }}</td>
+                    <td>{{ m.orden.order_num if m.orden else '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center;color:#8e8e93;">No hay movimientos.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal: Compra -->
+<div class="modal-overlay" id="modalCompra">
+    <div class="modal">
+        <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
+        <h2>Registrar compra</h2>
+        <form method="POST" action="{{ url_for('inventario.comprar') }}">
+            <input type="hidden" name="producto_id" value="{{ producto.id }}" />
+            <div class="form-group">
+                <label>Cantidad</label>
+                <input type="number" step="0.01" name="cantidad" value="1" required />
+            </div>
+            <div class="form-group">
+                <label>Costo unitario (CUP)</label>
+                <input type="number" step="0.01" name="costo" value="{{ producto.costo or 0 }}" />
+            </div>
+            <div class="form-group">
+                <label>Comentario</label>
+                <input type="text" name="comentario" placeholder="Ej. Compra mensual" />
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
+                <button type="submit" class="btn btn-success">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Ajuste -->
+<div class="modal-overlay" id="modalAjuste">
+    <div class="modal">
+        <button class="modal-close" onclick="cerrarModal('modalAjuste')">&times;</button>
+        <h2>Ajustar stock (conteo físico)</h2>
+        <form method="POST" action="{{ url_for('inventario.ajustar') }}">
+            <input type="hidden" name="producto_id" value="{{ producto.id }}" />
+            <div class="form-group">
+                <label>Stock actual en sistema</label>
+                <input type="number" step="0.01" value="{{ producto.stock }}" disabled style="background:#f0ece8;" />
+            </div>
+            <div class="form-group">
+                <label>Stock real (cuenta física)</label>
+                <input type="number" step="0.01" name="stock_real" required />
+            </div>
+            <div class="form-group">
+                <label>Comentario</label>
+                <input type="text" name="comentario" placeholder="Ej. Conteo mensual" />
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="cerrarModal('modalAjuste')">Cancelar</button>
+                <button type="submit" class="btn btn-warning">Registrar ajuste</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function abrirModalCompra() {
+        document.getElementById('modalCompra').classList.add('active');
+    }
+
+    function abrirModalAjuste() {
+        document.getElementById('modalAjuste').classList.add('active');
+    }
+
+    function cerrarModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+    });
+</script>
+{% endblock %}

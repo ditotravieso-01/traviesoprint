@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if producto else 'Nuevo' }} Producto · Inventario{% endblock %}
+
+{% block page_title %}{{ '✏️ Editar' if producto else '📦 Nuevo' }} Producto{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container { max-width: 700px; margin: 0 auto; }
+    .form-section { background: white; border-radius: 16px; padding: 24px 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e8e0da; }
+    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 16px; color: #1a1a1a; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
+    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s; }
+    .form-group input:focus, .form-group select:focus { border-color: #1a1a1a; outline: none; background: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    .btn { padding: 10px 24px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .btn-primary { background: #1a1a1a; color: white; }
+    .btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .btn-outline { background: transparent; border: 1px solid #ccc; color: #333; }
+    .btn-outline:hover { border-color: #888; background: #f5f5f5; }
+    @media (max-width: 768px) { .form-grid-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-section">
+        <h4>{{ 'Editar producto' if producto else 'Nuevo producto' }}</h4>
+        <form method="POST">
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Nombre *</label>
+                    <input type="text" name="nombre" value="{{ producto.nombre if producto else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select name="tipo">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="tinta" {% if producto and producto.tipo == 'tinta' %}selected{% endif %}>Tinta</option>
+                        <option value="vinilo" {% if producto and producto.tipo == 'vinilo' %}selected{% endif %}>Vinilo</option>
+                        <option value="papel" {% if producto and producto.tipo == 'papel' %}selected{% endif %}>Papel</option>
+                        <option value="pvc" {% if producto and producto.tipo == 'pvc' %}selected{% endif %}>PVC</option>
+                        <option value="lona" {% if producto and producto.tipo == 'lona' %}selected{% endif %}>Lona</option>
+                        <option value="otros" {% if producto and producto.tipo == 'otros' %}selected{% endif %}>Otros</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Ubicación</label>
+                    <select name="ubicacion">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="almacen" {% if producto and producto.ubicacion == 'almacen' %}selected{% endif %}>Almacén</option>
+                        <option value="garaje" {% if producto and producto.ubicacion == 'garaje' %}selected{% endif %}>Garaje</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Unidad</label>
+                    <select name="unidad">
+                        <option value="rollo" {% if producto and producto.unidad == 'rollo' %}selected{% endif %}>Rollo</option>
+                        <option value="bote" {% if producto and producto.unidad == 'bote' %}selected{% endif %}>Bote</option>
+                        <option value="plancha" {% if producto and producto.unidad == 'plancha' %}selected{% endif %}>Plancha</option>
+                        <option value="unidad" {% if producto and producto.unidad == 'unidad' %}selected{% endif %}>Unidad</option>
+                        <option value="metro" {% if producto and producto.unidad == 'metro' %}selected{% endif %}>Metro</option>
+                        <option value="hojas" {% if producto and producto.unidad == 'hojas' %}selected{% endif %}>Hojas</option>
+                        <option value="ml" {% if producto and producto.unidad == 'ml' %}selected{% endif %}>ml</option>
+                        <option value="L" {% if producto and producto.unidad == 'L' %}selected{% endif %}>L</option>
+                        <option value="kg" {% if producto and producto.unidad == 'kg' %}selected{% endif %}>kg</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Costo unitario (CUP)</label>
+                    <input type="number" step="0.01" name="costo" value="{{ producto.costo if producto else 0 }}">
+                </div>
+                <div class="form-group">
+                    <label>Stock inicial</label>
+                    <input type="number" step="0.01" name="stock" value="{{ producto.stock if producto else 0 }}" {% if producto %}disabled{% endif %}>
+                    {% if producto %}<small style="color:#999;">El stock se ajusta desde la vista de detalle.</small>{% endif %}
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Stock mínimo (alerta)</label>
+                    <input type="number" step="0.01" name="stock_minimo" value="{{ producto.stock_minimo if producto else 0 }}">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de vencimiento</label>
+                    <input type="date" name="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
+                </div>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ 'Actualizar' if producto else 'Crear' }} producto</button>
+                <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

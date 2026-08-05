@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Reporte de Merma · Inventario{% endblock %}
+
+{% block page_title %}📉 Reporte de Merma{% endblock %}
+
+{% block content %}
+<div class="content-card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <form method="GET" action="{{ url_for('inventario.merma') }}" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <label>Mes:</label>
+            <select name="mes">
+                {% for m in range(1,13) %}
+                    <option value="{{ m }}" {% if mes == m %}selected{% endif %}>{{ m }}</option>
+                {% endfor %}
+            </select>
+            <label>Año:</label>
+            <select name="anio">
+                {% for a in range(2024, 2031) %}
+                    <option value="{{ a }}" {% if anio == a %}selected{% endif %}>{{ a }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm" style="background:#1c1c1e;color:white;">Filtrar</button>
+        </form>
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Entradas</th>
+                    <th>Consumos</th>
+                    <th>Merma</th>
+                    <th>% Merma</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in datos %}
+                <tr>
+                    <td><strong>{{ d.producto.nombre }}</strong></td>
+                    <td>{{ d.entradas }}</td>
+                    <td>{{ d.consumos }}</td>
+                    <td style="color:{{ 'red' if d.merma > 0 else 'green' if d.merma < 0 else '#888' }};">
+                        {{ d.merma > 0 and '+' or '' }}{{ d.merma }}
+                    </td>
+                    <td style="color:{{ 'red' if d.porcentaje > 10 else 'orange' if d.porcentaje > 5 else 'green' }};">
+                        {{ d.porcentaje|round(1) }}%
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" style="text-align:center;color:#8e8e93;">No hay datos para este período.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

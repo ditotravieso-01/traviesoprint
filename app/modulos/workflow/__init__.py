@@ -114,16 +114,24 @@ def mover_ajax(order_id):
         }), 403
 
     # ============================================
-    # NUEVA VALIDACIÓN: SOLO ÓRDENES CON ENTRADA AL SISTEMA PUEDEN MOVERSE
+    # VALIDACIÓN: SOLO ÓRDENES CON ENTRADA AL SISTEMA PUEDEN MOVERSE
     # ============================================
-    # Permitir mover a "pendiente" incluso si no tiene entrada (para que se pueda corregir)
     if not order.entrada_ok and nueva_columna != 'pendiente':
         return jsonify({
             'error': '⚠️ Esta orden no tiene entrada al sistema. Debes marcarla como "Entrada" primero.\n\n'
                      'Por favor, ve a la lista de órdenes y asígnale el número de Odoo para poder avanzarla en el flujo de trabajo.'
         }), 400
 
-    # (Resto del código: actualizar columna, guardar historial, notificaciones...)
+    # ============================================
+    # CONSUMIR MATERIALES AL PASAR A "IMPRESO Y CORTE"
+    # ============================================
+    if nueva_columna == 'impreso-corte' and order.entrada_ok:
+        from app.modulos.ordenes import consumir_materiales
+        success, msg = consumir_materiales(order.id)
+        if not success:
+            return jsonify({'error': f'Error al consumir materiales: {msg}'}), 400
+
+    # Actualizar columna
     order.column = nueva_columna
     if nueva_columna == 'entregados':
         order.fecha_entregado = datetime.now()
@@ -138,7 +146,7 @@ def mover_ajax(order_id):
     })
     db.session.commit()
 
-    # Notificaciones...
+    # Notificaciones
     usuarios = User.query.filter(User.is_active == True, User.id != current_user.id).all()
     if usuarios:
         mensaje = f"Orden {order.order_num} movida a '{nueva_columna}' por {current_user.username}"

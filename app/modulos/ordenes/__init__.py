@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, jsonify
 from flask_login import login_required, current_user
-from app.models import Order, User, ArchivoAdjunto, Client
+from app.models import Order, User, ArchivoAdjunto, Client, Producto, Movimiento, OrdenProducto
 from app import db
 from weasyprint import HTML
 import json
@@ -55,11 +55,16 @@ def _get_form_context(form_data=None, edit=False, order=None):
 
     todos_usuarios = User.query.filter_by(is_active=True).order_by(User.username).all()
 
+    # Obtener productos para el selector de inventario
+    productos = Producto.query.order_by(Producto.nombre).all()
+    productos_data = [{'id': p.id, 'nombre': p.nombre, 'unidad': p.unidad, 'stock': p.stock} for p in productos]
+
     context = {
         'lista_materiales': lista_materiales,
         'servicios_disponibles': servicios_disponibles,
         'clients_list': clients_data,
         'todos_usuarios': todos_usuarios,
+        'productos': productos_data,
         'edit': edit,
         'order': order,
         'form_data': form_data if form_data is not None else {}
@@ -102,6 +107,48 @@ def guardar_archivo(orden_id, archivo):
 
     archivo.save(ruta_absoluta)
     return ruta_relativa
+
+# ==========================================
+# CONSUMIR MATERIALES (integración con inventario)
+# ==========================================
+def consumir_materiales(orden_id):
+    """Consume los materiales de una orden al pasar a 'Impreso y corte'"""
+    order = Order.query.get(orden_id)
+    if not order:
+        return False, "Orden no encontrada"
+
+    op_items = OrdenProducto.query.filter_by(orden_id=orden_id).all()
+    if not op_items:
+        return True, "No hay materiales asociados a esta orden"
+
+    for item in op_items:
+        producto = Producto.query.get(item.producto_id)
+        if not producto:
+            continue
+
+        # Verificar que haya stock suficiente
+        if producto.stock < item.cantidad_estimada:
+            return False, f"Stock insuficiente de {producto.nombre} (disponible: {producto.stock}, necesario: {item.cantidad_estimada})"
+
+        # Descontar stock y comprometido
+        producto.stock -= item.cantidad_estimada
+        producto.stock_comprometido = max(0, (producto.stock_comprometido or 0) - item.cantidad_estimada)
+
+        # Registrar movimiento de consumo
+        movimiento = Movimiento(
+            producto_id=producto.id,
+            tipo='consumo',
+            cantidad=item.cantidad_estimada,
+            comentario=f'Consumo para orden {order.order_num or "sin número"}',
+            orden_id=orden.id,
+            usuario_id=current_user.id if hasattr(current_user, 'id') else None
+        )
+        db.session.add(movimiento)
+        # Actualizar cantidad real
+        item.cantidad_real = item.cantidad_estimada
+
+    db.session.commit()
+    return True, "Materiales consumidos correctamente"
 
 # ==========================================
 # CREAR ORDEN
@@ -158,6 +205,30 @@ def create_order():
         db.session.add(order)
         db.session.flush()
 
+        # ==========================================
+        # GUARDAR PRODUCTOS SELECCIONADOS (INVENTARIO)
+        # ==========================================
+        productos_ids = request.form.getlist('productos_ids[]')
+        productos_cantidades = request.form.getlist('productos_cantidades[]')
+        for p_id, cant in zip(productos_ids, productos_cantidades):
+            if p_id and cant:
+                try:
+                    p_id_int = int(p_id)
+                    cant_float = float(cant)
+                    if cant_float > 0:
+                        op = OrdenProducto(
+                            orden_id=order.id,
+                            producto_id=p_id_int,
+                            cantidad_estimada=cant_float
+                        )
+                        db.session.add(op)
+                        # Reservar stock
+                        producto = Producto.query.get(p_id_int)
+                        if producto:
+                            producto.stock_comprometido = (producto.stock_comprometido or 0) + cant_float
+                except (ValueError, TypeError):
+                    pass
+
         # NOTIFICACIONES
         usuarios_ids = []
         usuarios_notificar = request.form.getlist('usuarios_notificar[]')
@@ -179,7 +250,7 @@ def create_order():
 
         order.set_usuarios_notificados(usuarios_ids)
 
-        # LÍNEAS
+        # LÍNEAS (archivos adjuntos, etc.)
         nombres_visibles = request.form.getlist('nombres_visibles[]')
         materiales = request.form.getlist('materiales[]')
         cantidades = request.form.getlist('cantidades[]')
@@ -326,6 +397,32 @@ def edit_order(order_id):
                 adjunto.ruta = None
             db.session.add(adjunto)
 
+        # ACTUALIZAR PRODUCTOS ASOCIADOS (INVENTARIO)
+        # Primero eliminar los existentes y luego añadir los nuevos
+        # Para simplificar, eliminamos todos y volvemos a crear
+        OrdenProducto.query.filter_by(orden_id=order.id).delete()
+        # Liberar reservas anteriores
+        productos_ids = request.form.getlist('productos_ids[]')
+        productos_cantidades = request.form.getlist('productos_cantidades[]')
+        for p_id, cant in zip(productos_ids, productos_cantidades):
+            if p_id and cant:
+                try:
+                    p_id_int = int(p_id)
+                    cant_float = float(cant)
+                    if cant_float > 0:
+                        op = OrdenProducto(
+                            orden_id=order.id,
+                            producto_id=p_id_int,
+                            cantidad_estimada=cant_float
+                        )
+                        db.session.add(op)
+                        # Reservar stock
+                        producto = Producto.query.get(p_id_int)
+                        if producto:
+                            producto.stock_comprometido = (producto.stock_comprometido or 0) + cant_float
+                except (ValueError, TypeError):
+                    pass
+
         order.add_history(f'Editada por {current_user.username}')
 
         # NOTIFICACIONES
@@ -354,6 +451,16 @@ def edit_order(order_id):
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
     # GET
+    # Obtener productos asociados actuales
+    productos_asociados = OrdenProducto.query.filter_by(orden_id=order.id).all()
+    productos_data = []
+    for op in productos_asociados:
+        productos_data.append({
+            'producto_id': op.producto_id,
+            'cantidad': op.cantidad_estimada,
+            'nombre': op.producto.nombre if op.producto else ''
+        })
+
     form_data = {
         'order_num': order.order_num,
         'date': order.date.strftime('%Y-%m-%d') if order.date else '',
@@ -364,7 +471,8 @@ def edit_order(order_id):
         'tipo_proyecto': order.tipo_proyecto,
         'priority': order.priority,
         'descripcion': order.descripcion,
-        'servicios': order.get_servicios()
+        'servicios': order.get_servicios(),
+        'productos_asociados': productos_data
     }
     context = _get_form_context(form_data=form_data, edit=True, order=order)
     return render_template('form_orden.html', **context)

@@ -64,6 +64,15 @@
     .modal-close:hover { color: #333; }
     .modal .form-group { margin-bottom: 12px; }
 
+    .producto-item {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+    .producto-item select { flex: 2; }
+    .producto-item input[type="number"] { flex: 1; }
+
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; }
         .btn-group { flex-direction: column; align-items: stretch; }
@@ -72,6 +81,9 @@
         .lineas-table input, .lineas-table select { font-size: 13px; padding: 4px; }
         .client-select-wrapper { flex-direction: column; align-items: stretch; }
         .btn-crear-cliente { margin-left: 0; }
+        .producto-item { flex-wrap: wrap; }
+        .producto-item select { flex: 1 1 100%; }
+        .producto-item input[type="number"] { flex: 1 1 50%; }
     }
 </style>
 {% endblock %}
@@ -125,6 +137,42 @@
         </div>
 
         <!-- ==========================================
+        SECCIÓN 2: MATERIALES (INVENTARIO)
+        ========================================== -->
+        <div class="form-section">
+            <h4>📦 Materiales (Inventario)</h4>
+            <p style="color:#666; font-size:14px;">Selecciona los productos que se usarán en esta orden y sus cantidades estimadas.</p>
+            <div id="productos-container">
+                {% if edit and form_data.productos_asociados %}
+                    {% for item in form_data.productos_asociados %}
+                    <div class="producto-item">
+                        <select name="productos_ids[]" class="form-control">
+                            <option value="">-- Seleccionar --</option>
+                            {% for p in productos %}
+                            <option value="{{ p.id }}" {% if p.id == item.producto_id %}selected{% endif %}>{{ p.nombre }} (stock: {{ p.stock }})</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" value="{{ item.cantidad }}" required />
+                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="producto-item">
+                        <select name="productos_ids[]" class="form-control">
+                            <option value="">-- Seleccionar --</option>
+                            {% for p in productos %}
+                            <option value="{{ p.id }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
+                            {% endfor %}
+                        </select>
+                        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" required />
+                        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
+                    </div>
+                {% endif %}
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="agregarProductoItem()"><i class="fas fa-plus"></i> Añadir material</button>
+        </div>
+
+        <!-- ==========================================
         SECCIÓN: NOTIFICACIONES
         ========================================== -->
         <div class="form-section">
@@ -151,7 +199,7 @@
         </div>
 
         <!-- ==========================================
-        SECCIÓN 2: TIPO Y PRIORIDAD
+        SECCIÓN 3: TIPO Y PRIORIDAD
         ========================================== -->
         <div class="form-section">
             <h4>🎯 Tipo y Prioridad</h4>
@@ -177,7 +225,7 @@
         </div>
 
         <!-- ==========================================
-        SECCIÓN 3: SERVICIOS
+        SECCIÓN 4: SERVICIOS
         ========================================== -->
         <div class="form-section">
             <h4>🛠 Servicios</h4>
@@ -201,7 +249,7 @@
         </div>
 
         <!-- ==========================================
-        SECCIÓN 4: DESCRIPCIÓN
+        SECCIÓN 5: DESCRIPCIÓN
         ========================================== -->
         <div class="form-section">
             <h4>📝 Descripción</h4>
@@ -212,7 +260,7 @@
         </div>
 
         <!-- ==========================================
-        SECCIÓN 5: ARCHIVOS Y LÍNEAS
+        SECCIÓN 6: ARCHIVOS Y LÍNEAS
         ========================================== -->
         <div class="form-section">
             <h4>📎 Archivos y Líneas de trabajo</h4>
@@ -598,6 +646,31 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =============================================
+// GESTIÓN DE MATERIALES (PRODUCTOS)
+// =============================================
+function agregarProductoItem() {
+    const container = document.getElementById('productos-container');
+    const div = document.createElement('div');
+    div.className = 'producto-item';
+    // Usar las opciones del primer select como plantilla
+    const firstSelect = container.querySelector('select[name="productos_ids[]"]');
+    const optionsHtml = firstSelect ? firstSelect.innerHTML : '';
+    div.innerHTML = `
+        <select name="productos_ids[]" class="form-control">
+            ${optionsHtml}
+        </select>
+        <input type="number" step="0.01" name="productos_cantidades[]" placeholder="Cantidad" required />
+        <button type="button" class="btn btn-danger btn-sm" onclick="eliminarProductoItem(this)"><i class="fas fa-trash-alt"></i></button>
+    `;
+    container.appendChild(div);
+}
+
+function eliminarProductoItem(btn) {
+    const item = btn.closest('.producto-item');
+    if (item) item.remove();
+}
+
+// =============================================
 // FECHA ACTUAL POR DEFECTO
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
@@ -624,7 +697,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // =============================================
-// NUEVO: BÚSQUEDA Y SELECCIÓN DE USUARIOS
+// BÚSQUEDA Y SELECCIÓN DE USUARIOS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     const buscarInput = document.getElementById('buscarUsuario');
