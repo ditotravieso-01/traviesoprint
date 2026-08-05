@@ -107,18 +107,23 @@ def mover_ajax(order_id):
     print(f"🔍 Orden {order.order_num} (ID: {order_id}) está en columna: '{order.column}'")
     print(f"   Permisos del usuario: {columnas_permitidas}")
 
+    # 1. Verificar permiso de columna
     if order.column not in columnas_permitidas:
         return jsonify({
             'error': f'No tienes permiso para mover desde "{order.column}". Solo puedes mover desde: {", ".join(columnas_permitidas)}'
         }), 403
 
     # ============================================
-    # NUEVA VALIDACIÓN: Solo admin puede mover sin entrada al sistema
+    # NUEVA VALIDACIÓN: SOLO ÓRDENES CON ENTRADA AL SISTEMA PUEDEN MOVERSE
     # ============================================
-    if current_user.role != 'admin':
-        if not order.entrada_ok and nueva_columna != 'pendiente':
-            return jsonify({'error': 'La orden debe tener entrada al sistema para moverla a esta columna'}), 400
+    # Permitir mover a "pendiente" incluso si no tiene entrada (para que se pueda corregir)
+    if not order.entrada_ok and nueva_columna != 'pendiente':
+        return jsonify({
+            'error': '⚠️ Esta orden no tiene entrada al sistema. Debes marcarla como "Entrada" primero.\n\n'
+                     'Por favor, ve a la lista de órdenes y asígnale el número de Odoo para poder avanzarla en el flujo de trabajo.'
+        }), 400
 
+    # (Resto del código: actualizar columna, guardar historial, notificaciones...)
     order.column = nueva_columna
     if nueva_columna == 'entregados':
         order.fecha_entregado = datetime.now()
@@ -133,6 +138,7 @@ def mover_ajax(order_id):
     })
     db.session.commit()
 
+    # Notificaciones...
     usuarios = User.query.filter(User.is_active == True, User.id != current_user.id).all()
     if usuarios:
         mensaje = f"Orden {order.order_num} movida a '{nueva_columna}' por {current_user.username}"
