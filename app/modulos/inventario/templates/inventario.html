@@ -6,49 +6,379 @@
 
 {% block extra_css %}
 <style>
-    .filters-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; padding: 12px 16px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px); border-radius: 12px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px; }
-    .filters-bar input, .filters-bar select { padding: 6px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 13px; background: white; color: #1c1c1e; min-width: 120px; flex: 1; font-family: 'Inter', sans-serif; }
-    .filters-bar input:focus, .filters-bar select:focus { outline: none; border-color: #007aff; box-shadow: 0 0 0 3px rgba(0,122,255,0.1); }
-    .filters-bar .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .filters-bar .filter-label { font-weight: 600; font-size: 13px; color: #8e8e93; }
-    .btn { padding: 8px 18px; border-radius: 30px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; background: #1c1c1e; color: white; }
-    .btn:hover { background: #333; transform: translateY(-1px); }
-    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #007aff; color: #007aff; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; }
-    .btn-warning { background: #f59e0b; color: white; }
-    .btn-warning:hover { background: #d97706; }
-    .btn-danger { background: #dc2626; color: white; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-sm { padding: 4px 12px; font-size: 12px; }
-    .card { background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border-radius: 16px; padding: 18px 20px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02); margin-bottom: 16px; }
-    .card h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; margin-bottom: 12px; color: #1c1c1e; }
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    th { text-align: left; padding: 8px 10px; font-weight: 600; color: #8e8e93; border-bottom: 1px solid rgba(0,0,0,0.04); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
-    td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.02); }
-    .stock-bar { width: 100%; height: 6px; background: rgba(0,0,0,0.04); border-radius: 4px; overflow: hidden; }
-    .stock-bar .fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-    .fill-green { background: #10b981; }
-    .fill-yellow { background: #f59e0b; }
-    .fill-red { background: #dc2626; }
-    .badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
-    .badge-critico { background: #fde8e5; color: #dc2626; }
-    .badge-bajo { background: #fef3c7; color: #d97706; }
-    .badge-normal { background: #d1fae5; color: #10b981; }
-    .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.2); z-index: 999; backdrop-filter: blur(4px); justify-content: center; align-items: center; }
-    .modal-overlay.active { display: flex; }
-    .modal { background: white; border-radius: 24px; padding: 28px 32px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.08); animation: modalIn 0.3s ease; }
-    @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
-    .modal .form-group { margin-bottom: 12px; }
-    .modal .form-group label { display: block; font-weight: 600; font-size: 13px; color: #1c1c1e; margin-bottom: 2px; }
-    .modal .form-group input, .modal .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #d2d2d7; border-radius: 8px; font-size: 14px; background: white; }
-    .modal .form-group input:focus, .modal .form-group select:focus { outline: none; border-color: #007aff; }
-    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
-    .modal .modal-close { background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; float: right; }
-    @media (max-width: 768px) { .filters-bar { flex-direction: column; align-items: stretch; } .filters-bar input, .filters-bar select { min-width: unset; } }
+    /* ===== ESTUDIO BLANC - ESTILOS GENERALES ===== */
+    .filters-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255, 255, 255, 0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        margin-bottom: 20px;
+    }
+    .filters-bar input,
+    .filters-bar select {
+        padding: 6px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 120px;
+        flex: 1;
+        font-family: 'Inter', sans-serif;
+    }
+    .filters-bar input:focus,
+    .filters-bar select:focus {
+        outline: none;
+        border-color: #007aff;
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+    }
+    .filters-bar .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .filters-bar .filter-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+    }
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+    .btn-primary {
+        background: #1c1c1e;
+        color: white;
+    }
+    .btn-primary:hover {
+        background: #333;
+    }
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+    .btn-warning:hover {
+        background: #d97706;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-sm {
+        padding: 4px 12px;
+        font-size: 12px;
+    }
+    .card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+        margin-bottom: 16px;
+    }
+    .card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 12px;
+        color: #1c1c1e;
+    }
+    .table-wrap {
+        overflow-x: auto;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+    }
+    th {
+        text-align: left;
+        padding: 8px 10px;
+        font-weight: 600;
+        color: #8e8e93;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+    }
+    .stock-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(0, 0, 0, 0.04);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .stock-bar .fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s;
+    }
+    .fill-green {
+        background: #10b981;
+    }
+    .fill-yellow {
+        background: #f59e0b;
+    }
+    .fill-red {
+        background: #dc2626;
+    }
+    .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        display: inline-block;
+        font-family: 'Inter', sans-serif;
+    }
+    .badge-critico {
+        background: #fde8e5;
+        color: #dc2626;
+    }
+    .badge-bajo {
+        background: #fef3c7;
+        color: #d97706;
+    }
+    .badge-normal {
+        background: #d1fae5;
+        color: #10b981;
+    }
+
+    /* ============================================
+       MODALES ESTILO "ESTUDIO BLANC"
+       Psicología del color occidental:
+       - Verde (#10b981) → Comprar (éxito, dinero)
+       - Ámbar (#f59e0b) → Ajustar (cautela, cambio)
+    ============================================ */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal {
+        background: #ffffff;
+        border-radius: 20px;
+        padding: 0;
+        max-width: 520px;
+        width: 92%;
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
+        animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
+    }
+    @keyframes modalIn {
+        from {
+            transform: scale(0.95) translateY(12px);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Cabecera del modal con borde de color según acción */
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 28px 14px 28px;
+        border-bottom: 1px solid #f0ece8;
+        background: #fafaf9;
+    }
+    .modal-header .modal-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0;
+        color: #1c1c1e;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .modal-header .modal-title i {
+        font-size: 20px;
+    }
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 28px;
+        line-height: 1;
+        color: #8e8e93;
+        cursor: pointer;
+        transition: color 0.2s;
+        padding: 0 4px;
+    }
+    .modal-close:hover {
+        color: #1c1c1e;
+    }
+
+    /* Borde superior de color (se asigna mediante clase en el modal) */
+    .modal-compra {
+        border-top: 5px solid #10b981;
+    }
+    .modal-compra .modal-title {
+        color: #10b981;
+    }
+    .modal-compra .modal-title i {
+        color: #10b981;
+    }
+
+    .modal-ajuste {
+        border-top: 5px solid #f59e0b;
+    }
+    .modal-ajuste .modal-title {
+        color: #f59e0b;
+    }
+    .modal-ajuste .modal-title i {
+        color: #f59e0b;
+    }
+
+    /* Cuerpo del modal */
+    .modal-body {
+        padding: 20px 28px 28px 28px;
+    }
+    .modal-body .form-group {
+        margin-bottom: 16px;
+    }
+    .modal-body .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 13px;
+        color: #333;
+        margin-bottom: 4px;
+        font-family: 'Inter', sans-serif;
+    }
+    .modal-body .form-group input,
+    .modal-body .form-group select {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #d2d2d7;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    .modal-body .form-group input:focus,
+    .modal-body .form-group select:focus {
+        outline: none;
+        border-color: #1c1c1e;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
+    }
+
+    /* Inputs específicos con foco de color según acción */
+    .modal-compra .form-group input:focus,
+    .modal-compra .form-group select:focus {
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
+    }
+    .modal-ajuste .form-group input:focus,
+    .modal-ajuste .form-group select:focus {
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08);
+    }
+
+    .modal-body .form-group input[disabled] {
+        background: #f0ece8;
+        color: #6b7280;
+        cursor: not-allowed;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        justify-content: flex-end;
+        border-top: 1px solid #f0ece8;
+        padding-top: 16px;
+    }
+
+    @media (max-width: 768px) {
+        .filters-bar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .filters-bar input,
+        .filters-bar select {
+            min-width: unset;
+        }
+        .modal {
+            width: 95%;
+        }
+        .modal-header {
+            padding: 14px 18px 10px 18px;
+        }
+        .modal-body {
+            padding: 16px 18px 20px 18px;
+        }
+        .modal-header .modal-title {
+            font-size: 19px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -124,7 +454,7 @@
                         <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
                             <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
                         </form>
-                        <button class="btn btn-sm btn-outline" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
+                        <button class="btn btn-sm btn-success" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
                     </td>
                 </tr>
                 {% endfor %}
@@ -133,37 +463,45 @@
     </div>
 </div>
 
-<!-- Modal: Registrar compra -->
+<!-- ============================================
+     MODAL: COMPRAR (verde - éxito)
+     ============================================ -->
 <div class="modal-overlay" id="modalCompra">
-    <div class="modal">
-        <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
-        <h2>Registrar compra</h2>
-        <form method="POST" action="{{ url_for('inventario.comprar') }}">
-            <div class="form-group">
-                <label>Producto</label>
-                <select id="compraProductoSelect" name="producto_id" required>
-                    {% for p in productos %}
-                    <option value="{{ p.id }}">{{ p.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Cantidad</label>
-                <input type="number" step="0.01" name="cantidad" value="1" required />
-            </div>
-            <div class="form-group">
-                <label>Costo unitario (USD)</label>
-                <input type="number" step="0.01" name="costo" value="0" />
-            </div>
-            <div class="form-group">
-                <label>Comentario</label>
-                <input type="text" name="comentario" placeholder="Ej. Compra mensual" />
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
-                <button type="submit" class="btn btn-success">Guardar</button>
-            </div>
-        </form>
+    <div class="modal modal-compra">
+        <!-- Cabecera -->
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-shopping-cart"></i> Registrar compra</span>
+            <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
+        </div>
+        <!-- Cuerpo -->
+        <div class="modal-body">
+            <form method="POST" action="{{ url_for('inventario.comprar') }}">
+                <div class="form-group">
+                    <label>Producto</label>
+                    <select id="compraProductoSelect" name="producto_id" required>
+                        {% for p in productos %}
+                        <option value="{{ p.id }}">{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad</label>
+                    <input type="number" step="0.01" name="cantidad" value="1" required />
+                </div>
+                <div class="form-group">
+                    <label>Costo unitario (USD)</label>
+                    <input type="number" step="0.01" name="costo" value="0" placeholder="0.00" />
+                </div>
+                <div class="form-group">
+                    <label>Comentario</label>
+                    <input type="text" name="comentario" placeholder="Ej. Compra mensual" />
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Guardar compra</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
@@ -176,15 +514,34 @@
         if (search) url += 'search=' + encodeURIComponent(search);
         window.location.href = url;
     }
+
     function abrirModalCompra(productoId) {
         document.getElementById('compraProductoSelect').value = productoId;
         document.getElementById('modalCompra').classList.add('active');
+        document.body.style.overflow = 'hidden'; // Evita scroll
     }
+
     function cerrarModal(id) {
         document.getElementById(id).classList.remove('active');
+        document.body.style.overflow = '';
     }
+
+    // Cerrar con ESC
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            document.body.style.overflow = '';
+        }
+    });
+
+    // Cerrar al hacer clic fuera del modal
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.remove('active');
+                document.body.style.overflow = '';
+            }
+        });
     });
 </script>
 {% endblock %}
