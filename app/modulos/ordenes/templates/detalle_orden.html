@@ -1,168 +1,182 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Orden de Trabajo {{ order.order_num }}</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background: #ffffff; color: #1a1a1a; padding: 30px 40px; line-height: 1.5; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #a8854f; padding-bottom: 12px; margin-bottom: 20px; }
-        .header-left .brand { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1a1a1a; letter-spacing: 1px; }
-        .header-left .brand-sub { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 300; color: #666; letter-spacing: 3px; margin-top: -2px; }
-        .header-right { text-align: right; }
-        .header-right .doc-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #a8854f; letter-spacing: 2px; }
-        .header-right .doc-sub { font-size: 11px; color: #888; font-weight: 300; }
-        .data-card { background: #f9f7f5; border-radius: 6px; padding: 14px 20px; margin-bottom: 18px; border-left: 4px solid #a8854f; }
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 30px; }
-        .data-item { display: flex; padding: 2px 0; border-bottom: 1px solid #f0ece8; }
-        .data-item .label { font-weight: 600; color: #333; width: 110px; flex-shrink: 0; font-size: 12px; }
-        .data-item .value { font-weight: 400; color: #1a1a1a; font-size: 13px; }
-        .section { margin-bottom: 16px; }
-        .section-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; color: #2c2c2c; border-bottom: 2px solid #e8e0d8; padding-bottom: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .section-title .icon { font-size: 16px; }
-        .servicios-list { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 2px 0; }
-        .servicio-tag { background: #f0ece8; padding: 3px 14px; border-radius: 16px; font-size: 12px; color: #333; font-weight: 500; }
-        .desc-text { background: #fcfaf8; padding: 8px 14px; border-radius: 4px; border: 1px solid #e8e0da; font-size: 13px; color: #333; line-height: 1.6; }
-        .lineas-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
-        .lineas-table th { background: #f0ece8; text-align: left; padding: 6px 10px; font-weight: 700; font-size: 11px; color: #333; border-bottom: 2px solid #d8d0c8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .lineas-table td { padding: 6px 10px; border-bottom: 1px solid #e8e0da; vertical-align: top; }
-        .lineas-table .nombre-linea { font-weight: 600; color: #1a1a1a; }
-        .lineas-table .material-linea { color: #555; font-size: 11px; }
-        .lineas-table .cantidad-linea { font-weight: 500; color: #1a1a1a; }
-        .lineas-table .unidad-linea { color: #555; }
-        .lineas-table .tipo-linea { font-size: 11px; background: #f0ece8; padding: 1px 6px; border-radius: 12px; }
-        .lineas-table .detalle-etiqueta { font-size: 10px; color: #777; }
-        .detalle-panel { background: #f8f6f4; border-radius: 6px; padding: 10px 14px; margin-top: 4px; border-left: 3px solid #b8860b; display: none; }
-        .detalle-panel.visible { display: block; }
-        .detalle-panel .detalle-row { display: flex; justify-content: space-between; padding: 2px 0; font-size: 12px; border-bottom: 1px solid #eee; }
-        .detalle-panel .detalle-row .label { font-weight: 600; color: #555; }
-        .btn-detalle { background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; font-size: 12px; cursor: pointer; }
-        .btn-detalle:hover { background: #f0ece8; }
-        .footer { margin-top: 20px; border-top: 2px solid #e8e0d8; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
-        @media (max-width: 600px) { body { padding: 16px; } .header { flex-direction: column; align-items: flex-start; gap: 4px; } .header-right { text-align: left; } .data-grid { grid-template-columns: 1fr; } .data-item .label { width: 90px; } }
-        @page { margin: 12mm 15mm; @bottom-center { content: "CairoStudio · Generado el " attr(data-fecha); font-size: 8px; color: #aaa; } }
-        @page:first { @bottom-center { content: ""; } }
-    </style>
-</head>
-<body data-fecha="{{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}">
-    <div class="header">
-        <div class="header-left">
-            <div class="brand">CAIROSTUDIO</div>
-            <div class="brand-sub">GRUPO CREATIVO</div>
+{% extends "base.html" %}
+
+{% block title %}Orden de Trabajo {{ order.order_num }} · CairoStudio{% endblock %}
+
+{% block page_title %}📄 Orden de Trabajo {{ order.order_num }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .order-detail { max-width: 1000px; margin: 0 auto; }
+    .detail-card { background: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e8e0da; }
+    .detail-card h4 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 12px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 30px; }
+    .detail-item { display: flex; padding: 4px 0; border-bottom: 1px solid #f5f2ef; }
+    .detail-item .label { font-weight: 600; color: #555; width: 120px; flex-shrink: 0; font-size: 13px; }
+    .detail-item .value { color: #1a1a1a; font-size: 14px; }
+    .lineas-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 8px; }
+    .lineas-table th { background: #f8f6f4; text-align: left; padding: 8px 10px; font-weight: 600; font-size: 13px; border-bottom: 2px solid #e8e0da; }
+    .lineas-table td { padding: 8px 10px; border-bottom: 1px solid #eee; vertical-align: top; }
+    .badge-tipo { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #f0ece8; }
+    .badge-etiquetas { background: #b8860b; color: white; }
+    .badge-otros { background: #e8e0da; color: #333; }
+    .btn { padding: 6px 14px; border-radius: 20px; border: none; font-weight: 500; cursor: pointer; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
+    .btn-outline { background: transparent; border: 1px solid #ccc; color: #333; }
+    .btn-outline:hover { border-color: #888; background: #f5f5f5; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-pdf { background: #dc2626; color: white; }
+    .btn-pdf:hover { background: #b91c1c; }
+    .btn-primary { background: #1a1a1a; color: white; }
+    .btn-primary:hover { background: #333; }
+    .detalle-panel { background: #f8f8fc; border-radius: 8px; padding: 12px 16px; margin-top: 8px; border-left: 3px solid #b8860b; display: none; }
+    .detalle-panel.visible { display: block; }
+    .detalle-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; border-bottom: 1px solid #f0ece8; }
+    .detalle-row .label { font-weight: 600; color: #555; }
+    @media (max-width: 768px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .detail-item .label { width: 100px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="order-detail">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <div>
+            <span class="badge-tipo {% if order.entrada_ok %}badge-etiquetas{% else %}badge-otros{% endif %}">
+                {{ '✅ Entrada OK' if order.entrada_ok else '⏳ Pendiente entrada' }}
+            </span>
+            {% if order.entrada_ok %}
+                <span class="badge-tipo" style="background:#10b981; color:white;">N° {{ order.order_num }}</span>
+            {% endif %}
         </div>
-        <div class="header-right">
-            <div class="doc-title">ORDEN DE TRABAJO</div>
-            <div class="doc-sub">N° {{ order.order_num or 'Sin número' }}</div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            {% if current_user.role in ['comercial', 'admin'] %}
+                <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
+                <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+            {% endif %}
+            <a href="{{ url_for('ordenes.list_orders') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
         </div>
     </div>
 
-    <div class="data-card">
-        <div class="data-grid">
-            <div class="data-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num or 'Sin número' }}</span></div>
-            <div class="data-item"><span class="label">Fecha</span><span class="value">{{ order.date.strftime('%d/%m/%Y') if order.date else '-' }}</span></div>
-            <div class="data-item"><span class="label">Cliente</span><span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></div>
-            <div class="data-item"><span class="label">Solicitado</span><span class="value">{{ order.solicitado or '-' }}</span></div>
-            <div class="data-item"><span class="label">Tipo</span><span class="value">{{ order.tipo_proyecto or 'grafica' }}</span></div>
-            <div class="data-item"><span class="label">Prioridad</span><span class="value">{{ order.priority or 'normal' }}</span></div>
+    <!-- DATOS GENERALES -->
+    <div class="detail-card">
+        <h4>📋 Datos Generales</h4>
+        <div class="detail-grid">
+            <div class="detail-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num or 'Sin número' }}</span></div>
+            <div class="detail-item"><span class="label">Fecha</span><span class="value">{{ order.date.strftime('%d/%m/%Y') if order.date else '-' }}</span></div>
+            <div class="detail-item"><span class="label">Cliente</span><span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></div>
+            <div class="detail-item"><span class="label">Solicitado por</span><span class="value">{{ order.solicitado or '-' }}</span></div>
+            <div class="detail-item"><span class="label">Tipo de proyecto</span><span class="value">{{ order.tipo_proyecto or 'grafica' }}</span></div>
+            <div class="detail-item"><span class="label">Prioridad</span><span class="value">{{ order.priority or 'normal' }}</span></div>
+            <div class="detail-item"><span class="label">Estado</span><span class="value">{{ columnas_nombres[order.column] or order.column }}</span></div>
+            <div class="detail-item"><span class="label">Entrada sistema</span><span class="value">{% if order.entrada_ok %}✅ OK ({{ order.order_num }}){% else %}⏳ Pendiente{% endif %}</span></div>
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">🛠</span> Servicios</div>
+    <!-- SERVICIOS -->
+    <div class="detail-card">
+        <h4>🛠 Servicios</h4>
         {% set servicios = order.get_servicios() %}
-        <div class="servicios-list">
-            {% if servicios %}{% for serv in servicios %}<span class="servicio-tag">{{ serv }}</span>{% endfor %}{% else %}<span style="color:#999; font-style:italic;">No especificados</span>{% endif %}
+        <div style="display:flex; flex-wrap:wrap; gap:8px;">
+            {% if servicios %}
+                {% for serv in servicios %}
+                    <span class="badge-tipo" style="background:#f0ece8; padding:4px 12px;">{{ serv }}</span>
+                {% endfor %}
+            {% else %}
+                <span style="color:#999;">No especificados</span>
+            {% endif %}
         </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">📝</span> Tener en cuenta</div>
-        <div class="desc-text">{{ order.descripcion or 'Sin descripción' }}</div>
+    <!-- DESCRIPCIÓN / TENER EN CUENTA -->
+    <div class="detail-card">
+        <h4>📝 Tener en cuenta</h4>
+        <div style="background:#fcfaf8; padding:10px 14px; border-radius:6px; border:1px solid #e8e0da; font-size:14px; line-height:1.6;">
+            {{ order.descripcion or 'Sin descripción' }}
+        </div>
     </div>
 
-    <div class="section">
-        <div class="section-title"><span class="icon">📎</span> Líneas de trabajo</div>
+    <!-- LÍNEAS DE TRABAJO -->
+    <div class="detail-card">
+        <h4>📎 Líneas de trabajo</h4>
         {% if order.archivos %}
-        <table class="lineas-table">
-            <thead>
-                <tr>
-                    <th style="width:18%;">Nombre</th>
-                    <th style="width:18%;">Material</th>
-                    <th style="width:10%;">Cantidad</th>
-                    <th style="width:10%;">Unidad</th>
-                    <th style="width:12%;">Tipo</th>
-                    <th style="width:32%;">Detalles</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for archivo in order.archivos %}
-                <tr>
-                    <td class="nombre-linea">{{ archivo.nombre_visible }}</td>
-                    <td class="material-linea">{{ archivo.material or '-' }}</td>
-                    <td class="cantidad-linea">{{ archivo.cantidad if archivo.cantidad is not none else '-' }}</td>
-                    <td class="unidad-linea">{{ archivo.unidad or '-' }}</td>
-                    <td>
-                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
-                            <span class="tipo-linea" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
-                            <button class="btn-detalle" onclick="toggleDetalle({{ archivo.id }})">📐 Ver</button>
-                        {% else %}
-                            <span class="tipo-linea">Otros</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
-                            {% set params = archivo.get_parametros_etiqueta() %}
-                            <div class="detalle-panel" id="detalle-{{ archivo.id }}">
-                                <div class="detalle-row"><span class="label">Ancho:</span> <span>{{ params.ancho }} cm</span></div>
-                                <div class="detalle-row"><span class="label">Alto:</span> <span>{{ params.alto }} cm</span></div>
-                                <div class="detalle-row"><span class="label">Ancho de rollo:</span> <span>{{ params.ancho_rollo }} m</span></div>
-                                <div class="detalle-row"><span class="label">Modo:</span> <span>{{ params.modo }}</span></div>
-                                <div class="detalle-row"><span class="label">Cantidad original:</span> <span>{{ params.cantidad }}</span></div>
-                                <div class="detalle-row"><span class="label">Precio m²:</span> <span>${{ params.precio }}</span></div>
-                                <div class="detalle-row"><span class="label">Margen mesa:</span> <span>{{ 'Sí' if params.mesa else 'No' }}</span></div>
-                                <div class="detalle-row"><span class="label">Girar 90°:</span> <span>{{ 'Sí' if params.girar else 'No' }}</span></div>
-                                <div class="detalle-row"><span class="label">Modo inteligente:</span> <span>{{ 'Sí' if params.auto_girar else 'No' }}</span></div>
-                                <div class="detalle-row"><span class="label">Etiquetas por m²:</span> <span>{{ params.etiquetas_por_m2 or '—' }}</span></div>
-                                <div class="detalle-row"><span class="label">Consumo (m):</span> <span>{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) if params.area_m2 else '—' }}</span></div>
-                                <div class="detalle-row"><span class="label">Área (m²):</span> <span>{{ params.area_m2|round(2) if params.area_m2 else '—' }}</span></div>
-                                <div class="detalle-row"><span class="label">Costo estimado:</span> <span>${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span></div>
-                                <button class="btn-detalle" onclick="toggleDetalle({{ archivo.id }})">Ocultar</button>
-                            </div>
-                        {% else %}
-                            <span style="font-size:10px; color:#999;">—</span>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+            <table class="lineas-table">
+                <thead>
+                    <tr>
+                        <th style="width:20%;">Nombre</th>
+                        <th style="width:20%;">Material</th>
+                        <th style="width:10%;">Cantidad</th>
+                        <th style="width:10%;">Unidad</th>
+                        <th style="width:12%;">Tipo</th>
+                        <th style="width:28%;">Detalles</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for archivo in order.archivos %}
+                    <tr>
+                        <td>{{ archivo.nombre_visible }}</td>
+                        <td>{{ archivo.material or '-' }}</td>
+                        <td>{{ archivo.cantidad if archivo.cantidad is not none else '-' }}</td>
+                        <td>{{ archivo.unidad or '-' }}</td>
+                        <td>
+                            {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                                <span class="badge-tipo badge-etiquetas">Etiquetas</span>
+                                <button class="btn btn-outline" style="padding:2px 8px; font-size:11px;" onclick="toggleDetalle({{ archivo.id }})">📐 Ver</button>
+                            {% else %}
+                                <span class="badge-tipo badge-otros">Otros</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                                {% set params = archivo.get_parametros_etiqueta() %}
+                                <div class="detalle-panel" id="detalle-{{ archivo.id }}">
+                                    <div class="detalle-row"><span class="label">Ancho:</span> <span>{{ params.ancho }} cm</span></div>
+                                    <div class="detalle-row"><span class="label">Alto:</span> <span>{{ params.alto }} cm</span></div>
+                                    <div class="detalle-row"><span class="label">Ancho de rollo:</span> <span>{{ params.ancho_rollo }} m</span></div>
+                                    <div class="detalle-row"><span class="label">Modo:</span> <span>{{ params.modo }}</span></div>
+                                    <div class="detalle-row"><span class="label">Cantidad original:</span> <span>{{ params.cantidad }}</span></div>
+                                    <div class="detalle-row"><span class="label">Precio m²:</span> <span>${{ params.precio }}</span></div>
+                                    <div class="detalle-row"><span class="label">Margen mesa:</span> <span>{{ 'Sí' if params.mesa else 'No' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Girar 90°:</span> <span>{{ 'Sí' if params.girar else 'No' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Modo inteligente:</span> <span>{{ 'Sí' if params.auto_girar else 'No' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Etiquetas por m²:</span> <span>{{ params.etiquetas_por_m2 or '—' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Metros completos:</span> <span>{% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span></div>
+                                    <div class="detalle-row"><span class="label">Resto (etiquetas):</span> <span>{% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %}</span></div>
+                                    <div class="detalle-row"><span class="label">Consumo (m):</span> <span>{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) if params.area_m2 else '—' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Área (m²):</span> <span>{{ params.area_m2|round(2) if params.area_m2 else '—' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Costo estimado:</span> <span>${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span></div>
+                                    <button class="btn btn-outline" style="padding:2px 8px; font-size:11px; margin-top:4px;" onclick="toggleDetalle({{ archivo.id }})">Ocultar</button>
+                                </div>
+                            {% else %}
+                                <span style="color:#999; font-size:13px;">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         {% else %}
-        <p style="color:#999; font-style:italic;">No hay líneas definidas</p>
+            <p style="color:#999; font-style:italic;">No hay líneas definidas</p>
         {% endif %}
     </div>
+</div>
 
-    <div class="footer">
-        <span class="left">CairoStudio · Grupo Creativo</span>
-        <span class="right">Generado: {{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}</span>
-    </div>
-
-    <script>
-        function toggleDetalle(id) {
-            var panel = document.getElementById('detalle-' + id);
-            if (panel) {
-                panel.classList.toggle('visible');
-                // Cambiar texto del botón "Ver" a "Ocultar" y viceversa
-                var btn = panel.parentElement.parentElement.querySelector('.btn-detalle');
-                if (btn) {
-                    if (panel.classList.contains('visible')) {
-                        btn.textContent = '📐 Ocultar';
-                    } else {
-                        btn.textContent = '📐 Ver';
-                    }
+<script>
+    function toggleDetalle(id) {
+        var panel = document.getElementById('detalle-' + id);
+        if (panel) {
+            panel.classList.toggle('visible');
+            // Cambiar texto del botón "Ver" a "Ocultar" y viceversa
+            var btn = panel.parentElement.parentElement.querySelector('.btn');
+            if (btn) {
+                if (panel.classList.contains('visible')) {
+                    btn.textContent = '📐 Ocultar';
+                } else {
+                    btn.textContent = '📐 Ver';
                 }
             }
         }
-    </script>
-</body>
-</html>
+    }
+</script>
+{% endblock %}

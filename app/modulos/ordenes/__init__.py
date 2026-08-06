@@ -10,6 +10,7 @@ import os
 import uuid
 from werkzeug.utils import secure_filename
 from app.services.notification_service import notificar_usuarios
+import math
 
 ordenes_bp = Blueprint('ordenes', __name__, url_prefix='/ordenes', template_folder='templates')
 
@@ -81,8 +82,16 @@ def list_orders():
 @login_required
 def detalle_order(order_id):
     order = Order.query.get_or_404(order_id)
-    return render_template('detalle_orden.html', order=order, now=datetime.now())
-
+    columnas_nombres = {
+        'pendiente': 'Pendiente',
+        'por-preparar': 'Por preparar',
+        'preparados': 'Preparados',
+        'imprimir-hoy': 'Imprimir hoy',
+        'impreso-corte': 'Impreso y corte',
+        'listo': 'Listo',
+        'entregados': 'Entregados'
+    }
+    return render_template('detalle_orden.html', order=order, now=datetime.now(), columnas_nombres=columnas_nombres)
 
 # ==========================================
 # FUNCIÓN AUXILIAR PARA GUARDAR ARCHIVO
@@ -121,7 +130,7 @@ def consumir_materiales(orden_id):
         if not producto:
             continue
 
-        # Verificar que haya stock suficiente
+        # Verificar que haya stock suficiente (stock actual + comprometido? mejor usar stock real)
         if producto.stock < item.cantidad_estimada:
             return False, f"Stock insuficiente de {producto.nombre} (disponible: {producto.stock}, necesario: {item.cantidad_estimada})"
 
@@ -206,7 +215,7 @@ def create_order():
         nombres_visibles = request.form.getlist('nombres_visibles[]')
         productos_ids = request.form.getlist('productos_ids[]')
         cantidades = request.form.getlist('cantidades[]')
-        unidades = request.form.getlist('unidades[]')   # <-- LÍNEA CORREGIDA
+        unidades = request.form.getlist('unidades[]')
         proyectos_linea = request.form.getlist('proyecto_linea[]')
 
         # Parámetros de etiquetas por línea (nuevas líneas)
@@ -295,7 +304,8 @@ def create_order():
                     context = _get_form_context(form_data=request.form, edit=False, order=None)
                     return render_template('form_orden.html', **context)
 
-                area_total = calculo['simData']['areaTotal']
+                simData = calculo['simData']
+                area_total = simData['areaTotal']
                 metros_lineales = area_total / ancho_rollo_m
                 if metros_lineales <= 0:
                     flash(f'Línea {i+1}: El consumo estimado es cero.', 'danger')
@@ -307,7 +317,29 @@ def create_order():
                 area_redondeada = round(area_total, 2)
                 costo_estimado = area_redondeada * precio_m2
 
-                # Crear adjunto con parámetros de etiquetas (guardando la cantidad original)
+                # ============================================================
+                # CÁLCULO DE METROS COMPLETOS Y RESTO (en el servidor)
+                # ============================================================
+                columnas = simData.get('columnas', 1)
+                filasPorMetro = simData.get('filasPorMetro', 1)
+                etiquetas_por_m2 = columnas * filasPorMetro
+                metros_completos = 0
+                resto_etiquetas = 0
+
+                if unidad == 'unidades' and cantidad_original and etiquetas_por_m2 > 0:
+                    metros_completos = int(cantidad_original // etiquetas_por_m2)
+                    resto = cantidad_original % etiquetas_por_m2
+                    if resto > 0:
+                        filas_extra = math.ceil(resto / columnas)
+                        resto_etiquetas = int(filas_extra * columnas)
+                    else:
+                        resto_etiquetas = 0
+                else:
+                    # Si es en metros, no aplica
+                    metros_completos = 0
+                    resto_etiquetas = 0
+
+                # Crear adjunto con parámetros de etiquetas
                 adjunto = ArchivoAdjunto(
                     orden_id=order.id,
                     nombre_original='',
@@ -328,8 +360,12 @@ def create_order():
                         'girar': girar,
                         'auto_girar': auto_girar,
                         'area_m2': area_total,
-                        'etiquetas_por_m2': calculo['simData']['columnas'] * calculo['simData']['filasPorMetro'],
-                        'costo_estimado': costo_estimado
+                        'etiquetas_por_m2': etiquetas_por_m2,
+                        'costo_estimado': costo_estimado,
+                        'metros_completos': metros_completos,
+                        'resto_etiquetas': resto_etiquetas,
+                        'columnas': columnas,
+                        'filasPorMetro': filasPorMetro
                     })
                 )
                 db.session.add(adjunto)
@@ -555,7 +591,8 @@ def edit_order(order_id):
                     context = _get_form_context(form_data=request.form, edit=True, order=order)
                     return render_template('form_orden.html', **context)
 
-                area_total = calculo['simData']['areaTotal']
+                simData = calculo['simData']
+                area_total = simData['areaTotal']
                 metros_lineales = area_total / ancho_rollo_m
                 if metros_lineales <= 0:
                     flash(f'Línea {i+1}: Consumo cero.', 'danger')
@@ -567,11 +604,26 @@ def edit_order(order_id):
                 area_redondeada = round(area_total, 2)
                 costo_estimado = area_redondeada * precio_m2
 
-                # Si ya existía una línea de etiquetas anterior, debemos actualizar la reserva
-                # Para simplificar, eliminamos todas las líneas de etiquetas anteriores y recreamos
-                # Pero solo para esta línea en particular, podemos buscar si hay alguna con el mismo producto
-                # y eliminarla. Como las líneas nuevas se añaden al final, no hay conflicto.
-                # No hacemos nada especial; simplemente creamos la nueva línea.
+                # ============================================================
+                # CÁLCULO DE METROS COMPLETOS Y RESTO (en el servidor)
+                # ============================================================
+                columnas = simData.get('columnas', 1)
+                filasPorMetro = simData.get('filasPorMetro', 1)
+                etiquetas_por_m2 = columnas * filasPorMetro
+                metros_completos = 0
+                resto_etiquetas = 0
+
+                if unidad == 'unidades' and cantidad_original and etiquetas_por_m2 > 0:
+                    metros_completos = int(cantidad_original // etiquetas_por_m2)
+                    resto = cantidad_original % etiquetas_por_m2
+                    if resto > 0:
+                        filas_extra = math.ceil(resto / columnas)
+                        resto_etiquetas = int(filas_extra * columnas)
+                    else:
+                        resto_etiquetas = 0
+                else:
+                    metros_completos = 0
+                    resto_etiquetas = 0
 
                 adjunto = ArchivoAdjunto(
                     orden_id=order.id,
@@ -593,8 +645,12 @@ def edit_order(order_id):
                         'girar': girar,
                         'auto_girar': auto_girar,
                         'area_m2': area_total,
-                        'etiquetas_por_m2': calculo['simData']['columnas'] * calculo['simData']['filasPorMetro'],
-                        'costo_estimado': costo_estimado
+                        'etiquetas_por_m2': etiquetas_por_m2,
+                        'costo_estimado': costo_estimado,
+                        'metros_completos': metros_completos,
+                        'resto_etiquetas': resto_etiquetas,
+                        'columnas': columnas,
+                        'filasPorMetro': filasPorMetro
                     })
                 )
                 db.session.add(adjunto)

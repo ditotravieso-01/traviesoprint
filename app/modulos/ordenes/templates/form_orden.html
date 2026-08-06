@@ -223,13 +223,16 @@
                     <!-- Líneas existentes (en edición) -->
                     {% if edit and order.archivos %}
                         {% for archivo in order.archivos %}
-                        <tr class="linea-fila" data-id="{{ archivo.id }}">
+                        {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
+                        {% set is_etiqueta = params is not none %}
+                        {% set paramsId = 'edit-' ~ archivo.id %}
+                        <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                             <td>
                                 <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
                                 <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
                             </td>
                             <td>
-                                <select name="producto_{{ archivo.id }}" required>
+                                <select name="producto_{{ archivo.id }}" class="producto-select-edit" required data-archivo-id="{{ archivo.id }}">
                                     <option value="">-- Seleccionar --</option>
                                     {% for p in productos %}
                                     <option value="{{ p.id }}" {% if archivo.producto_id == p.id %}selected{% endif %} data-ancho="{{ p.ancho_rollo or '' }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
@@ -237,65 +240,64 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="number" step="0.01" name="cantidad_{{ archivo.id }}" value="{{ archivo.cantidad if archivo.cantidad is not none else '' }}" placeholder="Cantidad" required>
+                                <input type="number" step="0.01" name="cantidad_{{ archivo.id }}" value="{{ archivo.cantidad if archivo.cantidad is not none else '' }}" placeholder="Cantidad" required class="cantidad-edit" data-archivo-id="{{ archivo.id }}">
                             </td>
                             <td>
-                                <select name="unidad_{{ archivo.id }}">
+                                <select name="unidad_{{ archivo.id }}" class="unidad-edit" data-archivo-id="{{ archivo.id }}">
                                     <option value="m" {% if archivo.unidad == 'm' %}selected{% endif %}>metros</option>
                                     <option value="unidades" {% if archivo.unidad == 'unidades' %}selected{% endif %}>unidades</option>
                                 </select>
                             </td>
                             <td>
-                                {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                                {% if is_etiqueta %}
                                     <span class="badge" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
-                                    <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="edit-{{ archivo.id }}">📐 Ocultar</button>
+                                    <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}">📐 Ocultar</button>
                                 {% else %}
                                     <span style="color:#999;">Otros</span>
                                 {% endif %}
                             </td>
                             <td>
-                                <form method="POST" action="{{ url_for('ordenes.eliminar_archivo', archivo_id=archivo.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta línea?')">
-                                    <button type="submit" class="btn-eliminar"><i class="fas fa-trash-alt"></i></button>
-                                </form>
+                                <button type="button" class="btn-eliminar" onclick="eliminarLineaExistente({{ archivo.id }})"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>
                         <!-- Si la línea tiene parámetros de etiquetas, mostrarlos (editables) -->
-                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
-                            {% set params = archivo.get_parametros_etiqueta() %}
-                            <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="edit-{{ archivo.id }}">
+                        {% if is_etiqueta %}
+                            <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}">
                                 <td colspan="6">
                                     <div class="etiquetas-params visible" style="display:block;">
                                         <div class="form-grid-2">
                                             <div class="form-group">
                                                 <label>Ancho (cm)</label>
-                                                <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.ancho if params else 10 }}">
+                                                <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.ancho if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                             <div class="form-group">
                                                 <label>Alto (cm)</label>
-                                                <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.alto if params else 10 }}">
+                                                <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.alto if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                         </div>
                                         <div class="form-group">
                                             <label>Ancho de rollo (m)</label>
-                                            <input type="number" step="0.01" min="0.01" class="ancho_rollo_edit" name="ancho_rollo_edit[]" value="{{ params.ancho_rollo if params else '' }}" placeholder="Automático del producto" disabled>
+                                            <input type="number" step="0.01" min="0.01" class="ancho_rollo_edit" name="ancho_rollo_edit[]" value="{{ params.ancho_rollo or '' }}" placeholder="Automático del producto" disabled>
                                         </div>
                                         <div class="form-group">
                                             <label>Precio por m² (USD)</label>
-                                            <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}">
+                                            <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                         </div>
                                         <div class="checkbox-grid">
-                                            <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %}> Margen de mesa (2 mm)</label>
-                                            <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %}> Girar 90° (manual)</label>
-                                            <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %}> 🧠 Modo Inteligente</label>
+                                            <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
+                                            <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
+                                            <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> 🧠 Modo Inteligente</label>
                                         </div>
                                         <div class="calc-result-linea">
                                             <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display_edit">{% if params and params.etiquetas_por_m2 %}{{ params.etiquetas_por_m2 }}{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display_edit">{% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display_edit">{% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display_edit">{% if params and params.area_m2 %}{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) }} m{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display_edit">{% if params and params.area_m2 %}{{ params.area_m2|round(2) }} m²{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display_edit">{% if params and params.costo_estimado %}${{ params.costo_estimado|round(2) }}{% else %}—{% endif %}</span></div>
                                         </div>
                                         <div style="margin-top:4px;">
-                                            <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="edit-{{ archivo.id }}">Ocultar</button>
+                                            <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
                                         </div>
                                     </div>
                                 </td>
@@ -469,7 +471,7 @@ window.onclick = function(event) {
 }
 
 // =============================================
-// FUNCIONES PARA LÍNEAS DINÁMICAS
+// FUNCIONES PARA LÍNEAS DINÁMICAS (NUEVAS)
 // =============================================
 let nuevaLineaCounter = 0;
 const productosData = {{ productos|tojson }};
@@ -557,6 +559,8 @@ function agregarLinea() {
                 </div>
                 <div class="calc-result-linea">
                     <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display">—</span></div>
+                    <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display">—</span></div>
+                    <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display">—</span></div>
                     <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display">—</span></div>
                     <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display">—</span></div>
                     <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display">—</span></div>
@@ -596,22 +600,18 @@ function agregarLinea() {
         paramsDiv.style.display = 'block';
         toggleBtn.style.display = 'inline-block';
         toggleBtn.textContent = '📐 Ocultar';
-        // Actualizar ancho de rollo y calcular
         actualizarAnchoRollo(paramsRow);
         setTimeout(() => triggerCalculo(), 100);
     }
 
-    // Función para ocultar el bloque de etiquetas
     function ocultarBloque() {
         paramsRow.style.display = 'none';
         paramsDiv.classList.remove('visible');
         paramsDiv.style.display = 'none';
         toggleBtn.textContent = '📐';
-        // Limpiar resultados
         limpiarResultados(paramsRow);
     }
 
-    // Función que dispara el cálculo
     function triggerCalculo() {
         if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
             console.log('Trigger cálculo automático para paramsId:', paramsId);
@@ -619,7 +619,6 @@ function agregarLinea() {
         }
     }
 
-    // Evento change del select "Proyecto/Producto"
     proyectoSelect.addEventListener('change', function(e) {
         if (this.value === 'etiquetas') {
             mostrarBloque();
@@ -628,7 +627,6 @@ function agregarLinea() {
         }
     });
 
-    // Evento click del botón toggle (📐)
     toggleBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         if (paramsRow.style.display === 'none') {
@@ -638,13 +636,11 @@ function agregarLinea() {
         }
     });
 
-    // Evento click del botón "Ocultar" dentro del bloque
     paramsRow.querySelector('.ocultar-etiquetas').addEventListener('click', function(e) {
         e.preventDefault();
         ocultarBloque();
     });
 
-    // Eventos de inputs para triggerCalculo (NO modifican los inputs principales)
     cantidadInput.addEventListener('input', triggerCalculo);
     cantidadInput.addEventListener('change', triggerCalculo);
     unidadSelect.addEventListener('change', triggerCalculo);
@@ -662,7 +658,6 @@ function agregarLinea() {
     girarCheck.addEventListener('change', triggerCalculo);
     autoGirarCheck.addEventListener('change', triggerCalculo);
 
-    // Función para actualizar el ancho de rollo según el producto seleccionado
     function actualizarAnchoRollo(paramsRow) {
         const productoSelect = paramsRow.closest('tr').previousElementSibling.querySelector('.producto-select');
         const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_display');
@@ -676,6 +671,9 @@ function agregarLinea() {
     console.log('Línea agregada con paramsId:', paramsId);
 }
 
+// =============================================
+// ELIMINAR LÍNEA NUEVA
+// =============================================
 function eliminarLinea(btn) {
     const row = btn.closest('tr');
     if (row) {
@@ -687,7 +685,42 @@ function eliminarLinea(btn) {
 }
 
 // =============================================
-// DELEGACIÓN DE EVENTOS para botones "toggle" y "ocultar" en edición
+// ELIMINAR LÍNEA EXISTENTE (AJAX)
+// =============================================
+function eliminarLineaExistente(archivoId) {
+    if (!confirm('¿Eliminar esta línea permanentemente?')) return;
+
+    fetch('/ordenes/archivo/eliminar/' + archivoId, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Eliminar la fila principal y su fila de parámetros del DOM
+            const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
+            if (mainRow) {
+                const paramsId = mainRow.dataset.paramsId;
+                const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
+                if (paramsRow) paramsRow.remove();
+                mainRow.remove();
+            }
+            // Opcional: mostrar mensaje
+        } else {
+            alert(data.error || 'Error al eliminar la línea.');
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión al eliminar la línea.');
+        console.error(error);
+    });
+}
+
+// =============================================
+// DELEGACIÓN DE EVENTOS PARA TOGGLE Y OCULTAR (edición y nuevos)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle para líneas existentes en edición
@@ -715,9 +748,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         paramsDiv.classList.add('visible');
                         paramsDiv.style.display = 'block';
                         // Al abrir, actualizar ancho de rollo y recalcular
-                        const productoSelect = mainRow.querySelector('.producto-select') || mainRow.querySelector('select[name^="producto_"]');
+                        const productoSelect = mainRow.querySelector('.producto-select-edit') || mainRow.querySelector('.producto-select');
                         if (productoSelect) {
-                            const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_display') || paramsRow.querySelector('.ancho_rollo_edit');
+                            const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_edit') || paramsRow.querySelector('.ancho_rollo_display');
                             if (anchoRolloDisplay) {
                                 const selected = productoSelect.options[productoSelect.selectedIndex];
                                 const ancho = selected.getAttribute('data-ancho') || '1.3';
@@ -787,7 +820,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    console.log('DOM cargado - eventos delegados configurados');
+    // ============================================================
+    // ASIGNAR EVENTOS DE CÁLCULO DINÁMICO A LÍNEAS EXISTENTES (edición)
+    // ============================================================
+    document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(paramsRow) {
+        const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+        if (!paramsDiv) return;
+
+        // Campos de la fila de parámetros
+        const anchoInput = paramsDiv.querySelector('.ancho_etiqueta_edit');
+        const altoInput = paramsDiv.querySelector('.alto_etiqueta_edit');
+        const precioInput = paramsDiv.querySelector('.precio_etiqueta_edit');
+        const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta_edit');
+        const girarCheck = paramsDiv.querySelector('.girar_etiqueta_edit');
+        const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta_edit');
+
+        // Obtener el archivo ID desde data-archivo-id (en los inputs)
+        const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
+        if (!archivoId) return;
+
+        // Campos de la línea principal (nombre, producto, cantidad, unidad)
+        const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
+        if (!mainRow) return;
+        const productoSelect = mainRow.querySelector('.producto-select-edit');
+        const cantidadInput = mainRow.querySelector('.cantidad-edit');
+        const unidadSelect = mainRow.querySelector('.unidad-edit');
+
+        // Función para disparar recalculo
+        function triggerCalculoEdit() {
+            // Actualizar ancho de rollo automático
+            if (productoSelect) {
+                const anchoRolloDisplay = paramsDiv.querySelector('.ancho_rollo_edit');
+                if (anchoRolloDisplay) {
+                    const selected = productoSelect.options[productoSelect.selectedIndex];
+                    const ancho = selected.getAttribute('data-ancho') || '1.3';
+                    anchoRolloDisplay.value = ancho;
+                }
+            }
+            // Recalcular
+            calcularLinea(paramsRow);
+        }
+
+        // Asignar eventos a los campos
+        if (anchoInput) { anchoInput.addEventListener('input', triggerCalculoEdit); anchoInput.addEventListener('change', triggerCalculoEdit); }
+        if (altoInput) { altoInput.addEventListener('input', triggerCalculoEdit); altoInput.addEventListener('change', triggerCalculoEdit); }
+        if (precioInput) { precioInput.addEventListener('input', triggerCalculoEdit); precioInput.addEventListener('change', triggerCalculoEdit); }
+        if (mesaCheck) { mesaCheck.addEventListener('change', triggerCalculoEdit); }
+        if (girarCheck) { girarCheck.addEventListener('change', triggerCalculoEdit); }
+        if (autoGirarCheck) { autoGirarCheck.addEventListener('change', triggerCalculoEdit); }
+        if (productoSelect) { productoSelect.addEventListener('change', triggerCalculoEdit); }
+        if (cantidadInput) { cantidadInput.addEventListener('input', triggerCalculoEdit); cantidadInput.addEventListener('change', triggerCalculoEdit); }
+        if (unidadSelect) { unidadSelect.addEventListener('change', triggerCalculoEdit); }
+
+        // Si la línea ya está visible, hacer un cálculo inicial
+        if (paramsRow.style.display !== 'none') {
+            setTimeout(triggerCalculoEdit, 200);
+        }
+    });
+
+    console.log('DOM cargado - eventos delegados y de edición configurados');
 });
 
 // =============================================
@@ -797,6 +888,8 @@ function limpiarResultados(paramsRow) {
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
     if (paramsDiv) {
         paramsDiv.querySelector('.etiquetas_por_m2_display').textContent = '—';
+        paramsDiv.querySelector('.metros_completos_display').textContent = '—';
+        paramsDiv.querySelector('.resto_etiquetas_display').textContent = '—';
         paramsDiv.querySelector('.consumo_m_display').textContent = '—';
         paramsDiv.querySelector('.area_m2_display').textContent = '—';
         paramsDiv.querySelector('.costo_estimado_display').textContent = '—';
@@ -804,6 +897,8 @@ function limpiarResultados(paramsRow) {
         const editDisplay = paramsDiv.querySelector('.etiquetas_por_m2_display_edit');
         if (editDisplay) {
             editDisplay.textContent = '—';
+            paramsDiv.querySelector('.metros_completos_display_edit').textContent = '—';
+            paramsDiv.querySelector('.resto_etiquetas_display_edit').textContent = '—';
             paramsDiv.querySelector('.consumo_m_display_edit').textContent = '—';
             paramsDiv.querySelector('.area_m2_display_edit').textContent = '—';
             paramsDiv.querySelector('.costo_estimado_display_edit').textContent = '—';
@@ -812,14 +907,13 @@ function limpiarResultados(paramsRow) {
 }
 
 // =============================================
-// CÁLCULO AUTOMÁTICO DE ETIQUETAS
+// CÁLCULO AUTOMÁTICO DE ETIQUETAS (CON CÁLCULO FRONTEND DE METROS COMPLETOS Y RESTO)
 // =============================================
 function calcularLinea(paramsRow) {
     if (!paramsRow) return;
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
     if (!paramsDiv) return;
 
-    // Determinar si es edición o nueva línea
     const isEdit = paramsRow.dataset.paramsId && paramsRow.dataset.paramsId.startsWith('edit-');
     const prefix = isEdit ? '_edit' : '';
 
@@ -831,7 +925,6 @@ function calcularLinea(paramsRow) {
     const girar = paramsDiv.querySelector(`.girar_etiqueta${prefix}`).checked ? '1' : '0';
     const auto_girar = paramsDiv.querySelector(`.auto_girar_etiqueta${prefix}`).checked ? '1' : '0';
 
-    // Obtener línea principal
     const paramsId = paramsRow.dataset.paramsId;
     const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
     if (!mainRow) {
@@ -839,15 +932,24 @@ function calcularLinea(paramsRow) {
         return;
     }
 
-    const cantidadInput = mainRow.querySelector('input[name="cantidades[]"]');
-    const unidadSelect = mainRow.querySelector('select[name="unidades[]"]');
-    const productoSelect = mainRow.querySelector('select[name="productos_ids[]"]') || mainRow.querySelector('select[name^="producto_"]');
+    let cantidadInput, unidadSelect, productoSelect;
+    if (isEdit) {
+        // En edición, los nombres son específicos del archivo
+        const archivoId = paramsId.replace('edit-', '');
+        cantidadInput = mainRow.querySelector(`.cantidad-edit[data-archivo-id="${archivoId}"]`);
+        unidadSelect = mainRow.querySelector(`.unidad-edit[data-archivo-id="${archivoId}"]`);
+        productoSelect = mainRow.querySelector(`.producto-select-edit[data-archivo-id="${archivoId}"]`);
+    } else {
+        cantidadInput = mainRow.querySelector('input[name="cantidades[]"]');
+        unidadSelect = mainRow.querySelector('select[name="unidades[]"]');
+        productoSelect = mainRow.querySelector('select[name="productos_ids[]"]');
+    }
+
     if (!cantidadInput || !unidadSelect || !productoSelect) {
         console.error('Faltan campos en la línea principal');
         return;
     }
 
-    // Obtener cantidad y unidad ORIGINALES (las que el usuario ingresó)
     const cantidad = cantidadInput.value;
     const unidad = unidadSelect.value;
     const selectedOption = productoSelect.options[productoSelect.selectedIndex];
@@ -874,7 +976,6 @@ function calcularLinea(paramsRow) {
         formData.append('cantidad', cantidad);
         formData.append('area', '');
     } else {
-        // Convertir metros lineales a área (m²)
         const area = parseFloat(cantidad) * parseFloat(anchoRollo);
         formData.append('area', area.toFixed(4));
         formData.append('cantidad', '');
@@ -882,16 +983,17 @@ function calcularLinea(paramsRow) {
 
     console.log('Enviando cálculo:', Object.fromEntries(formData));
 
-    // Llamada AJAX al endpoint de etiquetas
     fetch("{{ url_for('etiquetas.calcular_ajax') }}", {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Respuesta del cálculo:', data);
+        console.log('Respuesta del cálculo (simData):', data.simData);
         if (data.error) {
             paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
+            paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
+            paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
             paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = data.error;
             paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
             paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
@@ -899,21 +1001,42 @@ function calcularLinea(paramsRow) {
         }
         const simData = data.simData;
         const areaTotal = simData.areaTotal || 0;
-        const etiquetasPorM2 = simData.columnas * simData.filasPorMetro || 0;
+        const columnas = simData.columnas || 1;
+        const filasPorMetro = simData.filasPorMetro || 1;
+        const etiquetasPorM2 = columnas * filasPorMetro;
         const precioUnitario = parseFloat(precio) || 10;
         const areaRedondeada = Math.round(areaTotal * 100) / 100;
         const costoEstimado = areaRedondeada * precioUnitario;
         const anchoRolloM = parseFloat(anchoRollo) || 1.3;
         const metrosLineales = areaTotal / anchoRolloM;
 
-        // Actualizar nombre visible si está vacío (solo si está vacío)
-        const nombreInput = mainRow.querySelector('input[name="nombres_visibles[]"]');
+        // ============================================================
+        // CÁLCULO DE METROS COMPLETOS Y RESTO (frontend)
+        // ============================================================
+        let metrosCompletos = null;
+        let restoEtiquetas = null;
+        if (unidad === 'unidades' && etiquetasPorM2 > 0 && columnas > 0) {
+            const cantidadOriginal = parseFloat(cantidad);
+            metrosCompletos = Math.floor(cantidadOriginal / etiquetasPorM2);
+            const resto = cantidadOriginal % etiquetasPorM2;
+            if (resto > 0) {
+                const filasExtra = Math.ceil(resto / columnas);
+                restoEtiquetas = filasExtra * columnas;
+            } else {
+                restoEtiquetas = 0;
+            }
+        }
+
+        // Actualizar nombre visible si está vacío
+        const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
         if (nombreInput && !nombreInput.value.trim()) {
             nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
 
-        // Mostrar resultados en el bloque de parámetros (sin modificar los inputs principales)
+        // Mostrar resultados en el bloque de parámetros
         paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = etiquetasPorM2 || '—';
+        paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = (metrosCompletos !== null) ? metrosCompletos : '—';
+        paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = (restoEtiquetas !== null) ? restoEtiquetas : '—';
         paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = metrosLineales ? metrosLineales.toFixed(2) + ' m' : '—';
         paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = areaTotal ? areaTotal.toFixed(2) + ' m²' : '—';
         paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = costoEstimado ? '$' + costoEstimado.toFixed(2) : '—';
@@ -921,6 +1044,8 @@ function calcularLinea(paramsRow) {
     .catch(error => {
         console.error('Error al calcular:', error);
         paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
+        paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
+        paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
         paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = 'Error de conexión';
         paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
         paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';

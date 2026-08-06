@@ -4,39 +4,215 @@
     <meta charset="UTF-8">
     <title>Orden de Trabajo {{ order.order_num }}</title>
     <style>
+        /* ===== FUENTES ===== */
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap');
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; background: #ffffff; color: #1a1a1a; padding: 30px 40px; line-height: 1.5; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #a8854f; padding-bottom: 12px; margin-bottom: 20px; }
-        .header-left .brand { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1a1a1a; letter-spacing: 1px; }
-        .header-left .brand-sub { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 300; color: #666; letter-spacing: 3px; margin-top: -2px; }
-        .header-right { text-align: right; }
-        .header-right .doc-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #a8854f; letter-spacing: 2px; }
-        .header-right .doc-sub { font-size: 11px; color: #888; font-weight: 300; }
-        .data-card { background: #f9f7f5; border-radius: 6px; padding: 14px 20px; margin-bottom: 18px; border-left: 4px solid #a8854f; }
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 30px; }
-        .data-item { display: flex; padding: 2px 0; border-bottom: 1px solid #f0ece8; }
-        .data-item .label { font-weight: 600; color: #333; width: 110px; flex-shrink: 0; font-size: 12px; }
-        .data-item .value { font-weight: 400; color: #1a1a1a; font-size: 13px; }
-        .section { margin-bottom: 16px; }
-        .section-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; color: #2c2c2c; border-bottom: 2px solid #e8e0d8; padding-bottom: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .section-title .icon { font-size: 16px; }
-        .servicios-list { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 2px 0; }
-        .servicio-tag { background: #f0ece8; padding: 3px 14px; border-radius: 16px; font-size: 12px; color: #333; font-weight: 500; }
-        .desc-text { background: #fcfaf8; padding: 8px 14px; border-radius: 4px; border: 1px solid #e8e0da; font-size: 13px; color: #333; line-height: 1.6; }
-        .lineas-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 4px; }
-        .lineas-table th { background: #f0ece8; text-align: left; padding: 6px 10px; font-weight: 700; font-size: 11px; color: #333; border-bottom: 2px solid #d8d0c8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .lineas-table td { padding: 6px 10px; border-bottom: 1px solid #e8e0da; vertical-align: top; }
-        .lineas-table .nombre-linea { font-weight: 600; color: #1a1a1a; }
-        .lineas-table .material-linea { color: #555; font-size: 11px; }
-        .lineas-table .cantidad-linea { font-weight: 500; color: #1a1a1a; }
-        .lineas-table .unidad-linea { color: #555; }
-        .lineas-table .tipo-linea { font-size: 11px; background: #f0ece8; padding: 1px 6px; border-radius: 12px; }
-        .lineas-table .detalle-etiqueta { font-size: 10px; color: #777; }
-        .footer { margin-top: 20px; border-top: 2px solid #e8e0d8; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
-        @media (max-width: 600px) { body { padding: 16px; } .header { flex-direction: column; align-items: flex-start; gap: 4px; } .header-right { text-align: left; } .data-grid { grid-template-columns: 1fr; } .data-item .label { width: 90px; } }
-        @page { margin: 12mm 15mm; @bottom-center { content: "CairoStudio · Generado el " attr(data-fecha); font-size: 8px; color: #aaa; } }
-        @page:first { @bottom-center { content: ""; } }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #ffffff;
+            color: #1a1a1a;
+            padding: 30px 40px;
+            line-height: 1.5;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 3px solid #a8854f;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+        }
+        .header-left .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 1px;
+        }
+        .header-left .brand-sub {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            font-weight: 300;
+            color: #666;
+            letter-spacing: 3px;
+            margin-top: -2px;
+        }
+        .header-right {
+            text-align: right;
+        }
+        .header-right .doc-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #a8854f;
+            letter-spacing: 2px;
+        }
+        .header-right .doc-sub {
+            font-size: 11px;
+            color: #888;
+            font-weight: 300;
+        }
+
+        .data-card {
+            background: #f9f7f5;
+            border-radius: 6px;
+            padding: 14px 20px;
+            margin-bottom: 18px;
+            border-left: 4px solid #a8854f;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px 30px;
+        }
+        .data-item {
+            display: flex;
+            padding: 2px 0;
+            border-bottom: 1px solid #f0ece8;
+        }
+        .data-item .label {
+            font-weight: 600;
+            color: #333;
+            width: 110px;
+            flex-shrink: 0;
+            font-size: 12px;
+        }
+        .data-item .value {
+            font-weight: 400;
+            color: #1a1a1a;
+            font-size: 13px;
+        }
+
+        .section {
+            margin-bottom: 16px;
+        }
+        .section-title {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #2c2c2c;
+            border-bottom: 2px solid #e8e0d8;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-title .icon {
+            font-size: 16px;
+        }
+
+        .servicios-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+            padding: 2px 0;
+        }
+        .servicio-tag {
+            background: #f0ece8;
+            padding: 3px 14px;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .desc-text {
+            background: #fcfaf8;
+            padding: 8px 14px;
+            border-radius: 4px;
+            border: 1px solid #e8e0da;
+            font-size: 13px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .lineas-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+        .lineas-table th {
+            background: #f0ece8;
+            text-align: left;
+            padding: 6px 10px;
+            font-weight: 700;
+            font-size: 11px;
+            color: #333;
+            border-bottom: 2px solid #d8d0c8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .lineas-table td {
+            padding: 6px 10px;
+            border-bottom: 1px solid #e8e0da;
+            vertical-align: top;
+        }
+        .lineas-table .nombre-linea {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .lineas-table .material-linea {
+            color: #555;
+            font-size: 11px;
+        }
+        .lineas-table .cantidad-linea {
+            font-weight: 500;
+            color: #1a1a1a;
+        }
+        .lineas-table .unidad-linea {
+            color: #555;
+        }
+        .lineas-table .tipo-linea {
+            font-size: 11px;
+            background: #f0ece8;
+            padding: 1px 6px;
+            border-radius: 12px;
+        }
+        .lineas-table .detalle-etiqueta {
+            font-size: 10px;
+            color: #777;
+        }
+
+        .footer {
+            margin-top: 20px;
+            border-top: 2px solid #e8e0d8;
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            color: #999;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 16px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .header-right { text-align: left; }
+            .data-grid { grid-template-columns: 1fr; }
+            .data-item .label { width: 90px; }
+        }
+
+        @page {
+            margin: 12mm 15mm;
+            @bottom-center {
+                content: "CairoStudio · Generado el " attr(data-fecha);
+                font-size: 8px;
+                color: #aaa;
+            }
+        }
+        @page:first {
+            @bottom-center {
+                content: "";
+            }
+        }
     </style>
 </head>
 <body data-fecha="{{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}">
@@ -114,6 +290,8 @@
                                 {% if params.cantidad %}
                                     <span> | Cantidad original: {{ params.cantidad }}</span>
                                 {% endif %}
+                                <span> | Metros completos: {% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span>
+                                <span> | Resto: {% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %} etiquetas</span>
                                 {% if params.area_m2 %}
                                     <span> | Área: {{ params.area_m2|round(2) }} m²</span>
                                 {% endif %}
