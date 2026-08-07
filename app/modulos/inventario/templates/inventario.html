@@ -424,6 +424,7 @@
                     <th>Costo</th>
                     <th>Stock</th>
                     <th>Comprometido</th>
+                    <th>Disponible</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
@@ -444,6 +445,12 @@
                     <td>${{ p.costo|round(2) if p.costo else '—' }}</td>
                     <td>{{ p.stock }}</td>
                     <td>{{ p.stock_comprometido or 0 }}</td>
+                    <td style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
+                        {{ p.disponible }}
+                        {% if p.disponible < 0 %}
+                            <span style="font-size:11px; color:#dc2626;"> ⚠️ Sobre-reserva</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
                         <div class="stock-bar"><div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div></div>

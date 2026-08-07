@@ -211,6 +211,7 @@ class Producto(db.Model):
     __tablename__ = 'productos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(100), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)  # Descripción del producto
     tipo = db.Column(db.String(50))               # tinta, vinilo, pvc, lona, etc.
     ubicacion = db.Column(db.String(50))          # almacen, garaje
     unidad = db.Column(db.String(20))             # rollo, bote, plancha, unidad

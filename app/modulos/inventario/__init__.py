@@ -118,8 +118,14 @@ def index():
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
     productos = query.order_by(Producto.nombre).all()
+    
+    # Calcular disponible para cada producto
+    for p in productos:
+        p.disponible = max(0, (p.stock or 0) - (p.stock_comprometido or 0))
+    
     categorias = Categoria.query.order_by(Categoria.nombre).all()
-    return render_template('inventario.html', productos=productos, categorias=categorias, categoria_seleccionada=categoria_id, search=search)
+    return render_template('inventario.html', productos=productos, categorias=categorias,
+                           categoria_seleccionada=categoria_id, search=search)
 
 # ==========================================
 # CREAR PRODUCTO
@@ -131,6 +137,7 @@ def crear_producto():
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()  # <-- NUEVO
         tipo = request.form.get('tipo', '').strip()
         ubicacion = request.form.get('ubicacion', '').strip()
         unidad = request.form.get('unidad', '').strip()
@@ -152,6 +159,7 @@ def crear_producto():
 
         producto = Producto(
             nombre=nombre,
+            descripcion=descripcion,  # <-- NUEVO
             tipo=tipo,
             ubicacion=ubicacion,
             unidad=unidad,
@@ -198,6 +206,7 @@ def editar_producto(producto_id):
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     if request.method == 'POST':
         producto.nombre = request.form.get('nombre', '').strip()
+        producto.descripcion = request.form.get('descripcion', '').strip()  # <-- NUEVO
         producto.tipo = request.form.get('tipo', '').strip()
         producto.ubicacion = request.form.get('ubicacion', '').strip()
         producto.unidad = request.form.get('unidad', '').strip()
@@ -249,8 +258,43 @@ def eliminar_producto(producto_id):
 @economico_or_admin_required
 def detalle_producto(producto_id):
     producto = Producto.query.get_or_404(producto_id)
-    movimientos = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
-    return render_template('detalle_producto.html', producto=producto, movimientos=movimientos)
+    producto.disponible = (producto.stock or 0) - (producto.stock_comprometido or 0)  # valor real
+
+    # Obtener movimientos ordenados cronológicamente (ascendente)
+    movimientos = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.asc()).all()
+    
+    # Calcular saldo acumulado para el gráfico
+    saldo = 0
+    fechas = []
+    saldos = []
+    for m in movimientos:
+        # Actualizar saldo según tipo de movimiento
+        if m.tipo in ['entrada', 'entrada_ajuste']:
+            saldo += m.cantidad
+        elif m.tipo in ['consumo', 'salida_ajuste', 'reserva']:
+            saldo -= m.cantidad
+        # Guardar punto
+        fechas.append(m.fecha.strftime('%Y-%m-%d %H:%M'))
+        saldos.append(round(saldo, 2))
+    
+    # Si no hay movimientos, agregar un punto con el stock actual (opcional)
+    if not fechas:
+        fechas.append(datetime.now().strftime('%Y-%m-%d'))
+        saldos.append(round(producto.stock, 2))
+    
+    # Limitar a los últimos 50 puntos para no saturar
+    if len(fechas) > 50:
+        fechas = fechas[-50:]
+        saldos = saldos[-50:]
+
+    # Para la tabla de movimientos recientes (orden descendente, como antes)
+    movimientos_recientes = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
+    
+    return render_template('detalle_producto.html', 
+                           producto=producto, 
+                           movimientos=movimientos_recientes,
+                           fechas_json=json.dumps(fechas),
+                           saldos_json=json.dumps(saldos))
 
 # ==========================================
 # REGISTRAR COMPRA
@@ -328,53 +372,142 @@ def ajustar():
 @login_required
 @economico_or_admin_required
 def merma():
-    mes = request.args.get('mes', type=int, default=datetime.now().month)
-    anio = request.args.get('anio', type=int, default=datetime.now().year)
-    inicio = datetime(anio, mes, 1)
-    if mes == 12:
-        fin = datetime(anio + 1, 1, 1) - timedelta(seconds=1)
+    # Obtener parámetros de filtro
+    periodo = request.args.get('periodo', 'month')  # day, week, month, year
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    agrupar_por = request.args.get('agrupar_por', 'producto')  # producto, categoria
+
+    # Calcular fechas según el período
+    hoy = datetime.now()
+    if fecha_inicio_str and fecha_fin_str:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+        except:
+            fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
     else:
-        fin = datetime(anio, mes + 1, 1) - timedelta(seconds=1)
-    productos = Producto.query.join(Movimiento).filter(
-        Movimiento.fecha >= inicio,
-        Movimiento.fecha <= fin
-    ).distinct().all()
-    datos = []
-    for p in productos:
-        entradas = Movimiento.query.filter(
-            Movimiento.producto_id == p.id,
-            Movimiento.tipo == 'entrada',
-            Movimiento.fecha >= inicio,
-            Movimiento.fecha <= fin
-        ).with_entities(func.sum(Movimiento.cantidad)).scalar() or 0
-        consumos = Movimiento.query.filter(
-            Movimiento.producto_id == p.id,
-            Movimiento.tipo == 'consumo',
-            Movimiento.fecha >= inicio,
-            Movimiento.fecha <= fin
-        ).with_entities(func.sum(Movimiento.cantidad)).scalar() or 0
-        ajustes_salida = Movimiento.query.filter(
-            Movimiento.producto_id == p.id,
-            Movimiento.tipo == 'salida_ajuste',
-            Movimiento.fecha >= inicio,
-            Movimiento.fecha <= fin
-        ).with_entities(func.sum(Movimiento.cantidad)).scalar() or 0
-        ajustes_entrada = Movimiento.query.filter(
-            Movimiento.producto_id == p.id,
-            Movimiento.tipo == 'entrada_ajuste',
-            Movimiento.fecha >= inicio,
-            Movimiento.fecha <= fin
-        ).with_entities(func.sum(Movimiento.cantidad)).scalar() or 0
-        merma_total = ajustes_salida - ajustes_entrada
-        datos.append({
-            'producto': p,
-            'entradas': entradas,
-            'consumos': consumos,
-            'merma': merma_total,
-            'porcentaje': (merma_total / (entradas + consumos) * 100) if (entradas + consumos) > 0 else 0
-        })
-    datos.sort(key=lambda x: x['merma'], reverse=True)
-    return render_template('merma.html', datos=datos, mes=mes, anio=anio)
+        if periodo == 'day':
+            fecha_inicio = hoy.replace(hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
+        elif periodo == 'week':
+            inicio_semana = hoy - timedelta(days=hoy.weekday())
+            fecha_inicio = inicio_semana.replace(hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
+        elif periodo == 'month':
+            fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
+        else:  # year
+            fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+            fecha_fin = hoy
+
+    # Consultar movimientos en el período
+    movimientos = Movimiento.query.filter(Movimiento.fecha >= fecha_inicio, Movimiento.fecha <= fecha_fin).all()
+
+    # Agrupar datos
+    if agrupar_por == 'categoria':
+        # Agrupar por categoría (usando producto.categoria)
+        datos = {}
+        for m in movimientos:
+            producto = m.producto
+            if not producto:
+                continue
+            cat = producto.categoria
+            cat_nombre = cat.nombre if cat else 'Sin categoría'
+            if cat_nombre not in datos:
+                datos[cat_nombre] = {'entradas': 0, 'consumos': 0, 'merma': 0}
+            if m.tipo == 'entrada':
+                datos[cat_nombre]['entradas'] += m.cantidad
+            elif m.tipo == 'consumo':
+                datos[cat_nombre]['consumos'] += m.cantidad
+            elif m.tipo == 'salida_ajuste':
+                datos[cat_nombre]['merma'] += m.cantidad
+            elif m.tipo == 'entrada_ajuste':
+                datos[cat_nombre]['merma'] -= m.cantidad
+        # Convertir a lista para template
+        datos_lista = []
+        for cat, vals in datos.items():
+            merma = vals['merma']
+            porcentaje = (merma / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
+            datos_lista.append({
+                'nombre': cat,
+                'entradas': vals['entradas'],
+                'consumos': vals['consumos'],
+                'merma': merma,
+                'porcentaje': porcentaje
+            })
+        datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
+    else:
+        # Agrupar por producto
+        datos = {}
+        for m in movimientos:
+            producto = m.producto
+            if not producto:
+                continue
+            key = producto.id
+            if key not in datos:
+                datos[key] = {
+                    'producto': producto,
+                    'nombre': producto.nombre,
+                    'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
+                    'entradas': 0,
+                    'consumos': 0,
+                    'merma': 0
+                }
+            if m.tipo == 'entrada':
+                datos[key]['entradas'] += m.cantidad
+            elif m.tipo == 'consumo':
+                datos[key]['consumos'] += m.cantidad
+            elif m.tipo == 'salida_ajuste':
+                datos[key]['merma'] += m.cantidad
+            elif m.tipo == 'entrada_ajuste':
+                datos[key]['merma'] -= m.cantidad
+        datos_lista = []
+        for key, vals in datos.items():
+            merma = vals['merma']
+            porcentaje = (merma / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
+            datos_lista.append({
+                'producto': vals['producto'],
+                'nombre': vals['nombre'],
+                'categoria': vals['categoria'],
+                'entradas': vals['entradas'],
+                'consumos': vals['consumos'],
+                'merma': merma,
+                'porcentaje': porcentaje
+            })
+        datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
+
+    # Preparar datos para gráficos
+    labels = [d['nombre'][:20] for d in datos_lista[:10]]  # top 10 para barras
+    merma_values = [d['merma'] for d in datos_lista[:10]]
+    
+    # Datos para pastel (por categoría, si agrupamos por producto)
+    if agrupar_por == 'producto':
+        categorias_merma = {}
+        for d in datos_lista:
+            cat = d['categoria']
+            if cat not in categorias_merma:
+                categorias_merma[cat] = 0
+            categorias_merma[cat] += d['merma']
+        pie_labels = list(categorias_merma.keys())
+        pie_values = list(categorias_merma.values())
+    else:
+        # Si ya agrupamos por categoría, usar esos datos
+        pie_labels = labels
+        pie_values = merma_values
+
+    return render_template('merma.html',
+                           datos=datos_lista,
+                           periodo=periodo,
+                           fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
+                           fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
+                           agrupar_por=agrupar_por,
+                           labels=json.dumps(labels),
+                           merma_values=json.dumps(merma_values),
+                           pie_labels=json.dumps(pie_labels),
+                           pie_values=json.dumps(pie_values))
+
 
 # ==========================================
 # OBTENER MOVIMIENTOS (AJAX)
@@ -417,6 +550,7 @@ def exportar_productos():
         mapa_columnas = {
             'id': 'id',
             'nombre': 'nombre',
+            'descripcion': 'descripcion',  # <-- NUEVO
             'tipo': 'tipo',
             'ubicacion': 'ubicacion',
             'unidad': 'unidad',
@@ -452,7 +586,6 @@ def exportar_productos():
                         valor = getattr(obj, field) if obj else None
                     else:
                         valor = getattr(prod, attr)
-                    # CORRECCIÓN DE FECHAS
                     if isinstance(valor, datetime):
                         valor = valor.strftime('%Y-%m-%d %H:%M')
                     elif isinstance(valor, date):
@@ -474,6 +607,7 @@ def exportar_productos():
     columnas_disponibles = [
         {'id': 'id', 'label': 'ID'},
         {'id': 'nombre', 'label': 'Nombre'},
+        {'id': 'descripcion', 'label': 'Descripción'},  # <-- NUEVO
         {'id': 'tipo', 'label': 'Tipo'},
         {'id': 'ubicacion', 'label': 'Ubicación'},
         {'id': 'unidad', 'label': 'Unidad'},
@@ -518,6 +652,8 @@ def importar_productos():
                 h_clean = h.lower().replace(' ', '_').replace('(', '').replace(')', '').replace('ñ', 'n')
                 if 'nombre' in h_clean:
                     col_map['nombre'] = idx
+                elif 'descripcion' in h_clean:
+                    col_map['descripcion'] = idx
                 elif 'tipo' in h_clean:
                     col_map['tipo'] = idx
                 elif 'ubicacion' in h_clean:
@@ -556,6 +692,8 @@ def importar_productos():
 
                 producto = Producto.query.filter_by(nombre=nombre).first()
                 if producto:
+                    if col_map.get('descripcion') is not None and row[col_map['descripcion']]:
+                        producto.descripcion = str(row[col_map['descripcion']]).strip()
                     if col_map.get('tipo') is not None and row[col_map['tipo']]:
                         producto.tipo = str(row[col_map['tipo']]).strip()
                     if col_map.get('ubicacion') is not None and row[col_map['ubicacion']]:
@@ -617,6 +755,8 @@ def importar_productos():
                     actualizados += 1
                 else:
                     nuevo = Producto(nombre=nombre)
+                    if col_map.get('descripcion') is not None and row[col_map['descripcion']]:
+                        nuevo.descripcion = str(row[col_map['descripcion']]).strip()
                     if col_map.get('tipo') is not None and row[col_map['tipo']]:
                         nuevo.tipo = str(row[col_map['tipo']]).strip()
                     if col_map.get('ubicacion') is not None and row[col_map['ubicacion']]:

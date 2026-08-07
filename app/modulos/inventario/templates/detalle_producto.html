@@ -8,9 +8,7 @@
 <style>
     /* ============================================
        MODALES ESTILO "ESTUDIO BLANC"
-       Psicología del color occidental:
-       - Verde (#10b981) → Comprar (éxito, dinero)
-       - Ámbar (#f59e0b) → Ajustar (cautela, cambio)
+       (igual que antes, no lo repito por brevedad)
     ============================================ */
     .modal-overlay {
         display: none;
@@ -26,10 +24,7 @@
         justify-content: center;
         align-items: center;
     }
-    .modal-overlay.active {
-        display: flex;
-    }
-
+    .modal-overlay.active { display: flex; }
     .modal {
         background: #ffffff;
         border-radius: 20px;
@@ -41,17 +36,9 @@
         overflow: hidden;
     }
     @keyframes modalIn {
-        from {
-            transform: scale(0.95) translateY(12px);
-            opacity: 0;
-        }
-        to {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
+        from { transform: scale(0.95) translateY(12px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
     }
-
-    /* Cabecera del modal con borde de color según acción */
     .modal-header {
         display: flex;
         justify-content: space-between;
@@ -70,9 +57,7 @@
         align-items: center;
         gap: 10px;
     }
-    .modal-header .modal-title i {
-        font-size: 20px;
-    }
+    .modal-header .modal-title i { font-size: 20px; }
     .modal-close {
         background: none;
         border: none;
@@ -83,38 +68,15 @@
         transition: color 0.2s;
         padding: 0 4px;
     }
-    .modal-close:hover {
-        color: #1c1c1e;
-    }
-
-    /* Borde superior de color (se asigna mediante clase en el modal) */
-    .modal-compra {
-        border-top: 5px solid #10b981;
-    }
-    .modal-compra .modal-title {
-        color: #10b981;
-    }
-    .modal-compra .modal-title i {
-        color: #10b981;
-    }
-
-    .modal-ajuste {
-        border-top: 5px solid #f59e0b;
-    }
-    .modal-ajuste .modal-title {
-        color: #f59e0b;
-    }
-    .modal-ajuste .modal-title i {
-        color: #f59e0b;
-    }
-
-    /* Cuerpo del modal */
-    .modal-body {
-        padding: 20px 28px 28px 28px;
-    }
-    .modal-body .form-group {
-        margin-bottom: 16px;
-    }
+    .modal-close:hover { color: #1c1c1e; }
+    .modal-compra { border-top: 5px solid #10b981; }
+    .modal-compra .modal-title { color: #10b981; }
+    .modal-compra .modal-title i { color: #10b981; }
+    .modal-ajuste { border-top: 5px solid #f59e0b; }
+    .modal-ajuste .modal-title { color: #f59e0b; }
+    .modal-ajuste .modal-title i { color: #f59e0b; }
+    .modal-body { padding: 20px 28px 28px 28px; }
+    .modal-body .form-group { margin-bottom: 16px; }
     .modal-body .form-group label {
         display: block;
         font-weight: 600;
@@ -142,8 +104,6 @@
         background: white;
         box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
     }
-
-    /* Inputs específicos con foco de color según acción */
     .modal-compra .form-group input:focus,
     .modal-compra .form-group select:focus {
         border-color: #10b981;
@@ -154,13 +114,11 @@
         border-color: #f59e0b;
         box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08);
     }
-
     .modal-body .form-group input[disabled] {
         background: #f0ece8;
         color: #6b7280;
         cursor: not-allowed;
     }
-
     .modal-actions {
         display: flex;
         gap: 12px;
@@ -169,7 +127,6 @@
         border-top: 1px solid #f0ece8;
         padding-top: 16px;
     }
-
     .btn {
         padding: 8px 18px;
         border-radius: 30px;
@@ -218,7 +175,6 @@
         padding: 4px 12px;
         font-size: 12px;
     }
-
     .content-card {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
@@ -258,20 +214,30 @@
         padding: 8px 10px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.02);
     }
-
+    /* Estilos para el gráfico */
+    .chart-container {
+        margin-top: 20px;
+        padding: 16px;
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #f0ece8;
+    }
+    .chart-container h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 16px;
+        margin-bottom: 12px;
+        color: #1c1c1e;
+    }
+    .chart-wrapper {
+        position: relative;
+        height: 250px;
+    }
     @media (max-width: 768px) {
-        .modal {
-            width: 95%;
-        }
-        .modal-header {
-            padding: 14px 18px 10px 18px;
-        }
-        .modal-body {
-            padding: 16px 18px 20px 18px;
-        }
-        .modal-header .modal-title {
-            font-size: 19px;
-        }
+        .modal { width: 95%; }
+        .modal-header { padding: 14px 18px 10px 18px; }
+        .modal-body { padding: 16px 18px 20px 18px; }
+        .modal-header .modal-title { font-size: 19px; }
+        .chart-wrapper { height: 200px; }
     }
 </style>
 {% endblock %}
@@ -281,6 +247,7 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 20px;">
             <p><strong>Categoría:</strong> {{ producto.categoria.nombre if producto.categoria else '—' }}</p>
+            <p><strong>Descripción:</strong> {{ producto.descripcion or 'Sin descripción' }}</p>
             <p><strong>Tipo:</strong> {{ producto.tipo or '—' }}</p>
             <p><strong>Ubicación:</strong> {{ producto.ubicacion or '—' }}</p>
             <p><strong>Unidad:</strong> {{ producto.unidad or '—' }}</p>
@@ -289,6 +256,14 @@
             <p><strong>Largo rollo:</strong> {{ producto.largo_rollo|round(2) if producto.largo_rollo else '—' }} m</p>
             <p><strong>Stock actual:</strong> {{ producto.stock }}</p>
             <p><strong>Comprometido:</strong> {{ producto.stock_comprometido or 0 }}</p>
+            <p><strong>Disponible:</strong> 
+                <span style="color: {{ 'red' if producto.disponible < 0 else 'green' if producto.disponible > 0 else '#888' }};">
+                    {{ producto.disponible }}
+                    {% if producto.disponible < 0 %}
+                        <span style="font-size:11px; color:#dc2626;"> ⚠️ Sobre-reserva</span>
+                    {% endif %}
+                </span>
+            </p>
             <p><strong>Stock mínimo:</strong> {{ producto.stock_minimo or 0 }}</p>
             {% if producto.fecha_vencimiento %}
                 <p><strong>Vence:</strong> {{ producto.fecha_vencimiento.strftime('%d/%m/%Y') }}</p>
@@ -298,6 +273,14 @@
             <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
             <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-edit"></i> Ajustar stock</button>
             <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        </div>
+    </div>
+
+    <!-- ===== GRÁFICO DE EVOLUCIÓN ===== -->
+    <div class="chart-container">
+        <h4>📈 Evolución del stock</h4>
+        <div class="chart-wrapper">
+            <canvas id="stockChart"></canvas>
         </div>
     </div>
 
@@ -331,7 +314,7 @@
 </div>
 
 <!-- ============================================
-     MODAL: COMPRAR (verde - éxito)
+     MODALES (Compra y Ajuste) - igual que antes
      ============================================ -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
@@ -363,9 +346,6 @@
     </div>
 </div>
 
-<!-- ============================================
-     MODAL: AJUSTAR STOCK (ámbar - cautela)
-     ============================================ -->
 <div class="modal-overlay" id="modalAjuste">
     <div class="modal modal-ajuste">
         <div class="modal-header">
@@ -396,31 +376,99 @@
     </div>
 </div>
 
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+    // Datos pasados desde el backend
+    const fechas = {{ fechas_json | safe }};
+    const saldos = {{ saldos_json | safe }};
+
+    // Inicializar gráfico cuando el DOM esté listo
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('stockChart').getContext('2d');
+
+        // Colores según el saldo (verde si positivo, rojo si negativo)
+        const color = saldos[saldos.length - 1] >= 0 ? '#10b981' : '#dc2626';
+        const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+        gradient.addColorStop(0, color + '40');
+        gradient.addColorStop(1, color + '05');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Stock ({{ producto.unidad or "u" }})',
+                    data: saldos,
+                    borderColor: color,
+                    backgroundColor: gradient,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: color,
+                    tension: 0.3,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        labels: {
+                            font: { family: 'Inter', size: 12 },
+                            color: '#1c1c1e',
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.parsed.y + ' {{ producto.unidad or "" }}';
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: {
+                            maxTicksLimit: 15,
+                            font: { size: 10, family: 'Inter' },
+                            color: '#8e8e93',
+                        }
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.03)' },
+                        ticks: {
+                            font: { size: 11, family: 'Inter' },
+                            color: '#1c1c1e',
+                        }
+                    }
+                }
+            }
+        });
+    });
+
+    // Funciones para los modales (igual que antes)
     function abrirModalCompra() {
         document.getElementById('modalCompra').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-
     function abrirModalAjuste() {
         document.getElementById('modalAjuste').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-
     function cerrarModal(id) {
         document.getElementById(id).classList.remove('active');
         document.body.style.overflow = '';
     }
-
-    // Cerrar con ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             document.body.style.overflow = '';
         }
     });
-
-    // Cerrar al hacer clic fuera del modal
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -430,4 +478,5 @@
         });
     });
 </script>
+{% endblock %}
 {% endblock %}

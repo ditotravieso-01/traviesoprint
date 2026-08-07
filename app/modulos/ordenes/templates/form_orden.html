@@ -226,7 +226,7 @@
                         {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
                         {% set is_etiqueta = params is not none %}
                         {% set paramsId = 'edit-' ~ archivo.id %}
-                        <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
+                        <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false">
                             <td>
                                 <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
                                 <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
@@ -257,12 +257,12 @@
                                 {% endif %}
                             </td>
                             <td>
-                                <button type="button" class="btn-eliminar" onclick="eliminarLineaExistente({{ archivo.id }})"><i class="fas fa-trash-alt"></i></button>
+                                <button type="button" class="btn-eliminar" onclick="marcarEliminarLinea({{ archivo.id }})"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>
                         <!-- Si la línea tiene parámetros de etiquetas, mostrarlos (editables) -->
                         {% if is_etiqueta %}
-                            <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}">
+                            <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                                 <td colspan="6">
                                     <div class="etiquetas-params visible" style="display:block;">
                                         <div class="form-grid-2">
@@ -280,7 +280,7 @@
                                             <input type="number" step="0.01" min="0.01" class="ancho_rollo_edit" name="ancho_rollo_edit[]" value="{{ params.ancho_rollo or '' }}" placeholder="Automático del producto" disabled>
                                         </div>
                                         <div class="form-group">
-                                            <label>Precio por m² (USD)</label>
+                                            <label>Precio (USD)</label>
                                             <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                         </div>
                                         <div class="checkbox-grid">
@@ -292,8 +292,7 @@
                                             <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display_edit">{% if params and params.etiquetas_por_m2 %}{{ params.etiquetas_por_m2 }}{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display_edit">{% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display_edit">{% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display_edit">{% if params and params.area_m2 %}{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) }} m{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display_edit">{% if params and params.area_m2 %}{{ params.area_m2|round(2) }} m²{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Consumo ({{ 'm' if archivo.unidad == 'm' else 'm²' }})</span><span class="value consumo_m_display_edit">{% if params and params.consumo %}{{ params.consumo|round(2) }}{% else %}—{% endif %}</span></div>
                                             <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display_edit">{% if params and params.costo_estimado %}${{ params.costo_estimado|round(2) }}{% else %}—{% endif %}</span></div>
                                         </div>
                                         <div style="margin-top:4px;">
@@ -481,7 +480,6 @@ function agregarLinea() {
     const idx = nuevaLineaCounter++;
     const paramsId = 'params-' + idx;
 
-    // Fila principal
     const row = document.createElement('tr');
     row.className = 'linea-fila';
     row.dataset.nuevo = 'true';
@@ -524,7 +522,6 @@ function agregarLinea() {
     `;
     tbody.appendChild(row);
 
-    // Fila de parámetros de etiquetas (inicialmente oculta)
     const paramsRow = document.createElement('tr');
     paramsRow.className = 'etiquetas-params-row';
     paramsRow.dataset.paramsId = paramsId;
@@ -549,7 +546,7 @@ function agregarLinea() {
                     <input type="number" step="0.01" min="0.01" class="ancho_rollo_display" value="" placeholder="Automático del producto" disabled>
                 </div>
                 <div class="form-group">
-                    <label>Precio por m² (USD)</label>
+                    <label>Precio (USD)</label>
                     <input type="number" step="0.01" min="0" class="precio_etiqueta" name="precio_etiqueta[]" value="10">
                 </div>
                 <div class="checkbox-grid">
@@ -561,8 +558,7 @@ function agregarLinea() {
                     <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display">—</span></div>
                     <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display">—</span></div>
                     <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display">—</span></div>
-                    <div class="item"><span class="label">Consumo (m)</span><span class="value consumo_m_display">—</span></div>
-                    <div class="item"><span class="label">Área (m²)</span><span class="value area_m2_display">—</span></div>
+                    <div class="item"><span class="label">Consumo</span><span class="value consumo_m_display">—</span></div>
                     <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display">—</span></div>
                 </div>
                 <div style="margin-top:4px;">
@@ -578,7 +574,6 @@ function agregarLinea() {
         tbody.appendChild(paramsRow);
     }
 
-    // ------ REFERENCIAS A ELEMENTOS ------
     const proyectoSelect = row.querySelector('.proyecto-linea');
     const cantidadInput = row.querySelector('input[name="cantidades[]"]');
     const unidadSelect = row.querySelector('.unidad-select');
@@ -593,7 +588,6 @@ function agregarLinea() {
     const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
     const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
 
-    // Función para mostrar el bloque de etiquetas
     function mostrarBloque() {
         paramsRow.style.display = 'table-row';
         paramsDiv.classList.add('visible');
@@ -614,7 +608,6 @@ function agregarLinea() {
 
     function triggerCalculo() {
         if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
-            console.log('Trigger cálculo automático para paramsId:', paramsId);
             calcularLinea(paramsRow);
         }
     }
@@ -643,7 +636,16 @@ function agregarLinea() {
 
     cantidadInput.addEventListener('input', triggerCalculo);
     cantidadInput.addEventListener('change', triggerCalculo);
-    unidadSelect.addEventListener('change', triggerCalculo);
+    unidadSelect.addEventListener('change', function() {
+        // Actualizar etiqueta de consumo
+        const unidad = this.value;
+        const consumoLabel = paramsDiv.querySelector('.consumo_m_display').closest('.item').querySelector('.label');
+        if (consumoLabel) {
+            consumoLabel.textContent = 'Consumo (' + (unidad === 'm' ? 'm' : 'm²') + ')';
+        }
+        actualizarAnchoRollo(paramsRow);
+        triggerCalculo();
+    });
     productoSelect.addEventListener('change', function() {
         actualizarAnchoRollo(paramsRow);
         triggerCalculo();
@@ -667,8 +669,6 @@ function agregarLinea() {
             anchoRolloDisplay.value = ancho;
         }
     }
-
-    console.log('Línea agregada con paramsId:', paramsId);
 }
 
 // =============================================
@@ -685,42 +685,32 @@ function eliminarLinea(btn) {
 }
 
 // =============================================
-// ELIMINAR LÍNEA EXISTENTE (AJAX)
+// MARCAR LÍNEA EXISTENTE PARA ELIMINAR (edición)
 // =============================================
-function eliminarLineaExistente(archivoId) {
+function marcarEliminarLinea(archivoId) {
     if (!confirm('¿Eliminar esta línea permanentemente?')) return;
 
-    fetch('/ordenes/archivo/eliminar/' + archivoId, {
-        method: 'POST',
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Eliminar la fila principal y su fila de parámetros del DOM
-            const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
-            if (mainRow) {
-                const paramsId = mainRow.dataset.paramsId;
-                const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
-                if (paramsRow) paramsRow.remove();
-                mainRow.remove();
-            }
-            // Opcional: mostrar mensaje
-        } else {
-            alert(data.error || 'Error al eliminar la línea.');
-        }
-    })
-    .catch(error => {
-        alert('Error de conexión al eliminar la línea.');
-        console.error(error);
-    });
+    const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
+    const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-id="${archivoId}"]`);
+
+    if (mainRow) {
+        // Ocultar la fila
+        mainRow.style.display = 'none';
+        mainRow.dataset.eliminado = 'true';
+        // Añadir input oculto con el ID a eliminar
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'eliminar_archivos[]';
+        input.value = archivoId;
+        mainRow.appendChild(input);
+    }
+    if (paramsRow) {
+        paramsRow.style.display = 'none';
+    }
 }
 
 // =============================================
-// DELEGACIÓN DE EVENTOS PARA TOGGLE Y OCULTAR (edición y nuevos)
+// DELEGACIÓN DE EVENTOS PARA TOGGLE Y OCULTAR (edición)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     // Toggle para líneas existentes en edición
@@ -731,7 +721,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const paramsId = toggleBtn.dataset.paramsId;
             const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
             const mainRow = toggleBtn.closest('tr.linea-fila');
-            if (mainRow && paramsRow) {
+            if (mainRow && paramsRow && mainRow.dataset.eliminado !== 'true') {
                 const isVisible = paramsRow.style.display !== 'none';
                 if (isVisible) {
                     paramsRow.style.display = 'none';
@@ -747,7 +737,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (paramsDiv) {
                         paramsDiv.classList.add('visible');
                         paramsDiv.style.display = 'block';
-                        // Al abrir, actualizar ancho de rollo y recalcular
                         const productoSelect = mainRow.querySelector('.producto-select-edit') || mainRow.querySelector('.producto-select');
                         if (productoSelect) {
                             const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_edit') || paramsRow.querySelector('.ancho_rollo_display');
@@ -827,7 +816,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const paramsDiv = paramsRow.querySelector('.etiquetas-params');
         if (!paramsDiv) return;
 
-        // Campos de la fila de parámetros
         const anchoInput = paramsDiv.querySelector('.ancho_etiqueta_edit');
         const altoInput = paramsDiv.querySelector('.alto_etiqueta_edit');
         const precioInput = paramsDiv.querySelector('.precio_etiqueta_edit');
@@ -835,20 +823,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const girarCheck = paramsDiv.querySelector('.girar_etiqueta_edit');
         const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta_edit');
 
-        // Obtener el archivo ID desde data-archivo-id (en los inputs)
         const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
         if (!archivoId) return;
 
-        // Campos de la línea principal (nombre, producto, cantidad, unidad)
         const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
         if (!mainRow) return;
         const productoSelect = mainRow.querySelector('.producto-select-edit');
         const cantidadInput = mainRow.querySelector('.cantidad-edit');
         const unidadSelect = mainRow.querySelector('.unidad-edit');
 
-        // Función para disparar recalculo
         function triggerCalculoEdit() {
-            // Actualizar ancho de rollo automático
             if (productoSelect) {
                 const anchoRolloDisplay = paramsDiv.querySelector('.ancho_rollo_edit');
                 if (anchoRolloDisplay) {
@@ -857,11 +841,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     anchoRolloDisplay.value = ancho;
                 }
             }
-            // Recalcular
             calcularLinea(paramsRow);
         }
 
-        // Asignar eventos a los campos
         if (anchoInput) { anchoInput.addEventListener('input', triggerCalculoEdit); anchoInput.addEventListener('change', triggerCalculoEdit); }
         if (altoInput) { altoInput.addEventListener('input', triggerCalculoEdit); altoInput.addEventListener('change', triggerCalculoEdit); }
         if (precioInput) { precioInput.addEventListener('input', triggerCalculoEdit); precioInput.addEventListener('change', triggerCalculoEdit); }
@@ -872,7 +854,6 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cantidadInput) { cantidadInput.addEventListener('input', triggerCalculoEdit); cantidadInput.addEventListener('change', triggerCalculoEdit); }
         if (unidadSelect) { unidadSelect.addEventListener('change', triggerCalculoEdit); }
 
-        // Si la línea ya está visible, hacer un cálculo inicial
         if (paramsRow.style.display !== 'none') {
             setTimeout(triggerCalculoEdit, 200);
         }
@@ -891,23 +872,20 @@ function limpiarResultados(paramsRow) {
         paramsDiv.querySelector('.metros_completos_display').textContent = '—';
         paramsDiv.querySelector('.resto_etiquetas_display').textContent = '—';
         paramsDiv.querySelector('.consumo_m_display').textContent = '—';
-        paramsDiv.querySelector('.area_m2_display').textContent = '—';
         paramsDiv.querySelector('.costo_estimado_display').textContent = '—';
-        // También para edición
         const editDisplay = paramsDiv.querySelector('.etiquetas_por_m2_display_edit');
         if (editDisplay) {
             editDisplay.textContent = '—';
             paramsDiv.querySelector('.metros_completos_display_edit').textContent = '—';
             paramsDiv.querySelector('.resto_etiquetas_display_edit').textContent = '—';
             paramsDiv.querySelector('.consumo_m_display_edit').textContent = '—';
-            paramsDiv.querySelector('.area_m2_display_edit').textContent = '—';
             paramsDiv.querySelector('.costo_estimado_display_edit').textContent = '—';
         }
     }
 }
 
 // =============================================
-// CÁLCULO AUTOMÁTICO DE ETIQUETAS (CON CÁLCULO FRONTEND DE METROS COMPLETOS Y RESTO)
+// CÁLCULO AUTOMÁTICO DE ETIQUETAS
 // =============================================
 function calcularLinea(paramsRow) {
     if (!paramsRow) return;
@@ -917,7 +895,6 @@ function calcularLinea(paramsRow) {
     const isEdit = paramsRow.dataset.paramsId && paramsRow.dataset.paramsId.startsWith('edit-');
     const prefix = isEdit ? '_edit' : '';
 
-    // Recolectar valores
     const ancho = paramsDiv.querySelector(`.ancho_etiqueta${prefix}`).value;
     const alto = paramsDiv.querySelector(`.alto_etiqueta${prefix}`).value;
     const precio = paramsDiv.querySelector(`.precio_etiqueta${prefix}`).value || '10';
@@ -934,7 +911,6 @@ function calcularLinea(paramsRow) {
 
     let cantidadInput, unidadSelect, productoSelect;
     if (isEdit) {
-        // En edición, los nombres son específicos del archivo
         const archivoId = paramsId.replace('edit-', '');
         cantidadInput = mainRow.querySelector(`.cantidad-edit[data-archivo-id="${archivoId}"]`);
         unidadSelect = mainRow.querySelector(`.unidad-edit[data-archivo-id="${archivoId}"]`);
@@ -962,7 +938,6 @@ function calcularLinea(paramsRow) {
         return;
     }
 
-    // Construir FormData
     const formData = new FormData();
     formData.append('ancho', ancho);
     formData.append('alto', alto);
@@ -981,21 +956,17 @@ function calcularLinea(paramsRow) {
         formData.append('cantidad', '');
     }
 
-    console.log('Enviando cálculo:', Object.fromEntries(formData));
-
     fetch("{{ url_for('etiquetas.calcular_ajax') }}", {
         method: 'POST',
         body: formData
     })
     .then(response => response.json())
     .then(data => {
-        console.log('Respuesta del cálculo (simData):', data.simData);
         if (data.error) {
             paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
             paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
             paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
             paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = data.error;
-            paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
             paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
             return;
         }
@@ -1006,13 +977,17 @@ function calcularLinea(paramsRow) {
         const etiquetasPorM2 = columnas * filasPorMetro;
         const precioUnitario = parseFloat(precio) || 10;
         const areaRedondeada = Math.round(areaTotal * 100) / 100;
-        const costoEstimado = areaRedondeada * precioUnitario;
-        const anchoRolloM = parseFloat(anchoRollo) || 1.3;
-        const metrosLineales = areaTotal / anchoRolloM;
 
-        // ============================================================
-        // CÁLCULO DE METROS COMPLETOS Y RESTO (frontend)
-        // ============================================================
+        // Calcular consumo y costo según unidad
+        let consumo, costoEstimado;
+        if (unidad === 'm') {
+            consumo = parseFloat(cantidad) || 0;
+            costoEstimado = consumo * precioUnitario;
+        } else {
+            consumo = areaTotal;
+            costoEstimado = areaTotal * precioUnitario;
+        }
+
         let metrosCompletos = null;
         let restoEtiquetas = null;
         if (unidad === 'unidades' && etiquetasPorM2 > 0 && columnas > 0) {
@@ -1027,18 +1002,21 @@ function calcularLinea(paramsRow) {
             }
         }
 
-        // Actualizar nombre visible si está vacío
         const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
         if (nombreInput && !nombreInput.value.trim()) {
             nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
 
-        // Mostrar resultados en el bloque de parámetros
+        // Actualizar etiqueta de consumo si es necesario
+        const consumoLabel = paramsDiv.querySelector(`.consumo_m_display${prefix}`).closest('.item').querySelector('.label');
+        if (consumoLabel) {
+            consumoLabel.textContent = 'Consumo (' + (unidad === 'm' ? 'm' : 'm²') + ')';
+        }
+
         paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = etiquetasPorM2 || '—';
         paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = (metrosCompletos !== null) ? metrosCompletos : '—';
         paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = (restoEtiquetas !== null) ? restoEtiquetas : '—';
-        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = metrosLineales ? metrosLineales.toFixed(2) + ' m' : '—';
-        paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = areaTotal ? areaTotal.toFixed(2) + ' m²' : '—';
+        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = consumo ? consumo.toFixed(2) : '—';
         paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = costoEstimado ? '$' + costoEstimado.toFixed(2) : '—';
     })
     .catch(error => {
@@ -1047,7 +1025,6 @@ function calcularLinea(paramsRow) {
         paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
         paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
         paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = 'Error de conexión';
-        paramsDiv.querySelector(`.area_m2_display${prefix}`).textContent = '—';
         paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
     });
 }

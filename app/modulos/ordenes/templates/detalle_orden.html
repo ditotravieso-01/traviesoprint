@@ -136,15 +136,14 @@
                                     <div class="detalle-row"><span class="label">Ancho de rollo:</span> <span>{{ params.ancho_rollo }} m</span></div>
                                     <div class="detalle-row"><span class="label">Modo:</span> <span>{{ params.modo }}</span></div>
                                     <div class="detalle-row"><span class="label">Cantidad original:</span> <span>{{ params.cantidad }}</span></div>
-                                    <div class="detalle-row"><span class="label">Precio m²:</span> <span>${{ params.precio }}</span></div>
+                                    <div class="detalle-row"><span class="label">Precio:</span> <span>${{ params.precio }}</span></div>
                                     <div class="detalle-row"><span class="label">Margen mesa:</span> <span>{{ 'Sí' if params.mesa else 'No' }}</span></div>
                                     <div class="detalle-row"><span class="label">Girar 90°:</span> <span>{{ 'Sí' if params.girar else 'No' }}</span></div>
                                     <div class="detalle-row"><span class="label">Modo inteligente:</span> <span>{{ 'Sí' if params.auto_girar else 'No' }}</span></div>
                                     <div class="detalle-row"><span class="label">Etiquetas por m²:</span> <span>{{ params.etiquetas_por_m2 or '—' }}</span></div>
                                     <div class="detalle-row"><span class="label">Metros completos:</span> <span>{% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span></div>
                                     <div class="detalle-row"><span class="label">Resto (etiquetas):</span> <span>{% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %}</span></div>
-                                    <div class="detalle-row"><span class="label">Consumo (m):</span> <span>{{ (params.area_m2 / (params.ancho_rollo or 1.3))|round(2) if params.area_m2 else '—' }}</span></div>
-                                    <div class="detalle-row"><span class="label">Área (m²):</span> <span>{{ params.area_m2|round(2) if params.area_m2 else '—' }}</span></div>
+                                    <div class="detalle-row"><span class="label">Consumo ({{ 'm' if archivo.unidad == 'm' else 'm²' }}):</span> <span>{% if params.consumo %}{{ params.consumo|round(2) }}{% else %}—{% endif %}</span></div>
                                     <div class="detalle-row"><span class="label">Costo estimado:</span> <span>${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span></div>
                                     <button class="btn btn-outline" style="padding:2px 8px; font-size:11px; margin-top:4px;" onclick="toggleDetalle({{ archivo.id }})">Ocultar</button>
                                 </div>
@@ -167,7 +166,6 @@
         var panel = document.getElementById('detalle-' + id);
         if (panel) {
             panel.classList.toggle('visible');
-            // Cambiar texto del botón "Ver" a "Ocultar" y viceversa
             var btn = panel.parentElement.parentElement.querySelector('.btn');
             if (btn) {
                 if (panel.classList.contains('visible')) {
