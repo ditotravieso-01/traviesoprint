@@ -8,7 +8,9 @@
 <style>
     /* ============================================
        MODALES ESTILO "ESTUDIO BLANC"
-       (igual que antes, no lo repito por brevedad)
+       Psicología del color occidental:
+       - Verde (#10b981) → Comprar (éxito, dinero)
+       - Ámbar (#f59e0b) → Ajustar (cautela, cambio)
     ============================================ */
     .modal-overlay {
         display: none;
@@ -24,7 +26,10 @@
         justify-content: center;
         align-items: center;
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active {
+        display: flex;
+    }
+
     .modal {
         background: #ffffff;
         border-radius: 20px;
@@ -36,9 +41,17 @@
         overflow: hidden;
     }
     @keyframes modalIn {
-        from { transform: scale(0.95) translateY(12px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
+        from {
+            transform: scale(0.95) translateY(12px);
+            opacity: 0;
+        }
+        to {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+        }
     }
+
+    /* Cabecera del modal con borde de color según acción */
     .modal-header {
         display: flex;
         justify-content: space-between;
@@ -57,7 +70,9 @@
         align-items: center;
         gap: 10px;
     }
-    .modal-header .modal-title i { font-size: 20px; }
+    .modal-header .modal-title i {
+        font-size: 20px;
+    }
     .modal-close {
         background: none;
         border: none;
@@ -68,15 +83,36 @@
         transition: color 0.2s;
         padding: 0 4px;
     }
-    .modal-close:hover { color: #1c1c1e; }
-    .modal-compra { border-top: 5px solid #10b981; }
-    .modal-compra .modal-title { color: #10b981; }
-    .modal-compra .modal-title i { color: #10b981; }
-    .modal-ajuste { border-top: 5px solid #f59e0b; }
-    .modal-ajuste .modal-title { color: #f59e0b; }
-    .modal-ajuste .modal-title i { color: #f59e0b; }
-    .modal-body { padding: 20px 28px 28px 28px; }
-    .modal-body .form-group { margin-bottom: 16px; }
+    .modal-close:hover {
+        color: #1c1c1e;
+    }
+
+    .modal-compra {
+        border-top: 5px solid #10b981;
+    }
+    .modal-compra .modal-title {
+        color: #10b981;
+    }
+    .modal-compra .modal-title i {
+        color: #10b981;
+    }
+
+    .modal-ajuste {
+        border-top: 5px solid #f59e0b;
+    }
+    .modal-ajuste .modal-title {
+        color: #f59e0b;
+    }
+    .modal-ajuste .modal-title i {
+        color: #f59e0b;
+    }
+
+    .modal-body {
+        padding: 20px 28px 28px 28px;
+    }
+    .modal-body .form-group {
+        margin-bottom: 16px;
+    }
     .modal-body .form-group label {
         display: block;
         font-weight: 600;
@@ -127,6 +163,7 @@
         border-top: 1px solid #f0ece8;
         padding-top: 16px;
     }
+
     .btn {
         padding: 8px 18px;
         border-radius: 30px;
@@ -139,6 +176,7 @@
         align-items: center;
         gap: 6px;
         font-family: 'Inter', sans-serif;
+        text-decoration: none;
     }
     .btn:hover {
         transform: translateY(-1px);
@@ -175,6 +213,15 @@
         padding: 4px 12px;
         font-size: 12px;
     }
+    .btn-copy {
+        background: #8b5cf6;
+        color: white;
+    }
+    .btn-copy:hover {
+        background: #7c3aed;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
+
     .content-card {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
@@ -214,7 +261,6 @@
         padding: 8px 10px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.02);
     }
-    /* Estilos para el gráfico */
     .chart-container {
         margin-top: 20px;
         padding: 16px;
@@ -232,12 +278,23 @@
         position: relative;
         height: 250px;
     }
+
     @media (max-width: 768px) {
-        .modal { width: 95%; }
-        .modal-header { padding: 14px 18px 10px 18px; }
-        .modal-body { padding: 16px 18px 20px 18px; }
-        .modal-header .modal-title { font-size: 19px; }
-        .chart-wrapper { height: 200px; }
+        .modal {
+            width: 95%;
+        }
+        .modal-header {
+            padding: 14px 18px 10px 18px;
+        }
+        .modal-body {
+            padding: 16px 18px 20px 18px;
+        }
+        .modal-header .modal-title {
+            font-size: 19px;
+        }
+        .chart-wrapper {
+            height: 200px;
+        }
     }
 </style>
 {% endblock %}
@@ -272,6 +329,7 @@
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
             <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-edit"></i> Ajustar stock</button>
+            <a href="{{ url_for('inventario.duplicar_producto', producto_id=producto.id) }}" class="btn btn-copy"><i class="fas fa-copy"></i> Duplicar</a>
             <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
         </div>
     </div>
@@ -314,7 +372,7 @@
 </div>
 
 <!-- ============================================
-     MODALES (Compra y Ajuste) - igual que antes
+     MODAL: COMPRAR (verde - éxito)
      ============================================ -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
@@ -346,6 +404,9 @@
     </div>
 </div>
 
+<!-- ============================================
+     MODAL: AJUSTAR STOCK (ámbar - cautela)
+     ============================================ -->
 <div class="modal-overlay" id="modalAjuste">
     <div class="modal modal-ajuste">
         <div class="modal-header">
@@ -450,7 +511,7 @@
         });
     });
 
-    // Funciones para los modales (igual que antes)
+    // Funciones para los modales
     function abrirModalCompra() {
         document.getElementById('modalCompra').classList.add('active');
         document.body.style.overflow = 'hidden';

@@ -251,6 +251,34 @@ def eliminar_producto(producto_id):
     return redirect(url_for('inventario.index'))
 
 # ==========================================
+# DUPLICAR PRODUCTO
+# ==========================================
+@inventario_bp.route('/duplicar/<int:producto_id>')
+@login_required
+@economico_or_admin_required
+def duplicar_producto(producto_id):
+    original = Producto.query.get_or_404(producto_id)
+    # Crear copia
+    nueva = Producto(
+        nombre=f"Copia de {original.nombre}",
+        descripcion=original.descripcion,
+        tipo=original.tipo,
+        ubicacion=original.ubicacion,
+        unidad=original.unidad,
+        costo=original.costo,
+        stock=0,  # stock en 0 para evitar confusiones
+        stock_minimo=original.stock_minimo,
+        categoria_id=original.categoria_id,
+        ancho_rollo=original.ancho_rollo,
+        largo_rollo=original.largo_rollo,
+        fecha_vencimiento=original.fecha_vencimiento
+    )
+    db.session.add(nueva)
+    db.session.commit()
+    flash(f'Producto "{original.nombre}" duplicado correctamente. Edita el nuevo producto para ajustarlo.', 'success')
+    return redirect(url_for('inventario.editar_producto', producto_id=nueva.id))
+
+# ==========================================
 # DETALLE DE PRODUCTO
 # ==========================================
 @inventario_bp.route('/producto/<int:producto_id>')

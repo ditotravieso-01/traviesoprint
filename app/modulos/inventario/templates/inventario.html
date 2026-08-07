@@ -6,7 +6,6 @@
 
 {% block extra_css %}
 <style>
-    /* ===== ESTUDIO BLANC - ESTILOS GENERALES ===== */
     .filters-bar {
         display: flex;
         gap: 12px;
@@ -62,6 +61,7 @@
         background: #1c1c1e;
         color: white;
         font-family: 'Inter', sans-serif;
+        text-decoration: none;
     }
     .btn:hover {
         transform: translateY(-1px);
@@ -112,6 +112,14 @@
         padding: 4px 12px;
         font-size: 12px;
     }
+    .btn-copy {
+        background: #8b5cf6;
+        color: white;
+    }
+    .btn-copy:hover {
+        background: #7c3aed;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    }
     .card {
         background: rgba(255, 255, 255, 0.7);
         backdrop-filter: blur(10px);
@@ -146,6 +154,25 @@
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+    th:hover {
+        color: #1c1c1e;
+    }
+    th.sortable::after {
+        content: ' ⇅';
+        font-size: 10px;
+        color: #bbb;
+    }
+    th.sortable.asc::after {
+        content: ' ↑';
+        color: #1a1a1a;
+    }
+    th.sortable.desc::after {
+        content: ' ↓';
+        color: #1a1a1a;
     }
     td {
         padding: 8px 10px;
@@ -193,12 +220,7 @@
         color: #10b981;
     }
 
-    /* ============================================
-       MODALES ESTILO "ESTUDIO BLANC"
-       Psicología del color occidental:
-       - Verde (#10b981) → Comprar (éxito, dinero)
-       - Ámbar (#f59e0b) → Ajustar (cautela, cambio)
-    ============================================ */
+    /* Modal styles (igual que antes) */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -216,7 +238,6 @@
     .modal-overlay.active {
         display: flex;
     }
-
     .modal {
         background: #ffffff;
         border-radius: 20px;
@@ -228,17 +249,9 @@
         overflow: hidden;
     }
     @keyframes modalIn {
-        from {
-            transform: scale(0.95) translateY(12px);
-            opacity: 0;
-        }
-        to {
-            transform: scale(1) translateY(0);
-            opacity: 1;
-        }
+        from { transform: scale(0.95) translateY(12px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
     }
-
-    /* Cabecera del modal con borde de color según acción */
     .modal-header {
         display: flex;
         justify-content: space-between;
@@ -273,35 +286,14 @@
     .modal-close:hover {
         color: #1c1c1e;
     }
-
-    /* Borde superior de color (se asigna mediante clase en el modal) */
-    .modal-compra {
-        border-top: 5px solid #10b981;
-    }
-    .modal-compra .modal-title {
-        color: #10b981;
-    }
-    .modal-compra .modal-title i {
-        color: #10b981;
-    }
-
-    .modal-ajuste {
-        border-top: 5px solid #f59e0b;
-    }
-    .modal-ajuste .modal-title {
-        color: #f59e0b;
-    }
-    .modal-ajuste .modal-title i {
-        color: #f59e0b;
-    }
-
-    /* Cuerpo del modal */
-    .modal-body {
-        padding: 20px 28px 28px 28px;
-    }
-    .modal-body .form-group {
-        margin-bottom: 16px;
-    }
+    .modal-compra { border-top: 5px solid #10b981; }
+    .modal-compra .modal-title { color: #10b981; }
+    .modal-compra .modal-title i { color: #10b981; }
+    .modal-ajuste { border-top: 5px solid #f59e0b; }
+    .modal-ajuste .modal-title { color: #f59e0b; }
+    .modal-ajuste .modal-title i { color: #f59e0b; }
+    .modal-body { padding: 20px 28px 28px 28px; }
+    .modal-body .form-group { margin-bottom: 16px; }
     .modal-body .form-group label {
         display: block;
         font-weight: 600;
@@ -329,8 +321,6 @@
         background: white;
         box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
     }
-
-    /* Inputs específicos con foco de color según acción */
     .modal-compra .form-group input:focus,
     .modal-compra .form-group select:focus {
         border-color: #10b981;
@@ -341,13 +331,11 @@
         border-color: #f59e0b;
         box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08);
     }
-
     .modal-body .form-group input[disabled] {
         background: #f0ece8;
         color: #6b7280;
         cursor: not-allowed;
     }
-
     .modal-actions {
         display: flex;
         gap: 12px;
@@ -356,7 +344,6 @@
         border-top: 1px solid #f0ece8;
         padding-top: 16px;
     }
-
     @media (max-width: 768px) {
         .filters-bar {
             flex-direction: column;
@@ -413,20 +400,20 @@
         </div>
     </div>
     <div class="table-wrap">
-        <table>
+        <table id="tablaInventario">
             <thead>
                 <tr>
-                    <th>Producto</th>
-                    <th>Categoría</th>
-                    <th>Tipo</th>
-                    <th>Ubicación</th>
-                    <th>Unidad</th>
-                    <th>Costo</th>
-                    <th>Stock</th>
-                    <th>Comprometido</th>
-                    <th>Disponible</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th class="sortable" data-order="">Producto</th>
+                    <th class="sortable" data-order="">Categoría</th>
+                    <th class="sortable" data-order="">Tipo</th>
+                    <th class="sortable" data-order="">Ubicación</th>
+                    <th class="sortable" data-order="">Unidad</th>
+                    <th class="sortable" data-order="">Costo</th>
+                    <th class="sortable" data-order="">Stock</th>
+                    <th class="sortable" data-order="">Comprometido</th>
+                    <th class="sortable" data-order="">Disponible</th>
+                    <th class="sortable" data-order="">Estado</th>
+                    <th style="cursor:default;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -448,7 +435,7 @@
                     <td style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
                         {{ p.disponible }}
                         {% if p.disponible < 0 %}
-                            <span style="font-size:11px; color:#dc2626;"> ⚠️ Sobre-reserva</span>
+                            <span style="font-size:11px; color:#dc2626;"> ⚠️</span>
                         {% endif %}
                     </td>
                     <td>
@@ -458,6 +445,7 @@
                     <td>
                         <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
                         <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <a href="{{ url_for('inventario.duplicar_producto', producto_id=p.id) }}" class="btn btn-sm btn-copy" title="Duplicar producto"><i class="fas fa-copy"></i></a>
                         <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
                             <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
                         </form>
@@ -475,12 +463,10 @@
      ============================================ -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
-        <!-- Cabecera -->
         <div class="modal-header">
             <span class="modal-title"><i class="fas fa-shopping-cart"></i> Registrar compra</span>
             <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
         </div>
-        <!-- Cuerpo -->
         <div class="modal-body">
             <form method="POST" action="{{ url_for('inventario.comprar') }}">
                 <div class="form-group">
@@ -525,7 +511,7 @@
     function abrirModalCompra(productoId) {
         document.getElementById('compraProductoSelect').value = productoId;
         document.getElementById('modalCompra').classList.add('active');
-        document.body.style.overflow = 'hidden'; // Evita scroll
+        document.body.style.overflow = 'hidden';
     }
 
     function cerrarModal(id) {
@@ -548,6 +534,63 @@
                 this.classList.remove('active');
                 document.body.style.overflow = '';
             }
+        });
+    });
+
+    // =============================================
+    // ORDENACIÓN DE LA TABLA
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        const table = document.getElementById('tablaInventario');
+        const headers = table.querySelectorAll('th.sortable');
+        const tbody = table.querySelector('tbody');
+
+        headers.forEach(function(th) {
+            th.addEventListener('click', function() {
+                const colIndex = Array.from(th.parentNode.children).indexOf(th);
+                const isAsc = th.dataset.order === 'asc' ? false : true;
+
+                // Resetear orden de otras columnas
+                headers.forEach(h => {
+                    if (h !== th) h.dataset.order = '';
+                });
+                th.dataset.order = isAsc ? 'asc' : 'desc';
+
+                // Obtener todas las filas del tbody
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                // Determinar si la columna es numérica
+                const firstRow = rows[0];
+                if (!firstRow) return;
+                const cell = firstRow.children[colIndex];
+                const cellText = cell ? cell.innerText.trim() : '';
+                // Intentar parsear como número (quitar $, etc.)
+                const numericValue = parseFloat(cellText.replace(/[^0-9.-]/g, ''));
+                const isNumeric = !isNaN(numericValue) && isFinite(numericValue) && cellText.trim() !== '';
+
+                // Ordenar filas
+                rows.sort(function(a, b) {
+                    let aVal = a.children[colIndex] ? a.children[colIndex].innerText.trim() : '';
+                    let bVal = b.children[colIndex] ? b.children[colIndex].innerText.trim() : '';
+
+                    if (isNumeric) {
+                        aVal = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+                        bVal = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+                    } else {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+
+                    if (aVal < bVal) return isAsc ? -1 : 1;
+                    if (aVal > bVal) return isAsc ? 1 : -1;
+                    return 0;
+                });
+
+                // Reordenar en el DOM
+                rows.forEach(function(row) {
+                    tbody.appendChild(row);
+                });
+            });
         });
     });
 </script>
