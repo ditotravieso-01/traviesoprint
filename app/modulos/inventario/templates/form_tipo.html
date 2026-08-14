@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Editar' if categoria else 'Nueva' }} Categoría · Inventario{% endblock %}
+{% block title %}{{ 'Editar' if tipo else 'Nuevo' }} Tipo · Inventario{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if categoria else '📄 Nueva' }} Categoría{% endblock %}
+{% block page_title %}{{ '✏️ Editar' if tipo else '📄 Nuevo' }} Tipo{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -113,20 +113,20 @@
 {% block content %}
 <div class="form-container">
     <div class="form-section">
-        <h4><i class="fas fa-tag"></i> {{ 'Editar categoría' if categoria else 'Nueva categoría' }}</h4>
+        <h4><i class="fas fa-box"></i> {{ 'Editar tipo' if tipo else 'Nuevo tipo' }}</h4>
         <form method="POST">
             <div class="form-group">
                 <label>Nombre *</label>
-                <input type="text" name="nombre" value="{{ categoria.nombre if categoria else '' }}" required placeholder="Ej. Vinilo, Tinta, Papel...">
+                <input type="text" name="nombre" value="{{ tipo.nombre if tipo else '' }}" required placeholder="Ej. Consumible, Activo Fijo, Herramienta...">
             </div>
             <div class="form-group">
                 <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Describe esta categoría...">{{ categoria.descripcion if categoria else '' }}</textarea>
-                <small>Opcional. Ayuda a identificar el propósito de esta categoría.</small>
+                <textarea name="descripcion" rows="3" placeholder="Describe este tipo de producto...">{{ tipo.descripcion if tipo else '' }}</textarea>
+                <small>Opcional. Ayuda a entender la clasificación.</small>
             </div>
             <div class="btn-group">
                 <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> {{ 'Actualizar' if categoria else 'Crear categoría' }}
+                    <i class="fas fa-save"></i> {{ 'Actualizar' if tipo else 'Crear tipo' }}
                 </button>
                 <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline">
                     <i class="fas fa-times"></i> Cancelar

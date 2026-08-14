@@ -4,36 +4,232 @@
 
 {% block page_title %}🏷️ Categorías{% endblock %}
 
+{% block extra_css %}
+<style>
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+    .admin-header p {
+        color: #8e8e93;
+        margin: 4px 0 0 0;
+        font-size: 14px;
+    }
+    .btn {
+        padding: 8px 20px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+    }
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-sm {
+        padding: 4px 14px;
+        font-size: 12px;
+        border-radius: 20px;
+    }
+    .btn-success {
+        background: #10b981;
+        color: white;
+    }
+    .btn-success:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    }
+    .btn-warning {
+        background: #f59e0b;
+        color: white;
+    }
+    .btn-warning:hover {
+        background: #d97706;
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    }
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
+
+    .categorias-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 24px;
+        margin-top: 8px;
+    }
+
+    .categoria-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 24px 20px 20px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #1c1c1e;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+    }
+    .categoria-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+        border-color: rgba(168, 133, 79, 0.2);
+    }
+    .categoria-card:nth-child(5n+1) { border-top: 5px solid #3b82f6; }
+    .categoria-card:nth-child(5n+2) { border-top: 5px solid #10b981; }
+    .categoria-card:nth-child(5n+3) { border-top: 5px solid #f59e0b; }
+    .categoria-card:nth-child(5n+4) { border-top: 5px solid #8b5cf6; }
+    .categoria-card:nth-child(5n+5) { border-top: 5px solid #ec4899; }
+
+    .categoria-card .card-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+    .categoria-card h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        margin: 0 0 4px 0;
+        color: #1c1c1e;
+    }
+    .categoria-card .card-desc {
+        font-size: 14px;
+        color: #8e8e93;
+        margin: 0 0 12px 0;
+        flex: 1;
+        min-height: 40px;
+    }
+    .categoria-card .card-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+        margin-top: 4px;
+    }
+    .categoria-card .count {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-family: 'Playfair Display', serif;
+    }
+    .categoria-card .count-label {
+        font-size: 12px;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-weight: 600;
+    }
+    .categoria-card .card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    .categoria-card .card-actions .btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 60px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #8e8e93;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        border: 1px dashed #d2d2d7;
+        grid-column: 1 / -1;
+    }
+    .empty-state h3 {
+        font-family: 'Playfair Display', serif;
+        color: #1c1c1e;
+        margin-bottom: 8px;
+    }
+    @media (max-width: 768px) {
+        .categorias-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="content-card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <p style="color:#666; margin:0;">Lista de categorías para organizar los productos.</p>
-        <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva categoría</a>
+<div class="admin-header">
+    <div>
+        <p>Clasifica tus productos en categorías para una mejor organización</p>
     </div>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Descripción</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cat in categorias %}
-                <tr>
-                    <td><strong>{{ cat.nombre }}</strong></td>
-                    <td>{{ cat.descripcion or '—' }}</td>
-                    <td>
-                        <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta categoría?')">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline">
+        <i class="fas fa-arrow-left"></i> Volver
+    </a>
+</div>
+
+<div style="display: flex; justify-content: flex-end; margin-bottom: 16px;">
+    <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success">
+        <i class="fas fa-plus"></i> Nueva categoría
+    </a>
+</div>
+
+<div class="categorias-grid">
+    {% for cat in categorias %}
+        {% set count = cat.productos|length %}
+        <div class="categoria-card">
+            <div class="card-icon">🏷️</div>
+            <h4>{{ cat.nombre }}</h4>
+            <div class="card-desc">{{ cat.descripcion or 'Sin descripción' }}</div>
+            <div class="card-stats">
+                <div>
+                    <div class="count">{{ count }}</div>
+                    <div class="count-label">productos</div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="btn btn-sm btn-warning">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline; flex:1;" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                    <button type="submit" class="btn btn-sm btn-danger" style="width:100%;">
+                        <i class="fas fa-trash-alt"></i> Eliminar
+                    </button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>📭 No hay categorías</h3>
+            <p>Crea tu primera categoría para organizar los productos.</p>
+            <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success" style="margin-top: 12px;">
+                <i class="fas fa-plus"></i> Crear categoría
+            </a>
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}

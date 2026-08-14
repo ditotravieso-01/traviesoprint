@@ -221,6 +221,20 @@
         background: #7c3aed;
         box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
     }
+    .btn-admin {
+        background: #6b7280;
+        color: white;
+    }
+    .btn-admin:hover {
+        background: #4b5563;
+    }
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #b91c1c;
+    }
 
     .content-card {
         background: rgba(255, 255, 255, 0.7);
@@ -278,23 +292,63 @@
         position: relative;
         height: 250px;
     }
+    .admin-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        padding: 12px 16px;
+        background: #f8f6f4;
+        border-radius: 12px;
+        border: 1px solid #e8e0da;
+        align-items: center;
+    }
+    .admin-actions .label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-right: 8px;
+        display: flex;
+        align-items: center;
+    }
+    .atributos-extra {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 20px;
+        margin-top: 8px;
+        padding: 12px 16px;
+        background: #fafaf9;
+        border-radius: 8px;
+        border: 1px solid #f0ece8;
+    }
+    .atributos-extra .item {
+        display: flex;
+        padding: 2px 0;
+        border-bottom: 1px solid #f5f2ef;
+    }
+    .atributos-extra .item .label {
+        font-weight: 600;
+        color: #555;
+        width: 120px;
+        flex-shrink: 0;
+        font-size: 13px;
+    }
+    .atributos-extra .item .value {
+        color: #1a1a1a;
+        font-size: 14px;
+    }
 
     @media (max-width: 768px) {
-        .modal {
-            width: 95%;
-        }
-        .modal-header {
-            padding: 14px 18px 10px 18px;
-        }
-        .modal-body {
-            padding: 16px 18px 20px 18px;
-        }
-        .modal-header .modal-title {
-            font-size: 19px;
-        }
-        .chart-wrapper {
-            height: 200px;
-        }
+        .modal { width: 95%; }
+        .modal-header { padding: 14px 18px 10px 18px; }
+        .modal-body { padding: 16px 18px 20px 18px; }
+        .modal-header .modal-title { font-size: 19px; }
+        .chart-wrapper { height: 200px; }
+        .admin-actions { flex-direction: column; align-items: stretch; }
+        .admin-actions .label { margin-bottom: 4px; }
+        .atributos-extra { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -303,28 +357,50 @@
 <div class="content-card">
     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:4px 20px;">
+            <p><strong>Área:</strong> {{ producto.area.nombre if producto.area else '—' }}</p>
             <p><strong>Categoría:</strong> {{ producto.categoria.nombre if producto.categoria else '—' }}</p>
+            <p><strong>Ubicación:</strong> {{ producto.ubicacion_rel.nombre if producto.ubicacion_rel else '—' }}</p>
+            <p><strong>Tipo:</strong> {{ producto.tipo_rel.nombre if producto.tipo_rel else '—' }}</p>
+            <p><strong>Unidad:</strong>
+                {% if producto.unidad_rel %}
+                    {{ producto.unidad_rel.nombre }}
+                    {% if producto.unidad_rel.simbolo %}({{ producto.unidad_rel.simbolo }}){% endif %}
+                {% else %}
+                    —
+                {% endif %}
+            </p>
             <p><strong>Descripción:</strong> {{ producto.descripcion or 'Sin descripción' }}</p>
-            <p><strong>Tipo:</strong> {{ producto.tipo or '—' }}</p>
-            <p><strong>Ubicación:</strong> {{ producto.ubicacion or '—' }}</p>
-            <p><strong>Unidad:</strong> {{ producto.unidad or '—' }}</p>
             <p><strong>Costo unitario:</strong> ${{ producto.costo|round(2) if producto.costo else '—' }}</p>
+            <p><strong>Inversión total:</strong> ${{ producto.inversion_total|round(2) if producto.inversion_total else '—' }}</p>
             <p><strong>Ancho rollo:</strong> {{ producto.ancho_rollo|round(2) if producto.ancho_rollo else '—' }} m</p>
             <p><strong>Largo rollo:</strong> {{ producto.largo_rollo|round(2) if producto.largo_rollo else '—' }} m</p>
-            <p><strong>Stock actual:</strong> {{ producto.stock }}</p>
-            <p><strong>Comprometido:</strong> {{ producto.stock_comprometido or 0 }}</p>
-            <p><strong>Disponible:</strong> 
-                <span style="color: {{ 'red' if producto.disponible < 0 else 'green' if producto.disponible > 0 else '#888' }};">
-                    {{ producto.disponible }}
-                    {% if producto.disponible < 0 %}
+
+            <!-- Stock en unidades físicas -->
+            <p><strong>Stock ({{ producto.unidad or 'u' }}):</strong> {{ producto.stock|round(2) }}</p>
+            <p><strong>Comprometido ({{ producto.unidad or 'u' }}):</strong> {{ producto.stock_comprometido|round(2) or 0 }}</p>
+            <p><strong>Disponible ({{ producto.unidad or 'u' }}):</strong>
+                <span style="color: {{ 'red' if producto.get_stock_unidades_disponible() < 0 else 'green' if producto.get_stock_unidades_disponible() > 0 else '#888' }};">
+                    {{ producto.get_stock_unidades_disponible()|round(2) }}
+                </span>
+            </p>
+
+            <!-- Stock en metros -->
+            <p><strong>Stock (metros):</strong> {{ producto.stock_metros|round(2) if producto.stock_metros else 0 }}</p>
+            <p><strong>Comprometido (metros):</strong> {{ producto.stock_comprometido_metros|round(2) or 0 }}</p>
+            <p><strong>Disponible (metros):</strong>
+                <span style="color: {{ 'red' if producto.get_stock_metros_disponible() < 0 else 'green' if producto.get_stock_metros_disponible() > 0 else '#888' }};">
+                    {{ producto.get_stock_metros_disponible()|round(2) }}
+                    {% if producto.get_stock_metros_disponible() < 0 %}
                         <span style="font-size:11px; color:#dc2626;"> ⚠️ Sobre-reserva</span>
                     {% endif %}
                 </span>
             </p>
-            <p><strong>Stock mínimo:</strong> {{ producto.stock_minimo or 0 }}</p>
+
+            <p><strong>Stock mínimo:</strong> {{ producto.stock_minimo|round(2) or 0 }}</p>
             {% if producto.fecha_vencimiento %}
                 <p><strong>Vence:</strong> {{ producto.fecha_vencimiento.strftime('%d/%m/%Y') }}</p>
             {% endif %}
+            <p><strong>Material impresión:</strong> {{ '✅ Sí' if producto.es_material_impresion else '❌ No' }}</p>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
@@ -333,6 +409,34 @@
             <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
         </div>
     </div>
+
+    <!-- Atributos extra (si existen) -->
+    {% if producto.atributos_extra and producto.atributos_extra|length > 0 %}
+    <div class="atributos-extra">
+        {% for key, value in producto.atributos_extra.items() %}
+            <div class="item">
+                <span class="label">{{ key|replace('_', ' ')|title }}:</span>
+                <span class="value">{{ value }}</span>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Acciones Administrativas (solo admin) -->
+    {% if current_user.role == 'admin' %}
+    <div class="admin-actions">
+        <span class="label">🔐 Administrador:</span>
+        <form method="POST" action="{{ url_for('inventario.borrar_historial', producto_id=producto.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar todo el historial de movimientos de este producto? Esta acción no se puede deshacer.')">
+            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i> Borrar historial</button>
+        </form>
+        <form method="POST" action="{{ url_for('inventario.resetear_comprometido', producto_id=producto.id) }}" style="display:inline;" onsubmit="return confirm('¿Resetear el stock comprometido a 0?')">
+            <button type="submit" class="btn btn-sm btn-admin"><i class="fas fa-undo"></i> Resetear comprometido</button>
+        </form>
+        <span style="font-size:12px; color:#8e8e93; display:flex; align-items:center;">
+            <i class="fas fa-info-circle" style="margin-right:4px;"></i> Estas acciones afectan solo a este producto
+        </span>
+    </div>
+    {% endif %}
 
     <!-- ===== GRÁFICO DE EVOLUCIÓN ===== -->
     <div class="chart-container">
@@ -349,7 +453,10 @@
                 <tr>
                     <th>Fecha</th>
                     <th>Tipo</th>
-                    <th>Cantidad</th>
+                    <th>Cantidad ({{ producto.unidad or 'u' }})</th>
+                    <th>Cantidad (metros)</th>
+                    <th>Costo Unit.</th>
+                    <th>Costo Total</th>
                     <th>Comentario</th>
                     <th>Orden</th>
                 </tr>
@@ -359,18 +466,22 @@
                 <tr>
                     <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
                     <td>{{ m.tipo }}</td>
-                    <td>{{ m.cantidad }}</td>
+                    <td>{{ m.cantidad|round(2) }}</td>
+                    <td>{% if m.cantidad_metros %}{{ m.cantidad_metros|round(2) }}{% else %}—{% endif %}</td>
+                    <td>{% if m.costo_unitario %} ${{ m.costo_unitario|round(2) }} {% else %}—{% endif %}</td>
+                    <td>{% if m.costo_total %} ${{ m.costo_total|round(2) }} {% else %}—{% endif %}</td>
                     <td>{{ m.comentario or '-' }}</td>
                     <td>{{ m.orden.order_num if m.orden else '-' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" style="text-align:center;color:#8e8e93;">No hay movimientos.</td></tr>
+                <tr><td colspan="8" style="text-align:center;color:#8e8e93;">No hay movimientos.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
 
+<!-- MODALES (Compra y Ajuste) -->
 <!-- ============================================
      MODAL: COMPRAR (verde - éxito)
      ============================================ -->
@@ -384,7 +495,7 @@
             <form method="POST" action="{{ url_for('inventario.comprar') }}">
                 <input type="hidden" name="producto_id" value="{{ producto.id }}" />
                 <div class="form-group">
-                    <label>Cantidad</label>
+                    <label>Cantidad ({{ producto.unidad or 'u' }})</label>
                     <input type="number" step="0.01" name="cantidad" value="1" required />
                 </div>
                 <div class="form-group">
@@ -417,11 +528,11 @@
             <form method="POST" action="{{ url_for('inventario.ajustar') }}">
                 <input type="hidden" name="producto_id" value="{{ producto.id }}" />
                 <div class="form-group">
-                    <label>Stock actual en sistema</label>
-                    <input type="number" step="0.01" value="{{ producto.stock }}" disabled style="background:#f0ece8;" />
+                    <label>Stock actual en sistema ({{ producto.unidad or 'u' }})</label>
+                    <input type="number" step="0.01" value="{{ producto.stock|round(2) }}" disabled style="background:#f0ece8;" />
                 </div>
                 <div class="form-group">
-                    <label>Stock real (cuenta física)</label>
+                    <label>Stock real (cuenta física) ({{ producto.unidad or 'u' }})</label>
                     <input type="number" step="0.01" name="stock_real" required placeholder="Ingresa el stock contado" />
                 </div>
                 <div class="form-group">
@@ -441,9 +552,12 @@
 <!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Datos pasados desde el backend
+    // Datos pasados desde el backend (saldos en unidades)
     const fechas = {{ fechas_json | safe }};
     const saldos = {{ saldos_json | safe }};
+
+    // Datos en metros (si existen)
+    const saldosMetros = {{ saldos_metros_json | safe if saldos_metros_json else '[]' }};
 
     // Inicializar gráfico cuando el DOM esté listo
     document.addEventListener('DOMContentLoaded', function() {
@@ -455,21 +569,41 @@
         gradient.addColorStop(0, color + '40');
         gradient.addColorStop(1, color + '05');
 
+        // Dataset principal (en unidades)
+        const datasets = [{
+            label: 'Stock ({{ producto.unidad or "u" }})',
+            data: saldos,
+            borderColor: color,
+            backgroundColor: gradient,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointBackgroundColor: color,
+            tension: 0.3,
+            fill: true,
+        }];
+
+        // Si hay datos en metros, añadir un segundo dataset
+        if (saldosMetros && saldosMetros.length > 0) {
+            const colorMetros = '#3b82f6';
+            datasets.push({
+                label: 'Stock (metros)',
+                data: saldosMetros,
+                borderColor: colorMetros,
+                backgroundColor: colorMetros + '20',
+                borderWidth: 2,
+                borderDash: [5, 5],
+                pointRadius: 2,
+                pointBackgroundColor: colorMetros,
+                tension: 0.3,
+                fill: false,
+            });
+        }
+
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: fechas,
-                datasets: [{
-                    label: 'Stock ({{ producto.unidad or "u" }})',
-                    data: saldos,
-                    borderColor: color,
-                    backgroundColor: gradient,
-                    borderWidth: 2,
-                    pointRadius: 3,
-                    pointBackgroundColor: color,
-                    tension: 0.3,
-                    fill: true,
-                }]
+                datasets: datasets
             },
             options: {
                 responsive: true,
@@ -485,7 +619,7 @@
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                return context.parsed.y + ' {{ producto.unidad or "" }}';
+                                return context.dataset.label + ': ' + context.parsed.y;
                             }
                         }
                     }

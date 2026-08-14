@@ -1,34 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Editar' if producto else 'Nuevo' }} Producto · Inventario{% endblock %}
+{% block title %}{% if producto %}{{ producto.nombre }} · Inventario{% else %}Nuevo Producto · Inventario{% endif %}{% endblock %}
 
 {% block page_title %}{{ '✏️ Editar' if producto else '📦 Nuevo' }} Producto{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width: 700px; margin: 0 auto; }
-    .form-section { background: white; border-radius: 16px; padding: 24px 28px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #e8e0da; }
-    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 20px; margin-bottom: 16px; color: #1a1a1a; border-bottom: 1px solid #eee; padding-bottom: 8px; }
+    .form-container { max-width: 800px; margin: 0 auto; }
+    .form-section { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 28px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: #1c1c1e; border-bottom: 2px solid #f0ece8; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+    .form-section h4 i { color: #a8854f; font-size: 22px; }
     .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
-    .form-group input, .form-group select { width: 100%; padding: 10px 14px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; background: #fafafa; transition: border-color 0.2s, box-shadow 0.2s; }
-    .form-group input:focus, .form-group select:focus { border-color: #1a1a1a; outline: none; background: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
-    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
-    .btn { padding: 10px 24px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
-    .btn-primary { background: #1a1a1a; color: white; }
-    .btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    .btn-outline { background: transparent; border: 1px solid #ccc; color: #333; }
-    .btn-outline:hover { border-color: #888; background: #f5f5f5; }
-    @media (max-width: 768px) { .form-grid-2 { grid-template-columns: 1fr; } }
+    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; font-family: 'Inter', sans-serif; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #e0dcd8; border-radius: 10px; font-size: 15px; background: #fafaf9; transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Inter', sans-serif; color: #1c1c1e; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #a8854f; background: white; box-shadow: 0 0 0 4px rgba(168,133,79,0.08); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0ece8; }
+    .btn { padding: 10px 28px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-family: 'Inter', sans-serif; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(16,185,129,0.2); }
+    .campos-extra { margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid #f0ece8; display: none; }
+    .campos-extra.visible { display: block; }
+    .campos-extra h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
+    .campos-rollo { margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid #f0ece8; display: none; }
+    .campos-rollo h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
+    @media (max-width: 768px) { .form-grid-2 { grid-template-columns: 1fr; } .form-section { padding: 20px; } .btn-group { flex-direction: column; } .btn { justify-content: center; } }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
     <div class="form-section">
-        <h4>{{ 'Editar producto' if producto else 'Nuevo producto' }}</h4>
+        <h4><i class="fas fa-box"></i> {{ 'Editar producto' if producto else 'Nuevo producto' }}</h4>
         <form method="POST">
+            <!-- Datos básicos -->
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Nombre *</label>
@@ -44,83 +55,203 @@
                     </select>
                 </div>
             </div>
-            <!-- NUEVA FILA PARA DESCRIPCIÓN -->
-            <div class="form-group" style="grid-column: span 2;">
-                <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Ej. Vinilo backlit 1.30m, usado para cajas luminosas..." style="width:100%; padding:10px 14px; border:1px solid #ddd; border-radius:8px; font-size:15px; background:#fafafa; resize:vertical; font-family:'Inter', sans-serif;">{{ producto.descripcion if producto else '' }}</textarea>
-            </div>            <div class="form-grid-2">
+            <div class="form-grid-2">
                 <div class="form-group">
-                    <label>Tipo</label>
-                    <select name="tipo">
+                    <label>Área</label>
+                    <select name="area_id" id="area_id">
                         <option value="">-- Seleccionar --</option>
-                        <option value="tinta" {% if producto and producto.tipo == 'tinta' %}selected{% endif %}>Tinta</option>
-                        <option value="vinilo" {% if producto and producto.tipo == 'vinilo' %}selected{% endif %}>Vinilo</option>
-                        <option value="papel" {% if producto and producto.tipo == 'papel' %}selected{% endif %}>Papel</option>
-                        <option value="pvc" {% if producto and producto.tipo == 'pvc' %}selected{% endif %}>PVC</option>
-                        <option value="lona" {% if producto and producto.tipo == 'lona' %}selected{% endif %}>Lona</option>
-                        <option value="otros" {% if producto and producto.tipo == 'otros' %}selected{% endif %}>Otros</option>
+                        {% for a in areas %}
+                        <option value="{{ a.id }}" data-tipo="{{ a.tipo_atributos }}" {% if producto and producto.area_id == a.id %}selected{% endif %}>
+                            {{ a.nombre }}
+                        </option>
+                        {% endfor %}
                     </select>
+                    <small>El área determina qué campos adicionales se mostrarán.</small>
                 </div>
                 <div class="form-group">
                     <label>Ubicación</label>
-                    <select name="ubicacion">
+                    <select name="ubicacion_id">
                         <option value="">-- Seleccionar --</option>
-                        <option value="almacen" {% if producto and producto.ubicacion == 'almacen' %}selected{% endif %}>Almacén</option>
-                        <option value="garaje" {% if producto and producto.ubicacion == 'garaje' %}selected{% endif %}>Garaje</option>
+                        {% for ubi in ubicaciones %}
+                        <option value="{{ ubi.id }}" {% if producto and producto.ubicacion_id == ubi.id %}selected{% endif %}>{{ ubi.nombre }}</option>
+                        {% endfor %}
                     </select>
                 </div>
             </div>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label>Unidad</label>
-                    <select name="unidad">
-                        <option value="rollo" {% if producto and producto.unidad == 'rollo' %}selected{% endif %}>Rollo</option>
-                        <option value="bote" {% if producto and producto.unidad == 'bote' %}selected{% endif %}>Bote</option>
-                        <option value="plancha" {% if producto and producto.unidad == 'plancha' %}selected{% endif %}>Plancha</option>
-                        <option value="unidad" {% if producto and producto.unidad == 'unidad' %}selected{% endif %}>Unidad</option>
-                        <option value="metro" {% if producto and producto.unidad == 'metro' %}selected{% endif %}>Metro</option>
-                        <option value="hojas" {% if producto and producto.unidad == 'hojas' %}selected{% endif %}>Hojas</option>
-                        <option value="ml" {% if producto and producto.unidad == 'ml' %}selected{% endif %}>ml</option>
-                        <option value="L" {% if producto and producto.unidad == 'L' %}selected{% endif %}>L</option>
-                        <option value="kg" {% if producto and producto.unidad == 'kg' %}selected{% endif %}>kg</option>
-                        <option value="m2" {% if producto and producto.unidad == 'm2' %}selected{% endif %}>m²</option>
+                    <label>Tipo de producto</label>
+                    <select name="tipo_producto_id">
+                        <option value="">-- Seleccionar --</option>
+                        {% for t in tipos %}
+                        <option value="{{ t.id }}" {% if producto and producto.tipo_producto_id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+                        {% endfor %}
                     </select>
                 </div>
+                <div class="form-group">
+                    <label>Unidad</label>
+                    <select name="unidad_id">
+                        <option value="">-- Seleccionar --</option>
+                        {% for u in unidades %}
+                        <option value="{{ u.id }}" {% if producto and producto.unidad_id == u.id %}selected{% endif %}>{{ u.nombre }} ({{ u.simbolo or '' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="descripcion" rows="3" placeholder="Descripción del producto...">{{ producto.descripcion if producto else '' }}</textarea>
+            </div>
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label>Costo unitario (USD)</label>
                     <input type="number" step="0.01" name="costo" value="{{ producto.costo if producto else 0 }}">
-                </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Stock inicial</label>
-                    <input type="number" step="0.01" name="stock" value="{{ producto.stock if producto else 0 }}" {% if producto %}disabled{% endif %}>
-                    {% if producto %}<small style="color:#999;">El stock se ajusta desde la vista de detalle.</small>{% endif %}
                 </div>
                 <div class="form-group">
                     <label>Stock mínimo (alerta)</label>
                     <input type="number" step="0.01" name="stock_minimo" value="{{ producto.stock_minimo if producto else 0 }}">
                 </div>
             </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Ancho de rollo (m)</label>
-                    <input type="number" step="0.01" min="0" name="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.30">
+
+            <!-- Campos de rollo (área tipo rollo) -->
+            <div class="campos-rollo" style="display: none;">
+                <h5>📐 Datos del rollo</h5>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Ancho de rollo (m)</label>
+                        <input type="number" step="0.01" min="0" name="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.30">
+                    </div>
+                    <div class="form-group">
+                        <label>Largo de rollo (m)</label>
+                        <input type="number" step="0.01" min="0" name="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Largo de rollo (m)</label>
-                    <input type="number" step="0.01" min="0" name="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50">
+                    <label>Fecha de vencimiento</label>
+                    <input type="date" name="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
                 </div>
             </div>
-            <div class="form-group">
-                <label>Fecha de vencimiento</label>
-                <input type="date" name="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
+
+            <!-- Campos extra para Mobiliario (tipo mobiliario) -->
+            <div class="campos-extra" id="campos_mobiliario">
+                <h5>🪑 Datos de mobiliario / activo fijo</h5>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Número de serie</label>
+                        <input type="text" name="numero_serie" value="{{ producto.get_atributo('numero_serie') if producto else '' }}" placeholder="SN-0001">
+                    </div>
+                    <div class="form-group">
+                        <label>Marca</label>
+                        <input type="text" name="marca" value="{{ producto.get_atributo('marca') if producto else '' }}" placeholder="Ej. HP, Samsung...">
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Modelo</label>
+                        <input type="text" name="modelo" value="{{ producto.get_atributo('modelo') if producto else '' }}" placeholder="Ej. ProBook 450">
+                    </div>
+                    <div class="form-group">
+                        <label>Estado</label>
+                        <select name="estado">
+                            <option value="">-- Seleccionar --</option>
+                            <option value="nuevo" {% if producto and producto.get_atributo('estado') == 'nuevo' %}selected{% endif %}>Nuevo</option>
+                            <option value="bueno" {% if producto and producto.get_atributo('estado') == 'bueno' %}selected{% endif %}>Bueno</option>
+                            <option value="regular" {% if producto and producto.get_atributo('estado') == 'regular' %}selected{% endif %}>Regular</option>
+                            <option value="malo" {% if producto and producto.get_atributo('estado') == 'malo' %}selected{% endif %}>Malo</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div class="btn-group">
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> {{ 'Actualizar' if producto else 'Crear' }} producto</button>
-                <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
-            </div>
-        </form>
+
+            <!-- Campos extra para Tintas (tipo tinta) -->
+            <div class="campos-extra" id="campos_tintas">
+                <h5>🎨 Datos de tinta / consumible</h5>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Color</label>
+                        <input type="text" name="color" value="{{ producto.get_atributo('color') if producto else '' }}" placeholder="Ej. Amarillo, Cyan, Negro...">
+                    </div>
+                    <div class="form-group">
+                        <label>Volumen (ml / L)</label>
+                        <input type="text" name="volumen" value="{{ producto.get_atributo('volumen') if producto else '' }}" placeholder="Ej. 1000ml, 1L">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de tinta</label>
+                    <select name="tipo_tinta">
+                        <option value="">-- Seleccionar --</option>
+                        <option value="solvente" {% if producto and producto.get_atributo('tipo_tinta') == 'solvente' %}selected{% endif %}>Solvente</option>
+                        <option value="eco_solvente" {% if producto and producto.get_atributo('tipo_tinta') == 'eco_solvente' %}selected{% endif %}>Eco-solvente</option>
+                        <option value="latex" {% if producto and producto.get_atributo('tipo_tinta') == 'latex' %}selected{% endif %}>Latex</option>
+                        <option value="uv" {% if producto and producto.get_atributo('tipo_tinta') == 'uv' %}selected{% endif %}>UV</option>
+                        <option value="acuarela" {% if producto and producto.get_atributo('tipo_tinta') == 'acuarela' %}selected{% endif %}>Acuarela</option>
+                    </select>
     </div>
 </div>
+
+<!-- Stock en unidades y metros -->
+<div class="form-grid-2">
+    <div class="form-group">
+        <label>Stock ({{ producto.unidad or 'unidades' }})</label>
+        <input type="number" step="0.01" name="stock" value="{{ producto.stock if producto else 0 }}" {% if producto %}disabled{% endif %}>
+        {% if producto %}<small>El stock se ajusta desde la vista de detalle.</small>{% endif %}
+    </div>
+    <div class="form-group">
+        <label>Stock (metros)</label>
+        <input type="number" step="0.01" name="stock_metros" value="{{ producto.stock_metros if producto else 0 }}" {% if producto %}disabled{% endif %}>
+        <small>Se calcula automáticamente si tienes <strong>largo_rollo</strong>.</small>
+    </div>
+</div>
+
+<!-- Material de impresión -->
+<div class="form-group" style="margin-top: 16px;">
+    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+        <input type="checkbox" name="es_material_impresion" {% if producto and producto.es_material_impresion %}checked{% endif %}>
+        <span>✅ Es material de impresión (aparecerá en el selector de órdenes de trabajo)</span>
+    </label>
+    <small>Marca esta casilla si el producto es un rollo, tinta o material que se usa en producción.</small>
+</div>
+
+<div class="btn-group">
+    <button type="submit" class="btn btn-success">
+        <i class="fas fa-save"></i> {{ 'Actualizar' if producto else 'Crear producto' }}
+    </button>
+    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+        <i class="fas fa-times"></i> Cancelar
+    </a>
+</div>
+</form>
+</div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const areaSelect = document.getElementById('area_id');
+    const camposRollo = document.querySelector('.campos-rollo');
+    const camposMobiliario = document.getElementById('campos_mobiliario');
+    const camposTintas = document.getElementById('campos_tintas');
+    
+    function toggleCampos() {
+        const option = areaSelect.options[areaSelect.selectedIndex];
+        const tipo = option ? option.dataset.tipo : 'ninguno';
+        
+        if (camposRollo) camposRollo.style.display = 'none';
+        if (camposMobiliario) camposMobiliario.classList.remove('visible');
+        if (camposTintas) camposTintas.classList.remove('visible');
+        
+        if (tipo === 'rollo') {
+            if (camposRollo) camposRollo.style.display = 'block';
+        } else if (tipo === 'mobiliario') {
+            if (camposMobiliario) camposMobiliario.classList.add('visible');
+        } else if (tipo === 'tinta') {
+            if (camposTintas) camposTintas.classList.add('visible');
+        }
+    }
+    
+    if (areaSelect) {
+        areaSelect.addEventListener('change', toggleCampos);
+        toggleCampos();
+    }
+});
+</script>
 {% endblock %}

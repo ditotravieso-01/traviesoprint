@@ -558,7 +558,7 @@ function agregarLinea() {
                     <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display">—</span></div>
                     <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display">—</span></div>
                     <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display">—</span></div>
-                    <div class="item"><span class="label">Consumo</span><span class="value consumo_m_display">—</span></div>
+                    <div class="item"><span class="label">Consumo ({{ 'm' if 'unidad_select' else 'm²' }})</span><span class="value consumo_m_display">—</span></div>
                     <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display">—</span></div>
                 </div>
                 <div style="margin-top:4px;">
@@ -637,7 +637,6 @@ function agregarLinea() {
     cantidadInput.addEventListener('input', triggerCalculo);
     cantidadInput.addEventListener('change', triggerCalculo);
     unidadSelect.addEventListener('change', function() {
-        // Actualizar etiqueta de consumo
         const unidad = this.value;
         const consumoLabel = paramsDiv.querySelector('.consumo_m_display').closest('.item').querySelector('.label');
         if (consumoLabel) {
@@ -694,10 +693,8 @@ function marcarEliminarLinea(archivoId) {
     const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-id="${archivoId}"]`);
 
     if (mainRow) {
-        // Ocultar la fila
         mainRow.style.display = 'none';
         mainRow.dataset.eliminado = 'true';
-        // Añadir input oculto con el ID a eliminar
         const input = document.createElement('input');
         input.type = 'hidden';
         input.name = 'eliminar_archivos[]';
@@ -713,7 +710,6 @@ function marcarEliminarLinea(archivoId) {
 // DELEGACIÓN DE EVENTOS PARA TOGGLE Y OCULTAR (edición)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Toggle para líneas existentes en edición
     document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
         const toggleBtn = e.target.closest('.toggle-etiquetas');
         if (toggleBtn) {
@@ -754,7 +750,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Ocultar para líneas en edición (botón dentro del bloque)
     document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
         const ocultarBtn = e.target.closest('.ocultar-etiquetas');
         if (ocultarBtn) {
@@ -885,7 +880,7 @@ function limpiarResultados(paramsRow) {
 }
 
 // =============================================
-// CÁLCULO AUTOMÁTICO DE ETIQUETAS
+// CÁLCULO AUTOMÁTICO DE ETIQUETAS (CORREGIDO - REDONDEO)
 // =============================================
 function calcularLinea(paramsRow) {
     if (!paramsRow) return;
@@ -976,16 +971,18 @@ function calcularLinea(paramsRow) {
         const filasPorMetro = simData.filasPorMetro || 1;
         const etiquetasPorM2 = columnas * filasPorMetro;
         const precioUnitario = parseFloat(precio) || 10;
-        const areaRedondeada = Math.round(areaTotal * 100) / 100;
 
-        // Calcular consumo y costo según unidad
+        // ============================================================
+        // REDONDEO DE ÁREA A 2 DECIMALES PARA CÁLCULO DEL COSTO
+        // ============================================================
+        const areaRedondeada = Math.round(areaTotal * 100) / 100;
         let consumo, costoEstimado;
         if (unidad === 'm') {
             consumo = parseFloat(cantidad) || 0;
             costoEstimado = consumo * precioUnitario;
         } else {
             consumo = areaTotal;
-            costoEstimado = areaTotal * precioUnitario;
+            costoEstimado = areaRedondeada * precioUnitario;  // <-- CORRECCIÓN
         }
 
         let metrosCompletos = null;
@@ -1007,7 +1004,7 @@ function calcularLinea(paramsRow) {
             nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
 
-        // Actualizar etiqueta de consumo si es necesario
+        // Actualizar etiqueta de consumo
         const consumoLabel = paramsDiv.querySelector(`.consumo_m_display${prefix}`).closest('.item').querySelector('.label');
         if (consumoLabel) {
             consumoLabel.textContent = 'Consumo (' + (unidad === 'm' ? 'm' : 'm²') + ')';

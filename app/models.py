@@ -8,6 +8,7 @@ from app import db, login_manager
 # MODELO DE USUARIO
 # ==========================================
 class User(UserMixin, db.Model):
+    __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=True)
@@ -37,7 +38,24 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ==========================================
-# MODELO DE CATEGORÍA (nuevo)
+# MODELO DE ÁREA
+# ==========================================
+class Area(db.Model):
+    __tablename__ = 'areas'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))
+    tipo_atributos = db.Column(db.String(30), nullable=False, default='ninguno')
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    productos = db.relationship('Producto', back_populates='area', lazy=True)
+
+    def __repr__(self):
+        return f'<Area {self.nombre}>'
+
+# ==========================================
+# MODELO DE CATEGORÍA
 # ==========================================
 class Categoria(db.Model):
     __tablename__ = 'categorias'
@@ -47,10 +65,59 @@ class Categoria(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    productos = db.relationship('Producto', backref='categoria', lazy=True)
+    productos = db.relationship('Producto', back_populates='categoria', lazy=True)
 
     def __repr__(self):
         return f'<Categoria {self.nombre}>'
+
+# ==========================================
+# MODELO DE UBICACIÓN
+# ==========================================
+class Ubicacion(db.Model):
+    __tablename__ = 'ubicaciones'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    productos = db.relationship('Producto', back_populates='ubicacion_rel', lazy=True)
+
+    def __repr__(self):
+        return f'<Ubicacion {self.nombre}>'
+
+# ==========================================
+# MODELO DE TIPO DE PRODUCTO
+# ==========================================
+class TipoProducto(db.Model):
+    __tablename__ = 'tipos_producto'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    productos = db.relationship('Producto', back_populates='tipo_rel', lazy=True)
+
+    def __repr__(self):
+        return f'<TipoProducto {self.nombre}>'
+
+# ==========================================
+# MODELO DE UNIDAD
+# ==========================================
+class Unidad(db.Model):
+    __tablename__ = 'unidades'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(50), nullable=False, unique=True)
+    simbolo = db.Column(db.String(20), nullable=True)
+    descripcion = db.Column(db.String(200))
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    productos = db.relationship('Producto', back_populates='unidad_rel', lazy=True)
+
+    def __repr__(self):
+        return f'<Unidad {self.nombre}>'
 
 # ==========================================
 # MODELO DE ORDEN DE TRABAJO
@@ -72,7 +139,7 @@ class Order(db.Model):
     column = db.Column(db.String(30), default='pendiente')
     entrada_ok = db.Column(db.Boolean, default=False)
     history = db.Column(db.Text, default='[]')
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     created_by = db.relationship('User', foreign_keys=[created_by_id])
@@ -109,9 +176,6 @@ class Order(db.Model):
                 entry['usuario'] = current_user.username if hasattr(current_user, 'username') else 'Sistema'
         hist.append(entry)
         self.history = json.dumps(hist)
-
-    def get_history(self):
-        return json.loads(self.history) if self.history else []
 
     def __repr__(self):
         return f'<Order {self.order_num}>'
@@ -159,7 +223,7 @@ class ArchivoAdjunto(db.Model):
 class Notificacion(db.Model):
     __tablename__ = 'notificaciones'
     id = db.Column(db.Integer, primary_key=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
     mensaje = db.Column(db.String(500), nullable=False)
     tipo = db.Column(db.String(50), nullable=False)
@@ -199,53 +263,108 @@ class Client(db.Model):
     frecuencia_pedido = db.Column(db.String(30))
     ultimo_pedido = db.Column(db.Date)
     observaciones_internas = db.Column(db.Text)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     created_by = db.relationship('User', foreign_keys=[created_by_id])
 
 # ==========================================
-# MODELO DE PRODUCTO (INVENTARIO) - MODIFICADO
+# MODELO DE PRODUCTO (INVENTARIO) - CON UNIDADES HÍBRIDAS
 # ==========================================
 class Producto(db.Model):
     __tablename__ = 'productos'
     id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.Text, nullable=True)  # Descripción del producto
-    tipo = db.Column(db.String(50))               # tinta, vinilo, pvc, lona, etc.
-    ubicacion = db.Column(db.String(50))          # almacen, garaje
-    unidad = db.Column(db.String(20))             # rollo, bote, plancha, unidad
+    nombre = db.Column(db.String(150), nullable=False, unique=True)
+    descripcion = db.Column(db.Text, nullable=True)
+    tipo = db.Column(db.String(50), nullable=True)
+    ubicacion = db.Column(db.String(50), nullable=True)
+    unidad = db.Column(db.String(20), nullable=True)
     costo = db.Column(db.Float, default=0.0)
+    inversion_total = db.Column(db.Float, default=0.0)
+
+    # STOCK EN UNIDADES FÍSICAS (rollos, litros, etc.)
     stock = db.Column(db.Float, default=0.0)
+    # STOCK EN METROS (para materiales de impresión)
+    stock_metros = db.Column(db.Float, default=0.0)
+
     stock_minimo = db.Column(db.Float, default=0.0)
-    stock_comprometido = db.Column(db.Float, default=0.0)
+    stock_comprometido = db.Column(db.Float, default=0.0)  # en unidades físicas
+    stock_comprometido_metros = db.Column(db.Float, default=0.0)  # en metros
+
     fecha_vencimiento = db.Column(db.Date, nullable=True)
-    # NUEVOS CAMPOS
+    ancho_rollo = db.Column(db.Float, nullable=True)
+    largo_rollo = db.Column(db.Float, nullable=True)  # metros por rollo (factor de conversión)
+    es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
+    atributos_extra = db.Column(db.JSON, nullable=True, default={})
+
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
-    ancho_rollo = db.Column(db.Float, nullable=True)   # en metros
-    largo_rollo = db.Column(db.Float, nullable=True)   # en metros (informativo)
+    area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=True)
+    ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
+    tipo_producto_id = db.Column(db.Integer, db.ForeignKey('tipos_producto.id'), nullable=True)
+    unidad_id = db.Column(db.Integer, db.ForeignKey('unidades.id'), nullable=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    categoria = db.relationship('Categoria', back_populates='productos')
+    area = db.relationship('Area', back_populates='productos')
+    ubicacion_rel = db.relationship('Ubicacion', back_populates='productos')
+    tipo_rel = db.relationship('TipoProducto', back_populates='productos')
+    unidad_rel = db.relationship('Unidad', back_populates='productos')
+    movimientos = db.relationship('Movimiento', backref='producto', lazy='dynamic')
+
+    def get_atributo(self, key, default=None):
+        if self.atributos_extra:
+            return self.atributos_extra.get(key, default)
+        return default
+
+    def set_atributo(self, key, value):
+        if self.atributos_extra is None:
+            self.atributos_extra = {}
+        self.atributos_extra[key] = value
+
+    def get_stock_metros_disponible(self):
+        """Retorna el stock disponible en metros (stock_metros - comprometido_metros)"""
+        return (self.stock_metros or 0) - (self.stock_comprometido_metros or 0)
+
+    def get_stock_metros_total(self):
+        """Retorna el stock total en metros"""
+        return self.stock_metros or 0
+
+    def get_stock_unidades_disponible(self):
+        """Retorna el stock disponible en unidades físicas"""
+        return (self.stock or 0) - (self.stock_comprometido or 0)
+
+    def get_stock_unidades_total(self):
+        """Retorna el stock total en unidades físicas"""
+        return self.stock or 0
+
+    def get_metros_por_unidad(self):
+        """Retorna los metros por unidad física (largo_rollo)"""
+        return self.largo_rollo or 1.0
 
     def __repr__(self):
         return f'<Producto {self.nombre}>'
 
 # ==========================================
-# MODELO DE MOVIMIENTO (INVENTARIO)
+# MODELO DE MOVIMIENTO
 # ==========================================
 class Movimiento(db.Model):
     __tablename__ = 'movimientos'
     id = db.Column(db.Integer, primary_key=True)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
-    tipo = db.Column(db.String(20), nullable=False)  # entrada, consumo, salida_ajuste, entrada_ajuste
+    tipo = db.Column(db.String(30), nullable=False)
     cantidad = db.Column(db.Float, nullable=False)
+    cantidad_metros = db.Column(db.Float, nullable=True)  # para movimientos en metros
+    costo_unitario = db.Column(db.Float, nullable=True)
+    costo_total = db.Column(db.Float, nullable=True)
+    comentario = db.Column(db.String(200), nullable=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
-    comentario = db.Column(db.String(200))
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
-    producto = db.relationship('Producto', backref='movimientos')
-    orden = db.relationship('Order', backref='movimientos')
+
     usuario = db.relationship('User', backref='movimientos')
+    orden = db.relationship('Order', backref='movimientos')
 
     def __repr__(self):
         return f'<Movimiento {self.id} - {self.tipo}>'
@@ -258,8 +377,8 @@ class OrdenProducto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
-    cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)
-    cantidad_real = db.Column(db.Float, nullable=True)
+    cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)  # en metros
+    cantidad_real = db.Column(db.Float, nullable=True)  # en metros
     orden = db.relationship('Order', backref='productos_asignados')
     producto = db.relationship('Producto', backref='ordenes_asignadas')
 

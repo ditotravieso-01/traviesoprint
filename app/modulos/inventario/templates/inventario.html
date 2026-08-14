@@ -2,53 +2,25 @@
 
 {% block title %}Inventario · CairoStudio{% endblock %}
 
-{% block page_title %}🧾 Inventario{% endblock %}
+{% block page_title %}📦 Áreas de inventario{% endblock %}
 
 {% block extra_css %}
 <style>
-    .filters-bar {
+    .admin-header {
         display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        margin-bottom: 20px;
-    }
-    .filters-bar input,
-    .filters-bar select {
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
-        color: #1c1c1e;
-        min-width: 120px;
-        flex: 1;
-        font-family: 'Inter', sans-serif;
-    }
-    .filters-bar input:focus,
-    .filters-bar select:focus {
-        outline: none;
-        border-color: #007aff;
-        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
-    }
-    .filters-bar .filter-group {
-        display: flex;
-        gap: 8px;
+        justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
     }
-    .filters-bar .filter-label {
-        font-weight: 600;
-        font-size: 13px;
+    .admin-header p {
         color: #8e8e93;
+        margin: 4px 0 0 0;
+        font-size: 14px;
     }
     .btn {
-        padding: 8px 18px;
+        padding: 8px 20px;
         border-radius: 30px;
         border: none;
         font-weight: 600;
@@ -57,22 +29,31 @@
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 8px;
         background: #1c1c1e;
         color: white;
         font-family: 'Inter', sans-serif;
         text-decoration: none;
     }
     .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
-    .btn-primary {
-        background: #1c1c1e;
-        color: white;
+    .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
     }
-    .btn-primary:hover {
-        background: #333;
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-sm {
+        padding: 4px 14px;
+        font-size: 12px;
+        border-radius: 20px;
     }
     .btn-success {
         background: #10b981;
@@ -90,508 +71,210 @@
         background: #d97706;
         box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
     }
-    .btn-danger {
-        background: #dc2626;
+    .btn-admin {
+        background: #6b7280;
         color: white;
     }
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
-    .btn-sm {
-        padding: 4px 12px;
-        font-size: 12px;
-    }
-    .btn-copy {
-        background: #8b5cf6;
-        color: white;
-    }
-    .btn-copy:hover {
-        background: #7c3aed;
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-    }
-    .card {
-        background: rgba(255, 255, 255, 0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 18px 20px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
-        margin-bottom: 16px;
-    }
-    .card h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        font-weight: 700;
-        margin-bottom: 12px;
-        color: #1c1c1e;
-    }
-    .table-wrap {
-        overflow-x: auto;
-    }
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 14px;
-        font-family: 'Inter', sans-serif;
-    }
-    th {
-        text-align: left;
-        padding: 8px 10px;
-        font-weight: 600;
-        color: #8e8e93;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        cursor: pointer;
-        user-select: none;
-        position: relative;
-    }
-    th:hover {
-        color: #1c1c1e;
-    }
-    th.sortable::after {
-        content: ' ⇅';
-        font-size: 10px;
-        color: #bbb;
-    }
-    th.sortable.asc::after {
-        content: ' ↑';
-        color: #1a1a1a;
-    }
-    th.sortable.desc::after {
-        content: ' ↓';
-        color: #1a1a1a;
-    }
-    td {
-        padding: 8px 10px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.02);
-    }
-    .stock-bar {
-        width: 100%;
-        height: 6px;
-        background: rgba(0, 0, 0, 0.04);
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .stock-bar .fill {
-        height: 100%;
-        border-radius: 4px;
-        transition: width 0.3s;
-    }
-    .fill-green {
-        background: #10b981;
-    }
-    .fill-yellow {
-        background: #f59e0b;
-    }
-    .fill-red {
-        background: #dc2626;
-    }
-    .badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 30px;
-        display: inline-block;
-        font-family: 'Inter', sans-serif;
-    }
-    .badge-critico {
-        background: #fde8e5;
-        color: #dc2626;
-    }
-    .badge-bajo {
-        background: #fef3c7;
-        color: #d97706;
-    }
-    .badge-normal {
-        background: #d1fae5;
-        color: #10b981;
+    .btn-admin:hover {
+        background: #4b5563;
     }
 
-    /* Modal styles (igual que antes) */
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.25);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
-        z-index: 999;
-        justify-content: center;
-        align-items: center;
+    /* Grid de áreas */
+    .areas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+        margin-top: 8px;
     }
-    .modal-overlay.active {
-        display: flex;
-    }
-    .modal {
-        background: #ffffff;
+
+    /* Tarjeta de área */
+    .area-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
         border-radius: 20px;
-        padding: 0;
-        max-width: 520px;
-        width: 92%;
-        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.12);
-        animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-        overflow: hidden;
-    }
-    @keyframes modalIn {
-        from { transform: scale(0.95) translateY(12px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    .modal-header {
+        padding: 24px 20px 20px;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: #1c1c1e;
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 18px 28px 14px 28px;
-        border-bottom: 1px solid #f0ece8;
-        background: #fafaf9;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        cursor: pointer;
     }
-    .modal-header .modal-title {
+    .area-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
+        border-color: rgba(168, 133, 79, 0.2);
+    }
+    /* Colores diferentes para cada área (cíclico) */
+    .area-card:nth-child(5n+1) { border-top: 5px solid #3b82f6; }  /* Azul */
+    .area-card:nth-child(5n+2) { border-top: 5px solid #10b981; }  /* Verde */
+    .area-card:nth-child(5n+3) { border-top: 5px solid #f59e0b; }  /* Amarillo */
+    .area-card:nth-child(5n+4) { border-top: 5px solid #8b5cf6; }  /* Morado */
+    .area-card:nth-child(5n+5) { border-top: 5px solid #ec4899; }  /* Rosa */
+
+    .area-card .card-icon {
+        font-size: 28px;
+        margin-bottom: 8px;
+    }
+    .area-card .area-name {
         font-family: 'Playfair Display', serif;
         font-size: 22px;
         font-weight: 700;
-        margin: 0;
+        margin: 0 0 4px 0;
         color: #1c1c1e;
-        display: flex;
-        align-items: center;
-        gap: 10px;
     }
-    .modal-header .modal-title i {
-        font-size: 20px;
-    }
-    .modal-close {
-        background: none;
-        border: none;
-        font-size: 28px;
-        line-height: 1;
+    .area-card .area-desc {
+        font-size: 14px;
         color: #8e8e93;
-        cursor: pointer;
-        transition: color 0.2s;
-        padding: 0 4px;
+        margin: 0 0 12px 0;
+        flex: 1;
     }
-    .modal-close:hover {
-        color: #1c1c1e;
-    }
-    .modal-compra { border-top: 5px solid #10b981; }
-    .modal-compra .modal-title { color: #10b981; }
-    .modal-compra .modal-title i { color: #10b981; }
-    .modal-ajuste { border-top: 5px solid #f59e0b; }
-    .modal-ajuste .modal-title { color: #f59e0b; }
-    .modal-ajuste .modal-title i { color: #f59e0b; }
-    .modal-body { padding: 20px 28px 28px 28px; }
-    .modal-body .form-group { margin-bottom: 16px; }
-    .modal-body .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 13px;
-        color: #333;
-        margin-bottom: 4px;
-        font-family: 'Inter', sans-serif;
-    }
-    .modal-body .form-group input,
-    .modal-body .form-group select {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 10px;
-        font-size: 15px;
-        background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-    }
-    .modal-body .form-group input:focus,
-    .modal-body .form-group select:focus {
-        outline: none;
-        border-color: #1c1c1e;
-        background: white;
-        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.03);
-    }
-    .modal-compra .form-group input:focus,
-    .modal-compra .form-group select:focus {
-        border-color: #10b981;
-        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
-    }
-    .modal-ajuste .form-group input:focus,
-    .modal-ajuste .form-group select:focus {
-        border-color: #f59e0b;
-        box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.08);
-    }
-    .modal-body .form-group input[disabled] {
-        background: #f0ece8;
-        color: #6b7280;
-        cursor: not-allowed;
-    }
-    .modal-actions {
+    .area-card .card-stats {
         display: flex;
-        gap: 12px;
-        margin-top: 20px;
-        justify-content: flex-end;
+        justify-content: space-between;
+        padding-top: 12px;
         border-top: 1px solid #f0ece8;
-        padding-top: 16px;
+        margin-top: 4px;
+        gap: 8px;
     }
+    .area-card .stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+    .area-card .stat .value {
+        font-size: 22px;
+        font-weight: 700;
+        font-family: 'Playfair Display', serif;
+    }
+    .area-card .stat .value.blue { color: #3b82f6; }
+    .area-card .stat .value.green { color: #10b981; }
+    .area-card .stat .value.gold { color: #f59e0b; }
+    .area-card .stat .label {
+        font-size: 11px;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-weight: 600;
+    }
+
+    .area-card .card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    .area-card .card-actions .btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 60px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #8e8e93;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 16px;
+        border: 1px dashed #d2d2d7;
+        grid-column: 1 / -1;
+    }
+    .empty-state h3 {
+        font-family: 'Playfair Display', serif;
+        color: #1c1c1e;
+        margin-bottom: 8px;
+    }
+
     @media (max-width: 768px) {
-        .filters-bar {
-            flex-direction: column;
-            align-items: stretch;
+        .areas-grid {
+            grid-template-columns: 1fr;
         }
-        .filters-bar input,
-        .filters-bar select {
-            min-width: unset;
+        .area-card .card-stats {
+            flex-direction: row;
+            flex-wrap: wrap;
         }
-        .modal {
-            width: 95%;
-        }
-        .modal-header {
-            padding: 14px 18px 10px 18px;
-        }
-        .modal-body {
-            padding: 16px 18px 20px 18px;
-        }
-        .modal-header .modal-title {
-            font-size: 19px;
+        .area-card .stat {
+            min-width: 60px;
         }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
-        <h3>📦 Productos</h3>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-            <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
-            <a href="{{ url_for('inventario.merma') }}" class="btn btn-warning"><i class="fas fa-chart-line"></i> Merma</a>
-            <a href="{{ url_for('inventario.exportar_productos') }}" class="btn btn-outline"><i class="fas fa-file-export"></i> Exportar</a>
-            <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-outline"><i class="fas fa-file-import"></i> Importar</a>
-            <a href="{{ url_for('inventario.exportar_movimientos') }}" class="btn btn-outline"><i class="fas fa-history"></i> Movimientos</a>
+<div class="admin-header">
+    <div>
+        <p style="font-size: 16px; color: #8e8e93; margin: 0;">
+            Selecciona un área para gestionar sus productos
+        </p>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline">
+            <i class="fas fa-list"></i> Todos los productos
+        </a>
+        {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-admin">
+                <i class="fas fa-cog"></i> Panel de administración
+            </a>
+        {% endif %}
+        <a href="{{ url_for('inventario.movimientos') }}" class="btn btn-outline">
+            <i class="fas fa-history"></i> Movimientos
+        </a>
+        <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline">
+            <i class="fas fa-chart-line"></i> Merma
+        </a>
+    </div>
+</div>
+
+<div class="areas-grid">
+    {% for item in areas_data %}
+        <div class="area-card" onclick="window.location.href='{{ url_for('inventario.productos_por_area', area_id=item.area.id) }}'">
+            <div class="card-icon">🗂️</div>
+            <div class="area-name">{{ item.area.nombre }}</div>
+            {% if item.area.descripcion %}
+                <div class="area-desc">{{ item.area.descripcion }}</div>
+            {% else %}
+                <div class="area-desc" style="font-style: italic; color: #bbb;">Sin descripción</div>
+            {% endif %}
+            <div class="card-stats">
+                <div class="stat">
+                    <span class="value blue">{{ item.total_productos }}</span>
+                    <span class="label">Productos</span>
+                </div>
+                <div class="stat">
+                    <span class="value green">{{ item.stock_total|round(2) }}</span>
+                    <span class="label">Stock total</span>
+                </div>
+                <div class="stat">
+                    <span class="value gold">${{ item.inversion_total|round(2) }}</span>
+                    <span class="label">Inversión</span>
+                </div>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('inventario.productos_por_area', area_id=item.area.id) }}" class="btn btn-sm btn-outline">
+                    <i class="fas fa-eye"></i> Ver
+                </a>
+                {% if current_user.role == 'admin' %}
+                    <a href="{{ url_for('inventario.editar_area', area_id=item.area.id) }}" class="btn btn-sm btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>🚀 No hay áreas creadas</h3>
+            <p>Crea un área para empezar a organizar tu inventario.</p>
             {% if current_user.role == 'admin' %}
-                <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-outline"><i class="fas fa-tags"></i> Categorías</a>
+                <a href="{{ url_for('inventario.gestion_areas') }}" class="btn btn-success" style="margin-top: 12px;">
+                    <i class="fas fa-plus"></i> Crear área
+                </a>
             {% endif %}
         </div>
-    </div>
-    <div class="filters-bar">
-        <div class="filter-group">
-            <span class="filter-label">Categoría:</span>
-            <select name="categoria" id="filtroCategoria" onchange="aplicarFiltros()">
-                <option value="">Todas</option>
-                {% for cat in categorias %}
-                    <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Buscar:</span>
-            <input type="text" id="filtroSearch" value="{{ search }}" placeholder="Nombre..." onkeyup="aplicarFiltros()">
-        </div>
-    </div>
-    <div class="table-wrap">
-        <table id="tablaInventario">
-            <thead>
-                <tr>
-                    <th class="sortable" data-order="">Producto</th>
-                    <th class="sortable" data-order="">Categoría</th>
-                    <th class="sortable" data-order="">Tipo</th>
-                    <th class="sortable" data-order="">Ubicación</th>
-                    <th class="sortable" data-order="">Unidad</th>
-                    <th class="sortable" data-order="">Costo</th>
-                    <th class="sortable" data-order="">Stock</th>
-                    <th class="sortable" data-order="">Comprometido</th>
-                    <th class="sortable" data-order="">Disponible</th>
-                    <th class="sortable" data-order="">Estado</th>
-                    <th style="cursor:default;">Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in productos %}
-                {% set critico = p.stock < p.stock_minimo %}
-                {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
-                {% set badgeClass = 'badge-critico' if critico else ('badge-bajo' if bajo else 'badge-normal') %}
-                {% set pct = (p.stock / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo > 0 else 100 %}
-                {% set color = '#dc2626' if critico else ('#f59e0b' if bajo else '#10b981') %}
-                <tr>
-                    <td><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
-                    <td>{{ p.categoria.nombre if p.categoria else '—' }}</td>
-                    <td>{{ p.tipo or '—' }}</td>
-                    <td>{{ p.ubicacion or '—' }}</td>
-                    <td>{{ p.unidad or '—' }}</td>
-                    <td>${{ p.costo|round(2) if p.costo else '—' }}</td>
-                    <td>{{ p.stock }}</td>
-                    <td>{{ p.stock_comprometido or 0 }}</td>
-                    <td style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
-                        {{ p.disponible }}
-                        {% if p.disponible < 0 %}
-                            <span style="font-size:11px; color:#dc2626;"> ⚠️</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
-                        <div class="stock-bar"><div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div></div>
-                    </td>
-                    <td>
-                        <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
-                        <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <a href="{{ url_for('inventario.duplicar_producto', producto_id=p.id) }}" class="btn btn-sm btn-copy" title="Duplicar producto"><i class="fas fa-copy"></i></a>
-                        <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    {% endfor %}
 </div>
-
-<!-- ============================================
-     MODAL: COMPRAR (verde - éxito)
-     ============================================ -->
-<div class="modal-overlay" id="modalCompra">
-    <div class="modal modal-compra">
-        <div class="modal-header">
-            <span class="modal-title"><i class="fas fa-shopping-cart"></i> Registrar compra</span>
-            <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
-        </div>
-        <div class="modal-body">
-            <form method="POST" action="{{ url_for('inventario.comprar') }}">
-                <div class="form-group">
-                    <label>Producto</label>
-                    <select id="compraProductoSelect" name="producto_id" required>
-                        {% for p in productos %}
-                        <option value="{{ p.id }}">{{ p.nombre }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Cantidad</label>
-                    <input type="number" step="0.01" name="cantidad" value="1" required />
-                </div>
-                <div class="form-group">
-                    <label>Costo unitario (USD)</label>
-                    <input type="number" step="0.01" name="costo" value="0" placeholder="0.00" />
-                </div>
-                <div class="form-group">
-                    <label>Comentario</label>
-                    <input type="text" name="comentario" placeholder="Ej. Compra mensual" />
-                </div>
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Guardar compra</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-    function aplicarFiltros() {
-        const categoria = document.getElementById('filtroCategoria').value;
-        const search = document.getElementById('filtroSearch').value;
-        let url = window.location.pathname + '?';
-        if (categoria) url += 'categoria=' + categoria + '&';
-        if (search) url += 'search=' + encodeURIComponent(search);
-        window.location.href = url;
-    }
-
-    function abrirModalCompra(productoId) {
-        document.getElementById('compraProductoSelect').value = productoId;
-        document.getElementById('modalCompra').classList.add('active');
-        document.body.style.overflow = 'hidden';
-    }
-
-    function cerrarModal(id) {
-        document.getElementById(id).classList.remove('active');
-        document.body.style.overflow = '';
-    }
-
-    // Cerrar con ESC
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
-            document.body.style.overflow = '';
-        }
-    });
-
-    // Cerrar al hacer clic fuera del modal
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-                document.body.style.overflow = '';
-            }
-        });
-    });
-
-    // =============================================
-    // ORDENACIÓN DE LA TABLA
-    // =============================================
-    document.addEventListener('DOMContentLoaded', function() {
-        const table = document.getElementById('tablaInventario');
-        const headers = table.querySelectorAll('th.sortable');
-        const tbody = table.querySelector('tbody');
-
-        headers.forEach(function(th) {
-            th.addEventListener('click', function() {
-                const colIndex = Array.from(th.parentNode.children).indexOf(th);
-                const isAsc = th.dataset.order === 'asc' ? false : true;
-
-                // Resetear orden de otras columnas
-                headers.forEach(h => {
-                    if (h !== th) h.dataset.order = '';
-                });
-                th.dataset.order = isAsc ? 'asc' : 'desc';
-
-                // Obtener todas las filas del tbody
-                const rows = Array.from(tbody.querySelectorAll('tr'));
-
-                // Determinar si la columna es numérica
-                const firstRow = rows[0];
-                if (!firstRow) return;
-                const cell = firstRow.children[colIndex];
-                const cellText = cell ? cell.innerText.trim() : '';
-                // Intentar parsear como número (quitar $, etc.)
-                const numericValue = parseFloat(cellText.replace(/[^0-9.-]/g, ''));
-                const isNumeric = !isNaN(numericValue) && isFinite(numericValue) && cellText.trim() !== '';
-
-                // Ordenar filas
-                rows.sort(function(a, b) {
-                    let aVal = a.children[colIndex] ? a.children[colIndex].innerText.trim() : '';
-                    let bVal = b.children[colIndex] ? b.children[colIndex].innerText.trim() : '';
-
-                    if (isNumeric) {
-                        aVal = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
-                        bVal = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
-                    } else {
-                        aVal = aVal.toLowerCase();
-                        bVal = bVal.toLowerCase();
-                    }
-
-                    if (aVal < bVal) return isAsc ? -1 : 1;
-                    if (aVal > bVal) return isAsc ? 1 : -1;
-                    return 0;
-                });
-
-                // Reordenar en el DOM
-                rows.forEach(function(row) {
-                    tbody.appendChild(row);
-                });
-            });
-        });
-    });
-</script>
 {% endblock %}
