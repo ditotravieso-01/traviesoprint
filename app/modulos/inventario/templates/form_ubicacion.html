@@ -118,6 +118,7 @@
             <div class="form-group">
                 <label>Nombre *</label>
                 <input type="text" name="nombre" value="{{ ubicacion.nombre if ubicacion else '' }}" required placeholder="Ej. Almacén Central, Garaje, Estante A-3...">
+                <small>Nombre descriptivo de la ubicación física.</small>
             </div>
             <div class="form-group">
                 <label>Descripción</label>
@@ -128,7 +129,7 @@
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-save"></i> {{ 'Actualizar' if ubicacion else 'Crear ubicación' }}
                 </button>
-                <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline">
+                <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-outline">
                     <i class="fas fa-times"></i> Cancelar
                 </a>
             </div>

@@ -1,76 +1,97 @@
 {% extends "base.html" %}
 
-{% block title %}Inventario · CairoStudio{% endblock %}
+{% block title %}Inventario · Dashboard{% endblock %}
 
-{% block page_title %}📦 Áreas de inventario{% endblock %}
+{% block page_title %}📊 Inventario{% endblock %}
 
 {% block extra_css %}
 <style>
-    .admin-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 16px;
         margin-bottom: 24px;
     }
-    .admin-header p {
-        color: #8e8e93;
-        margin: 4px 0 0 0;
-        font-size: 14px;
-    }
-    .btn {
-        padding: 8px 20px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
+    .kpi-card {
+        background: white;
+        border-radius: 16px;
+        padding: 16px 18px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: #1c1c1e;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        text-decoration: none;
     }
-    .btn:hover {
+    .kpi-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     }
-    .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
+    .kpi-card .kpi-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
         color: #1c1c1e;
     }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
+    .kpi-card .kpi-label {
+        font-size: 13px;
+        color: #8e8e93;
+        font-weight: 500;
+        margin-top: 2px;
     }
-    .btn-sm {
-        padding: 4px 14px;
-        font-size: 12px;
-        border-radius: 20px;
+    .kpi-card .kpi-icon {
+        float: right;
+        font-size: 24px;
+        color: #a8854f;
+        opacity: 0.4;
     }
-    .btn-success {
-        background: #10b981;
-        color: white;
+    .kpi-card.verde { border-top-color: #10b981; }
+    .kpi-card.verde .kpi-icon { color: #10b981; }
+    .kpi-card.rojo { border-top-color: #dc2626; }
+    .kpi-card.rojo .kpi-icon { color: #dc2626; }
+    .kpi-card.amarillo { border-top-color: #f59e0b; }
+    .kpi-card.amarillo .kpi-icon { color: #f59e0b; }
+
+    .chart-container {
+        position: relative;
+        height: 240px;
+        margin-top: 8px;
     }
-    .btn-success:hover {
-        background: #059669;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+
+    .categoria-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 12px;
     }
-    .btn-warning {
-        background: #f59e0b;
-        color: white;
+    .categoria-card {
+        background: white;
+        border-radius: 16px;
+        padding: 14px 16px;
+        border-left: 4px solid #a8854f;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        cursor: pointer;
+        text-decoration: none;
+        color: #1c1c1e;
     }
-    .btn-warning:hover {
-        background: #d97706;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    .categoria-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
     }
+    .categoria-card .cat-name {
+        font-weight: 600;
+        font-size: 16px;
+        font-family: 'Playfair Display', serif;
+    }
+    .categoria-card .cat-stats {
+        display: flex;
+        gap: 16px;
+        margin-top: 6px;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+    .categoria-card .cat-stats span strong {
+        color: #1c1c1e;
+    }
+
     .btn-admin {
         background: #6b7280;
         color: white;
@@ -78,203 +99,147 @@
     .btn-admin:hover {
         background: #4b5563;
     }
-
-    /* Grid de áreas */
-    .areas-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 24px;
-        margin-top: 8px;
-    }
-
-    /* Tarjeta de área */
-    .area-card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 24px 20px 20px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
-        transition: all 0.3s ease;
-        text-decoration: none;
-        color: #1c1c1e;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        overflow: hidden;
-        cursor: pointer;
-    }
-    .area-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
-        border-color: rgba(168, 133, 79, 0.2);
-    }
-    /* Colores diferentes para cada área (cíclico) */
-    .area-card:nth-child(5n+1) { border-top: 5px solid #3b82f6; }  /* Azul */
-    .area-card:nth-child(5n+2) { border-top: 5px solid #10b981; }  /* Verde */
-    .area-card:nth-child(5n+3) { border-top: 5px solid #f59e0b; }  /* Amarillo */
-    .area-card:nth-child(5n+4) { border-top: 5px solid #8b5cf6; }  /* Morado */
-    .area-card:nth-child(5n+5) { border-top: 5px solid #ec4899; }  /* Rosa */
-
-    .area-card .card-icon {
-        font-size: 28px;
-        margin-bottom: 8px;
-    }
-    .area-card .area-name {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        font-weight: 700;
-        margin: 0 0 4px 0;
-        color: #1c1c1e;
-    }
-    .area-card .area-desc {
-        font-size: 14px;
-        color: #8e8e93;
-        margin: 0 0 12px 0;
-        flex: 1;
-    }
-    .area-card .card-stats {
-        display: flex;
-        justify-content: space-between;
-        padding-top: 12px;
-        border-top: 1px solid #f0ece8;
-        margin-top: 4px;
-        gap: 8px;
-    }
-    .area-card .stat {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-    }
-    .area-card .stat .value {
-        font-size: 22px;
-        font-weight: 700;
-        font-family: 'Playfair Display', serif;
-    }
-    .area-card .stat .value.blue { color: #3b82f6; }
-    .area-card .stat .value.green { color: #10b981; }
-    .area-card .stat .value.gold { color: #f59e0b; }
-    .area-card .stat .label {
-        font-size: 11px;
-        color: #8e8e93;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        font-weight: 600;
-    }
-
-    .area-card .card-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-    }
-    .area-card .card-actions .btn {
-        flex: 1;
-        justify-content: center;
-        min-width: 60px;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        color: #8e8e93;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 16px;
-        border: 1px dashed #d2d2d7;
-        grid-column: 1 / -1;
-    }
-    .empty-state h3 {
-        font-family: 'Playfair Display', serif;
-        color: #1c1c1e;
-        margin-bottom: 8px;
-    }
-
-    @media (max-width: 768px) {
-        .areas-grid {
-            grid-template-columns: 1fr;
-        }
-        .area-card .card-stats {
-            flex-direction: row;
-            flex-wrap: wrap;
-        }
-        .area-card .stat {
-            min-width: 60px;
-        }
-    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-header">
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
     <div>
-        <p style="font-size: 16px; color: #8e8e93; margin: 0;">
-            Selecciona un área para gestionar sus productos
-        </p>
+        <p style="color:#8e8e93; margin:0;">Resumen general del inventario</p>
     </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline">
-            <i class="fas fa-list"></i> Todos los productos
-        </a>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline"><i class="fas fa-list"></i> Todos los productos</a>
+        <a href="{{ url_for('inventario.movimientos') }}" class="btn btn-outline"><i class="fas fa-history"></i> Movimientos</a>
+        <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline"><i class="fas fa-chart-line"></i> Merma</a>
         {% if current_user.role == 'admin' %}
-            <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-admin">
-                <i class="fas fa-cog"></i> Panel de administración
-            </a>
+            <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-admin"><i class="fas fa-cog"></i> Administración</a>
         {% endif %}
-        <a href="{{ url_for('inventario.movimientos') }}" class="btn btn-outline">
-            <i class="fas fa-history"></i> Movimientos
-        </a>
-        <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline">
-            <i class="fas fa-chart-line"></i> Merma
-        </a>
     </div>
 </div>
 
-<div class="areas-grid">
-    {% for item in areas_data %}
-        <div class="area-card" onclick="window.location.href='{{ url_for('inventario.productos_por_area', area_id=item.area.id) }}'">
-            <div class="card-icon">🗂️</div>
-            <div class="area-name">{{ item.area.nombre }}</div>
-            {% if item.area.descripcion %}
-                <div class="area-desc">{{ item.area.descripcion }}</div>
-            {% else %}
-                <div class="area-desc" style="font-style: italic; color: #bbb;">Sin descripción</div>
-            {% endif %}
-            <div class="card-stats">
-                <div class="stat">
-                    <span class="value blue">{{ item.total_productos }}</span>
-                    <span class="label">Productos</span>
-                </div>
-                <div class="stat">
-                    <span class="value green">{{ item.stock_total|round(2) }}</span>
-                    <span class="label">Stock total</span>
-                </div>
-                <div class="stat">
-                    <span class="value gold">${{ item.inversion_total|round(2) }}</span>
-                    <span class="label">Inversión</span>
-                </div>
-            </div>
-            <div class="card-actions">
-                <a href="{{ url_for('inventario.productos_por_area', area_id=item.area.id) }}" class="btn btn-sm btn-outline">
-                    <i class="fas fa-eye"></i> Ver
-                </a>
-                {% if current_user.role == 'admin' %}
-                    <a href="{{ url_for('inventario.editar_area', area_id=item.area.id) }}" class="btn btn-sm btn-warning">
-                        <i class="fas fa-edit"></i> Editar
-                    </a>
-                {% endif %}
-            </div>
-        </div>
-    {% else %}
-        <div class="empty-state">
-            <h3>🚀 No hay áreas creadas</h3>
-            <p>Crea un área para empezar a organizar tu inventario.</p>
-            {% if current_user.role == 'admin' %}
-                <a href="{{ url_for('inventario.gestion_areas') }}" class="btn btn-success" style="margin-top: 12px;">
-                    <i class="fas fa-plus"></i> Crear área
-                </a>
-            {% endif %}
-        </div>
-    {% endfor %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <i class="fas fa-cubes kpi-icon"></i>
+        <div class="kpi-value">{{ total_productos }}</div>
+        <div class="kpi-label">Productos totales</div>
+    </div>
+    <div class="kpi-card verde">
+        <i class="fas fa-boxes kpi-icon"></i>
+        <div class="kpi-value">{{ stock_total }}</div>
+        <div class="kpi-label">Stock (unidades)</div>
+    </div>
+    <div class="kpi-card amarillo">
+        <i class="fas fa-ruler-combined kpi-icon"></i>
+        <div class="kpi-value">{{ stock_metros_total }}</div>
+        <div class="kpi-label">Stock (metros)</div>
+    </div>
+    <div class="kpi-card">
+        <i class="fas fa-dollar-sign kpi-icon"></i>
+        <div class="kpi-value">${{ valor_total }}</div>
+        <div class="kpi-label">Valor inventario</div>
+    </div>
+    <div class="kpi-card rojo">
+        <i class="fas fa-exclamation-triangle kpi-icon"></i>
+        <div class="kpi-value">{{ criticos }}</div>
+        <div class="kpi-label">Productos críticos</div>
+    </div>
 </div>
+
+<div class="card" style="margin-bottom:20px;">
+    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📈 Evolución del stock (últimos 30 días)</h4>
+    <div class="chart-container">
+        <canvas id="stockChart"></canvas>
+    </div>
+</div>
+
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+        <h4 class="serif" style="font-size:18px; margin:0;">📂 Categorías principales</h4>
+        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline btn-sm"><i class="fas fa-list"></i> Ver todos</a>
+    </div>
+    <div class="categoria-grid">
+        {% for item in categorias_data %}
+        <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=item.categoria.id) }}" class="categoria-card">
+            <div class="cat-name">{{ item.categoria.nombre }}</div>
+            <div class="cat-stats">
+                <span><strong>{{ item.total_productos }}</strong> productos</span>
+                <span><strong>{{ item.stock_total }}</strong> stock</span>
+                <span>$<strong>{{ item.inversion_total }}</strong></span>
+            </div>
+        </a>
+        {% else %}
+        <p class="text-muted">No hay categorías creadas. <a href="{{ url_for('inventario.crear_categoria') }}">Crear una</a></p>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">🔄 Últimos movimientos</h4>
+    <div class="table-wrap">
+        <table>
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Cantidad</th>
+                    <th>Comentario</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in ultimos_movimientos %}
+                <tr>
+                    <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ m.producto.nombre if m.producto else '—' }}</td>
+                    <td><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% else %}#fde8e5{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% else %}#dc2626{% endif %};">{{ m.tipo }}</span></td>
+                    <td>{{ m.cantidad }}</td>
+                    <td>{{ m.comentario or '-' }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-muted text-center">No hay movimientos recientes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const ctx = document.getElementById('stockChart').getContext('2d');
+        const fechas = {{ fechas_json|safe }};
+        const valores = {{ valores_json|safe }};
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Stock total (unidades)',
+                    data: valores,
+                    borderColor: '#a8854f',
+                    backgroundColor: 'rgba(168,133,79,0.08)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#a8854f',
+                    pointRadius: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

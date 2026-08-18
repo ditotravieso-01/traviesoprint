@@ -2,92 +2,15 @@
 
 {% block title %}{{ cliente.nombre }} · CairoStudio{% endblock %}
 
-{% block page_title %}<i class="fas fa-user-circle"></i> {{ cliente.nombre }}{% endblock %}
+{% block page_title %}👤 {{ cliente.nombre }}{% endblock %}
 
 {% block extra_css %}
 <style>
-    .profile-header {
-        background: linear-gradient(135deg, #f8f6f4 0%, #f0ece8 100%);
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        border-left: 6px solid #a8854f;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        flex-wrap: wrap;
-        gap: 16px;
-    }
-    .profile-header .info h2 {
-        margin: 0 0 4px 0;
-        font-size: 26px;
-        font-family: 'Playfair Display', serif;
-    }
-    .profile-header .info .ref {
-        color: #888;
-        font-size: 14px;
-    }
-    .profile-header .info .badge-tipo {
-        display: inline-block;
-        padding: 2px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-top: 4px;
-    }
-    .profile-header .stats {
-        display: flex;
-        gap: 24px;
-        flex-wrap: wrap;
-    }
-    .profile-header .stats .stat-item {
-        text-align: center;
-        background: white;
-        padding: 8px 20px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        min-width: 80px;
-    }
-    .profile-header .stats .stat-item .number {
-        font-size: 24px;
-        font-weight: 700;
-        color: #1a1a1a;
-    }
-    .profile-header .stats .stat-item .label {
-        font-size: 11px;
-        color: #888;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-    .profile-actions {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-    }
-    .profile-actions .btn {
-        padding: 6px 16px;
-        font-size: 13px;
-    }
-    .detail-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #e8e0da;
-    }
-    .detail-card h4 {
-        margin: 0 0 12px 0;
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
-    }
     .detail-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 6px 30px;
+        gap: 4px 30px;
+        margin-top: 8px;
     }
     .detail-item {
         display: flex;
@@ -97,7 +20,7 @@
     .detail-item .label {
         font-weight: 600;
         color: #555;
-        width: 120px;
+        width: 140px;
         flex-shrink: 0;
         font-size: 13px;
     }
@@ -105,206 +28,258 @@
         color: #1a1a1a;
         font-size: 14px;
     }
-    .orders-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .orders-table th { background: #f8f6f4; text-align: left; padding: 8px 12px; font-weight: 600; border-bottom: 2px solid #e8e0da; }
-    .orders-table td { padding: 8px 12px; border-bottom: 1px solid #eee; }
-    .badge-prioridad { padding: 2px 10px; border-radius: 12px; font-size: 12px; color: white; }
-    .badge-urgente { background: #dc2626; }
-    .badge-normal { background: #888; }
-    .badge-critica { background: #f59e0b; }
-    .badge-estado { padding: 2px 10px; border-radius: 12px; font-size: 12px; }
-    .badge-ok { background: #10b981; color: white; }
-    .badge-pendiente { background: #f59e0b; color: white; }
-    .chart-container { height: 250px; margin-top: 12px; }
-
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
+        gap: 16px;
+        margin-top: 12px;
+    }
+    .stat-card {
+        background: #fafaf9;
+        border-radius: 12px;
+        padding: 12px 16px;
+        text-align: center;
+        border: 1px solid #f0ece8;
+    }
+    .stat-card .stat-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .stat-card .stat-label {
+        font-size: 12px;
+        color: #8e8e93;
+    }
+    .stat-card .stat-icon {
+        font-size: 20px;
+        color: #a8854f;
+        opacity: 0.6;
+    }
+    .insights-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+        gap: 16px;
+        margin-top: 12px;
+    }
+    .insight-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+        border: 1px solid #f0ece8;
+    }
+    .insight-card .insight-label {
+        font-size: 12px;
+        color: #8e8e93;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .insight-card .insight-value {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1c1c1e;
+        margin-top: 4px;
+    }
+    .insight-card .insight-tag {
+        display: inline-block;
+        background: #f0ece8;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        margin: 2px 4px 2px 0;
+    }
+    .insight-card .insight-tag.green { background: #d1fae5; color: #065f46; }
+    .insight-card .insight-tag.blue { background: #e0f2fe; color: #1e3a8a; }
+    .insight-card .insight-tag.amber { background: #fef3c7; color: #78350f; }
+    .chart-container {
+        position: relative;
+        height: 200px;
+        margin-top: 8px;
+    }
+    .badge-success { background: #d1fae5; color: #065f46; }
+    .badge-warning { background: #fef3c7; color: #78350f; }
+    .badge-info { background: #e0f2fe; color: #1e3a8a; }
     @media (max-width: 768px) {
-        .profile-header { flex-direction: column; align-items: stretch; }
-        .profile-header .stats { justify-content: flex-start; }
         .detail-grid { grid-template-columns: 1fr; }
-        .chart-container { height: 200px; }
+        .stats-grid { grid-template-columns: 1fr 1fr; }
+        .insights-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .stats-grid { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<!-- ===== HEADER ===== -->
-<div class="profile-header">
-    <div class="info">
-        <h2>{{ cliente.nombre }}</h2>
-        <div class="ref">Referencia: {{ cliente.referencia }}</div>
-        <span class="badge-tipo {% if cliente.tipo_cliente == 'persona' %}badge-persona{% elif cliente.tipo_cliente == 'empresa' %}badge-empresa{% else %}badge-emprendimiento{% endif %}" style="background:{% if cliente.tipo_cliente == 'persona' %}#e0f2fe; color:#0369a1{% elif cliente.tipo_cliente == 'empresa' %}#fef3c7; color:#b45309{% else %}#d1fae5; color:#065f46{% endif %};">
-            {{ cliente.tipo_cliente or 'persona' }}
-        </span>
-        <div class="profile-actions">
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
+        <div class="detail-grid" style="flex:1;">
+            <div class="detail-item"><span class="label">Referencia:</span><span class="value">{{ cliente.referencia }}</span></div>
+            <div class="detail-item"><span class="label">Nombre:</span><span class="value">{{ cliente.nombre }}</span></div>
+            <div class="detail-item"><span class="label">Teléfono:</span><span class="value">{{ cliente.telefono or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Email:</span><span class="value">{{ cliente.email or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Dirección:</span><span class="value">{{ cliente.direccion or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Comercial:</span><span class="value">{{ cliente.comercial or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Tipo Cliente:</span><span class="value">{{ cliente.tipo_cliente or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Sector:</span><span class="value">{{ cliente.sector or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Preferencias Diseño:</span><span class="value">{{ cliente.preferencias_diseno or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Método Pago:</span><span class="value">{{ cliente.metodo_pago_favorito or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Referido Por:</span><span class="value">{{ cliente.referido_por or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Frecuencia Pedido:</span><span class="value">{{ cliente.frecuencia_pedido or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Notas:</span><span class="value">{{ cliente.notas or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Observaciones:</span><span class="value">{{ cliente.observaciones_internas or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Etiquetas:</span><span class="value">{{ cliente.etiquetas or '—' }}</span></div>
+            <div class="detail-item"><span class="label">Fecha Nacimiento:</span><span class="value">{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else '—' }}</span></div>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
             <a href="{{ url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-            <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
-            <a href="{{ url_for('clientes.duplicar_cliente', cliente_id=cliente.id) }}" class="btn btn-outline"><i class="fas fa-copy"></i> Duplicar</a>
-            {% if current_user.role == 'admin' and not cliente.orders %}
-                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
-                    <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Eliminar</button>
-                </form>
-            {% endif %}
-        </div>
-    </div>
-    <div class="stats">
-        <div class="stat-item">
-            <div class="number">{{ total_pedidos }}</div>
-            <div class="label">Pedidos</div>
-        </div>
-        <div class="stat-item">
-            <div class="number">${{ "%.2f"|format(total_facturado) }}</div>
-            <div class="label">Facturado</div>
-        </div>
-        <div class="stat-item">
-            <div class="number">{{ ultimo_pedido.strftime('%d/%m/%Y') if ultimo_pedido else '-' }}</div>
-            <div class="label">Último pedido</div>
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
         </div>
     </div>
 </div>
 
-<!-- ===== DATOS DE CONTACTO ===== -->
-<div class="detail-card">
-    <h4>📋 Datos de contacto</h4>
-    <div class="detail-grid">
-        <div class="detail-item"><span class="label">Teléfono</span><span class="value">{{ cliente.telefono or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Email</span><span class="value">{{ cliente.email or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Dirección</span><span class="value">{{ cliente.direccion or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Comercial</span><span class="value">{{ cliente.comercial or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Carnet Identidad</span><span class="value">{{ cliente.carnet_identidad or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Fecha Nacimiento</span><span class="value">{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else '-' }}</span></div>
-        <div class="detail-item"><span class="label">Sector</span><span class="value">{{ cliente.sector or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Método Pago</span><span class="value">{{ cliente.metodo_pago_favorito or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Frecuencia Pedido</span><span class="value">{{ cliente.frecuencia_pedido or '-' }}</span></div>
-        <div class="detail-item"><span class="label">Referido por</span><span class="value">{{ cliente.referido_por or '-' }}</span></div>
-    </div>
-</div>
-
-<!-- ===== NOTAS Y PREFERENCIAS ===== -->
-<div class="detail-card">
-    <h4>📝 Notas y preferencias</h4>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-        <div>
-            <strong style="font-size:13px; color:#555;">Gustos</strong>
-            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.gustos or 'Sin información' }}</p>
+<!-- KPIs -->
+<div class="card">
+    <h4 class="serif" style="font-size:18px; margin-bottom:12px;">📊 Resumen de actividad</h4>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-value">{{ total_ordenes }}</div>
+            <div class="stat-label">Total Órdenes</div>
         </div>
-        <div>
-            <strong style="font-size:13px; color:#555;">Preferencias de diseño</strong>
-            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.preferencias_diseno or 'Sin información' }}</p>
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{ ordenes_completadas }}</div>
+            <div class="stat-label">Completadas</div>
         </div>
-        <div style="grid-column: 1 / -1;">
-            <strong style="font-size:13px; color:#555;">Observaciones internas</strong>
-            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.observaciones_internas or 'Sin observaciones' }}</p>
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-value">{{ ordenes_pendientes }}</div>
+            <div class="stat-label">Pendientes</div>
         </div>
-        <div style="grid-column: 1 / -1;">
-            <strong style="font-size:13px; color:#555;">Notas</strong>
-            <p style="margin:4px 0 0 0; font-size:14px;">{{ cliente.notas or 'Sin notas' }}</p>
+        <div class="stat-card" style="border-top: 3px solid #10b981;">
+            <div class="stat-icon">💰</div>
+            <div class="stat-value">${{ total_facturado|round(2) }}</div>
+            <div class="stat-label">Total Facturado</div>
         </div>
     </div>
 </div>
 
-<!-- ===== GRÁFICO DE EVOLUCIÓN ===== -->
-{% if orders %}
-<div class="detail-card">
-    <h4>📈 Evolución de pedidos</h4>
+<!-- Insights -->
+<div class="card">
+    <h4 class="serif" style="font-size:18px; margin-bottom:12px;">🔍 Insights del cliente</h4>
+    <div class="insights-grid">
+        <div class="insight-card">
+            <div class="insight-label">📅 Frecuencia de pedido</div>
+            <div class="insight-value">{{ frecuencia_pedido|capitalize }}</div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-label">🛠 Servicios más solicitados</div>
+            <div class="insight-value">
+                {% if top_servicios %}
+                    {% for servicio, count in top_servicios %}
+                        <span class="insight-tag green">{{ servicio }} ({{ count }})</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted">Sin datos</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="insight-card">
+            <div class="insight-label">📦 Materiales/productos más usados</div>
+            <div class="insight-value">
+                {% if top_materiales %}
+                    {% for material, count in top_materiales %}
+                        <span class="insight-tag blue">{{ material }} ({{ count }})</span>
+                    {% endfor %}
+                {% else %}
+                    <span class="text-muted">Sin datos</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráfico de evolución -->
+<div class="card">
+    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📈 Evolución de pedidos (últimos 12 meses)</h4>
     <div class="chart-container">
         <canvas id="ordersChart"></canvas>
     </div>
 </div>
-{% endif %}
 
-<!-- ===== ÓRDENES ===== -->
-<div class="detail-card">
-    <h4>📦 Órdenes de trabajo</h4>
-    {% if orders %}
-        <table class="orders-table">
+<!-- Últimas órdenes -->
+<div class="card">
+    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📋 Últimas órdenes</h4>
+    <div class="table-wrap">
+        <table>
             <thead>
                 <tr>
                     <th>N° Orden</th>
                     <th>Fecha</th>
-                    <th>Proyecto</th>
-                    <th>Prioridad</th>
                     <th>Estado</th>
-                    <th>Entrada</th>
-                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {% for order in orders %}
+                {% for o in orders_recientes %}
                 <tr>
-                    <td><strong>{{ order.order_num }}</strong></td>
-                    <td>{{ order.date.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ order.proyecto or '-' }}</td>
+                    <td><a href="{{ url_for('ordenes.detalle_order', order_id=o.id) }}">{{ o.order_num or 'Sin número' }}</a></td>
+                    <td>{{ o.date.strftime('%d/%m/%Y') if o.date else '—' }}</td>
                     <td>
-                        <span class="badge-prioridad {% if order.priority == 'urgente' %}badge-urgente{% elif order.priority == 'critica' %}badge-critica{% else %}badge-normal{% endif %}">
-                            {{ order.priority or 'normal' }}
+                        <span class="badge {% if o.column in ['entregados', 'listo'] %}badge-success{% elif o.column in ['pendiente', 'por-preparar'] %}badge-warning{% else %}badge-info{% endif %}">
+                            {{ o.column }}
                         </span>
                     </td>
-                    <td>{{ columnas_nombres[order.column] or order.column }}</td>
-                    <td>
-                        {% if order.entrada_ok %}
-                            <span class="badge-estado badge-ok">OK</span>
-                        {% else %}
-                            <span class="badge-estado badge-pendiente">Pendiente</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
-                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                    </td>
                 </tr>
+                {% else %}
+                <tr><td colspan="3" class="text-muted text-center">No hay órdenes registradas.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
-    {% else %}
-        <p style="color:#999; text-align:center; padding:12px 0;">Este cliente no tiene órdenes de trabajo.</p>
-    {% endif %}
+    </div>
 </div>
-
 {% endblock %}
 
 {% block extra_js %}
-<!-- Chart.js -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Datos para el gráfico (pasados desde el backend)
-    const chartData = {{ chart_data|tojson if chart_data else '[]' }};
-    const chartLabels = {{ chart_labels|tojson if chart_labels else '[]' }};
-
-    if (chartData.length > 0 && chartLabels.length > 0) {
+    document.addEventListener('DOMContentLoaded', function() {
         const ctx = document.getElementById('ordersChart').getContext('2d');
+        const labels = {{ evolucion_labels|tojson }};
+        const values = {{ evolucion_values|tojson }};
+
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: chartLabels,
+                labels: labels,
                 datasets: [{
-                    label: 'Pedidos por mes',
-                    data: chartData,
-                    backgroundColor: 'rgba(168, 133, 79, 0.7)',
-                    borderColor: 'rgba(168, 133, 79, 1)',
+                    label: 'Pedidos',
+                    data: values,
+                    backgroundColor: 'rgba(168,133,79,0.6)',
+                    borderColor: '#a8854f',
                     borderWidth: 2,
-                    borderRadius: 4
+                    borderRadius: 4,
                 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
-                    legend: {
-                        display: false
-                    }
+                    legend: { display: false }
                 },
                 scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { size: 10, family: 'Inter' } }
+                    },
                     y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
+                        grid: { color: 'rgba(0,0,0,0.03)' },
+                        ticks: { font: { size: 10, family: 'Inter' }, stepSize: 1 }
                     }
                 }
             }
         });
-    }
-});
+    });
 </script>
 {% endblock %}

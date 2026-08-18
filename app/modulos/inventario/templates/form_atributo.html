@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Editar' if atributo else 'Nuevo' }} Atributo · {{ grupo.nombre }}{% endblock %}
+
+{% block page_title %}{{ '✏️ Editar' if atributo else '📄 Nuevo' }} Atributo{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-container { max-width:600px; margin:0 auto; }
+    .form-section {
+        background:rgba(255,255,255,0.85);
+        backdrop-filter:blur(10px);
+        border-radius:20px;
+        padding:28px 32px;
+        box-shadow:0 4px 20px rgba(0,0,0,0.04);
+        border:1px solid rgba(0,0,0,0.04);
+    }
+    .form-section h4 {
+        font-family:'Playfair Display',serif;
+        font-size:22px;
+        margin-bottom:20px;
+        color:#1c1c1e;
+        border-bottom:2px solid #f0ece8;
+        padding-bottom:12px;
+        display:flex;
+        align-items:center;
+        gap:10px;
+    }
+    .form-section h4 i { color:#a8854f; font-size:22px; }
+    .form-group { margin-bottom:18px; }
+    .form-group label {
+        display:block;
+        font-weight:600;
+        font-size:14px;
+        color:#333;
+        margin-bottom:4px;
+        font-family:'Inter',sans-serif;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+        width:100%;
+        padding:12px 16px;
+        border:1.5px solid #e0dcd8;
+        border-radius:10px;
+        font-size:15px;
+        background:#fafaf9;
+        transition:border-color 0.2s, box-shadow 0.2s;
+        font-family:'Inter',sans-serif;
+        color:#1c1c1e;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline:none;
+        border-color:#a8854f;
+        background:white;
+        box-shadow:0 0 0 4px rgba(168,133,79,0.08);
+    }
+    .form-group textarea { resize:vertical; min-height:60px; }
+    .form-group small { display:block; color:#8e8e93; font-size:12px; margin-top:4px; }
+    .checkbox-group {
+        display:flex;
+        align-items:center;
+        gap:8px;
+    }
+    .checkbox-group input[type="checkbox"] {
+        width:18px;
+        height:18px;
+        accent-color:#a8854f;
+    }
+    .btn-group {
+        display:flex;
+        gap:12px;
+        flex-wrap:wrap;
+        margin-top:24px;
+        padding-top:16px;
+        border-top:1px solid #f0ece8;
+    }
+    .btn {
+        padding:10px 28px;
+        border-radius:30px;
+        border:none;
+        font-weight:600;
+        cursor:pointer;
+        transition:all 0.2s;
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        text-decoration:none;
+        font-size:14px;
+        font-family:'Inter',sans-serif;
+    }
+    .btn-success {
+        background:#10b981;
+        color:white;
+    }
+    .btn-success:hover {
+        background:#059669;
+        transform:translateY(-2px);
+        box-shadow:0 4px 16px rgba(16,185,129,0.2);
+    }
+    .btn-outline {
+        background:transparent;
+        border:1.5px solid #d2d2d7;
+        color:#1c1c1e;
+    }
+    .btn-outline:hover {
+        border-color:#8e8e93;
+        background:#f5f5f5;
+        transform:none;
+        box-shadow:none;
+    }
+    .opciones-helper {
+        background:#f8f6f4;
+        padding:8px 12px;
+        border-radius:8px;
+        font-size:13px;
+        color:#555;
+        border-left:3px solid #a8854f;
+        margin-top:4px;
+    }
+    @media (max-width:768px) {
+        .form-section { padding:20px; }
+        .btn-group { flex-direction:column; }
+        .btn { justify-content:center; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="form-section">
+        <h4><i class="fas fa-tag"></i> {{ 'Editar atributo' if atributo else 'Nuevo atributo' }} en {{ grupo.nombre }}</h4>
+        <form method="POST">
+            <div class="form-group">
+                <label>Nombre (clave) *</label>
+                <input type="text" name="nombre" value="{{ atributo.nombre if atributo else '' }}" required placeholder="Ej. ancho, color, serie">
+                <small>Identificador único dentro del grupo (ej. "ancho", "color").</small>
+            </div>
+            <div class="form-group">
+                <label>Etiqueta *</label>
+                <input type="text" name="etiqueta" value="{{ atributo.etiqueta if atributo else '' }}" required placeholder="Ej. Ancho (m), Color, Número de serie">
+                <small>Texto que verá el usuario en el formulario.</small>
+            </div>
+            <div class="form-group">
+                <label>Tipo *</label>
+                <select name="tipo" id="tipo" required>
+                    <option value="">Seleccionar</option>
+                    <option value="texto" {% if atributo and atributo.tipo == 'texto' %}selected{% endif %}>Texto</option>
+                    <option value="numero" {% if atributo and atributo.tipo == 'numero' %}selected{% endif %}>Número</option>
+                    <option value="fecha" {% if atributo and atributo.tipo == 'fecha' %}selected{% endif %}>Fecha</option>
+                    <option value="seleccion" {% if atributo and atributo.tipo == 'seleccion' %}selected{% endif %}>Selección (desplegable)</option>
+                    <option value="booleano" {% if atributo and atributo.tipo == 'booleano' %}selected{% endif %}>Sí/No (checkbox)</option>
+                </select>
+            </div>
+            <div class="form-group" id="opciones-group">
+                <label>Opciones <span id="opciones-requerido" style="color:#dc2626; display:none;">*</span></label>
+                <input type="text" name="opciones" id="opciones" value="{{ atributo.opciones if atributo else '' }}" placeholder="Rojo, Azul, Verde">
+                <div class="opciones-helper">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="opciones-helper-text">Opciones separadas por coma. <strong>Solo para tipo "Selección".</strong></span>
+                </div>
+            </div>
+            <div class="form-group checkbox-group">
+                <input type="checkbox" name="requerido" {% if atributo and atributo.requerido %}checked{% endif %}>
+                <label style="margin:0; font-weight:400;">Requerido</label>
+            </div>
+            <div class="form-group">
+                <label>Orden</label>
+                <input type="number" name="orden" value="{{ atributo.orden if atributo else 0 }}" min="0">
+                <small>Orden de aparición en el formulario (menor número primero).</small>
+            </div>
+            <div class="btn-group">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> {{ 'Actualizar' if atributo else 'Crear atributo' }}
+                </button>
+                <a href="{{ url_for('inventario.listar_atributos', grupo_id=grupo.id) }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const tipoSelect = document.getElementById('tipo');
+        const opcionesGroup = document.getElementById('opciones-group');
+        const opcionesInput = document.getElementById('opciones');
+        const opcionesRequerido = document.getElementById('opciones-requerido');
+        const helperText = document.getElementById('opciones-helper-text');
+
+        function toggleOpciones() {
+            const isSeleccion = tipoSelect.value === 'seleccion';
+            // Mostrar/ocultar el campo completo
+            opcionesGroup.style.display = isSeleccion ? 'block' : 'block'; // siempre visible
+            // Resaltar si es selección
+            if (isSeleccion) {
+                opcionesInput.placeholder = 'Ej. Solvente, Eco-solvente, UV';
+                opcionesInput.style.borderColor = '#a8854f';
+                opcionesInput.style.background = '#fff';
+                opcionesRequerido.style.display = 'inline';
+                helperText.innerHTML = 'Opciones separadas por coma. <strong style="color:#10b981;">Requerido para tipo "Selección".</strong>';
+            } else {
+                opcionesInput.placeholder = 'Opciones (solo para tipo Selección)';
+                opcionesInput.style.borderColor = '#e0dcd8';
+                opcionesInput.style.background = '#fafaf9';
+                opcionesRequerido.style.display = 'none';
+                helperText.innerHTML = 'Opciones separadas por coma. <strong>Solo para tipo "Selección".</strong>';
+            }
+        }
+
+        tipoSelect.addEventListener('change', toggleOpciones);
+        toggleOpciones(); // Ejecutar al cargar
+
+        // Validación antes de enviar: si tipo es selección, las opciones no deben estar vacías
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (tipoSelect.value === 'seleccion' && !opcionesInput.value.trim()) {
+                e.preventDefault();
+                alert('Para el tipo "Selección" debes especificar opciones separadas por coma.');
+                opcionesInput.focus();
+                opcionesInput.style.borderColor = '#dc2626';
+                opcionesInput.style.background = '#fde8e5';
+            }
+        });
+    });
+</script>
+{% endblock %}

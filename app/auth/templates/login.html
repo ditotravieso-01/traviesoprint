@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión · CairoStudio</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap" rel="stylesheet">
+    <!-- Google Fonts (Estudio Blanc) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        /* ===== RESET ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: #1a1a1a;
+            background: #faf8f6;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -19,7 +23,6 @@
             padding: 20px;
         }
 
-        /* ===== FONDO CON OVERLAY OSCURO ===== */
         .login-page {
             width: 100%;
             max-width: 700px;
@@ -28,27 +31,26 @@
             align-items: center;
             justify-content: center;
             padding: 40px 30px;
-            background-image: linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+            background-image: linear-gradient(rgba(250,248,246,0.85), rgba(250,248,246,0.85)),
                               url('{{ url_for('static', filename='img/fondo_login.jpg') }}');
             background-size: cover;
             background-position: center;
             border-radius: 24px;
-            box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+            box-shadow: 0 30px 80px rgba(0,0,0,0.06);
         }
 
-        /* ===== TARJETA DE LOGIN ===== */
         .login-card {
             background: rgba(255,255,255,0.92);
             backdrop-filter: blur(8px);
             padding: 40px 35px;
             border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.04);
             max-width: 400px;
             width: 100%;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(0,0,0,0.04);
+            border-top: 4px solid #a8854f;
         }
 
-        /* ===== LOGO ===== */
         .login-logo {
             text-align: center;
             margin-bottom: 28px;
@@ -58,13 +60,13 @@
             height: auto;
             display: block;
             margin: 0 auto 12px;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.08));
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.02));
         }
         .login-logo h1 {
             font-family: 'Playfair Display', serif;
             font-weight: 700;
             font-size: 26px;
-            color: #1a1a1a;
+            color: #1c1c1e;
             letter-spacing: -0.3px;
         }
         .login-logo p {
@@ -72,11 +74,10 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 2px;
-            color: #888;
+            color: #8e8e93;
             margin-top: 2px;
         }
 
-        /* ===== FORMULARIO ===== */
         .form-group {
             margin-bottom: 18px;
         }
@@ -90,18 +91,19 @@
         .form-group input {
             width: 100%;
             padding: 12px 16px;
-            border: 1px solid #ddd;
+            border: 1.5px solid #e0dcd8;
             border-radius: 12px;
             font-size: 16px;
             font-family: 'Inter', sans-serif;
-            background: #fafafa;
+            background: #fafaf9;
             transition: border-color 0.2s, background 0.2s;
+            color: #1c1c1e;
         }
         .form-group input:focus {
             outline: none;
-            border-color: #1a1a1a;
+            border-color: #a8854f;
             background: white;
-            box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+            box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
         }
 
         .remember-me {
@@ -115,13 +117,13 @@
         .remember-me input {
             width: 18px;
             height: 18px;
-            accent-color: #1a1a1a;
+            accent-color: #a8854f;
         }
 
         .btn-login {
             width: 100%;
             padding: 14px;
-            background: #1a1a1a;
+            background: #1c1c1e;
             color: white;
             border: none;
             border-radius: 30px;
@@ -135,16 +137,18 @@
         .btn-login:hover {
             background: #333;
             transform: translateY(-1px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.04);
         }
 
-        /* ===== ALERTAS (FLASH) ===== */
         .alert {
             padding: 12px 16px;
             border-radius: 12px;
             font-size: 14px;
             margin-bottom: 16px;
             border-left: 4px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .alert-success {
             background: #d1fae5;
@@ -152,28 +156,27 @@
             border-left-color: #10b981;
         }
         .alert-danger {
-            background: #fee2e2;
+            background: #fde8e5;
             color: #991b1b;
             border-left-color: #dc2626;
         }
         .alert-warning {
             background: #fef3c7;
-            color: #92400e;
+            color: #78350f;
             border-left-color: #f59e0b;
         }
         .alert-info {
-            background: #dbeafe;
-            color: #1e40af;
+            background: #e0f2fe;
+            color: #1e3a8a;
             border-left-color: #3b82f6;
         }
 
-        /* ===== FOOTER ===== */
         .footer-text {
             text-align: center;
             margin-top: 20px;
             font-size: 13px;
-            color: #999;
-            border-top: 1px solid #eee;
+            color: #8e8e93;
+            border-top: 1px solid #f0ece8;
             padding-top: 16px;
         }
         .version-info {
@@ -183,43 +186,30 @@
             color: #bbb;
         }
 
-        /* ===== RESPONSIVE ===== */
         @media (max-width: 500px) {
-            .login-page {
-                padding: 20px 15px;
-                min-height: 450px;
-            }
-            .login-card {
-                padding: 30px 20px;
-            }
-            .login-logo img {
-                width: 60px;
-            }
+            .login-page { padding: 20px 15px; min-height: 450px; }
+            .login-card { padding: 30px 20px; }
+            .login-logo img { width: 160px; }
         }
     </style>
 </head>
 <body>
-
     <div class="login-page">
         <div class="login-card">
-
-            <!-- LOGO -->
             <div class="login-logo">
                 <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" alt="CairoStudio Grupo Creativo">
                 <h1>CAIROSTUDIOKIT</h1>
                 <p>HERRAMIENTAS DE GESTIÓN CREATIVA</p>
             </div>
 
-            <!-- MENSAJES FLASH -->
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        <div class="alert alert-{{ category }}"><i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i> {{ message }}</div>
                     {% endfor %}
                 {% endif %}
             {% endwith %}
 
-            <!-- FORMULARIO DE LOGIN -->
             <form method="POST" action="{{ url_for('auth.login') }}">
                 <div class="form-group">
                     <label for="username">Usuario</label>
@@ -233,18 +223,16 @@
                     <input type="checkbox" id="remember" name="remember">
                     <label for="remember">Recordarme</label>
                 </div>
-                <button type="submit" class="btn-login">Acceder</button>
+                <button type="submit" class="btn-login"><i class="fas fa-sign-in-alt"></i> Acceder</button>
             </form>
 
             <div class="footer-text">
-                Sistema interno · Autenticación mediante Active Directory
+                <i class="fas fa-shield-alt"></i> Sistema interno · Autenticación mediante Active Directory
             </div>
             <div class="version-info">
-                v0.2 · Entorno de Pruebas - Powered by TraviesoWorks
+                v0.2 · Entorno de Pruebas · <span style="color:#a8854f;">TraviesoWorks</span>
             </div>
-
         </div>
     </div>
-
 </body>
 </html>

@@ -6,93 +6,19 @@
 
 {% block extra_css %}
 <style>
-    .admin-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 24px;
-    }
-    .admin-header p {
-        color: #8e8e93;
-        margin: 4px 0 0 0;
-        font-size: 14px;
-    }
-    .btn {
-        padding: 8px 20px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        background: #1c1c1e;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        text-decoration: none;
-    }
-    .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-    }
-    .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
-    .btn-sm {
-        padding: 4px 14px;
-        font-size: 12px;
-        border-radius: 20px;
-    }
-    .btn-success {
-        background: #10b981;
-        color: white;
-    }
-    .btn-success:hover {
-        background: #059669;
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-    }
-    .btn-warning {
-        background: #f59e0b;
-        color: white;
-    }
-    .btn-warning:hover {
-        background: #d97706;
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
-    }
-    .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
-
     .admin-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
         gap: 24px;
         margin-top: 8px;
     }
-
     .admin-card {
-        background: rgba(255, 255, 255, 0.8);
+        background: rgba(255,255,255,0.8);
         backdrop-filter: blur(12px);
         border-radius: 20px;
         padding: 24px 20px 20px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         transition: all 0.3s ease;
         text-decoration: none;
         color: #1c1c1e;
@@ -103,31 +29,12 @@
     }
     .admin-card:hover {
         transform: translateY(-6px);
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.06);
-        border-color: rgba(168, 133, 79, 0.2);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        border-color: rgba(168,133,79,0.2);
     }
-    .admin-card.area { border-top: 5px solid #3b82f6; }
-    .admin-card.categoria { border-top: 5px solid #10b981; }
-    .admin-card.ubicacion { border-top: 5px solid #f59e0b; }
-    .admin-card.tipo { border-top: 5px solid #8b5cf6; }
-    .admin-card.unidad { border-top: 5px solid #ec4899; }
-
-    .admin-card .card-icon {
-        font-size: 28px;
-        margin-bottom: 8px;
-    }
-    .admin-card h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        margin: 0 0 4px 0;
-        color: #1c1c1e;
-    }
-    .admin-card .card-desc {
-        font-size: 14px;
-        color: #8e8e93;
-        margin: 0 0 12px 0;
-        flex: 1;
-    }
+    .admin-card .card-icon { font-size: 28px; margin-bottom: 8px; }
+    .admin-card h4 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 0 0 4px 0; color: #1c1c1e; }
+    .admin-card .card-desc { font-size: 14px; color: #8e8e93; margin: 0 0 12px 0; flex: 1; }
     .admin-card .card-stats {
         display: flex;
         justify-content: space-between;
@@ -136,158 +43,98 @@
         border-top: 1px solid #f0ece8;
         margin-top: 4px;
     }
-    .admin-card .count {
-        font-size: 28px;
-        font-weight: 700;
-        color: #1c1c1e;
-        font-family: 'Playfair Display', serif;
-    }
-    .admin-card .count-label {
-        font-size: 12px;
-        color: #8e8e93;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+    .admin-card .count { font-size: 28px; font-weight: 700; color: #1c1c1e; font-family: 'Playfair Display', serif; }
+    .admin-card .count-label { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
+    .admin-card .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .admin-card .card-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
         font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
     }
-    .admin-card .examples {
-        font-size: 12px;
-        color: #8e8e93;
-        margin-top: 8px;
-        padding: 6px 10px;
-        background: rgba(0,0,0,0.02);
-        border-radius: 8px;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px 8px;
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
     }
-    .admin-card .examples span {
-        background: rgba(255,255,255,0.6);
-        padding: 2px 8px;
-        border-radius: 12px;
-        border: 1px solid #e8e0da;
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
     }
-    .admin-card .card-actions {
-        display: flex;
-        gap: 8px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-    }
-    .admin-card .card-actions .btn {
-        flex: 1;
-        justify-content: center;
-        min-width: 80px;
-    }
-    @media (max-width: 768px) {
-        .admin-grid { grid-template-columns: 1fr; }
-        .admin-card .card-actions .btn { flex: 1 1 100%; }
-    }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .admin-card.ubicacion { border-top: 5px solid #f59e0b; }
+    .admin-card.categoria { border-top: 5px solid #3b82f6; }
+    .admin-card.atributos { border-top: 5px solid #8b5cf6; }
+    @media (max-width:768px) { .admin-grid { grid-template-columns: 1fr; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-header">
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
     <div>
-        <p>Gestiona la configuración del inventario: áreas, categorías, ubicaciones, tipos y unidades</p>
+        <p style="color:#8e8e93; margin:4px 0 0 0;">Gestiona la configuración del inventario</p>
     </div>
-    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
-        <i class="fas fa-arrow-left"></i> Volver
-    </a>
+    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
 </div>
 
 <div class="admin-grid">
-    <div class="admin-card area">
-        <div class="card-icon">🗂️</div>
-        <h4>Áreas</h4>
-        <div class="card-desc">Organiza el inventario por áreas (Gráfica, Mobiliario, Oficina, etc.)</div>
-        <div class="card-stats">
-            <div>
-                <div class="count">{{ areas|length }}</div>
-                <div class="count-label">registros</div>
-            </div>
-        </div>
-        <div class="examples">
-            {% for a in areas[:3] %}<span>{{ a.nombre }}</span>{% endfor %}
-            {% if areas|length > 3 %}<span>+{{ areas|length - 3 }}</span>{% endif %}
-        </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.gestion_areas') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_area') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
-        </div>
-    </div>
+    <!-- Categorías -->
     <div class="admin-card categoria">
-        <div class="card-icon">🏷️</div>
+        <div class="card-icon">🗂️</div>
         <h4>Categorías</h4>
-        <div class="card-desc">Clasifica los productos en categorías (Vinilo, Tinta, Papel, etc.)</div>
+        <div class="card-desc">Organiza los productos en categorías jerárquicas</div>
         <div class="card-stats">
-            <div>
-                <div class="count">{{ categorias|length }}</div>
-                <div class="count-label">registros</div>
-            </div>
-        </div>
-        <div class="examples">
-            {% for c in categorias[:3] %}<span>{{ c.nombre }}</span>{% endfor %}
-            {% if categorias|length > 3 %}<span>+{{ categorias|length - 3 }}</span>{% endif %}
+            <div><div class="count">{{ categorias|length }}</div><div class="count-label">registros</div></div>
         </div>
         <div class="card-actions">
             <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
             <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
         </div>
     </div>
+
+    <!-- Grupos de Atributos -->
+    <div class="admin-card atributos">
+        <div class="card-icon">🏷️</div>
+        <h4>Atributos</h4>
+        <div class="card-desc">Define atributos personalizados por categoría</div>
+        <div class="card-stats">
+            <div><div class="count">{{ grupos|length }}</div><div class="count-label">grupos</div></div>
+        </div>
+        <div class="card-actions">
+            <a href="{{ url_for('inventario.listar_grupos') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
+            <a href="{{ url_for('inventario.crear_grupo') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
+        </div>
+    </div>
+
+    <!-- Ubicaciones (NUEVO) -->
     <div class="admin-card ubicacion">
         <div class="card-icon">📍</div>
         <h4>Ubicaciones</h4>
-        <div class="card-desc">Gestiona las ubicaciones físicas (Almacén, Garaje, Estante, etc.)</div>
+        <div class="card-desc">Gestiona las ubicaciones físicas del inventario</div>
         <div class="card-stats">
-            <div>
-                <div class="count">{{ ubicaciones|length }}</div>
-                <div class="count-label">registros</div>
-            </div>
-        </div>
-        <div class="examples">
-            {% for u in ubicaciones[:3] %}<span>{{ u.nombre }}</span>{% endfor %}
-            {% if ubicaciones|length > 3 %}<span>+{{ ubicaciones|length - 3 }}</span>{% endif %}
+            <div><div class="count">{{ ubicaciones|length }}</div><div class="count-label">registros</div></div>
         </div>
         <div class="card-actions">
             <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
             <a href="{{ url_for('inventario.crear_ubicacion') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
-        </div>
-    </div>
-    <div class="admin-card tipo">
-        <div class="card-icon">📦</div>
-        <h4>Tipos de producto</h4>
-        <div class="card-desc">Clasifica como consumible, activo fijo, herramienta, etc.</div>
-        <div class="card-stats">
-            <div>
-                <div class="count">{{ tipos|length }}</div>
-                <div class="count-label">registros</div>
-            </div>
-        </div>
-        <div class="examples">
-            {% for t in tipos[:3] %}<span>{{ t.nombre }}</span>{% endfor %}
-            {% if tipos|length > 3 %}<span>+{{ tipos|length - 3 }}</span>{% endif %}
-        </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_tipos') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_tipo') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
-        </div>
-    </div>
-    <div class="admin-card unidad">
-        <div class="card-icon">📏</div>
-        <h4>Unidades</h4>
-        <div class="card-desc">Gestiona las unidades de medida (m, kg, L, m², etc.)</div>
-        <div class="card-stats">
-            <div>
-                <div class="count">{{ unidades|length }}</div>
-                <div class="count-label">registros</div>
-            </div>
-        </div>
-        <div class="examples">
-            {% for u in unidades[:3] %}<span>{{ u.nombre }} ({{ u.simbolo or '—' }})</span>{% endfor %}
-            {% if unidades|length > 3 %}<span>+{{ unidades|length - 3 }}</span>{% endif %}
-        </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_unidades') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_unidad') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
         </div>
     </div>
 </div>

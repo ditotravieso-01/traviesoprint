@@ -1,48 +1,34 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - Cairostudiokit{% endblock %}
+{% block title %}Inicio · CairoStudioKit{% endblock %}
 
-
-{% block page_title %}Panel de Control{% endblock %}
-
-{% block user_name %}Admin{% endblock %}
+{% block page_title %}🏠 Bienvenido a CairoStudioKit{% endblock %}
 
 {% block content %}
-<div class="content-card">
-    <h2>Bienvenido a Cairostudiokit</h2>
-    <p>
-        Esta es la nueva plataforma interna de CairoStudio Grupo Creativo.
-        Desde aquí podrás acceder a todas las herramientas de cálculo, gestión
-        de clientes, órdenes de trabajo y mucho más.
-    </p>
-
-    <div style="display: flex; gap: 16px; margin-top: 24px; flex-wrap: wrap;">
-        <div style="background: #f8f6f4; padding: 20px 24px; border-radius: 12px; flex: 1; min-width: 150px; border-left: 4px solid #2a2a2a;">
-            <div style="font-size: 28px; font-weight: 700;">0</div>
-            <div style="color: #777; font-size: 14px;">Órdenes hoy</div>
+<div class="card">
+    <h2 class="serif" style="font-size: 24px; margin-bottom: 12px;">Resumen rápido</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+        <div class="kpi-card" style="background: white; padding: 16px; border-radius: 16px; border-left: 4px solid #a8854f;">
+            <div style="font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif;">0</div>
+            <div style="color: #8e8e93; font-size: 13px;">Órdenes activas</div>
         </div>
-        <div style="background: #f8f6f4; padding: 20px 24px; border-radius: 12px; flex: 1; min-width: 150px; border-left: 4px solid #888;">
-            <div style="font-size: 28px; font-weight: 700;">0</div>
-            <div style="color: #777; font-size: 14px;">Clientes activos</div>
+        <div class="kpi-card" style="background: white; padding: 16px; border-radius: 16px; border-left: 4px solid #10b981;">
+            <div style="font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif;">0</div>
+            <div style="color: #8e8e93; font-size: 13px;">Clientes totales</div>
         </div>
-        <div style="background: #f8f6f4; padding: 20px 24px; border-radius: 12px; flex: 1; min-width: 150px; border-left: 4px solid #bbb;">
-            <div style="font-size: 28px; font-weight: 700;">0</div>
-            <div style="color: #777; font-size: 14px;">Material en stock</div>
+        <div class="kpi-card" style="background: white; padding: 16px; border-radius: 16px; border-left: 4px solid #f59e0b;">
+            <div style="font-size: 28px; font-weight: 700; font-family: 'Playfair Display', serif;">0</div>
+            <div style="color: #8e8e93; font-size: 13px;">Productos en stock</div>
         </div>
     </div>
 </div>
 
-<div class="content-card">
-    <h2>Próximos pasos</h2>
-    <ul style="color: #555; line-height: 2; padding-left: 20px;">
-        <li>✅ Estructura de la aplicación creada</li>
-        <li>✅ Diseño visual (Estilo C) aplicado</li>
-        <li>✅ Integración de usuarios y roles</li>
-        <li>✅ Integración de calculadora de etiquetas</li>
-        <li>✅ Órdenes de trabajo con PDF</li>
-        <li>⏳ Integración de calculadora de kanban</li>
-        <li>⏳ Integración de calculadora de carteles</li>
-        <li>⏳ Módulo de clientes</li>
-    </ul>
+<div class="card">
+    <h3 class="serif" style="font-size: 20px; margin-bottom: 8px;">📋 Accesos rápidos</h3>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px;">
+        <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
+        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
+        <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-primary"><i class="fas fa-user-plus"></i> Nuevo cliente</a>
+    </div>
 </div>
 {% endblock %}

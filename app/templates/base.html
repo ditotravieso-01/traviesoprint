@@ -1,204 +1,449 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" style="background: #faf8f6;">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Cairostudiokit{% endblock %}</title>
-
-    <!-- CSS personalizado -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <!-- Bloque para CSS adicional -->
-    {% block extra_css %}{% endblock %}
+    <title>{% block title %}CairoStudioKit{% endblock %}</title>
+    <!-- Google Fonts (Estudio Blanc) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_css %}{% endblock %}
 </head>
-<body>
-
-    <!-- ==================== SIDEBAR ==================== -->
-    <aside class="sidebar">
-        <div class="logo-area">
-            <div class="logo-circle">
-                <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}"
-                     alt="Logo CairoStudio Grupo Creativo">
-            </div>
-            <div class="logo-text">
-                CAIROSTUDIO
-                <small>Grupo Creativo</small>
-            </div>
-        </div>
-
-        <nav class="nav-menu">
-            {% if current_user.is_authenticated %}
-                <a href="{{ url_for('home.home') }}" class="nav-item {% if request.endpoint == 'home.home' %}active{% endif %}">
-                    <span class="icon">📊</span> Dashboard
+<body style="background: #faf8f6; margin:0; padding:0; font-family: 'Inter', sans-serif; color: #1c1c1e; display: flex; min-height: 100vh;">
+    <div class="app-container" style="display: flex; width: 100%; min-height: 100vh; background: #faf8f6;">
+        <!-- Sidebar -->
+        <aside class="sidebar" style="width: 240px; background: #ffffff; border-right: 1px solid rgba(0,0,0,0.04); padding: 20px 0; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; position: sticky; top: 0; box-shadow: 2px 0 20px rgba(0,0,0,0.02); transition: all 0.3s;">
+            <div class="sidebar-brand" style="padding: 0 20px 20px 20px; text-align: center; border-bottom: 1px solid #f0ece8;">
+                <a href="{{ url_for('home.home') }}">
+                    <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" alt="CairoStudio" height="40" style="max-height: 50px; width: auto;">
                 </a>
-
-                {% if current_user.role in ['comercial', 'admin'] %}
-                    <a href="{{ url_for('clientes.list_clientes') }}" class="nav-item {% if request.endpoint == 'clientes.list_clientes' %}active{% endif %}">
-                        <span class="icon">👥</span> Clientes
-                    </a>
-                {% endif %}
-
-                {% if current_user.role in ['admin', 'comercial', 'economico'] %}
-                    <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint == 'ordenes.list_orders' %}active{% endif %}">
-                        <span class="icon">📋</span> Órdenes de Trabajo
-                    </a>
-                {% endif %}
-
-                <!-- Workflow (Kanban) - visible para roles que puedan usarlo -->
-                {% if current_user.role in ['admin', 'comercial', 'disenador', 'operario', 'economico'] %}
-                    <a href="{{ url_for('workflow.board') }}" class="nav-item {% if request.endpoint == 'workflow.board' %}active{% endif %}">
-                        <span class="icon">📊</span> Workflow
-                    </a>
-                {% endif %}
-
-                {% if current_user.role in ['admin', 'operario', 'comercial', 'economico'] %}
-                    <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint == 'etiquetas.index' %}active{% endif %}">
-                        <span class="icon">🏷️</span> Etiquetas
-                    </a>
-                {% endif %}
-
-                {% if current_user.role in ['admin', 'operario', 'comercial', 'economico'] %}
-                    <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint == 'carteles.index' %}active{% endif %}">
-                        <span class="icon">📐</span> Carteles
-                    </a>
-                {% endif %}
-
-                {% if current_user.role in ['admin', 'economico'] %}
-                    <a href="{{ url_for('inventario.index') }}" class="nav-item {% if request.endpoint == 'inventario.index' %}active{% endif %}">
-                        <span class="icon">🧾</span> Inventario
-                    </a>
-                {% endif %}
-
-                {% if current_user.role == 'admin' %}
-                    <a href="{{ url_for('auth.admin_users') }}" class="nav-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
-                        <span class="icon">⚙️</span> Usuarios
-                    </a>
-                {% endif %}
-
-                <a href="{{ url_for('auth.logout') }}" class="nav-item" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px;">
-                    <span class="icon">🚪</span> Cerrar sesión
-                </a>
-            {% else %}
-                <a href="{{ url_for('auth.login') }}" class="nav-item">
-                    <span class="icon">🔑</span> Iniciar sesión
-                </a>
-            {% endif %}
-        </nav>
-
-        <div class="sidebar-footer">
-            <a href="{{ url_for('auth.logout') }}"
-               style="color: rgba(255,255,255,0.5); text-decoration: none; font-size: 13px; display: block; margin-top: 10px; transition: color 0.2s;">
-                🔒 Cerrar sesión
-            </a>
-            <div style="margin-top: 8px; font-size: 11px; color: rgba(255,255,255,0.2);">
-                v0.1 · Interno
             </div>
-        </div>
-    </aside>
-
-    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
-    <main class="main-content">
-
-        <!-- Header superior -->
-        <header class="main-header">
-            <h1>{% block page_title %}Bienvenido{% endblock %}</h1>
-            <div style="display: flex; align-items: center; gap: 16px;">
-
-                <!-- ==================== CAMPANA DE NOTIFICACIONES ==================== -->
-                <div class="dropdown" style="position: relative; display: inline-block;">
-                    <a href="#" id="notificacionesDropdown" class="btn btn-outline" style="background: transparent; border: none; padding: 6px 10px; font-size: 20px; color: #333; position: relative; text-decoration: none;" onclick="event.preventDefault();">
-                        <i class="fas fa-bell"></i>
-                        <span id="notificaciones-contador" class="badge" style="position: absolute; top: -4px; right: -4px; background: #dc2626; color: white; font-size: 10px; padding: 2px 6px; border-radius: 50%; display: none;">0</span>
+            <nav class="sidebar-nav" style="flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px;">
+                <a href="{{ url_for('home.home') }}" class="nav-item {% if request.endpoint == 'home.home' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                    <i class="fas fa-home" style="width: 20px; text-align: center; font-size: 16px;"></i> Inicio
+                </a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('ordenes.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-clipboard-list" style="width: 20px; text-align: center; font-size: 16px;"></i> Órdenes
                     </a>
-                    <div id="dropdownNotificaciones" class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 35px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); min-width: 320px; max-height: 400px; overflow-y: auto; z-index: 1000; padding: 8px 0;">
-                        <div style="padding: 8px 16px; font-weight: 600; border-bottom: 1px solid #eee;">Notificaciones</div>
-                        <div id="lista-notificaciones" style="padding: 8px 0;">
-                            <span style="display: block; padding: 8px 16px; color: #888;">Cargando...</span>
-                        </div>
-                        <div style="border-top: 1px solid #eee; padding: 8px 16px; text-align: center;">
-                            <a href="#" id="marcar-todas-leidas" style="color: #1a1a1a; text-decoration: none; font-size: 13px;">Marcar todas como leídas</a>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Perfil de usuario -->
-                <div style="position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="toggleUserMenu(event)">
-                    <span>{{ current_user.username }}</span>
-                    <div class="user-avatar" style="background: #1a1a1a; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;">
-                        {{ current_user.username[0]|upper }}
-                    </div>
-                    <!-- Dropdown de usuario -->
-                    <div id="userMenu" style="display: none; position: absolute; right: 0; top: 45px; background: white; border: 1px solid #ddd; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); min-width: 180px; z-index: 1000;">
-                        <a href="{{ url_for('auth.profile') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; transition: background 0.2s;">
-                            <i class="fas fa-user"></i> Mi perfil
+                    <a href="{{ url_for('workflow.board') }}" class="nav-item {% if request.endpoint == 'workflow.board' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-columns" style="width: 20px; text-align: center; font-size: 16px;"></i> Workflow
+                    </a>
+                    <a href="{{ url_for('inventario.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('inventario.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-warehouse" style="width: 20px; text-align: center; font-size: 16px;"></i> Inventario
+                    </a>
+                    <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('etiquetas.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-tag" style="width: 20px; text-align: center; font-size: 16px;"></i> Etiquetas
+                    </a>
+                    <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('carteles.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-image" style="width: 20px; text-align: center; font-size: 16px;"></i> Carteles
+                    </a>
+                    <a href="{{ url_for('clientes.listar_clientes') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('clientes.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-users" style="width: 20px; text-align: center; font-size: 16px;"></i> Clientes
+                    </a>
+                    {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('auth.admin_users') }}" class="nav-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                            <i class="fas fa-user-cog" style="width: 20px; text-align: center; font-size: 16px;"></i> Usuarios
                         </a>
-                        <a href="{{ url_for('auth.change_password') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; border-bottom: 1px solid #eee; transition: background 0.2s;">
-                            <i class="fas fa-key"></i> Cambiar contraseña
-                        </a>
-                        <a href="{{ url_for('auth.logout') }}" class="dropdown-item" style="display: block; padding: 10px 16px; color: #333; text-decoration: none; transition: background 0.2s;">
-                            <i class="fas fa-sign-out-alt"></i> Cerrar sesión
-                        </a>
-                    </div>
-                </div>
+                    {% endif %}
+                    <a href="{{ url_for('auth.logout') }}" class="nav-item logout" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif; margin-top: auto; color: #dc2626;">
+                        <i class="fas fa-sign-out-alt" style="width: 20px; text-align: center; font-size: 16px;"></i> Cerrar sesión
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
+                        <i class="fas fa-sign-in-alt" style="width: 20px; text-align: center; font-size: 16px;"></i> Iniciar sesión
+                    </a>
+                {% endif %}
+            </nav>
+            <div class="sidebar-footer" style="padding: 16px 20px; border-top: 1px solid #f0ece8; text-align: center; font-size: 12px; color: #8e8e93;">
+                <span class="version">v0.1 - Interno</span>
             </div>
-        </header>
+        </aside>
 
-        <!-- Mensajes flash -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div style="margin-bottom: 20px;">
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
-                    {% endfor %}
+        <!-- Main Content -->
+        <main class="main-content" style="flex: 1; padding: 24px 32px; overflow-y: auto; background: #faf8f6;">
+            <!-- Top Bar -->
+            <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+                <div class="topbar-left" style="display: flex; align-items: center; gap: 16px;">
+                    <button class="sidebar-toggle" onclick="toggleSidebar()" style="background: none; border: none; font-size: 22px; color: #1c1c1e; cursor: pointer; padding: 4px;">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="page-title" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1c1c1e; margin: 0;">{% block page_title %}CairoStudioKit{% endblock %}</h1>
                 </div>
-            {% endif %}
-        {% endwith %}
+                <div class="topbar-right" style="display: flex; align-items: center; gap: 12px;">
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.profile') }}" class="user-badge" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1c1c1e; font-weight: 500; transition: all 0.2s; padding: 4px 8px; border-radius: 8px;">
+                            <i class="fas fa-user-circle" style="font-size: 22px; color: #a8854f;"></i>
+                            {{ current_user.username }}
+                            <span class="role-badge" style="background: #f0ece8; padding: 2px 10px; border-radius: 30px; font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.3px;">{{ current_user.role }}</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </header>
 
-        <!-- Contenido dinámico -->
-        {% block content %}
-        <div class="content-card">
-            <p>Contenido por defecto. Las páginas hijas deben sobrescribir el bloque 'content'.</p>
-        </div>
-        {% endblock %}
+            <!-- Flash Messages -->
+            <div class="flash-messages" style="margin-bottom: 20px;">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}" style="padding: 12px 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; margin-bottom: 8px; animation: flashIn 0.3s ease; border-left: 4px solid transparent; transition: opacity 0.3s;">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}" style="font-size: 18px;"></i>
+                                {{ message }}
+                                <button class="flash-close" onclick="this.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 20px; cursor: pointer; color: inherit; opacity: 0.6; padding: 0 4px;">&times;</button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
 
-    </main>
+            <!-- Content -->
+            <div class="content">
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
 
-    <!-- ==================== SCRIPTS ==================== -->
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/notificaciones.js') }}"></script>
-
+    <!-- JavaScripts -->
     <script>
-        // Toggle menú de usuario
-        function toggleUserMenu(event) {
-            event.stopPropagation();
-            const menu = document.getElementById('userMenu');
-            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('collapsed');
         }
 
-        // Cerrar menú al hacer clic fuera
-        document.addEventListener('click', function(e) {
-            const menu = document.getElementById('userMenu');
-            if (menu && !menu.contains(e.target)) {
-                menu.style.display = 'none';
-            }
-            const notifDropdown = document.getElementById('dropdownNotificaciones');
-            const notifBtn = document.getElementById('notificacionesDropdown');
-            if (notifDropdown && notifBtn && !notifBtn.contains(e.target) && !notifDropdown.contains(e.target)) {
-                notifDropdown.style.display = 'none';
-            }
-        });
-
-        // Toggle dropdown de notificaciones
-        document.getElementById('notificacionesDropdown').addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const dropdown = document.getElementById('dropdownNotificaciones');
-            dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+        // Cerrar flashes automáticamente después de 5 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                document.querySelectorAll('.flash-message').forEach(function(el) {
+                    el.style.opacity = '0';
+                    setTimeout(function() {
+                        el.remove();
+                    }, 300);
+                });
+            }, 5000);
         });
     </script>
-
+    <style>
+        /* Estilos base (Estudio Blanc) */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #faf8f6;
+            color: #1c1c1e;
+            display: flex;
+            min-height: 100vh;
+        }
+        .app-container {
+            display: flex;
+            width: 100%;
+            min-height: 100vh;
+            background: #faf8f6;
+        }
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: #ffffff;
+            border-right: 1px solid rgba(0,0,0,0.04);
+            padding: 20px 0;
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            height: 100vh;
+            position: sticky;
+            top: 0;
+            box-shadow: 2px 0 20px rgba(0,0,0,0.02);
+            transition: all 0.3s;
+        }
+        .sidebar.collapsed {
+            width: 70px;
+        }
+        .sidebar.collapsed .sidebar-brand img {
+            max-width: 40px;
+        }
+        .sidebar.collapsed .nav-item span,
+        .sidebar.collapsed .sidebar-footer .version {
+            display: none;
+        }
+        .sidebar-brand {
+            padding: 0 20px 20px 20px;
+            text-align: center;
+            border-bottom: 1px solid #f0ece8;
+        }
+        .sidebar-brand img {
+            max-height: 50px;
+            width: auto;
+        }
+        .sidebar-nav {
+            flex: 1;
+            padding: 16px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            color: #5a5a5a;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .nav-item:hover {
+            background: rgba(0,0,0,0.03);
+            color: #1c1c1e;
+        }
+        .nav-item.active {
+            background: #1c1c1e;
+            color: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+        .nav-item.logout {
+            margin-top: auto;
+            color: #dc2626;
+        }
+        .nav-item.logout:hover {
+            background: #fde8e5;
+        }
+        .sidebar-footer {
+            padding: 16px 20px;
+            border-top: 1px solid #f0ece8;
+            text-align: center;
+            font-size: 12px;
+            color: #8e8e93;
+        }
+        /* Main */
+        .main-content {
+            flex: 1;
+            padding: 24px 32px;
+            overflow-y: auto;
+            background: #faf8f6;
+        }
+        /* Topbar */
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .topbar-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .sidebar-toggle {
+            background: none;
+            border: none;
+            font-size: 22px;
+            color: #1c1c1e;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .page-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1c1e;
+            margin: 0;
+        }
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #1c1c1e;
+            font-weight: 500;
+            transition: all 0.2s;
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+        .user-badge:hover {
+            background: rgba(0,0,0,0.03);
+        }
+        .user-badge i {
+            font-size: 22px;
+            color: #a8854f;
+        }
+        .role-badge {
+            background: #f0ece8;
+            padding: 2px 10px;
+            border-radius: 30px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #555;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        /* Flash Messages */
+        .flash-messages {
+            margin-bottom: 20px;
+        }
+        .flash-message {
+            padding: 12px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            animation: flashIn 0.3s ease;
+            border-left: 4px solid transparent;
+            transition: opacity 0.3s;
+        }
+        .flash-message i {
+            font-size: 18px;
+        }
+        .flash-close {
+            margin-left: auto;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: inherit;
+            opacity: 0.6;
+            padding: 0 4px;
+        }
+        .flash-close:hover { opacity: 1; }
+        .flash-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left-color: #10b981;
+        }
+        .flash-danger {
+            background: #fde8e5;
+            color: #991b1b;
+            border-left-color: #dc2626;
+        }
+        .flash-warning {
+            background: #fef3c7;
+            color: #78350f;
+            border-left-color: #f59e0b;
+        }
+        .flash-info {
+            background: #e0f2fe;
+            color: #1e3a8a;
+            border-left-color: #3b82f6;
+        }
+        @keyframes flashIn {
+            from { transform: translateY(-12px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        /* Cards */
+        .card {
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px 24px;
+            border: 1px solid rgba(0,0,0,0.04);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+            margin-bottom: 20px;
+            transition: all 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+        }
+        .btn {
+            padding: 8px 18px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: 'Inter', sans-serif;
+            text-decoration: none;
+            background: #1c1c1e;
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #d2d2d7;
+            color: #1c1c1e;
+        }
+        .btn-outline:hover {
+            border-color: #8e8e93;
+            background: #f5f5f5;
+            transform: none;
+            box-shadow: none;
+        }
+        .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-warning:hover { background: #d97706; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-danger:hover { background: #b91c1c; }
+        .btn-primary { background: #1c1c1e; color: white; }
+        .btn-primary:hover { background: #333; }
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 2px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+        }
+        .text-muted { color: #8e8e93; }
+        .text-center { text-align: center; }
+        .serif { font-family: 'Playfair Display', serif; }
+        .flex { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+        th {
+            text-align: left;
+            padding: 8px 10px;
+            font-weight: 600;
+            color: #8e8e93;
+            border-bottom: 1px solid rgba(0,0,0,0.04);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(0,0,0,0.02);
+        }
+        @media (max-width: 768px) {
+            .sidebar { width: 70px; }
+            .sidebar .sidebar-brand img { max-width: 40px; }
+            .sidebar .nav-item span,
+            .sidebar .sidebar-footer .version { display: none; }
+            .main-content { padding: 16px; }
+            .page-title { font-size: 22px; }
+            .topbar { flex-wrap: wrap; }
+        }
+    </style>
     {% block extra_js %}{% endblock %}
-
 </body>
 </html>

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}{{ area.nombre }} · Inventario{% endblock %}
+{% block title %}{{ categoria.nombre }} · Inventario{% endblock %}
 
-{% block page_title %}📦 {{ area.nombre }}{% endblock %}
+{% block page_title %}📦 {{ categoria.nombre }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -12,14 +12,13 @@
         flex-wrap: wrap;
         align-items: center;
         padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255,255,255,0.6);
         backdrop-filter: blur(10px);
         border-radius: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 16px;
     }
-    .filters-bar input,
-    .filters-bar select {
+    .filters-bar input, .filters-bar select {
         padding: 6px 12px;
         border: 1px solid #d2d2d7;
         border-radius: 8px;
@@ -29,11 +28,10 @@
         min-width: 140px;
         font-family: 'Inter', sans-serif;
     }
-    .filters-bar input:focus,
-    .filters-bar select:focus {
+    .filters-bar input:focus, .filters-bar select:focus {
         outline: none;
         border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
     }
     .filters-bar .filter-group {
         display: flex;
@@ -47,16 +45,12 @@
         color: #8e8e93;
     }
 
-    /* Estilos del selector de unidad */
     .unit-toggle {
         display: inline-flex;
         background: #f0ece8;
         border-radius: 30px;
         padding: 4px;
         gap: 2px;
-        font-size: 13px;
-        font-weight: 600;
-        font-family: 'Inter', sans-serif;
         border: 1px solid #d2d2d7;
     }
     .unit-toggle .unit-btn {
@@ -65,19 +59,18 @@
         border: none;
         background: transparent;
         cursor: pointer;
-        transition: all 0.2s;
-        color: #555;
         font-weight: 600;
         font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
     }
     .unit-toggle .unit-btn.active {
         background: white;
         color: #1c1c1e;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    .unit-toggle .unit-btn:hover {
-        color: #1c1c1e;
-    }
+    .unit-toggle .unit-btn:hover { color: #1c1c1e; }
     .unit-label {
         font-size: 14px;
         color: #8e8e93;
@@ -101,80 +94,37 @@
         font-family: 'Inter', sans-serif;
         text-decoration: none;
     }
-    .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .btn-outline {
         background: transparent;
         border: 1px solid #d2d2d7;
         color: #1c1c1e;
     }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
-    .btn-sm {
-        padding: 4px 12px;
-        font-size: 12px;
-    }
-    .btn-success {
-        background: #10b981;
-        color: white;
-    }
-    .btn-success:hover {
-        background: #059669;
-    }
-    .btn-warning {
-        background: #f59e0b;
-        color: white;
-    }
-    .btn-warning:hover {
-        background: #d97706;
-    }
-    .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
-    .btn-copy {
-        background: #8b5cf6;
-        color: white;
-    }
-    .btn-copy:hover {
-        background: #7c3aed;
-    }
-    .btn-export {
-        background: #10b981;
-        color: white;
-    }
-    .btn-export:hover {
-        background: #059669;
-    }
-    .btn-import {
-        background: #3b82f6;
-        color: white;
-    }
-    .btn-import:hover {
-        background: #2563eb;
-    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-copy { background: #8b5cf6; color: white; }
+    .btn-copy:hover { background: #7c3aed; }
+    .btn-export { background: #10b981; color: white; }
+    .btn-export:hover { background: #059669; }
+    .btn-import { background: #3b82f6; color: white; }
+    .btn-import:hover { background: #2563eb; }
 
     .card {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255,255,255,0.7);
         backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 18px 20px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         margin-bottom: 16px;
     }
-    .table-wrap {
-        overflow-x: auto;
-    }
+    .table-wrap { overflow-x: auto; }
     table {
         width: 100%;
         border-collapse: collapse;
@@ -186,7 +136,7 @@
         padding: 8px 10px;
         font-weight: 600;
         color: #8e8e93;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -194,25 +144,14 @@
         user-select: none;
         position: relative;
     }
-    th:hover {
-        color: #1c1c1e;
-    }
-    th.sortable::after {
-        content: ' ⇅';
-        font-size: 10px;
-        color: #bbb;
-    }
-    th.sortable.asc::after {
-        content: ' ↑';
-        color: #1a1a1a;
-    }
-    th.sortable.desc::after {
-        content: ' ↓';
-        color: #1a1a1a;
-    }
+    th:hover { color: #1c1c1e; }
+    th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
+    th.sortable.asc::after { content: ' ↑'; color: #1a1a1a; }
+    th.sortable.desc::after { content: ' ↓'; color: #1a1a1a; }
     td {
         padding: 8px 10px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+        border-bottom: 1px solid rgba(0,0,0,0.02);
+        vertical-align: middle;
     }
     .badge {
         font-size: 12px;
@@ -222,22 +161,13 @@
         display: inline-block;
         font-family: 'Inter', sans-serif;
     }
-    .badge-critico {
-        background: #fde8e5;
-        color: #dc2626;
-    }
-    .badge-bajo {
-        background: #fef3c7;
-        color: #d97706;
-    }
-    .badge-normal {
-        background: #d1fae5;
-        color: #10b981;
-    }
+    .badge-critico { background: #fde8e5; color: #dc2626; }
+    .badge-bajo { background: #fef3c7; color: #d97706; }
+    .badge-normal { background: #d1fae5; color: #10b981; }
     .stock-bar {
         width: 100%;
         height: 6px;
-        background: rgba(0, 0, 0, 0.04);
+        background: rgba(0,0,0,0.04);
         border-radius: 4px;
         overflow: hidden;
     }
@@ -246,95 +176,75 @@
         border-radius: 4px;
         transition: width 0.3s;
     }
-    .fill-green {
-        background: #10b981;
-    }
-    .fill-yellow {
-        background: #f59e0b;
-    }
-    .fill-red {
-        background: #dc2626;
-    }
-    .area-desc {
-        font-size: 14px;
-        color: #8e8e93;
-        margin-left: 12px;
-        font-weight: 400;
-        font-family: 'Inter', sans-serif;
-    }
-    @media (max-width: 768px) {
-        .filters-bar { flex-direction: column; align-items: stretch; }
-        .filters-bar .filter-group { width: 100%; }
-        .unit-toggle { width: 100%; justify-content: center; }
-        .area-desc { display: block; margin-left: 0; margin-top: 4px; }
-    }
+    .fill-green { background: #10b981; }
+    .fill-yellow { background: #f59e0b; }
+    .fill-red { background: #dc2626; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
     <div>
-        <!-- Eliminado el <h3> duplicado, solo usamos el page_title -->
-        {% if area.descripcion %}
-            <span class="area-desc">{{ area.descripcion }}</span>
+        {% if categoria.descripcion %}
+            <span style="font-size:14px; color:#8e8e93;">{{ categoria.descripcion }}</span>
         {% endif %}
-        <p style="color: #8e8e93; margin: 4px 0 0 0;">{{ productos|length }} productos en esta área</p>
+        <p style="color:#8e8e93; margin:4px 0 0 0;">{{ productos|length }} productos en esta categoría</p>
     </div>
     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <!-- Selector de unidad -->
         <div class="unit-toggle" id="unitToggle">
             <button class="unit-btn active" data-unit="unidades" onclick="cambiarUnidad('unidades')">Rollos</button>
             <button class="unit-btn" data-unit="metros" onclick="cambiarUnidad('metros')">Metros</button>
         </div>
         <span class="unit-label" id="unitLabel">(mostrando en rollos)</span>
-
-        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
-        <a href="{{ url_for('inventario.exportar_productos', area_id=area.id) }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
+        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo</a>
+        <a href="{{ url_for('inventario.exportar_productos', categoria_id=categoria.id) }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
         <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-import"><i class="fas fa-file-import"></i> Importar</a>
         <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
     </div>
 </div>
 
 <div class="card">
-    <form method="GET" action="{{ url_for('inventario.productos_por_area', area_id=area.id) }}" class="filters-bar">
+    <form method="GET" action="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="filters-bar">
+        {% if subcategorias %}
         <div class="filter-group">
-            <span class="filter-label">Categoría:</span>
-            <select name="categoria" onchange="this.form.submit()">
+            <span class="filter-label">Subcategoría:</span>
+            <select name="subcategoria" onchange="this.form.submit()">
                 <option value="">Todas</option>
-                {% for cat in categorias %}
-                    <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
+                {% for sub in subcategorias %}
+                    <option value="{{ sub.id }}" {% if subcategoria_seleccionada == sub.id %}selected{% endif %}>{{ sub.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
+        {% endif %}
         <div class="filter-group">
             <span class="filter-label">Buscar:</span>
             <input type="text" name="search" value="{{ search }}" placeholder="Nombre..." onkeyup="if(event.key==='Enter') this.form.submit()">
         </div>
         <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
-        {% if search or categoria_seleccionada %}
-            <a href="{{ url_for('inventario.productos_por_area', area_id=area.id) }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
+        {% if search or subcategoria_seleccionada %}
+            <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
         {% endif %}
     </form>
 
     {% if productos %}
     <div class="table-wrap">
-        <table id="tablaProductos">
+        <table>
             <thead>
                 <tr>
                     <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">Producto</th>
                     <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
                     <th class="sortable {% if sort == 'unidad' %}{{ order }}{% endif %}" onclick="ordenar('unidad')">Unidad</th>
-                    <th class="sortable stock-header {% if sort == 'stock' %}{{ order }}{% endif %}" onclick="ordenar('stock')" data-unit="unidades">Stock (rollos)</th>
-                    <th class="sortable stock-header {% if sort == 'stock' %}{{ order }}{% endif %}" onclick="ordenar('stock')" data-unit="metros" style="display:none;">Stock (metros)</th>
-                    <th class="sortable comprometido-header {% if sort == 'comprometido' %}{{ order }}{% endif %}" onclick="ordenar('comprometido')" data-unit="unidades">Comprometido (rollos)</th>
-                    <th class="sortable comprometido-header {% if sort == 'comprometido' %}{{ order }}{% endif %}" onclick="ordenar('comprometido')" data-unit="metros" style="display:none;">Comprometido (metros)</th>
-                    <th class="sortable disponible-header {% if sort == 'disponible' %}{{ order }}{% endif %}" onclick="ordenar('disponible')" data-unit="unidades">Disponible (rollos)</th>
-                    <th class="sortable disponible-header {% if sort == 'disponible' %}{{ order }}{% endif %}" onclick="ordenar('disponible')" data-unit="metros" style="display:none;">Disponible (metros)</th>
+                    <th class="sortable stock-header" data-unit="unidades" onclick="ordenar('stock')">Stock (rollos)</th>
+                    <th class="sortable stock-header" data-unit="metros" style="display:none;" onclick="ordenar('stock')">Stock (m²)</th>
+                    <th class="sortable comprometido-header" data-unit="unidades" onclick="ordenar('comprometido')">Comprometido (rollos)</th>
+                    <th class="sortable comprometido-header" data-unit="metros" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m²)</th>
+                    <th class="sortable disponible-header" data-unit="unidades" onclick="ordenar('disponible')">Disponible (rollos)</th>
+                    <th class="sortable disponible-header" data-unit="metros" style="display:none;" onclick="ordenar('disponible')">Disponible (m²)</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tablaProductosBody">
                 {% for p in productos %}
                 {% set critico = p.stock < p.stock_minimo %}
                 {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
@@ -345,20 +255,17 @@
                     <td><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
                     <td>{{ p.categoria.nombre if p.categoria else '—' }}</td>
                     <td>{{ p.unidad_rel.nombre if p.unidad_rel else '—' }}</td>
-                    <!-- Unidades -->
                     <td class="stock-unidades">{{ p.stock|round(2) }}</td>
-                    <td class="stock-metros" style="display:none;">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</td>
-                    <!-- Comprometido -->
+                    <td class="stock-metros" style="display:none;">{{ p.stock_metros_m2|round(2) if p.stock_metros_m2 else 0 }}</td>
                     <td class="comprometido-unidades">{{ p.stock_comprometido|round(2) or 0 }}</td>
-                    <td class="comprometido-metros" style="display:none;">{{ p.stock_comprometido_metros|round(2) or 0 }}</td>
-                    <!-- Disponible -->
+                    <td class="comprometido-metros" style="display:none;">{{ p.comprometido_metros_m2|round(2) or 0 }}</td>
                     <td class="disponible-unidades" style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
                         {{ p.disponible|round(2) }}
                         {% if p.disponible < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
                     </td>
-                    <td class="disponible-metros" style="display:none; color: {{ 'red' if p.get_stock_metros_disponible() < 0 else 'green' if p.get_stock_metros_disponible() > 0 else '#888' }};">
-                        {{ p.get_stock_metros_disponible()|round(2) }}
-                        {% if p.get_stock_metros_disponible() < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
+                    <td class="disponible-metros" style="display:none; color: {{ 'red' if p.disponible_metros_m2 < 0 else 'green' if p.disponible_metros_m2 > 0 else '#888' }};">
+                        {{ p.disponible_metros_m2|round(2) }}
+                        {% if p.disponible_metros_m2 < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
                     </td>
                     <td>
                         <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
@@ -380,13 +287,13 @@
     </div>
     {% else %}
     <div style="text-align:center; padding:40px 20px; color:#8e8e93;">
-        <p style="font-size:18px;">📭 No hay productos en esta área</p>
+        <p style="font-size:18px;">📭 No hay productos en esta categoría</p>
         <p>Haz clic en "Nuevo producto" para comenzar.</p>
     </div>
     {% endif %}
 </div>
 
-<!-- Modal Compra (igual que antes) -->
+<!-- Modal Compra (igual) -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
         <div class="modal-header">
@@ -428,14 +335,14 @@
     .modal-overlay {
         display: none;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.25);
+        top:0; left:0; right:0; bottom:0;
+        background: rgba(0,0,0,0.25);
         backdrop-filter: blur(6px);
-        z-index: 999;
-        justify-content: center;
-        align-items: center;
+        z-index:999;
+        justify-content:center;
+        align-items:center;
     }
-    .modal-overlay.active { display: flex; }
+    .modal-overlay.active { display:flex; }
     .modal {
         background: white;
         border-radius: 20px;
@@ -443,125 +350,104 @@
         max-width: 520px;
         width: 92%;
         box-shadow: 0 30px 80px rgba(0,0,0,0.12);
-        animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: modalIn 0.3s ease;
         overflow: hidden;
     }
     @keyframes modalIn {
-        from { transform: scale(0.95) translateY(12px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
+        from { transform:scale(0.95) translateY(12px); opacity:0; }
+        to { transform:scale(1) translateY(0); opacity:1; }
     }
     .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 18px 28px 14px 28px;
-        border-bottom: 1px solid #f0ece8;
-        background: #fafaf9;
+        display:flex; justify-content:space-between; align-items:center;
+        padding:18px 28px 14px 28px;
+        border-bottom:1px solid #f0ece8;
+        background:#fafaf9;
     }
     .modal-header .modal-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        font-weight: 700;
-        margin: 0;
-        color: #10b981;
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        font-family:'Playfair Display',serif;
+        font-size:22px; font-weight:700;
+        margin:0; color:#10b981;
+        display:flex; align-items:center; gap:10px;
     }
-    .modal-header .modal-title i { color: #10b981; }
+    .modal-header .modal-title i { color:#10b981; }
     .modal-close {
-        background: none;
-        border: none;
-        font-size: 28px;
-        color: #8e8e93;
-        cursor: pointer;
-        padding: 0 4px;
+        background:none; border:none; font-size:28px;
+        color:#8e8e93; cursor:pointer; padding:0 4px;
     }
-    .modal-close:hover { color: #1c1c1e; }
-    .modal-body { padding: 20px 28px 28px 28px; }
-    .modal-body .form-group { margin-bottom: 16px; }
+    .modal-close:hover { color:#1c1c1e; }
+    .modal-body { padding:20px 28px 28px 28px; }
+    .modal-body .form-group { margin-bottom:16px; }
     .modal-body .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 13px;
-        color: #333;
-        margin-bottom: 4px;
-        font-family: 'Inter', sans-serif;
+        display:block; font-weight:600; font-size:13px;
+        color:#333; margin-bottom:4px;
+        font-family:'Inter',sans-serif;
     }
     .modal-body .form-group input, .modal-body .form-group select {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 10px;
-        font-size: 15px;
-        background: #fafaf9;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
+        width:100%; padding:10px 14px;
+        border:1px solid #d2d2d7; border-radius:10px;
+        font-size:15px; background:#fafaf9;
+        font-family:'Inter',sans-serif; color:#1c1c1e;
     }
     .modal-body .form-group input:focus, .modal-body .form-group select:focus {
-        outline: none;
-        border-color: #10b981;
-        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
+        outline:none; border-color:#10b981;
+        box-shadow:0 0 0 4px rgba(16,185,129,0.08);
     }
     .modal-actions {
-        display: flex;
-        gap: 12px;
-        margin-top: 20px;
-        justify-content: flex-end;
-        border-top: 1px solid #f0ece8;
-        padding-top: 16px;
+        display:flex; gap:12px; margin-top:20px;
+        justify-content:flex-end; border-top:1px solid #f0ece8;
+        padding-top:16px;
     }
 </style>
 
 <script>
     // =============================================
-    // CAMBIO DE UNIDAD DE VISUALIZACIÓN
+    // TOGGLE DE UNIDADES (con m²)
     // =============================================
     function cambiarUnidad(unidad) {
-        // Guardar preferencia
         localStorage.setItem('unit_preference', unidad);
-
-        // Actualizar botones
-        document.querySelectorAll('.unit-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.unit === unidad);
-        });
-
-        // Actualizar etiqueta
-        const label = document.getElementById('unitLabel');
-        if (unidad === 'unidades') {
-            label.textContent = '(mostrando en rollos)';
-        } else {
-            label.textContent = '(mostrando en metros)';
-        }
-
-        // Mostrar/ocultar columnas
+        document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === unidad));
+        document.getElementById('unitLabel').textContent = unidad === 'unidades' ? '(mostrando en rollos)' : '(mostrando en m²)';
+        // Stock
         document.querySelectorAll('.stock-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.stock-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-        document.querySelectorAll('.comprometido-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
-        document.querySelectorAll('.comprometido-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-        document.querySelectorAll('.disponible-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
-        document.querySelectorAll('.disponible-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-
-        // Mostrar/ocultar celdas de datos
         document.querySelectorAll('.stock-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.stock-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
+        // Comprometido
+        document.querySelectorAll('.comprometido-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
+        document.querySelectorAll('.comprometido-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
         document.querySelectorAll('.comprometido-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.comprometido-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
+        // Disponible
+        document.querySelectorAll('.disponible-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
+        document.querySelectorAll('.disponible-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
         document.querySelectorAll('.disponible-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.disponible-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
     }
 
-    // Cargar preferencia guardada al iniciar
     document.addEventListener('DOMContentLoaded', function() {
-        const preferencia = localStorage.getItem('unit_preference') || 'unidades';
-        cambiarUnidad(preferencia);
+        const pref = localStorage.getItem('unit_preference') || 'unidades';
+        cambiarUnidad(pref);
     });
 
     // =============================================
-    // FUNCIONES PARA MODAL Y ORDENACIÓN
+    // ORDENACIÓN
     // =============================================
-    function abrirModalCompra(productoId) {
-        document.getElementById('compraProductoSelect').value = productoId;
+    function ordenar(columna) {
+        const url = new URL(window.location.href);
+        const currentSort = url.searchParams.get('sort');
+        const currentOrder = url.searchParams.get('order');
+        let newOrder = 'asc';
+        if (currentSort === columna && currentOrder === 'asc') newOrder = 'desc';
+        url.searchParams.set('sort', columna);
+        url.searchParams.set('order', newOrder);
+        window.location.href = url.toString();
+    }
+
+    // =============================================
+    // MODAL COMPRA
+    // =============================================
+    function abrirModalCompra(id) {
+        document.getElementById('compraProductoSelect').value = id;
         document.getElementById('modalCompra').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -569,32 +455,19 @@
         document.getElementById(id).classList.remove('active');
         document.body.style.overflow = '';
     }
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             document.body.style.overflow = '';
         }
     });
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.remove('active');
                 document.body.style.overflow = '';
             }
         });
     });
-
-    function ordenar(columna) {
-        const url = new URL(window.location.href);
-        const currentSort = url.searchParams.get('sort');
-        const currentOrder = url.searchParams.get('order');
-        let newOrder = 'asc';
-        if (currentSort === columna && currentOrder === 'asc') {
-            newOrder = 'desc';
-        }
-        url.searchParams.set('sort', columna);
-        url.searchParams.set('order', newOrder);
-        window.location.href = url.toString();
-    }
 </script>
 {% endblock %}

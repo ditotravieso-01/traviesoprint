@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Categorías · Inventario{% endblock %}
+{% block title %}Grupos de Atributos · Inventario{% endblock %}
 
-{% block page_title %}🏷️ Categorías{% endblock %}
+{% block page_title %}🏷️ Grupos de Atributos{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -23,19 +23,16 @@
     th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
     td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
     .badge-info { background:#e0e7ff; color:#3b82f6; padding:2px 10px; border-radius:30px; font-size:12px; font-weight:600; display:inline-block; }
-    .badge-tipo { background:#f0ece8; color:#333; padding:2px 8px; border-radius:12px; font-size:11px; display:inline-block; }
-    .tree-indent { padding-left:20px; }
-    .cat-path { font-size:11px; color:#8e8e93; font-weight:400; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
     <div>
-        <p style="color:#8e8e93; margin:4px 0 0 0;">Gestiona las categorías del inventario</p>
+        <p style="color:#8e8e93; margin:4px 0 0 0;">Define atributos personalizados por categoría</p>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nueva categoría</a>
+        <a href="{{ url_for('inventario.crear_grupo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo grupo</a>
         <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
     </div>
 </div>
@@ -46,28 +43,29 @@
             <thead>
                 <tr>
                     <th>Nombre</th>
-                    <th>Ruta</th>
-                    <th>Material Impresión</th>
-                    <th>Productos</th>
+                    <th>Descripción</th>
+                    <th>Categoría asociada</th>
+                    <th>Atributos</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
-                {% for cat in categorias %}
+                {% for g in grupos %}
                 <tr>
-                    <td><strong>{{ cat.nombre }}</strong></td>
-                    <td class="cat-path">{{ cat.get_full_path() }}</td>
-                    <td>{% if cat.es_material_impresion %}✅ Sí{% else %}❌ No{% endif %}</td>
-                    <td><span class="badge-info">{{ cat.productos|length }}</span></td>
+                    <td><strong>{{ g.nombre }}</strong></td>
+                    <td>{{ g.descripcion or '—' }}</td>
+                    <td>{{ g.categoria.nombre if g.categoria else '—' }}</td>
+                    <td><span class="badge-info">{{ g.atributos.count() }}</span></td>
                     <td>
-                        <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta categoría?')">
+                        <a href="{{ url_for('inventario.listar_atributos', grupo_id=g.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-list"></i></a>
+                        <a href="{{ url_for('inventario.editar_grupo', grupo_id=g.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                        <form method="POST" action="{{ url_for('inventario.eliminar_grupo', grupo_id=g.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este grupo?')">
                             <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
                         </form>
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" style="text-align:center;color:#8e8e93;padding:20px;">No hay categorías creadas.</td></tr>
+                <tr><td colspan="5" style="text-align:center;color:#8e8e93;padding:20px;">No hay grupos de atributos creados.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

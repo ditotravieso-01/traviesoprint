@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad
+from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad, GrupoAtributos, Atributo
 from app import db
 from datetime import datetime, timedelta, date
 from sqlalchemy import func
@@ -40,98 +40,131 @@ def admin_required(func):
     return wrapper
 
 # ==========================================
-# VISTA PRINCIPAL: TABLERO DE ÁREAS
+# FUNCIONES AUXILIARES
+# ==========================================
+
+def get_categoria_tree():
+    """Retorna un árbol de categorías (lista de diccionarios con 'id', 'nombre', 'children', 'es_material_impresion')"""
+    root_cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
+    def build_tree(cat):
+        children = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
+        return {
+            'id': cat.id,
+            'nombre': cat.nombre,
+            'descripcion': cat.descripcion,
+            'es_material_impresion': cat.es_material_impresion,
+            'children': [build_tree(c) for c in children]
+        }
+    return [build_tree(c) for c in root_cats]
+
+def get_categoria_options(cats=None, prefix=''):
+    """Genera opciones para select con sangría"""
+    if cats is None:
+        cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
+    options = []
+    for cat in cats:
+        options.append({'id': cat.id, 'nombre': prefix + cat.nombre})
+        children = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
+        options.extend(get_categoria_options(children, prefix + '— '))
+    return options
+
+def get_all_subcategory_ids(categoria_id):
+    """Retorna una lista con el id de la categoría y todos sus descendientes"""
+    if not categoria_id:
+        return []
+    cat = Categoria.query.get(categoria_id)
+    if not cat:
+        return []
+    ids = [cat.id]
+    def get_child_ids(parent):
+        children = Categoria.query.filter_by(parent_id=parent.id).all()
+        for child in children:
+            ids.append(child.id)
+            get_child_ids(child)
+    get_child_ids(cat)
+    return ids
+
+# ==========================================
+# VISTA PRINCIPAL: DASHBOARD
 # ==========================================
 @inventario_bp.route('/')
 @login_required
 @economico_or_admin_required
 def index():
-    areas = Area.query.order_by(Area.nombre).all()
-    areas_data = []
-    for area in areas:
-        productos = Producto.query.filter_by(area_id=area.id).all()
-        total_productos = len(productos)
-        stock_total = sum(p.stock or 0 for p in productos)
-        inversion_total = sum(p.inversion_total or 0 for p in productos)
-        areas_data.append({
-            'area': area,
-            'total_productos': total_productos,
-            'stock_total': stock_total,
-            'inversion_total': inversion_total
+    total_productos = Producto.query.count()
+    stock_total = db.session.query(func.sum(Producto.stock)).scalar() or 0
+    stock_metros_total = db.session.query(func.sum(Producto.stock_metros)).scalar() or 0
+    valor_total = db.session.query(func.sum(Producto.inversion_total)).scalar() or 0
+    criticos = Producto.query.filter(Producto.stock < Producto.stock_minimo).count()
+    
+    ultimos_movimientos = Movimiento.query.order_by(Movimiento.fecha.desc()).limit(10).all()
+    
+    # ===== CALCULAR m² PARA CADA MOVIMIENTO =====
+    for m in ultimos_movimientos:
+        if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo and m.producto.ancho_rollo > 0:
+            # Usar cantidad_metros si existe, si no, cantidad (para entradas sin metros)
+            metros = m.cantidad_metros if m.cantidad_metros else m.cantidad
+            m.cantidad_m2 = metros * m.producto.ancho_rollo
+        else:
+            m.cantidad_m2 = None  # o 0, pero None indica que no aplica
+    
+    root_cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
+    categorias_data = []
+    for cat in root_cats:
+        cat_ids = get_all_subcategory_ids(cat.id)
+        productos = Producto.query.filter(Producto.categoria_id.in_(cat_ids)).all()
+        categorias_data.append({
+            'categoria': cat,
+            'total_productos': len(productos),
+            'stock_total': sum(p.stock or 0 for p in productos),
+            'inversion_total': sum(p.inversion_total or 0 for p in productos)
         })
-    return render_template('inventario.html', areas_data=areas_data)
+    
+    hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    inicio = hoy - timedelta(days=30)
+    movs = Movimiento.query.filter(Movimiento.fecha >= inicio).order_by(Movimiento.fecha).all()
+    fechas = []
+    valores = []
+    saldo = 0
+    for d in range(31):
+        fecha = inicio + timedelta(days=d)
+        fechas.append(fecha.strftime('%d/%m'))
+        dia_movs = [m for m in movs if m.fecha.date() == fecha.date()]
+        for m in dia_movs:
+            if m.tipo in ['entrada', 'entrada_ajuste']:
+                saldo += m.cantidad
+            elif m.tipo in ['consumo', 'salida_ajuste', 'reserva']:
+                saldo -= m.cantidad
+        valores.append(round(saldo, 2))
+    
+    return render_template('inventario.html',
+                           total_productos=total_productos,
+                           stock_total=round(stock_total, 2),
+                           stock_metros_total=round(stock_metros_total, 2),
+                           valor_total=round(valor_total, 2),
+                           criticos=criticos,
+                           ultimos_movimientos=ultimos_movimientos,
+                           categorias_data=categorias_data,
+                           fechas_json=json.dumps(fechas),
+                           valores_json=json.dumps(valores))
 
 # ==========================================
-# PRODUCTOS POR ÁREA (CON ORDENACIÓN)
-# ==========================================
-@inventario_bp.route('/area/<int:area_id>')
-@login_required
-@economico_or_admin_required
-def productos_por_area(area_id):
-    area = Area.query.get_or_404(area_id)
-    categoria_id = request.args.get('categoria', type=int)
-    search = request.args.get('search', '').strip()
-    sort = request.args.get('sort', 'nombre')
-    order = request.args.get('order', 'asc')
-    
-    query = Producto.query.filter_by(area_id=area_id)
-    if categoria_id:
-        query = query.filter_by(categoria_id=categoria_id)
-    if search:
-        query = query.filter(Producto.nombre.ilike(f'%{search}%'))
-    
-    if sort == 'nombre':
-        col = Producto.nombre
-    elif sort == 'stock':
-        col = Producto.stock
-    elif sort == 'disponible':
-        col = (Producto.stock - Producto.stock_comprometido).label('disponible')
-    elif sort == 'comprometido':
-        col = Producto.stock_comprometido
-    elif sort == 'costo':
-        col = Producto.costo
-    elif sort == 'categoria':
-        col = Producto.categoria_id
-    else:
-        col = Producto.nombre
-    
-    if order == 'desc':
-        query = query.order_by(col.desc())
-    else:
-        query = query.order_by(col.asc())
-    
-    productos = query.all()
-    for p in productos:
-        p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
-    
-    categorias = Categoria.query.order_by(Categoria.nombre).all()
-    return render_template('productos_por_area.html',
-                           area=area,
-                           productos=productos,
-                           categorias=categorias,
-                           categoria_seleccionada=categoria_id,
-                           search=search,
-                           sort=sort,
-                           order=order)
-
-# ==========================================
-# TODOS LOS PRODUCTOS (CON ORDENACIÓN)
+# TODOS LOS PRODUCTOS (CON m² PARA MATERIALES DE IMPRESIÓN)
 # ==========================================
 @inventario_bp.route('/todos')
 @login_required
 @economico_or_admin_required
 def todos_productos():
     categoria_id = request.args.get('categoria', type=int)
-    area_id = request.args.get('area', type=int)
     search = request.args.get('search', '').strip()
     sort = request.args.get('sort', 'nombre')
     order = request.args.get('order', 'asc')
     
     query = Producto.query
     if categoria_id:
-        query = query.filter_by(categoria_id=categoria_id)
-    if area_id:
-        query = query.filter_by(area_id=area_id)
+        cat_ids = get_all_subcategory_ids(categoria_id)
+        if cat_ids:
+            query = query.filter(Producto.categoria_id.in_(cat_ids))
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
     
@@ -147,8 +180,6 @@ def todos_productos():
         col = Producto.costo
     elif sort == 'categoria':
         col = Producto.categoria_id
-    elif sort == 'area':
-        col = Producto.area_id
     else:
         col = Producto.nombre
     
@@ -160,18 +191,95 @@ def todos_productos():
     productos = query.all()
     for p in productos:
         p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
+        p.disponible_metros = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0)
+        # Convertir a m² si es material de impresión y tiene ancho_rollo
+        if p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0:
+            p.stock_metros_m2 = (p.stock_metros or 0) * p.ancho_rollo
+            p.comprometido_metros_m2 = (p.stock_comprometido_metros or 0) * p.ancho_rollo
+            p.disponible_metros_m2 = (p.disponible_metros or 0) * p.ancho_rollo
+        else:
+            p.stock_metros_m2 = p.stock_metros or 0
+            p.comprometido_metros_m2 = p.stock_comprometido_metros or 0
+            p.disponible_metros_m2 = p.disponible_metros or 0
     
     categorias = Categoria.query.order_by(Categoria.nombre).all()
-    areas = Area.query.order_by(Area.nombre).all()
+    categoria_options = get_categoria_options()
+    
     return render_template('todos_productos.html',
                            productos=productos,
                            categorias=categorias,
-                           areas=areas,
+                           categoria_options=categoria_options,
                            categoria_seleccionada=categoria_id,
-                           area_seleccionada=area_id,
                            search=search,
                            sort=sort,
                            order=order)
+
+# ==========================================
+# PRODUCTOS POR CATEGORÍA (CON m²)
+# ==========================================
+@inventario_bp.route('/categoria/<int:categoria_id>')
+@login_required
+@economico_or_admin_required
+def productos_por_categoria(categoria_id):
+    cat = Categoria.query.get_or_404(categoria_id)
+    subcategoria_id = request.args.get('subcategoria', type=int)
+    search = request.args.get('search', '').strip()
+    sort = request.args.get('sort', 'nombre')
+    order = request.args.get('order', 'asc')
+    
+    cat_ids = get_all_subcategory_ids(categoria_id)
+    query = Producto.query.filter(Producto.categoria_id.in_(cat_ids))
+    
+    if subcategoria_id:
+        query = query.filter_by(categoria_id=subcategoria_id)
+    if search:
+        query = query.filter(Producto.nombre.ilike(f'%{search}%'))
+    
+    if sort == 'nombre':
+        col = Producto.nombre
+    elif sort == 'stock':
+        col = Producto.stock
+    elif sort == 'disponible':
+        col = (Producto.stock - Producto.stock_comprometido).label('disponible')
+    elif sort == 'comprometido':
+        col = Producto.stock_comprometido
+    elif sort == 'costo':
+        col = Producto.costo
+    elif sort == 'categoria':
+        col = Producto.categoria_id
+    else:
+        col = Producto.nombre
+    
+    if order == 'desc':
+        query = query.order_by(col.desc())
+    else:
+        query = query.order_by(col.asc())
+    
+    productos = query.all()
+    for p in productos:
+        p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
+        p.disponible_metros = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0)
+        if p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0:
+            p.stock_metros_m2 = (p.stock_metros or 0) * p.ancho_rollo
+            p.comprometido_metros_m2 = (p.stock_comprometido_metros or 0) * p.ancho_rollo
+            p.disponible_metros_m2 = (p.disponible_metros or 0) * p.ancho_rollo
+        else:
+            p.stock_metros_m2 = p.stock_metros or 0
+            p.comprometido_metros_m2 = p.stock_comprometido_metros or 0
+            p.disponible_metros_m2 = p.disponible_metros or 0
+    
+    subcategorias = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
+    categoria_options = get_categoria_options()
+    
+    return render_template('productos_por_categoria.html',
+                           categoria=cat,
+                           productos=productos,
+                           subcategorias=subcategorias,
+                           subcategoria_seleccionada=subcategoria_id,
+                           search=search,
+                           sort=sort,
+                           order=order,
+                           categoria_options=categoria_options)
 
 # ==========================================
 # PANEL DE ADMINISTRACIÓN
@@ -193,87 +301,7 @@ def admin_panel():
                            unidades=unidades)
 
 # ==========================================
-# GESTIÓN DE ÁREAS
-# ==========================================
-@inventario_bp.route('/areas')
-@login_required
-@admin_required
-def gestion_areas():
-    areas = Area.query.order_by(Area.nombre).all()
-    areas_data = []
-    for area in areas:
-        productos = Producto.query.filter_by(area_id=area.id).all()
-        total_productos = len(productos)
-        stock_total = sum(p.stock or 0 for p in productos)
-        inversion_total = sum(p.inversion_total or 0 for p in productos)
-        areas_data.append({
-            'area': area,
-            'total_productos': total_productos,
-            'stock_total': stock_total,
-            'inversion_total': inversion_total
-        })
-    return render_template('gestion_areas.html', areas_data=areas_data)
-
-@inventario_bp.route('/area/crear', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def crear_area():
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-        descripcion = request.form.get('descripcion', '').strip()
-        tipo_atributos = request.form.get('tipo_atributos', 'ninguno')
-        if not nombre:
-            flash('El nombre del área es obligatorio.', 'danger')
-            return render_template('form_area.html')
-        if Area.query.filter_by(nombre=nombre).first():
-            flash('Ya existe un área con ese nombre.', 'danger')
-            return render_template('form_area.html')
-        area = Area(nombre=nombre, descripcion=descripcion, tipo_atributos=tipo_atributos)
-        db.session.add(area)
-        db.session.commit()
-        flash(f'Área "{nombre}" creada correctamente.', 'success')
-        return redirect(url_for('inventario.gestion_areas'))
-    return render_template('form_area.html')
-
-@inventario_bp.route('/area/editar/<int:area_id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def editar_area(area_id):
-    area = Area.query.get_or_404(area_id)
-    if request.method == 'POST':
-        nombre = request.form.get('nombre', '').strip()
-        descripcion = request.form.get('descripcion', '').strip()
-        tipo_atributos = request.form.get('tipo_atributos', 'ninguno')
-        if not nombre:
-            flash('El nombre es obligatorio.', 'danger')
-            return render_template('form_area.html', area=area)
-        existente = Area.query.filter(Area.nombre == nombre, Area.id != area.id).first()
-        if existente:
-            flash('Ya existe otra área con ese nombre.', 'danger')
-            return render_template('form_area.html', area=area)
-        area.nombre = nombre
-        area.descripcion = descripcion
-        area.tipo_atributos = tipo_atributos
-        db.session.commit()
-        flash('Área actualizada.', 'success')
-        return redirect(url_for('inventario.gestion_areas'))
-    return render_template('form_area.html', area=area)
-
-@inventario_bp.route('/area/eliminar/<int:area_id>', methods=['POST'])
-@login_required
-@admin_required
-def eliminar_area(area_id):
-    area = Area.query.get_or_404(area_id)
-    if Producto.query.filter_by(area_id=area.id).first():
-        flash('No se puede eliminar un área con productos asociados.', 'danger')
-        return redirect(url_for('inventario.gestion_areas'))
-    db.session.delete(area)
-    db.session.commit()
-    flash('Área eliminada.', 'success')
-    return redirect(url_for('inventario.gestion_areas'))
-
-# ==========================================
-# GESTIÓN DE CATEGORÍAS
+# GESTIÓN DE CATEGORÍAS (JERÁRQUICA)
 # ==========================================
 @inventario_bp.route('/categorias')
 @login_required
@@ -289,18 +317,21 @@ def crear_categoria():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
+        parent_id = request.form.get('parent_id', type=int) or None
+        es_material_impresion = request.form.get('es_material_impresion') == 'on'
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
             return render_template('form_categoria.html')
         if Categoria.query.filter_by(nombre=nombre).first():
             flash('Ya existe una categoría con ese nombre.', 'danger')
             return render_template('form_categoria.html')
-        cat = Categoria(nombre=nombre, descripcion=descripcion)
+        cat = Categoria(nombre=nombre, descripcion=descripcion, parent_id=parent_id, es_material_impresion=es_material_impresion)
         db.session.add(cat)
         db.session.commit()
         flash(f'Categoría "{nombre}" creada correctamente.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    return render_template('form_categoria.html')
+    padres = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
+    return render_template('form_categoria.html', padres=padres)
 
 @inventario_bp.route('/categoria/editar/<int:categoria_id>', methods=['GET', 'POST'])
 @login_required
@@ -310,8 +341,13 @@ def editar_categoria(categoria_id):
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
+        parent_id = request.form.get('parent_id', type=int) or None
+        es_material_impresion = request.form.get('es_material_impresion') == 'on'
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
+            return render_template('form_categoria.html', categoria=cat)
+        if parent_id == cat.id:
+            flash('No se puede asignar una categoría como su propio padre.', 'danger')
             return render_template('form_categoria.html', categoria=cat)
         existente = Categoria.query.filter(Categoria.nombre == nombre, Categoria.id != cat.id).first()
         if existente:
@@ -319,10 +355,13 @@ def editar_categoria(categoria_id):
             return render_template('form_categoria.html', categoria=cat)
         cat.nombre = nombre
         cat.descripcion = descripcion
+        cat.parent_id = parent_id
+        cat.es_material_impresion = es_material_impresion
         db.session.commit()
         flash('Categoría actualizada.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    return render_template('form_categoria.html', categoria=cat)
+    padres = Categoria.query.filter(Categoria.id != cat.id, Categoria.parent_id.is_(None)).order_by(Categoria.nombre).all()
+    return render_template('form_categoria.html', categoria=cat, padres=padres)
 
 @inventario_bp.route('/categoria/eliminar/<int:categoria_id>', methods=['POST'])
 @login_required
@@ -332,10 +371,44 @@ def eliminar_categoria(categoria_id):
     if Producto.query.filter_by(categoria_id=cat.id).first():
         flash('No se puede eliminar una categoría con productos asociados.', 'danger')
         return redirect(url_for('inventario.listar_categorias'))
+    children = Categoria.query.filter_by(parent_id=cat.id).all()
+    for child in children:
+        child.parent_id = cat.parent_id
     db.session.delete(cat)
     db.session.commit()
     flash('Categoría eliminada.', 'success')
     return redirect(url_for('inventario.listar_categorias'))
+
+# ==========================================
+# GESTIÓN DE ÁREAS (OBSOLETO, pero se mantiene)
+# ==========================================
+@inventario_bp.route('/areas')
+@login_required
+@admin_required
+def gestion_areas():
+    flash('Las áreas están obsoletas. Usa Categorías en su lugar.', 'info')
+    return redirect(url_for('inventario.admin_panel'))
+
+@inventario_bp.route('/area/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_area():
+    flash('Las áreas están obsoletas. Usa Categorías en su lugar.', 'info')
+    return redirect(url_for('inventario.crear_categoria'))
+
+@inventario_bp.route('/area/editar/<int:area_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_area(area_id):
+    flash('Las áreas están obsoletas. Usa Categorías en su lugar.', 'info')
+    return redirect(url_for('inventario.admin_panel'))
+
+@inventario_bp.route('/area/eliminar/<int:area_id>', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_area(area_id):
+    flash('Las áreas están obsoletas. Usa Categorías en su lugar.', 'info')
+    return redirect(url_for('inventario.admin_panel'))
 
 # ==========================================
 # GESTIÓN DE UBICACIONES
@@ -403,7 +476,7 @@ def eliminar_ubicacion(ubicacion_id):
     return redirect(url_for('inventario.listar_ubicaciones'))
 
 # ==========================================
-# GESTIÓN DE TIPOS
+# GESTIÓN DE TIPOS (OBSOLETO)
 # ==========================================
 @inventario_bp.route('/tipos')
 @login_required
@@ -586,14 +659,11 @@ def crear_producto():
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre).all()
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
-    areas_data = [{'id': a.id, 'nombre': a.nombre, 'tipo': a.tipo_atributos} for a in areas]
-
+    categoria_options = get_categoria_options()
+    
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
-        tipo = request.form.get('tipo', '').strip()
-        ubicacion = request.form.get('ubicacion', '').strip()
-        unidad = request.form.get('unidad', '').strip()
         costo = request.form.get('costo', type=float, default=0.0)
         stock = request.form.get('stock', type=float, default=0.0)
         stock_metros = request.form.get('stock_metros', type=float, default=0.0)
@@ -607,57 +677,46 @@ def crear_producto():
         largo_rollo = request.form.get('largo_rollo', type=float)
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
-
+        
         atributos_extra = {}
-        numero_serie = request.form.get('numero_serie', '').strip()
-        marca = request.form.get('marca', '').strip()
-        modelo = request.form.get('modelo', '').strip()
-        estado = request.form.get('estado', '').strip()
-        color = request.form.get('color', '').strip()
-        volumen = request.form.get('volumen', '').strip()
-        tipo_tinta = request.form.get('tipo_tinta', '').strip()
-
-        if numero_serie:
-            atributos_extra['numero_serie'] = numero_serie
-        if marca:
-            atributos_extra['marca'] = marca
-        if modelo:
-            atributos_extra['modelo'] = modelo
-        if estado:
-            atributos_extra['estado'] = estado
-        if color:
-            atributos_extra['color'] = color
-        if volumen:
-            atributos_extra['volumen'] = volumen
-        if tipo_tinta:
-            atributos_extra['tipo_tinta'] = tipo_tinta
-
-        if not nombre:
-            flash('El nombre es obligatorio.', 'danger')
+        if categoria_id:
+            grupo = GrupoAtributos.query.filter_by(categoria_id=categoria_id).first()
+            if grupo:
+                for attr in grupo.atributos.all():
+                    val = request.form.get(f'attr_{attr.nombre}', '').strip()
+                    if val:
+                        if attr.tipo == 'numero':
+                            try:
+                                val = float(val)
+                            except:
+                                val = 0
+                        elif attr.tipo == 'booleano':
+                            val = val == '1' or val == 'on' or val == 'true'
+                        atributos_extra[attr.nombre] = val
+        
+        if not nombre or not categoria_id:
+            flash('Nombre y categoría son obligatorios.', 'danger')
             return render_template('form_producto.html', categorias=categorias, areas=areas,
                                    ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
-                                   areas_data=areas_data)
-
+                                   categoria_options=categoria_options)
+        
         if Producto.query.filter_by(nombre=nombre).first():
             flash('Ya existe un producto con ese nombre.', 'danger')
             return render_template('form_producto.html', categorias=categorias, areas=areas,
                                    ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
-                                   areas_data=areas_data)
-
+                                   categoria_options=categoria_options)
+        
         if largo_rollo and largo_rollo > 0 and stock > 0 and not stock_metros:
             stock_metros = stock * largo_rollo
-
+        
         producto = Producto(
             nombre=nombre,
             descripcion=descripcion,
-            tipo=tipo,
-            ubicacion=ubicacion,
-            unidad=unidad,
             costo=costo,
             stock=stock,
             stock_metros=stock_metros,
             stock_minimo=stock_minimo,
-            categoria_id=categoria_id if categoria_id else None,
+            categoria_id=categoria_id,
             area_id=area_id if area_id else None,
             ubicacion_id=ubicacion_id if ubicacion_id else None,
             tipo_producto_id=tipo_producto_id if tipo_producto_id else None,
@@ -673,10 +732,10 @@ def crear_producto():
                 producto.fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
             except:
                 pass
-
+        
         db.session.add(producto)
         db.session.commit()
-
+        
         if stock > 0:
             movimiento = Movimiento(
                 producto_id=producto.id,
@@ -688,13 +747,13 @@ def crear_producto():
             )
             db.session.add(movimiento)
             db.session.commit()
-
+        
         flash(f'Producto "{nombre}" creado correctamente.', 'success')
-        return redirect(url_for('inventario.productos_por_area', area_id=producto.area_id if producto.area_id else 0))
-
+        return redirect(url_for('inventario.productos_por_categoria', categoria_id=producto.categoria_id))
+    
     return render_template('form_producto.html', producto=None, categorias=categorias, areas=areas,
                            ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
-                           areas_data=areas_data)
+                           categoria_options=categoria_options)
 
 # ==========================================
 # EDITAR PRODUCTO
@@ -709,14 +768,11 @@ def editar_producto(producto_id):
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre).all()
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
-    areas_data = [{'id': a.id, 'nombre': a.nombre, 'tipo': a.tipo_atributos} for a in areas]
-
+    categoria_options = get_categoria_options()
+    
     if request.method == 'POST':
         producto.nombre = request.form.get('nombre', '').strip()
         producto.descripcion = request.form.get('descripcion', '').strip()
-        producto.tipo = request.form.get('tipo', '').strip()
-        producto.ubicacion = request.form.get('ubicacion', '').strip()
-        producto.unidad = request.form.get('unidad', '').strip()
         producto.costo = request.form.get('costo', type=float, default=0.0)
         producto.stock_minimo = request.form.get('stock_minimo', type=float, default=0.0)
         producto.categoria_id = request.form.get('categoria_id', type=int) or None
@@ -728,37 +784,28 @@ def editar_producto(producto_id):
         producto.largo_rollo = request.form.get('largo_rollo', type=float)
         producto.es_material_impresion = request.form.get('es_material_impresion') == 'on'
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
-
         stock_metros = request.form.get('stock_metros', type=float)
         if stock_metros is not None:
             producto.stock_metros = stock_metros
-
+        
         atributos_extra = {}
-        numero_serie = request.form.get('numero_serie', '').strip()
-        marca = request.form.get('marca', '').strip()
-        modelo = request.form.get('modelo', '').strip()
-        estado = request.form.get('estado', '').strip()
-        color = request.form.get('color', '').strip()
-        volumen = request.form.get('volumen', '').strip()
-        tipo_tinta = request.form.get('tipo_tinta', '').strip()
-
-        if numero_serie:
-            atributos_extra['numero_serie'] = numero_serie
-        if marca:
-            atributos_extra['marca'] = marca
-        if modelo:
-            atributos_extra['modelo'] = modelo
-        if estado:
-            atributos_extra['estado'] = estado
-        if color:
-            atributos_extra['color'] = color
-        if volumen:
-            atributos_extra['volumen'] = volumen
-        if tipo_tinta:
-            atributos_extra['tipo_tinta'] = tipo_tinta
-
+        if producto.categoria_id:
+            grupo = GrupoAtributos.query.filter_by(categoria_id=producto.categoria_id).first()
+            if grupo:
+                for attr in grupo.atributos.all():
+                    val = request.form.get(f'attr_{attr.nombre}', '').strip()
+                    if val:
+                        if attr.tipo == 'numero':
+                            try:
+                                val = float(val)
+                            except:
+                                val = 0
+                        elif attr.tipo == 'booleano':
+                            val = val == '1' or val == 'on' or val == 'true'
+                        atributos_extra[attr.nombre] = val
+        
         producto.atributos_extra = atributos_extra if atributos_extra else None
-
+        
         if fecha_vencimiento:
             try:
                 producto.fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
@@ -766,14 +813,14 @@ def editar_producto(producto_id):
                 producto.fecha_vencimiento = None
         else:
             producto.fecha_vencimiento = None
-
+        
         db.session.commit()
         flash(f'Producto "{producto.nombre}" actualizado.', 'success')
         return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
-
+    
     return render_template('form_producto.html', producto=producto, categorias=categorias, areas=areas,
                            ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
-                           areas_data=areas_data)
+                           categoria_options=categoria_options)
 
 # ==========================================
 # ELIMINAR PRODUCTO
@@ -785,10 +832,10 @@ def eliminar_producto(producto_id):
     producto = Producto.query.get_or_404(producto_id)
     if Movimiento.query.filter_by(producto_id=producto.id).first():
         flash('No se puede eliminar un producto con movimientos.', 'danger')
-        return redirect(url_for('inventario.productos_por_area', area_id=producto.area_id if producto.area_id else 0))
+        return redirect(url_for('inventario.productos_por_categoria', categoria_id=producto.categoria_id or 0))
     if OrdenProducto.query.filter_by(producto_id=producto.id).first():
         flash('No se puede eliminar un producto asociado a órdenes.', 'danger')
-        return redirect(url_for('inventario.productos_por_area', area_id=producto.area_id if producto.area_id else 0))
+        return redirect(url_for('inventario.productos_por_categoria', categoria_id=producto.categoria_id or 0))
     nombre = producto.nombre
     db.session.delete(producto)
     db.session.commit()
@@ -806,9 +853,6 @@ def duplicar_producto(producto_id):
     nueva = Producto(
         nombre=f"Copia de {original.nombre}",
         descripcion=original.descripcion,
-        tipo=original.tipo,
-        ubicacion=original.ubicacion,
-        unidad=original.unidad,
         costo=original.costo,
         stock=0,
         stock_metros=0,
@@ -840,7 +884,7 @@ def detalle_producto(producto_id):
     producto = Producto.query.get_or_404(producto_id)
     producto.disponible = producto.get_stock_unidades_disponible()
     producto.disponible_metros = producto.get_stock_metros_disponible()
-
+    
     movimientos = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.asc()).all()
     saldo = 0
     saldo_metros = 0
@@ -865,9 +909,9 @@ def detalle_producto(producto_id):
         fechas = fechas[-50:]
         saldos = saldos[-50:]
         saldos_metros = saldos_metros[-50:]
-
+    
     movimientos_recientes = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
-
+    
     return render_template('detalle_producto.html',
                            producto=producto,
                            movimientos=movimientos_recientes,
@@ -898,7 +942,6 @@ def comprar():
         return redirect(url_for('inventario.index'))
     
     producto.stock += cantidad
-    
     if producto.largo_rollo and producto.largo_rollo > 0:
         metros_agregados = cantidad * producto.largo_rollo
         producto.stock_metros += metros_agregados
@@ -982,7 +1025,7 @@ def merma():
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     agrupar_por = request.args.get('agrupar_por', 'producto')
-
+    
     hoy = datetime.now()
     if fecha_inicio_str and fecha_fin_str:
         try:
@@ -1005,9 +1048,9 @@ def merma():
         else:  # year
             fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
             fecha_fin = hoy
-
+    
     movimientos = Movimiento.query.filter(Movimiento.fecha >= fecha_inicio, Movimiento.fecha <= fecha_fin).all()
-
+    
     if agrupar_por == 'categoria':
         datos = {}
         for m in movimientos:
@@ -1076,10 +1119,10 @@ def merma():
                 'porcentaje': porcentaje
             })
         datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
-
+    
     labels = [d['nombre'][:20] for d in datos_lista[:10]]
     merma_values = [round(d['merma'], 2) for d in datos_lista[:10]]
-
+    
     if agrupar_por == 'producto':
         categorias_merma = {}
         for d in datos_lista:
@@ -1092,7 +1135,7 @@ def merma():
     else:
         pie_labels = labels
         pie_values = merma_values
-
+    
     return render_template('merma.html',
                            datos=datos_lista,
                            periodo=periodo,
@@ -1141,10 +1184,12 @@ def movimientos():
     export = request.args.get('export', '0') == '1'
     sort = request.args.get('sort', 'fecha')
     order = request.args.get('order', 'desc')
-
+    
     query = Movimiento.query.join(Producto, Movimiento.producto_id == Producto.id)
     if categoria_id:
-        query = query.filter(Producto.categoria_id == categoria_id)
+        cat_ids = get_all_subcategory_ids(categoria_id)
+        if cat_ids:
+            query = query.filter(Producto.categoria_id.in_(cat_ids))
     if producto_id:
         query = query.filter(Movimiento.producto_id == producto_id)
     if tipo:
@@ -1161,7 +1206,7 @@ def movimientos():
             query = query.filter(Movimiento.fecha <= fecha_fin)
         except:
             pass
-
+    
     if sort == 'fecha':
         sort_col = Movimiento.fecha
     elif sort == 'producto':
@@ -1176,51 +1221,86 @@ def movimientos():
         sort_col = Producto.categoria_id
     else:
         sort_col = Movimiento.fecha
-
+    
     if order == 'asc':
         query = query.order_by(sort_col.asc())
     else:
         query = query.order_by(sort_col.desc())
-
+    
     movimientos = query.all()
-
+    
+    # ==========================================
+    # CALCULAR m² PARA MATERIALES DE IMPRESIÓN
+    # ==========================================
+    for m in movimientos:
+        if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo and m.producto.ancho_rollo > 0:
+            m.cantidad_metros_m2 = (m.cantidad_metros or 0) * m.producto.ancho_rollo
+        else:
+            m.cantidad_metros_m2 = m.cantidad_metros or 0
+    
     if export:
-        wb = openpyxl.Workbook()
-        ws = wb.active
-        ws.title = 'Movimientos'
-        headers = ['ID', 'Producto', 'Categoría', 'Tipo', 'Cantidad', 'Cantidad (m)', 'Costo', 'Fecha', 'Comentario', 'Orden']
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal='center')
-            cell.fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
-        for row_idx, mov in enumerate(movimientos, 2):
-            ws.cell(row=row_idx, column=1, value=mov.id)
-            ws.cell(row=row_idx, column=2, value=mov.producto.nombre if mov.producto else '')
-            ws.cell(row=row_idx, column=3, value=mov.producto.categoria.nombre if mov.producto and mov.producto.categoria else '')
-            ws.cell(row=row_idx, column=4, value=mov.tipo)
-            ws.cell(row=row_idx, column=5, value=round(mov.cantidad, 2))
-            ws.cell(row=row_idx, column=6, value=round(mov.cantidad_metros, 2) if mov.cantidad_metros else '')
-            if mov.tipo == 'entrada' and mov.costo_total:
-                ws.cell(row=row_idx, column=7, value=round(mov.costo_total, 2))
-            else:
-                ws.cell(row=row_idx, column=7, value='')
-            ws.cell(row=row_idx, column=8, value=mov.fecha.strftime('%Y-%m-%d %H:%M') if mov.fecha else '')
-            ws.cell(row=row_idx, column=9, value=mov.comentario or '')
-            ws.cell(row=row_idx, column=10, value=mov.orden.order_num if mov.orden else '')
-        for col in range(1, len(headers)+1):
-            ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
-        output = io.BytesIO()
-        wb.save(output)
-        output.seek(0)
-        return send_file(output,
-                         as_attachment=True,
-                         download_name=f'movimientos_{datetime.now().strftime("%Y%m%d")}.xlsx',
-                         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
+        return exportar_movimientos_excel(movimientos)
+    
     # DATOS PARA GRÁFICOS
+    chart_data = generar_datos_graficos_movimientos(movimientos)
+    
+    productos = Producto.query.order_by(Producto.nombre).all()
+    categorias = Categoria.query.order_by(Categoria.nombre).all()
+    tipos_lista = ['entrada', 'consumo', 'reserva', 'salida_ajuste', 'entrada_ajuste']
+    fecha_inicio_defecto = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+    fecha_fin_defecto = datetime.now().strftime('%Y-%m-%d')
+    
+    return render_template('movimientos.html',
+                           movimientos=movimientos,
+                           productos=productos,
+                           categorias=categorias,
+                           tipos=tipos_lista,
+                           producto_seleccionado=producto_id,
+                           categoria_seleccionada=categoria_id,
+                           tipo_seleccionado=tipo,
+                           fecha_inicio=fecha_inicio_str or fecha_inicio_defecto,
+                           fecha_fin=fecha_fin_str or fecha_fin_defecto,
+                           chart_data=json.dumps(chart_data),
+                           sort=sort,
+                           order=order,
+                           total_movimientos=len(movimientos))
+
+def exportar_movimientos_excel(movimientos):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Movimientos'
+    headers = ['ID', 'Producto', 'Categoría', 'Tipo', 'Cantidad', 'Cantidad (m)', 'Costo', 'Fecha', 'Comentario', 'Orden']
+    for col, header in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=header)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        cell.fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+    for row_idx, mov in enumerate(movimientos, 2):
+        ws.cell(row=row_idx, column=1, value=mov.id)
+        ws.cell(row=row_idx, column=2, value=mov.producto.nombre if mov.producto else '')
+        ws.cell(row=row_idx, column=3, value=mov.producto.categoria.nombre if mov.producto and mov.producto.categoria else '')
+        ws.cell(row=row_idx, column=4, value=mov.tipo)
+        ws.cell(row=row_idx, column=5, value=round(mov.cantidad, 2))
+        ws.cell(row=row_idx, column=6, value=round(mov.cantidad_metros, 2) if mov.cantidad_metros else '')
+        if mov.tipo == 'entrada' and mov.costo_total:
+            ws.cell(row=row_idx, column=7, value=round(mov.costo_total, 2))
+        else:
+            ws.cell(row=row_idx, column=7, value='')
+        ws.cell(row=row_idx, column=8, value=mov.fecha.strftime('%Y-%m-%d %H:%M') if mov.fecha else '')
+        ws.cell(row=row_idx, column=9, value=mov.comentario or '')
+        ws.cell(row=row_idx, column=10, value=mov.orden.order_num if mov.orden else '')
+    for col in range(1, len(headers)+1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(output,
+                     as_attachment=True,
+                     download_name=f'movimientos_{datetime.now().strftime("%Y%m%d")}.xlsx',
+                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+def generar_datos_graficos_movimientos(movimientos):
     hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
-    fecha_inicio_grafico = hoy - timedelta(days=30)
     dict_diario = defaultdict(lambda: {'entrada': 0, 'consumo': 0, 'reserva': 0, 'salida_ajuste': 0, 'entrada_ajuste': 0})
     for m in movimientos:
         fecha_key = m.fecha.strftime('%Y-%m-%d')
@@ -1246,7 +1326,7 @@ def movimientos():
         dict_tipos[m.tipo] += m.cantidad
     pie_labels = list(dict_tipos.keys())
     pie_values = [round(v, 2) for v in dict_tipos.values()]
-
+    
     dict_productos = defaultdict(float)
     for m in movimientos:
         if m.producto:
@@ -1254,8 +1334,8 @@ def movimientos():
     top_productos = sorted(dict_productos.items(), key=lambda x: x[1], reverse=True)[:10]
     top_labels = [p[0][:20] for p in top_productos]
     top_values = [round(p[1], 2) for p in top_productos]
-
-    chart_data = {
+    
+    return {
         'fechas': fechas_ordenadas,
         'datasets': datasets,
         'pie_labels': pie_labels,
@@ -1264,29 +1344,8 @@ def movimientos():
         'top_values': top_values
     }
 
-    productos = Producto.query.order_by(Producto.nombre).all()
-    categorias = Categoria.query.order_by(Categoria.nombre).all()
-    tipos_lista = ['entrada', 'consumo', 'reserva', 'salida_ajuste', 'entrada_ajuste']
-    fecha_inicio_defecto = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
-    fecha_fin_defecto = datetime.now().strftime('%Y-%m-%d')
-
-    return render_template('movimientos.html',
-                           movimientos=movimientos,
-                           productos=productos,
-                           categorias=categorias,
-                           tipos=tipos_lista,
-                           producto_seleccionado=producto_id,
-                           categoria_seleccionada=categoria_id,
-                           tipo_seleccionado=tipo,
-                           fecha_inicio=fecha_inicio_str or fecha_inicio_defecto,
-                           fecha_fin=fecha_fin_str or fecha_fin_defecto,
-                           chart_data=json.dumps(chart_data),
-                           sort=sort,
-                           order=order,
-                           total_movimientos=len(movimientos))
-
 # ==========================================
-# EXPORTAR PRODUCTOS A EXCEL (CON SELECCIÓN DE COLUMNAS Y FILTRO POR ÁREA)
+# EXPORTAR PRODUCTOS A EXCEL
 # ==========================================
 @inventario_bp.route('/exportar', methods=['GET', 'POST'])
 @login_required
@@ -1297,23 +1356,19 @@ def exportar_productos():
         if not columnas:
             flash('Selecciona al menos una columna.', 'danger')
             return redirect(url_for('inventario.exportar_productos'))
-
-        area_id = request.form.get('area_id', type=int)
+        
         categoria_id = request.form.get('categoria_id', type=int)
         query = Producto.query
-        if area_id:
-            query = query.filter_by(area_id=area_id)
         if categoria_id:
-            query = query.filter_by(categoria_id=categoria_id)
+            cat_ids = get_all_subcategory_ids(categoria_id)
+            if cat_ids:
+                query = query.filter(Producto.categoria_id.in_(cat_ids))
         productos = query.order_by(Producto.nombre).all()
-
+        
         mapa_columnas = {
             'id': 'id',
             'nombre': 'nombre',
             'descripcion': 'descripcion',
-            'tipo': 'tipo',
-            'ubicacion': 'ubicacion',
-            'unidad': 'unidad',
             'costo': 'costo',
             'inversion_total': 'inversion_total',
             'stock': 'stock',
@@ -1334,26 +1389,22 @@ def exportar_productos():
             'atributos_extra': 'atributos_extra',
             'created_at': 'created_at'
         }
-
+        
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = 'Productos'
-
-        # Estilo de cabecera
         for col_idx, col_name in enumerate(columnas, 1):
             cell = ws.cell(row=1, column=col_idx, value=col_name.replace('_', ' ').title())
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal='center')
             cell.fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
-
-        # Llenar datos
+        
         for row_idx, prod in enumerate(productos, 2):
             for col_idx, col_name in enumerate(columnas, 1):
                 attr = mapa_columnas.get(col_name)
                 valor = None
                 if attr:
                     if '.' in attr:
-                        # Relación anidada
                         parts = attr.split('.')
                         obj = prod
                         for part in parts:
@@ -1362,7 +1413,6 @@ def exportar_productos():
                         valor = obj
                     else:
                         valor = getattr(prod, attr, None)
-                    # Formatear valores
                     if isinstance(valor, datetime):
                         valor = valor.strftime('%Y-%m-%d %H:%M')
                     elif isinstance(valor, date):
@@ -1374,10 +1424,9 @@ def exportar_productos():
                     elif isinstance(valor, dict) or isinstance(valor, list):
                         valor = json.dumps(valor, ensure_ascii=False)
                 ws.cell(row=row_idx, column=col_idx, value=valor)
-
+        
         for col in range(1, len(columnas)+1):
             ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
-
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -1385,20 +1434,16 @@ def exportar_productos():
                          as_attachment=True,
                          download_name=f'productos_{datetime.now().strftime("%Y%m%d")}.xlsx',
                          mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-
-    # GET: mostrar formulario de selección de columnas
-    area_id = request.args.get('area_id', type=int)
+    
     categoria_id = request.args.get('categoria_id', type=int)
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     areas = Area.query.order_by(Area.nombre).all()
-
+    categoria_options = get_categoria_options()
+    
     columnas_disponibles = [
         {'id': 'id', 'label': 'ID'},
         {'id': 'nombre', 'label': 'Nombre'},
         {'id': 'descripcion', 'label': 'Descripción'},
-        {'id': 'tipo', 'label': 'Tipo'},
-        {'id': 'ubicacion', 'label': 'Ubicación (legacy)'},
-        {'id': 'unidad', 'label': 'Unidad (legacy)'},
         {'id': 'costo', 'label': 'Costo Unitario'},
         {'id': 'inversion_total', 'label': 'Inversión Total'},
         {'id': 'stock', 'label': 'Stock (unidades)'},
@@ -1423,11 +1468,11 @@ def exportar_productos():
                            columnas=columnas_disponibles,
                            categorias=categorias,
                            areas=areas,
-                           area_seleccionada=area_id,
+                           categoria_options=categoria_options,
                            categoria_seleccionada=categoria_id)
 
 # ==========================================
-# IMPORTAR PRODUCTOS DESDE EXCEL
+# IMPORTAR PRODUCTOS
 # ==========================================
 @inventario_bp.route('/importar', methods=['GET', 'POST'])
 @login_required
@@ -1444,11 +1489,11 @@ def importar_productos():
         if not archivo.filename.endswith(('.xlsx', '.xls')):
             flash('Formato no soportado. Use .xlsx o .xls', 'danger')
             return redirect(url_for('inventario.importar_productos'))
-
+        
         try:
             wb = openpyxl.load_workbook(archivo)
             ws = wb.active
-
+            
             headers = [cell.value.strip() if cell.value else '' for cell in ws[1]]
             col_map = {}
             for idx, h in enumerate(headers):
@@ -1457,13 +1502,7 @@ def importar_productos():
                     col_map['nombre'] = idx
                 elif 'descripcion' in h_clean:
                     col_map['descripcion'] = idx
-                elif 'tipo' in h_clean:
-                    col_map['tipo'] = idx
-                elif 'ubicacion' in h_clean and 'legacy' not in h_clean:
-                    col_map['ubicacion'] = idx
-                elif 'unidad' in h_clean and 'medida' not in h_clean and 'simbolo' not in h_clean:
-                    col_map['unidad'] = idx
-                elif 'costo_unitario' in h_clean or 'costo' in h_clean:
+                elif 'costo' in h_clean and 'unitario' in h_clean:
                     col_map['costo'] = idx
                 elif 'inversion_total' in h_clean or 'inversion' in h_clean:
                     col_map['inversion_total'] = idx
@@ -1489,41 +1528,31 @@ def importar_productos():
                     col_map['largo_rollo'] = idx
                 elif 'material_impresion' in h_clean:
                     col_map['es_material_impresion'] = idx
-                elif 'tipo_producto' in h_clean or 'tipo de producto' in h_clean:
-                    col_map['tipo_producto'] = idx
                 elif 'unidad_medida' in h_clean or 'unidad de medida' in h_clean:
                     col_map['unidad_medida'] = idx
                 elif 'simbolo_unidad' in h_clean or 'simbolo' in h_clean:
                     col_map['simbolo_unidad'] = idx
                 elif 'atributos_extra' in h_clean or 'atributos' in h_clean:
                     col_map['atributos_extra'] = idx
-
+            
             if 'nombre' not in col_map:
                 flash('El archivo debe contener una columna "Nombre".', 'danger')
                 return redirect(url_for('inventario.importar_productos'))
-
+            
             contador = 0
             actualizados = 0
-
+            
             for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not row or not any(row):
                     continue
                 nombre = str(row[col_map['nombre']]).strip() if col_map.get('nombre') is not None and row[col_map['nombre']] else ''
                 if not nombre:
                     continue
-
-                # Buscar producto existente
+                
                 producto = Producto.query.filter_by(nombre=nombre).first()
                 if producto:
-                    # Actualizar producto existente
                     if col_map.get('descripcion') is not None and row[col_map['descripcion']]:
                         producto.descripcion = str(row[col_map['descripcion']]).strip()
-                    if col_map.get('tipo') is not None and row[col_map['tipo']]:
-                        producto.tipo = str(row[col_map['tipo']]).strip()
-                    if col_map.get('ubicacion') is not None and row[col_map['ubicacion']]:
-                        producto.ubicacion = str(row[col_map['ubicacion']]).strip()
-                    if col_map.get('unidad') is not None and row[col_map['unidad']]:
-                        producto.unidad = str(row[col_map['unidad']]).strip()
                     if col_map.get('costo') is not None and row[col_map['costo']]:
                         try:
                             producto.costo = float(str(row[col_map['costo']]).replace(',', ''))
@@ -1584,8 +1613,7 @@ def importar_productos():
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
                         val = str(row[col_map['es_material_impresion']]).strip().lower()
                         producto.es_material_impresion = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
-
-                    # Relaciones (categoría, área, tipo, unidad)
+                    
                     if col_map.get('categoria') is not None and row[col_map['categoria']]:
                         cat_nombre = str(row[col_map['categoria']]).strip()
                         if cat_nombre:
@@ -1604,28 +1632,17 @@ def importar_productos():
                                 db.session.add(area)
                                 db.session.flush()
                             producto.area_id = area.id
-                    if col_map.get('tipo_producto') is not None and row[col_map['tipo_producto']]:
-                        tipo_nombre = str(row[col_map['tipo_producto']]).strip()
-                        if tipo_nombre:
-                            tipo = TipoProducto.query.filter_by(nombre=tipo_nombre).first()
-                            if not tipo:
-                                tipo = TipoProducto(nombre=tipo_nombre)
-                                db.session.add(tipo)
-                                db.session.flush()
-                            producto.tipo_producto_id = tipo.id
                     if col_map.get('unidad_medida') is not None and row[col_map['unidad_medida']]:
                         uni_nombre = str(row[col_map['unidad_medida']]).strip()
                         if uni_nombre:
                             uni = Unidad.query.filter_by(nombre=uni_nombre).first()
                             if not uni:
-                                # Usar símbolo si está disponible
                                 simbolo = str(row[col_map['simbolo_unidad']]).strip() if col_map.get('simbolo_unidad') is not None and row[col_map['simbolo_unidad']] else ''
                                 uni = Unidad(nombre=uni_nombre, simbolo=simbolo)
                                 db.session.add(uni)
                                 db.session.flush()
                             producto.unidad_id = uni.id
-
-                    # Atributos extra (JSON)
+                    
                     if col_map.get('atributos_extra') is not None and row[col_map['atributos_extra']]:
                         try:
                             attr_val = row[col_map['atributos_extra']]
@@ -1635,20 +1652,13 @@ def importar_productos():
                                 producto.atributos_extra = attr_val
                         except:
                             pass
-
+                    
                     producto.updated_at = datetime.now()
                     actualizados += 1
                 else:
-                    # Crear nuevo producto
                     nuevo = Producto(nombre=nombre)
                     if col_map.get('descripcion') is not None and row[col_map['descripcion']]:
                         nuevo.descripcion = str(row[col_map['descripcion']]).strip()
-                    if col_map.get('tipo') is not None and row[col_map['tipo']]:
-                        nuevo.tipo = str(row[col_map['tipo']]).strip()
-                    if col_map.get('ubicacion') is not None and row[col_map['ubicacion']]:
-                        nuevo.ubicacion = str(row[col_map['ubicacion']]).strip()
-                    if col_map.get('unidad') is not None and row[col_map['unidad']]:
-                        nuevo.unidad = str(row[col_map['unidad']]).strip()
                     if col_map.get('costo') is not None and row[col_map['costo']]:
                         try:
                             nuevo.costo = float(str(row[col_map['costo']]).replace(',', ''))
@@ -1709,7 +1719,7 @@ def importar_productos():
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
                         val = str(row[col_map['es_material_impresion']]).strip().lower()
                         nuevo.es_material_impresion = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
-
+                    
                     if col_map.get('categoria') is not None and row[col_map['categoria']]:
                         cat_nombre = str(row[col_map['categoria']]).strip()
                         if cat_nombre:
@@ -1728,15 +1738,6 @@ def importar_productos():
                                 db.session.add(area)
                                 db.session.flush()
                             nuevo.area_id = area.id
-                    if col_map.get('tipo_producto') is not None and row[col_map['tipo_producto']]:
-                        tipo_nombre = str(row[col_map['tipo_producto']]).strip()
-                        if tipo_nombre:
-                            tipo = TipoProducto.query.filter_by(nombre=tipo_nombre).first()
-                            if not tipo:
-                                tipo = TipoProducto(nombre=tipo_nombre)
-                                db.session.add(tipo)
-                                db.session.flush()
-                            nuevo.tipo_producto_id = tipo.id
                     if col_map.get('unidad_medida') is not None and row[col_map['unidad_medida']]:
                         uni_nombre = str(row[col_map['unidad_medida']]).strip()
                         if uni_nombre:
@@ -1756,10 +1757,10 @@ def importar_productos():
                                 nuevo.atributos_extra = attr_val
                         except:
                             pass
-
+                    
                     db.session.add(nuevo)
                     contador += 1
-
+            
             db.session.commit()
             flash(f'Importación completada: {contador} nuevos, {actualizados} actualizados.', 'success')
             return redirect(url_for('inventario.index'))
@@ -1767,5 +1768,187 @@ def importar_productos():
             db.session.rollback()
             flash(f'Error al importar: {str(e)}', 'danger')
             return redirect(url_for('inventario.importar_productos'))
-
+    
     return render_template('importar_productos.html')
+
+# ==========================================
+# API PARA ATRIBUTOS DINÁMICOS
+# ==========================================
+@inventario_bp.route('/api/atributos-por-categoria/<int:categoria_id>')
+@login_required
+def api_atributos_por_categoria(categoria_id):
+    cat = Categoria.query.get_or_404(categoria_id)
+    grupo = GrupoAtributos.query.filter_by(categoria_id=categoria_id).first()
+    atributos = []
+    if grupo:
+        atributos = [{
+            'id': a.id,
+            'nombre': a.nombre,
+            'etiqueta': a.etiqueta,
+            'tipo': a.tipo,
+            'requerido': a.requerido,
+            'opciones': a.opciones.split(',') if a.opciones else []
+        } for a in grupo.atributos.order_by(Atributo.orden).all()]
+    
+    return jsonify({
+        'atributos': atributos,
+        'es_material_impresion': cat.es_material_impresion
+    })
+
+# ==========================================
+# ADMINISTRACIÓN DE ATRIBUTOS
+# ==========================================
+@inventario_bp.route('/grupos-atributos')
+@login_required
+@admin_required
+def listar_grupos():
+    grupos = GrupoAtributos.query.order_by(GrupoAtributos.nombre).all()
+    return render_template('grupos_atributos.html', grupos=grupos)
+
+@inventario_bp.route('/grupo-atributos/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_grupo():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        categoria_id = request.form.get('categoria_id', type=int) or None
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return render_template('form_grupo_atributos.html')
+        if GrupoAtributos.query.filter_by(nombre=nombre).first():
+            flash('Ya existe un grupo con ese nombre.', 'danger')
+            return render_template('form_grupo_atributos.html')
+        grupo = GrupoAtributos(nombre=nombre, descripcion=descripcion, categoria_id=categoria_id)
+        db.session.add(grupo)
+        db.session.commit()
+        flash(f'Grupo "{nombre}" creado correctamente.', 'success')
+        return redirect(url_for('inventario.listar_grupos'))
+    categorias = Categoria.query.order_by(Categoria.nombre).all()
+    return render_template('form_grupo_atributos.html', categorias=categorias)
+
+@inventario_bp.route('/grupo-atributos/editar/<int:grupo_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_grupo(grupo_id):
+    grupo = GrupoAtributos.query.get_or_404(grupo_id)
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        descripcion = request.form.get('descripcion', '').strip()
+        categoria_id = request.form.get('categoria_id', type=int) or None
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return render_template('form_grupo_atributos.html', grupo=grupo)
+        existente = GrupoAtributos.query.filter(GrupoAtributos.nombre == nombre, GrupoAtributos.id != grupo.id).first()
+        if existente:
+            flash('Ya existe otro grupo con ese nombre.', 'danger')
+            return render_template('form_grupo_atributos.html', grupo=grupo)
+        grupo.nombre = nombre
+        grupo.descripcion = descripcion
+        grupo.categoria_id = categoria_id
+        db.session.commit()
+        flash('Grupo actualizado.', 'success')
+        return redirect(url_for('inventario.listar_grupos'))
+    categorias = Categoria.query.order_by(Categoria.nombre).all()
+    return render_template('form_grupo_atributos.html', grupo=grupo, categorias=categorias)
+
+@inventario_bp.route('/grupo-atributos/eliminar/<int:grupo_id>', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_grupo(grupo_id):
+    grupo = GrupoAtributos.query.get_or_404(grupo_id)
+    db.session.delete(grupo)
+    db.session.commit()
+    flash('Grupo eliminado.', 'success')
+    return redirect(url_for('inventario.listar_grupos'))
+
+@inventario_bp.route('/grupo-atributos/<int:grupo_id>/atributos')
+@login_required
+@admin_required
+def listar_atributos(grupo_id):
+    grupo = GrupoAtributos.query.get_or_404(grupo_id)
+    atributos = grupo.atributos.order_by(Atributo.orden).all()
+    return render_template('atributos_list.html', grupo=grupo, atributos=atributos)
+
+@inventario_bp.route('/grupo-atributos/<int:grupo_id>/atributo/crear', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def crear_atributo(grupo_id):
+    grupo = GrupoAtributos.query.get_or_404(grupo_id)
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        etiqueta = request.form.get('etiqueta', '').strip()
+        tipo = request.form.get('tipo', '').strip()
+        requerido = request.form.get('requerido') == 'on'
+        opciones = request.form.get('opciones', '')
+        orden = request.form.get('orden', type=int, default=0)
+        if not nombre or not etiqueta or not tipo:
+            flash('Nombre, etiqueta y tipo son obligatorios.', 'danger')
+            return render_template('form_atributo.html', grupo=grupo)
+        if Atributo.query.filter_by(grupo_id=grupo_id, nombre=nombre).first():
+            flash('Ya existe un atributo con ese nombre en este grupo.', 'danger')
+            return render_template('form_atributo.html', grupo=grupo)
+        attr = Atributo(grupo_id=grupo_id, nombre=nombre, etiqueta=etiqueta, tipo=tipo, requerido=requerido, opciones=opciones, orden=orden)
+        db.session.add(attr)
+        db.session.commit()
+        flash('Atributo creado correctamente.', 'success')
+        return redirect(url_for('inventario.listar_atributos', grupo_id=grupo_id))
+    return render_template('form_atributo.html', grupo=grupo)
+
+@inventario_bp.route('/grupo-atributos/<int:grupo_id>/atributo/editar/<int:atributo_id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def editar_atributo(grupo_id, atributo_id):
+    grupo = GrupoAtributos.query.get_or_404(grupo_id)
+    attr = Atributo.query.get_or_404(atributo_id)
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        etiqueta = request.form.get('etiqueta', '').strip()
+        tipo = request.form.get('tipo', '').strip()
+        requerido = request.form.get('requerido') == 'on'
+        opciones = request.form.get('opciones', '')
+        orden = request.form.get('orden', type=int, default=0)
+        if not nombre or not etiqueta or not tipo:
+            flash('Nombre, etiqueta y tipo son obligatorios.', 'danger')
+            return render_template('form_atributo.html', grupo=grupo, atributo=attr)
+        existente = Atributo.query.filter(Atributo.grupo_id == grupo_id, Atributo.nombre == nombre, Atributo.id != attr.id).first()
+        if existente:
+            flash('Ya existe otro atributo con ese nombre en este grupo.', 'danger')
+            return render_template('form_atributo.html', grupo=grupo, atributo=attr)
+        attr.nombre = nombre
+        attr.etiqueta = etiqueta
+        attr.tipo = tipo
+        attr.requerido = requerido
+        attr.opciones = opciones
+        attr.orden = orden
+        db.session.commit()
+        flash('Atributo actualizado.', 'success')
+        return redirect(url_for('inventario.listar_atributos', grupo_id=grupo_id))
+    return render_template('form_atributo.html', grupo=grupo, atributo=attr)
+
+@inventario_bp.route('/grupo-atributos/<int:grupo_id>/atributo/eliminar/<int:atributo_id>', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_atributo(grupo_id, atributo_id):
+    attr = Atributo.query.get_or_404(atributo_id)
+    db.session.delete(attr)
+    db.session.commit()
+    flash('Atributo eliminado.', 'success')
+    return redirect(url_for('inventario.listar_atributos', grupo_id=grupo_id))
+
+# ==========================================
+# RUTAS LEGACY (REDIRECCIONES)
+# ==========================================
+@inventario_bp.route('/area/<int:area_id>')
+@login_required
+@economico_or_admin_required
+def productos_por_area(area_id):
+    area = Area.query.get_or_404(area_id)
+    cat = Categoria.query.filter_by(nombre=area.nombre).first()
+    if cat:
+        return redirect(url_for('inventario.productos_por_categoria', categoria_id=cat.id))
+    productos = Producto.query.filter_by(area_id=area_id).first()
+    if productos and productos.categoria_id:
+        return redirect(url_for('inventario.productos_por_categoria', categoria_id=productos.categoria_id))
+    flash('No se encontró una categoría equivalente para esta área.', 'warning')
+    return redirect(url_for('inventario.index'))

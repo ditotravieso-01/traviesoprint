@@ -12,10 +12,10 @@
         flex-wrap: wrap;
         align-items: center;
         padding: 12px 16px;
-        background: rgba(255, 255, 255, 0.6);
+        background: rgba(255,255,255,0.6);
         backdrop-filter: blur(10px);
         border-radius: 12px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
+        border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 16px;
     }
     .filters-bar input,
@@ -33,7 +33,7 @@
     .filters-bar select:focus {
         outline: none;
         border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
     }
     .filters-bar .filter-group {
         display: flex;
@@ -53,9 +53,6 @@
         border-radius: 30px;
         padding: 4px;
         gap: 2px;
-        font-size: 13px;
-        font-weight: 600;
-        font-family: 'Inter', sans-serif;
         border: 1px solid #d2d2d7;
     }
     .unit-toggle .unit-btn {
@@ -64,19 +61,18 @@
         border: none;
         background: transparent;
         cursor: pointer;
-        transition: all 0.2s;
-        color: #555;
         font-weight: 600;
         font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
     }
     .unit-toggle .unit-btn.active {
         background: white;
         color: #1c1c1e;
         box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    .unit-toggle .unit-btn:hover {
-        color: #1c1c1e;
-    }
+    .unit-toggle .unit-btn:hover { color: #1c1c1e; }
     .unit-label {
         font-size: 14px;
         color: #8e8e93;
@@ -102,7 +98,7 @@
     }
     .btn:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .btn-outline {
         background: transparent;
@@ -163,12 +159,12 @@
     }
 
     .card {
-        background: rgba(255, 255, 255, 0.7);
+        background: rgba(255,255,255,0.7);
         backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 18px 20px;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         margin-bottom: 16px;
     }
     .table-wrap {
@@ -185,7 +181,7 @@
         padding: 8px 10px;
         font-weight: 600;
         color: #8e8e93;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         font-size: 12px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
@@ -211,7 +207,8 @@
     }
     td {
         padding: 8px 10px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+        border-bottom: 1px solid rgba(0,0,0,0.02);
+        vertical-align: middle;
     }
     .badge {
         font-size: 12px;
@@ -236,7 +233,7 @@
     .stock-bar {
         width: 100%;
         height: 6px;
-        background: rgba(0, 0, 0, 0.04);
+        background: rgba(0,0,0,0.04);
         border-radius: 4px;
         overflow: hidden;
     }
@@ -254,11 +251,6 @@
     .fill-red {
         background: #dc2626;
     }
-    @media (max-width: 768px) {
-        .filters-bar { flex-direction: column; align-items: stretch; }
-        .filters-bar .filter-group { width: 100%; }
-        .unit-toggle { width: 100%; justify-content: center; }
-    }
 </style>
 {% endblock %}
 
@@ -268,15 +260,13 @@
         <p style="color: #8e8e93; margin: 4px 0 0 0;">{{ productos|length }} productos encontrados</p>
     </div>
     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <!-- Selector de unidad -->
         <div class="unit-toggle" id="unitToggle">
             <button class="unit-btn active" data-unit="unidades" onclick="cambiarUnidad('unidades')">Rollos</button>
             <button class="unit-btn" data-unit="metros" onclick="cambiarUnidad('metros')">Metros</button>
         </div>
         <span class="unit-label" id="unitLabel">(mostrando en rollos)</span>
-
-        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo producto</a>
-        <a href="{{ url_for('inventario.exportar_productos', area_id=area_seleccionada, categoria_id=categoria_seleccionada) }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
+        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo</a>
+        <a href="{{ url_for('inventario.exportar_productos') }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
         <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-import"><i class="fas fa-file-import"></i> Importar</a>
         <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
     </div>
@@ -285,19 +275,10 @@
 <div class="card">
     <form method="GET" action="{{ url_for('inventario.todos_productos') }}" class="filters-bar">
         <div class="filter-group">
-            <span class="filter-label">Área:</span>
-            <select name="area" onchange="this.form.submit()">
-                <option value="">Todas</option>
-                {% for a in areas %}
-                    <option value="{{ a.id }}" {% if area_seleccionada == a.id %}selected{% endif %}>{{ a.nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="filter-group">
             <span class="filter-label">Categoría:</span>
             <select name="categoria" onchange="this.form.submit()">
                 <option value="">Todas</option>
-                {% for cat in categorias %}
+                {% for cat in categoria_options %}
                     <option value="{{ cat.id }}" {% if categoria_seleccionada == cat.id %}selected{% endif %}>{{ cat.nombre }}</option>
                 {% endfor %}
             </select>
@@ -307,7 +288,7 @@
             <input type="text" name="search" value="{{ search }}" placeholder="Nombre..." onkeyup="if(event.key==='Enter') this.form.submit()">
         </div>
         <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
-        {% if search or categoria_seleccionada or area_seleccionada %}
+        {% if search or categoria_seleccionada %}
             <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
         {% endif %}
     </form>
@@ -317,20 +298,19 @@
             <thead>
                 <tr>
                     <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">Producto</th>
-                    <th class="sortable {% if sort == 'area' %}{{ order }}{% endif %}" onclick="ordenar('area')">Área</th>
                     <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
                     <th class="sortable {% if sort == 'unidad' %}{{ order }}{% endif %}" onclick="ordenar('unidad')">Unidad</th>
-                    <th class="sortable stock-header {% if sort == 'stock' %}{{ order }}{% endif %}" onclick="ordenar('stock')" data-unit="unidades">Stock (rollos)</th>
-                    <th class="sortable stock-header {% if sort == 'stock' %}{{ order }}{% endif %}" onclick="ordenar('stock')" data-unit="metros" style="display:none;">Stock (metros)</th>
-                    <th class="sortable comprometido-header {% if sort == 'comprometido' %}{{ order }}{% endif %}" onclick="ordenar('comprometido')" data-unit="unidades">Comprometido (rollos)</th>
-                    <th class="sortable comprometido-header {% if sort == 'comprometido' %}{{ order }}{% endif %}" onclick="ordenar('comprometido')" data-unit="metros" style="display:none;">Comprometido (metros)</th>
-                    <th class="sortable disponible-header {% if sort == 'disponible' %}{{ order }}{% endif %}" onclick="ordenar('disponible')" data-unit="unidades">Disponible (rollos)</th>
-                    <th class="sortable disponible-header {% if sort == 'disponible' %}{{ order }}{% endif %}" onclick="ordenar('disponible')" data-unit="metros" style="display:none;">Disponible (metros)</th>
+                    <th class="sortable stock-header" data-unit="unidades" onclick="ordenar('stock')">Stock (rollos)</th>
+                    <th class="sortable stock-header" data-unit="metros" style="display:none;" onclick="ordenar('stock')">Stock (m²)</th>
+                    <th class="sortable comprometido-header" data-unit="unidades" onclick="ordenar('comprometido')">Comprometido (rollos)</th>
+                    <th class="sortable comprometido-header" data-unit="metros" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m²)</th>
+                    <th class="sortable disponible-header" data-unit="unidades" onclick="ordenar('disponible')">Disponible (rollos)</th>
+                    <th class="sortable disponible-header" data-unit="metros" style="display:none;" onclick="ordenar('disponible')">Disponible (m²)</th>
                     <th>Estado</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="tablaProductosBody">
                 {% for p in productos %}
                 {% set critico = p.stock < p.stock_minimo %}
                 {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
@@ -339,23 +319,19 @@
                 {% set color = '#dc2626' if critico else ('#f59e0b' if bajo else '#10b981') %}
                 <tr>
                     <td><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
-                    <td>{{ p.area.nombre if p.area else '—' }}</td>
                     <td>{{ p.categoria.nombre if p.categoria else '—' }}</td>
                     <td>{{ p.unidad_rel.nombre if p.unidad_rel else '—' }}</td>
-                    <!-- Unidades -->
                     <td class="stock-unidades">{{ p.stock|round(2) }}</td>
-                    <td class="stock-metros" style="display:none;">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</td>
-                    <!-- Comprometido -->
+                    <td class="stock-metros" style="display:none;">{{ p.stock_metros_m2|round(2) if p.stock_metros_m2 else 0 }}</td>
                     <td class="comprometido-unidades">{{ p.stock_comprometido|round(2) or 0 }}</td>
-                    <td class="comprometido-metros" style="display:none;">{{ p.stock_comprometido_metros|round(2) or 0 }}</td>
-                    <!-- Disponible -->
+                    <td class="comprometido-metros" style="display:none;">{{ p.comprometido_metros_m2|round(2) or 0 }}</td>
                     <td class="disponible-unidades" style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
                         {{ p.disponible|round(2) }}
                         {% if p.disponible < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
                     </td>
-                    <td class="disponible-metros" style="display:none; color: {{ 'red' if p.get_stock_metros_disponible() < 0 else 'green' if p.get_stock_metros_disponible() > 0 else '#888' }};">
-                        {{ p.get_stock_metros_disponible()|round(2) }}
-                        {% if p.get_stock_metros_disponible() < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
+                    <td class="disponible-metros" style="display:none; color: {{ 'red' if p.disponible_metros_m2 < 0 else 'green' if p.disponible_metros_m2 > 0 else '#888' }};">
+                        {{ p.disponible_metros_m2|round(2) }}
+                        {% if p.disponible_metros_m2 < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
                     </td>
                     <td>
                         <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
@@ -377,7 +353,7 @@
     </div>
 </div>
 
-<!-- Modal Compra -->
+<!-- Modal Compra (igual) -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
         <div class="modal-header">
@@ -420,7 +396,7 @@
         display: none;
         position: fixed;
         top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0, 0, 0, 0.25);
+        background: rgba(0,0,0,0.25);
         backdrop-filter: blur(6px);
         z-index: 999;
         justify-content: center;
@@ -434,7 +410,7 @@
         max-width: 520px;
         width: 92%;
         box-shadow: 0 30px 80px rgba(0,0,0,0.12);
-        animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: modalIn 0.3s ease;
         overflow: hidden;
     }
     @keyframes modalIn {
@@ -505,42 +481,54 @@
 </style>
 
 <script>
+    // =============================================
+    // TOGGLE DE UNIDADES (con m² para materiales de impresión)
+    // =============================================
     function cambiarUnidad(unidad) {
         localStorage.setItem('unit_preference', unidad);
-
-        document.querySelectorAll('.unit-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.unit === unidad);
-        });
-
-        const label = document.getElementById('unitLabel');
-        if (unidad === 'unidades') {
-            label.textContent = '(mostrando en rollos)';
-        } else {
-            label.textContent = '(mostrando en metros)';
-        }
-
+        document.querySelectorAll('.unit-btn').forEach(b => b.classList.toggle('active', b.dataset.unit === unidad));
+        document.getElementById('unitLabel').textContent = unidad === 'unidades' ? '(mostrando en rollos)' : '(mostrando en m²)';
+        // Stock
         document.querySelectorAll('.stock-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.stock-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-        document.querySelectorAll('.comprometido-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
-        document.querySelectorAll('.comprometido-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-        document.querySelectorAll('.disponible-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
-        document.querySelectorAll('.disponible-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
-
         document.querySelectorAll('.stock-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.stock-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
+        // Comprometido
+        document.querySelectorAll('.comprometido-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
+        document.querySelectorAll('.comprometido-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
         document.querySelectorAll('.comprometido-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.comprometido-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
+        // Disponible
+        document.querySelectorAll('.disponible-header[data-unit="unidades"]').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
+        document.querySelectorAll('.disponible-header[data-unit="metros"]').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
         document.querySelectorAll('.disponible-unidades').forEach(el => el.style.display = unidad === 'unidades' ? '' : 'none');
         document.querySelectorAll('.disponible-metros').forEach(el => el.style.display = unidad === 'metros' ? '' : 'none');
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        const preferencia = localStorage.getItem('unit_preference') || 'unidades';
-        cambiarUnidad(preferencia);
+        const pref = localStorage.getItem('unit_preference') || 'unidades';
+        cambiarUnidad(pref);
     });
 
-    function abrirModalCompra(productoId) {
-        document.getElementById('compraProductoSelect').value = productoId;
+    // =============================================
+    // ORDENACIÓN
+    // =============================================
+    function ordenar(columna) {
+        const url = new URL(window.location.href);
+        const currentSort = url.searchParams.get('sort');
+        const currentOrder = url.searchParams.get('order');
+        let newOrder = 'asc';
+        if (currentSort === columna && currentOrder === 'asc') newOrder = 'desc';
+        url.searchParams.set('sort', columna);
+        url.searchParams.set('order', newOrder);
+        window.location.href = url.toString();
+    }
+
+    // =============================================
+    // MODAL COMPRA
+    // =============================================
+    function abrirModalCompra(id) {
+        document.getElementById('compraProductoSelect').value = id;
         document.getElementById('modalCompra').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -548,32 +536,19 @@
         document.getElementById(id).classList.remove('active');
         document.body.style.overflow = '';
     }
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', e => {
         if (e.key === 'Escape') {
             document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
             document.body.style.overflow = '';
         }
     });
-    document.querySelectorAll('.modal-overlay').forEach(overlay => {
-        overlay.addEventListener('click', function(e) {
+    document.querySelectorAll('.modal-overlay').forEach(el => {
+        el.addEventListener('click', function(e) {
             if (e.target === this) {
                 this.classList.remove('active');
                 document.body.style.overflow = '';
             }
         });
     });
-
-    function ordenar(columna) {
-        const url = new URL(window.location.href);
-        const currentSort = url.searchParams.get('sort');
-        const currentOrder = url.searchParams.get('order');
-        let newOrder = 'asc';
-        if (currentSort === columna && currentOrder === 'asc') {
-            newOrder = 'desc';
-        }
-        url.searchParams.set('sort', columna);
-        url.searchParams.set('order', newOrder);
-        window.location.href = url.toString();
-    }
 </script>
 {% endblock %}

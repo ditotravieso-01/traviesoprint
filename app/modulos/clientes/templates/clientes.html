@@ -1,0 +1,558 @@
+{% extends "base.html" %}
+
+{% block title %}Clientes · CairoStudio{% endblock %}
+
+{% block page_title %}👥 Clientes{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== BASE ===== */
+    .filters-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 16px;
+    }
+    .filters-bar input, .filters-bar select {
+        padding: 6px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 140px;
+        font-family: 'Inter', sans-serif;
+    }
+    .filters-bar input:focus, .filters-bar select:focus {
+        outline: none;
+        border-color: #1a1a1a;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+    .filters-bar .filter-group {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .filters-bar .filter-label {
+        font-weight: 600;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+
+    /* ===== BOTONES ===== */
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-export { background: #10b981; color: white; }
+    .btn-export:hover { background: #059669; }
+    .btn-import { background: #3b82f6; color: white; }
+    .btn-import:hover { background: #2563eb; }
+
+    /* ===== TARJETAS ===== */
+    .card {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 16px;
+    }
+
+    /* ===== DASHBOARD KPIs ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .kpi-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 14px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .kpi-card .kpi-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .kpi-card .kpi-label {
+        font-size: 12px;
+        color: #8e8e93;
+        font-weight: 500;
+    }
+    .kpi-card .kpi-icon {
+        float: right;
+        font-size: 18px;
+        color: #a8854f;
+        opacity: 0.4;
+    }
+    .kpi-card.verde { border-top-color: #10b981; }
+    .kpi-card.verde .kpi-icon { color: #10b981; }
+    .kpi-card.amarillo { border-top-color: #f59e0b; }
+    .kpi-card.amarillo .kpi-icon { color: #f59e0b; }
+    .kpi-card.azul { border-top-color: #3b82f6; }
+    .kpi-card.azul .kpi-icon { color: #3b82f6; }
+
+    /* ===== TOGGLE VISTA ===== */
+    .view-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 4px;
+        gap: 2px;
+        border: 1px solid #d2d2d7;
+    }
+    .view-toggle .view-btn {
+        padding: 4px 16px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+    .view-toggle .view-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .view-toggle .view-btn:hover { color: #1c1c1e; }
+
+    /* ===== TABLA ===== */
+    .table-wrap { overflow-x: auto; }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+    }
+    th {
+        text-align: left;
+        padding: 8px 10px;
+        font-weight: 600;
+        color: #8e8e93;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        user-select: none;
+        position: relative;
+    }
+    th:hover { color: #1c1c1e; }
+    th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
+    th.sortable.asc::after { content: ' ↑'; color: #1a1a1a; }
+    th.sortable.desc::after { content: ' ↓'; color: #1a1a1a; }
+    td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(0,0,0,0.02);
+        vertical-align: middle;
+    }
+    .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        display: inline-block;
+        font-family: 'Inter', sans-serif;
+    }
+    .badge-info { background: #e0e7ff; color: #3b82f6; }
+
+    /* ===== NIVELES ===== */
+    .nivel-black .badge-nivel { background: #1a1a1a; color: #d4a574; border: 1px solid #d4a574; }
+    .nivel-golden .badge-nivel { background: #d4a574; color: white; }
+    .nivel-standard .badge-nivel { background: #f0ece8; color: #555; }
+
+    .badge-nivel {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    /* ===== KANBAN (ESTILO 4: CONTACTO) ===== */
+    .kanban-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+    }
+    .kanban-card {
+        background: white;
+        border-radius: 16px;
+        padding: 14px 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        position: relative;
+    }
+    .kanban-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+    }
+    .kanban-card .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 4px;
+        gap: 8px;
+    }
+    .kanban-card .name {
+        font-family: 'Playfair Display', serif;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .kanban-card .sub {
+        font-size: 13px;
+        color: #8e8e93;
+        font-weight: 400;
+        margin-top: 2px;
+    }
+    .kanban-card .sub .highlight {
+        font-weight: 600;
+        color: #1c1c1e;
+    }
+    .kanban-card .badge-nivel {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+    }
+    .kanban-card .card-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin: 6px 0 8px 0;
+    }
+    .kanban-card .card-tags .tag {
+        background: #f0ece8;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        color: #555;
+        font-weight: 500;
+    }
+    .kanban-card .card-tags .tag.blue { background: #e0f2fe; color: #1e3a8a; }
+    .kanban-card .card-tags .tag.green { background: #d1fae5; color: #065f46; }
+    .kanban-card .card-tags .tag.amber { background: #fef3c7; color: #78350f; }
+    .kanban-card .actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f0ece8;
+    }
+    .kanban-card .actions .btn {
+        padding: 4px 12px;
+        border-radius: 20px;
+        border: 1px solid #d2d2d7;
+        background: transparent;
+        font-weight: 600;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .kanban-card .actions .btn:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+    }
+    .kanban-card .actions .btn-warning { border-color: #f59e0b; color: #d97706; }
+    .kanban-card .actions .btn-warning:hover { background: #fef3c7; }
+    .kanban-card .actions .btn-danger { border-color: #dc2626; color: #dc2626; }
+    .kanban-card .actions .btn-danger:hover { background: #fde8e5; }
+
+    /* ===== NIVELES EN TARJETAS (solo badge, no fondo) ===== */
+    .kanban-card .badge-nivel.black { background: #1a1a1a; color: #d4a574; border: 1px solid #d4a574; }
+    .kanban-card .badge-nivel.golden { background: #d4a574; color: white; }
+    .kanban-card .badge-nivel.standard { background: #f0ece8; color: #555; }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    @media (max-width: 768px) {
+        .filters-bar { flex-direction: column; align-items: stretch; }
+        .filters-bar .filter-group { width: 100%; }
+        .view-toggle { width: 100%; justify-content: center; }
+        .kpi-grid { grid-template-columns: 1fr 1fr; }
+        .kanban-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 480px) {
+        .kpi-grid { grid-template-columns: 1fr; }
+        .kanban-card .header { flex-direction: column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- ===== DASHBOARD KPIs ===== -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <i class="fas fa-users kpi-icon"></i>
+        <div class="kpi-value">{{ total_clientes }}</div>
+        <div class="kpi-label">Total clientes</div>
+    </div>
+    <div class="kpi-card verde">
+        <i class="fas fa-clipboard-list kpi-icon"></i>
+        <div class="kpi-value">{{ total_ordenes }}</div>
+        <div class="kpi-label">Pedidos totales</div>
+    </div>
+    <div class="kpi-card azul">
+        <i class="fas fa-user-check kpi-icon"></i>
+        <div class="kpi-value">{{ clientes_activos }}</div>
+        <div class="kpi-label">Activos (30 días)</div>
+    </div>
+    <div class="kpi-card amarillo">
+        <i class="fas fa-dollar-sign kpi-icon"></i>
+        <div class="kpi-value">${{ total_facturado|round(2) }}</div>
+        <div class="kpi-label">Facturación total</div>
+    </div>
+    <div class="kpi-card" style="border-top-color:#8b5cf6;">
+        <i class="fas fa-trophy kpi-icon" style="color:#8b5cf6;"></i>
+        <div class="kpi-value" style="font-size:18px;">{{ top_cliente_nombre }}</div>
+        <div class="kpi-label">Top cliente · ${{ top_cliente_monto|round(2) }}</div>
+    </div>
+</div>
+
+<!-- ===== RESUMEN DE NIVELES ===== -->
+<div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; align-items:center;">
+    <span style="font-weight:600; font-size:13px; color:#8e8e93;">🏆 Clasificación:</span>
+    <span style="display:flex; align-items:center; gap:4px; background:#1a1a1a; color:#d4a574; padding:2px 12px; border-radius:30px; font-size:12px; font-weight:700; border:1px solid #d4a574;">
+        Black <span style="color:#d4a574; font-weight:400; margin-left:4px;">{{ black_count }}</span>
+    </span>
+    <span style="display:flex; align-items:center; gap:4px; background:#d4a574; color:white; padding:2px 12px; border-radius:30px; font-size:12px; font-weight:700;">
+        Golden <span style="font-weight:400; margin-left:4px;">{{ golden_count }}</span>
+    </span>
+    <span style="display:flex; align-items:center; gap:4px; background:#f0ece8; color:#555; padding:2px 12px; border-radius:30px; font-size:12px; font-weight:600;">
+        Standard <span style="font-weight:400; margin-left:4px;">{{ standard_count }}</span>
+    </span>
+</div>
+
+<!-- ===== FILTROS ===== -->
+<div class="card">
+    <form method="GET" action="{{ url_for('clientes.listar_clientes') }}" class="filters-bar">
+        <div class="filter-group">
+            <span class="filter-label">Buscar:</span>
+            <input type="text" name="search" value="{{ search }}" placeholder="Nombre, email, teléfono..." onkeyup="if(event.key==='Enter') this.form.submit()">
+        </div>
+        <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
+        {% if search %}
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- ===== TOGGLE DE VISTA Y ACCIONES ===== -->
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+    <div class="view-toggle" id="viewToggle">
+        <button class="view-btn active" data-view="lista" onclick="cambiarVista('lista')"><i class="fas fa-list"></i> Lista</button>
+        <button class="view-btn" data-view="kanban" onclick="cambiarVista('kanban')"><i class="fas fa-th"></i> Kanban</button>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo</a>
+        <a href="{{ url_for('clientes.exportar_clientes') }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
+        <a href="{{ url_for('clientes.importar_clientes') }}" class="btn btn-import"><i class="fas fa-file-import"></i> Importar</a>
+    </div>
+</div>
+
+<!-- ===== VISTA LISTA (TABLA) ===== -->
+<div class="view-section active" id="vistaLista">
+    <div class="card">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sortable {% if sort == 'referencia' %}{{ order }}{% endif %}" onclick="ordenar('referencia')">Ref.</th>
+                        <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">Nombre</th>
+                        <th class="sortable {% if sort == 'telefono' %}{{ order }}{% endif %}" onclick="ordenar('telefono')">Teléfono</th>
+                        <th class="sortable {% if sort == 'email' %}{{ order }}{% endif %}" onclick="ordenar('email')">Email</th>
+                        <th class="sortable {% if sort == 'total_facturado' %}{{ order }}{% endif %}" onclick="ordenar('total_facturado')">Facturado</th>
+                        <th>Pedidos</th>
+                        <th>Nivel</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in clients %}
+                    <tr>
+                        <td><strong>{{ c.referencia }}</strong></td>
+                        <td>{{ c.nombre }}</td>
+                        <td>{{ c.telefono or '—' }}</td>
+                        <td>{{ c.email or '—' }}</td>
+                        <td>${{ c.total_facturado|round(2) if c.total_facturado else 0 }}</td>
+                        <td><span class="badge badge-info">{{ c.total_pedidos }}</span></td>
+                        <td>
+                            <span class="badge-nivel 
+                                {% if c.nivel == 'black' %}black
+                                {% elif c.nivel == 'golden' %}golden
+                                {% else %}standard{% endif %}">
+                                {{ c.nivel_info.label }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
+                            <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
+                            {% if current_user.role == 'admin' %}
+                                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-muted text-center">No hay clientes.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ===== VISTA KANBAN (ESTILO 4: CONTACTO) ===== -->
+<div class="view-section" id="vistaKanban">
+    <div class="kanban-grid">
+        {% for c in clients %}
+        <div class="kanban-card">
+            <div class="header">
+                <div>
+                    <div class="name">{{ c.nombre }}</div>
+                    <div class="sub">
+                        <span class="highlight">{{ c.total_pedidos }}</span> pedidos · 
+                        $<span class="highlight">{{ c.total_facturado|round(2) if c.total_facturado else 0 }}</span>
+                        {% if c.frecuencia and c.frecuencia != 'eventual' %}
+                            · <span style="text-transform:capitalize;">{{ c.frecuencia }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <span class="badge-nivel 
+                    {% if c.nivel == 'black' %}black
+                    {% elif c.nivel == 'golden' %}golden
+                    {% else %}standard{% endif %}">
+                    {{ c.nivel_info.label }}
+                </span>
+            </div>
+
+            <!-- Etiquetas de gustos (aprendizaje automático) -->
+            <div class="card-tags">
+                {% if c.top_servicios %}
+                    {% for servicio, count in c.top_servicios %}
+                        <span class="tag blue">🛠 {{ servicio }} ({{ count }})</span>
+                    {% endfor %}
+                {% endif %}
+                {% if c.top_materiales %}
+                    {% for material, count in c.top_materiales %}
+                        <span class="tag green">📦 {{ material }} ({{ count }})</span>
+                    {% endfor %}
+                {% endif %}
+                {% if not c.top_servicios and not c.top_materiales %}
+                    <span class="tag">Sin datos</span>
+                {% endif %}
+            </div>
+
+            <div class="actions">
+                <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn"><i class="fas fa-eye"></i> Ver</a>
+                <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
+                {% if current_user.role == 'admin' %}
+                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente?')">
+                        <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div style="grid-column:1/-1; text-align:center; padding:40px; color:#8e8e93;">
+            <i class="fas fa-users" style="font-size:48px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+            No hay clientes.
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+    // ===== ORDENACIÓN =====
+    function ordenar(columna) {
+        const url = new URL(window.location.href);
+        const currentSort = url.searchParams.get('sort');
+        const currentOrder = url.searchParams.get('order');
+        let newOrder = 'asc';
+        if (currentSort === columna && currentOrder === 'asc') {
+            newOrder = 'desc';
+        }
+        url.searchParams.set('sort', columna);
+        url.searchParams.set('order', newOrder);
+        window.location.href = url.toString();
+    }
+
+    // ===== CAMBIO DE VISTA =====
+    function cambiarVista(vista) {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.view-btn[data-view="${vista}"]`).classList.add('active');
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        document.getElementById(vista === 'lista' ? 'vistaLista' : 'vistaKanban').classList.add('active');
+        localStorage.setItem('clientes_view_preference', vista);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const pref = localStorage.getItem('clientes_view_preference') || 'lista';
+        cambiarVista(pref);
+    });
+</script>
+{% endblock %}

@@ -38,7 +38,84 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 # ==========================================
-# MODELO DE ÁREA
+# MODELO DE CATEGORÍA (JERÁRQUICA)
+# ==========================================
+class Categoria(db.Model):
+    __tablename__ = 'categorias'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(200))
+    parent_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    es_material_impresion = db.Column(db.Boolean, default=False)  # flag para saber si esta categoría contiene materiales de impresión
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    # Relación jerárquica
+    children = db.relationship('Categoria', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
+    productos = db.relationship('Producto', back_populates='categoria', lazy=True)
+    grupo_atributos = db.relationship('GrupoAtributos', backref='categoria', uselist=False, lazy=True)
+
+    def __repr__(self):
+        return f'<Categoria {self.nombre}>'
+
+    def get_full_path(self):
+        """Retorna la ruta completa de la categoría (ej. 'Materiales > Rollos > Vinilo')"""
+        names = [self.nombre]
+        parent = self.parent
+        while parent:
+            names.insert(0, parent.nombre)
+            parent = parent.parent
+        return ' > '.join(names)
+
+    def get_descendant_ids(self):
+        """Retorna una lista con los IDs de todas las categorías descendientes (hijos, nietos, etc.)"""
+        ids = []
+        def get_children(parent):
+            children = Categoria.query.filter_by(parent_id=parent.id).all()
+            for child in children:
+                ids.append(child.id)
+                get_children(child)
+        get_children(self)
+        return ids
+
+# ==========================================
+# MODELO DE GRUPO DE ATRIBUTOS
+# ==========================================
+class GrupoAtributos(db.Model):
+    __tablename__ = 'grupo_atributos'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False, unique=True)
+    descripcion = db.Column(db.String(255))
+    categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    atributos = db.relationship('Atributo', backref='grupo', lazy='dynamic', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<GrupoAtributos {self.nombre}>'
+
+# ==========================================
+# MODELO DE ATRIBUTO
+# ==========================================
+class Atributo(db.Model):
+    __tablename__ = 'atributos'
+    id = db.Column(db.Integer, primary_key=True)
+    grupo_id = db.Column(db.Integer, db.ForeignKey('grupo_atributos.id'), nullable=False)
+    nombre = db.Column(db.String(100), nullable=False)  # clave en JSON
+    etiqueta = db.Column(db.String(100), nullable=False)  # texto mostrado en UI
+    tipo = db.Column(db.String(20), nullable=False)  # texto, numero, fecha, seleccion, booleano
+    requerido = db.Column(db.Boolean, default=False)
+    opciones = db.Column(db.Text, nullable=True)  # para tipo 'seleccion', opciones separadas por coma
+    orden = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    def __repr__(self):
+        return f'<Atributo {self.nombre} ({self.tipo})>'
+
+# ==========================================
+# MODELO DE ÁREA (OBSOLETO, se mantiene por compatibilidad)
 # ==========================================
 class Area(db.Model):
     __tablename__ = 'areas'
@@ -53,22 +130,6 @@ class Area(db.Model):
 
     def __repr__(self):
         return f'<Area {self.nombre}>'
-
-# ==========================================
-# MODELO DE CATEGORÍA
-# ==========================================
-class Categoria(db.Model):
-    __tablename__ = 'categorias'
-    id = db.Column(db.Integer, primary_key=True)
-    nombre = db.Column(db.String(100), nullable=False, unique=True)
-    descripcion = db.Column(db.String(200))
-    created_at = db.Column(db.DateTime, default=datetime.now)
-    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
-    productos = db.relationship('Producto', back_populates='categoria', lazy=True)
-
-    def __repr__(self):
-        return f'<Categoria {self.nombre}>'
 
 # ==========================================
 # MODELO DE UBICACIÓN
@@ -87,7 +148,7 @@ class Ubicacion(db.Model):
         return f'<Ubicacion {self.nombre}>'
 
 # ==========================================
-# MODELO DE TIPO DE PRODUCTO
+# MODELO DE TIPO DE PRODUCTO (OBSOLETO, se mantiene por compatibilidad)
 # ==========================================
 class TipoProducto(db.Model):
     __tablename__ = 'tipos_producto'
@@ -269,16 +330,16 @@ class Client(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
 
 # ==========================================
-# MODELO DE PRODUCTO (INVENTARIO) - CON UNIDADES HÍBRIDAS
+# MODELO DE PRODUCTO (INVENTARIO) - CON UNIDADES HÍBRIDAS Y ATRIBUTOS DINÁMICOS
 # ==========================================
 class Producto(db.Model):
     __tablename__ = 'productos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(150), nullable=False, unique=True)
     descripcion = db.Column(db.Text, nullable=True)
-    tipo = db.Column(db.String(50), nullable=True)
-    ubicacion = db.Column(db.String(50), nullable=True)
-    unidad = db.Column(db.String(20), nullable=True)
+    tipo = db.Column(db.String(50), nullable=True)  # obsoleto, se mantiene
+    ubicacion = db.Column(db.String(50), nullable=True)  # obsoleto
+    unidad = db.Column(db.String(20), nullable=True)  # obsoleto, usar unidad_id
     costo = db.Column(db.Float, default=0.0)
     inversion_total = db.Column(db.Float, default=0.0)
 
@@ -297,7 +358,9 @@ class Producto(db.Model):
     es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
     atributos_extra = db.Column(db.JSON, nullable=True, default={})
 
+    # Relaciones principales
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
+    # Relaciones obsoletas (se mantienen por compatibilidad, pero no se usan en UI)
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=True)
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
     tipo_producto_id = db.Column(db.Integer, db.ForeignKey('tipos_producto.id'), nullable=True)
@@ -384,3 +447,4 @@ class OrdenProducto(db.Model):
 
     def __repr__(self):
         return f'<OrdenProducto {self.orden_id} - {self.producto_id}>'
+
