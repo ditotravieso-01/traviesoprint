@@ -448,3 +448,112 @@ class OrdenProducto(db.Model):
     def __repr__(self):
         return f'<OrdenProducto {self.orden_id} - {self.producto_id}>'
 
+# ==========================================
+# MODELOS DEL MÓDULO EMPLEADOS
+# ==========================================
+
+class Empleado(db.Model):
+    __tablename__ = 'empleados'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    user = db.relationship('User', backref='empleado', uselist=False)
+    numero_identificacion = db.Column(db.String(20), unique=True, nullable=True)
+    telefono = db.Column(db.String(20), nullable=True)
+    fecha_contratacion = db.Column(db.Date, nullable=True)
+    tarifa_normal = db.Column(db.Float, default=1.00)
+    tarifa_nocturna = db.Column(db.Float, default=1.30)
+    tarifa_fin_semana = db.Column(db.Float, default=1.50)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    asistencias = db.relationship('Asistencia', backref='empleado', lazy='dynamic', cascade='all, delete-orphan')
+    detalles_nomina = db.relationship('DetalleNomina', backref='empleado', lazy='dynamic', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Empleado {self.user.username}>'
+
+    def get_nomina_periodo(self, periodo_id):
+        """Retorna el detalle de nómina para un periodo dado, o None si no existe."""
+        return self.detalles_nomina.filter_by(periodo_id=periodo_id).first()
+
+    def get_asistencias_periodo(self, fecha_inicio, fecha_fin):
+        """Retorna todas las asistencias del empleado en el rango de fechas."""
+        return self.asistencias.filter(
+            Asistencia.timestamp >= fecha_inicio,
+            Asistencia.timestamp <= fecha_fin
+        ).order_by(Asistencia.timestamp.asc()).all()
+
+
+class Asistencia(db.Model):
+    __tablename__ = 'asistencias'
+    id = db.Column(db.Integer, primary_key=True)
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    tipo = db.Column(db.String(10), nullable=False)  # 'entrada' o 'salida'
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Asistencia {self.empleado_id} {self.tipo} {self.timestamp}>'
+
+
+class PeriodoNomina(db.Model):
+    __tablename__ = 'periodos_nomina'
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_inicio = db.Column(db.Date, nullable=False)  # viernes
+    fecha_fin = db.Column(db.Date, nullable=False)    # jueves
+    estado = db.Column(db.String(20), default='abierto')  # abierto, cerrado, aprobado
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    detalles = db.relationship('DetalleNomina', backref='periodo', lazy='dynamic', cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<PeriodoNomina {self.fecha_inicio} - {self.fecha_fin}>'
+
+    @classmethod
+    def get_periodo_actual(cls):
+        """Devuelve el periodo de nómina actual (viernes a jueves)."""
+        hoy = datetime.utcnow().date()
+        # Calcular viernes anterior (si hoy es viernes, es el viernes de hoy; si no, el viernes pasado)
+        dia = hoy.weekday()  # 0=lunes, 4=viernes
+        if dia >= 4:  # viernes, sábado, domingo
+            diff = dia - 4
+        else:
+            diff = dia + 3  # días hasta el viernes anterior
+        viernes = hoy - timedelta(days=diff)
+        jueves = viernes + timedelta(days=6)
+        return cls.query.filter_by(fecha_inicio=viernes, fecha_fin=jueves).first()
+
+    @classmethod
+    def crear_periodo_actual(cls):
+        """Crea el periodo actual si no existe."""
+        periodo = cls.get_periodo_actual()
+        if not periodo:
+            hoy = datetime.utcnow().date()
+            dia = hoy.weekday()
+            if dia >= 4:
+                diff = dia - 4
+            else:
+                diff = dia + 3
+            viernes = hoy - timedelta(days=diff)
+            jueves = viernes + timedelta(days=6)
+            periodo = cls(fecha_inicio=viernes, fecha_fin=jueves, estado='abierto')
+            db.session.add(periodo)
+            db.session.commit()
+        return periodo
+
+
+class DetalleNomina(db.Model):
+    __tablename__ = 'detalles_nomina'
+    id = db.Column(db.Integer, primary_key=True)
+    periodo_id = db.Column(db.Integer, db.ForeignKey('periodos_nomina.id'), nullable=False)
+    empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
+    horas_totales = db.Column(db.Float, default=0.0)
+    salario_bruto = db.Column(db.Float, default=0.0)
+    aprobado = db.Column(db.Boolean, default=False)
+    fecha_aprobacion = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<DetalleNomina {self.empleado_id} {self.periodo_id}>'
