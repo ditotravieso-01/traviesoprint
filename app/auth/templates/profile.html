@@ -1,178 +1,62 @@
 {% extends "base.html" %}
 
-{% block title %}Mi perfil · CairoStudio{% endblock %}
+{% block title %}Mi Perfil · CairoStudio{% endblock %}
 
-{% block page_title %}👤 Mi perfil{% endblock %}
+{% block page_title %}👤 Mi Perfil{% endblock %}
 
 {% block extra_css %}
 <style>
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
+    .profile-card {
+        max-width: 600px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        border: 1px solid #f0ece8;
     }
-    .profile-avatar {
-        background: #1c1c1e;
-        color: white;
+    .profile-card .avatar {
         width: 80px;
         height: 80px;
+        background: #f0ece8;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-weight: 700;
-        font-size: 32px;
-        font-family: 'Playfair Display', serif;
-        flex-shrink: 0;
+        font-size: 36px;
+        color: #a8854f;
+        margin: 0 auto 16px;
     }
-    .profile-name h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 24px;
-        font-weight: 700;
-        color: #1c1c1e;
-        margin: 0 0 2px 0;
+    .profile-card .field {
+        display: flex;
+        padding: 8px 0;
+        border-bottom: 1px solid #f5f2ef;
     }
-    .profile-name .role-badge {
-        background: #f0ece8;
-        padding: 2px 12px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 600;
-        color: #555;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-    }
-    .profile-name .auth-badge {
-        padding: 2px 10px;
-        border-radius: 30px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-left: 8px;
-    }
-    .auth-badge.ldap { background: #e0f2fe; color: #1e3a8a; }
-    .auth-badge.local { background: #f0ece8; color: #555; }
-
-    .info-grid {
-        display: grid;
-        grid-template-columns: 140px 1fr;
-        gap: 8px 16px;
-        font-size: 14px;
-        margin-top: 8px;
-    }
-    .info-grid dt {
+    .profile-card .field .label {
         font-weight: 600;
         color: #8e8e93;
-        padding: 6px 0;
+        width: 120px;
+        flex-shrink: 0;
     }
-    .info-grid dd {
-        padding: 6px 0;
+    .profile-card .field .value {
         color: #1c1c1e;
-        border-bottom: 1px solid #f5f2ef;
-        margin: 0;
-    }
-    .info-grid dd .email-form {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .info-grid dd .email-form input[type="email"] {
-        flex: 1;
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 14px;
-        background: #fafaf9;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-        min-width: 180px;
-    }
-    .info-grid dd .email-form input[type="email"]:focus {
-        outline: none;
-        border-color: #1c1c1e;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
-    }
-    .actions-bar {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 20px;
-        padding-top: 16px;
-        border-top: 1px solid #f0ece8;
-    }
-    @media (max-width: 768px) {
-        .profile-header { flex-direction: column; text-align: center; }
-        .profile-avatar { width: 64px; height: 64px; font-size: 26px; }
-        .info-grid { grid-template-columns: 1fr; gap: 2px; }
-        .info-grid dt { padding-bottom: 0; }
-        .info-grid dd { border-bottom: none; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div class="profile-header">
-        <div class="profile-avatar">{{ current_user.username[0]|upper }}</div>
-        <div class="profile-name">
-            <h2>{{ current_user.username }}</h2>
-            <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 4px;">
-                <span class="role-badge">{{ current_user.role }}</span>
-                {% if current_user.is_ldap_user() %}
-                    <span class="auth-badge ldap"><i class="fas fa-server"></i> LDAP</span>
-                {% else %}
-                    <span class="auth-badge local"><i class="fas fa-database"></i> Local</span>
-                {% endif %}
-            </div>
-        </div>
-    </div>
+<div class="profile-card">
+    <div class="avatar"><i class="fas fa-user-circle"></i></div>
+    <h2 class="serif" style="text-align:center; font-size:24px; margin-bottom:4px;">{{ current_user.username }}</h2>
+    <p style="text-align:center; color:#8e8e93; margin-bottom:20px;">{{ current_user.role }}</p>
 
-    <div style="border-top: 1px solid #f0ece8; padding-top: 16px;">
-        <h3 class="serif" style="font-size:18px; margin-bottom:12px;">Información de la cuenta</h3>
-        <dl class="info-grid">
-            <dt>Usuario</dt>
-            <dd>{{ current_user.username }}</dd>
+    <div class="field"><span class="label">Nombre de usuario</span><span class="value">{{ current_user.username }}</span></div>
+    <div class="field"><span class="label">Rol</span><span class="value">{{ current_user.role }}</span></div>
+    <div class="field"><span class="label">Email</span><span class="value">{{ current_user.email or 'No especificado' }}</span></div>
+    <div class="field"><span class="label">Último acceso</span><span class="value">{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Nunca' }}</span></div>
 
-            <dt>Email</dt>
-            <dd>
-                {% if current_user.is_ldap_user() %}
-                    {{ current_user.email or 'No disponible (LDAP)' }}
-                {% else %}
-                    <form method="POST" action="{{ url_for('auth.update_profile') }}" class="email-form">
-                        <input type="email" name="email" value="{{ current_user.email or '' }}" placeholder="tu@email.com">
-                        <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-save"></i> Actualizar</button>
-                    </form>
-                {% endif %}
-            </dd>
-
-            <dt>Autenticación</dt>
-            <dd>
-                {% if current_user.is_ldap_user() %}
-                    <i class="fas fa-server"></i> Active Directory (LDAP)
-                {% else %}
-                    <i class="fas fa-database"></i> Local (contraseña en sistema)
-                {% endif %}
-            </dd>
-
-            <dt>Fecha de creación</dt>
-            <dd>{{ current_user.created_at.strftime('%d/%m/%Y %H:%M') if current_user.created_at else '—' }}</dd>
-
-            <dt>Última actualización</dt>
-            <dd>{{ current_user.updated_at.strftime('%d/%m/%Y %H:%M') if current_user.updated_at else '—' }}</dd>
-        </dl>
-
-        <div class="actions-bar">
-            {% if not current_user.is_ldap_user() %}
-                <a href="{{ url_for('auth.change_password') }}" class="btn btn-primary"><i class="fas fa-key"></i> Cambiar contraseña</a>
-            {% else %}
-                <span class="btn" style="background:#f0ece8; color:#555; cursor:default;">
-                    <i class="fas fa-info-circle"></i> Contraseña gestionada en Active Directory
-                </span>
-            {% endif %}
-            <a href="{{ url_for('home.home') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
-        </div>
+    <div style="display:flex; gap:12px; margin-top:20px; justify-content:center;">
+        <a href="{{ url_for('home.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
     </div>
 </div>
 {% endblock %}

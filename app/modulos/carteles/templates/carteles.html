@@ -23,19 +23,24 @@
         min-width: 300px;
     }
     .form-section {
-        background: white;
+        background: rgba(255,255,255,0.8);
+        backdrop-filter: blur(10px);
         border-radius: 16px;
         padding: 20px 24px;
         margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #e8e0da;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+    }
+    .form-section:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
     }
     .form-section h4 {
         font-family: 'Playfair Display', serif;
         font-size: 18px;
         margin-bottom: 14px;
-        color: #1a1a1a;
-        border-bottom: 1px solid #eee;
+        color: #1c1c1e;
+        border-bottom: 1px solid #f0ece8;
         padding-bottom: 8px;
     }
     .form-grid-2 {
@@ -52,26 +57,29 @@
         font-size: 14px;
         color: #333;
         margin-bottom: 4px;
+        font-family: 'Inter', sans-serif;
     }
     .form-group input, .form-group select {
         width: 100%;
         padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border: 1px solid #d2d2d7;
+        border-radius: 10px;
         font-size: 15px;
-        background: #fafafa;
-        transition: border-color 0.2s;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
     }
     .form-group input:focus, .form-group select:focus {
-        border-color: #1a1a1a;
         outline: none;
+        border-color: #1a1a1a;
         background: white;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
     }
     .checkbox-group {
         display: flex;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 12px 20px;
         margin: 12px 0 16px 0;
     }
     .checkbox-group label {
@@ -81,6 +89,13 @@
         font-weight: 400;
         font-size: 14px;
         cursor: pointer;
+        color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
+    }
+    .checkbox-group input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #1a1a1a;
     }
     .btn-group {
         display: flex;
@@ -98,26 +113,28 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 16px;
+        font-size: 15px;
         font-family: 'Inter', sans-serif;
     }
     .btn-primary {
-        background: #1a1a1a;
+        background: #1c1c1e;
         color: white;
     }
     .btn-primary:hover {
         background: #333;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
     }
     .btn-outline {
         background: transparent;
-        border: 1px solid #ccc;
-        color: #333;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
     }
     .btn-outline:hover {
-        border-color: #888;
+        border-color: #8e8e93;
         background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
     }
     .btn-success {
         background: #10b981;
@@ -125,25 +142,36 @@
     }
     .btn-success:hover {
         background: #059669;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.2);
+    }
+    .btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .btn-danger:hover {
+        background: #b91c1c;
     }
     .result-box {
-        background: #f8f6f4;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
         padding: 18px 22px;
         border-radius: 12px;
-        border-left: 4px solid #1a1a1a;
+        border: 1px solid rgba(0,0,0,0.04);
         line-height: 1.8;
         font-size: 15px;
         min-height: 120px;
         margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     .canvas-wrapper {
-        border: 1px solid #e0d8d0;
+        border: 1px solid #f0ece8;
         border-radius: 12px;
         padding: 8px;
         background: white;
         margin-top: 12px;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     canvas {
         display: block;
@@ -153,24 +181,25 @@
         background: #fcfcfc;
     }
     .file-upload-area {
-        border: 2px dashed #ddd;
+        border: 2px dashed #d2d2d7;
         border-radius: 12px;
         padding: 16px;
         text-align: center;
         cursor: pointer;
-        transition: border-color 0.2s;
-        background: #fafafa;
+        transition: border-color 0.2s, background 0.2s;
+        background: rgba(255,255,255,0.5);
         margin-top: 8px;
     }
     .file-upload-area:hover {
         border-color: #1a1a1a;
+        background: rgba(255,255,255,0.8);
     }
     .file-upload-area input[type="file"] {
         display: none;
     }
     .file-name {
         font-size: 13px;
-        color: #555;
+        color: #8e8e93;
         font-style: italic;
     }
     .history-panel {
@@ -179,79 +208,149 @@
         right: -420px;
         width: 400px;
         height: 100%;
-        background: white;
-        box-shadow: -4px 0 20px rgba(0,0,0,0.1);
-        padding: 30px 20px;
+        background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(12px);
+        box-shadow: -4px 0 30px rgba(0,0,0,0.06);
+        padding: 30px 24px;
         transition: right 0.3s ease;
         z-index: 1000;
         overflow-y: auto;
+        border-left: 1px solid rgba(0,0,0,0.04);
     }
-    .history-panel.open {
-        right: 0;
-    }
+    .history-panel.open { right: 0; }
     .history-panel h3 {
         font-family: 'Playfair Display', serif;
         font-size: 22px;
+        margin-bottom: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 16px;
+        color: #1c1c1e;
     }
     .history-panel .close-btn {
         background: none;
         border: none;
         font-size: 24px;
         cursor: pointer;
-        color: #888;
+        color: #8e8e93;
+        padding: 0 4px;
+        transition: color 0.2s;
     }
+    .history-panel .close-btn:hover { color: #1c1c1e; }
     .history-item {
-        border-bottom: 1px solid #eee;
-        padding: 10px 0;
-        font-size: 13px;
+        border-bottom: 1px solid #f0ece8;
+        padding: 12px 0;
+        font-size: 14px;
         cursor: pointer;
+        transition: background 0.2s;
+        border-radius: 8px;
+        padding-left: 8px;
     }
-    .history-item:hover {
-        background: #f5f5f5;
-    }
+    .history-item:hover { background: rgba(0,0,0,0.02); }
     .history-item .date {
-        color: #999;
-        font-size: 11px;
+        color: #8e8e93;
+        font-size: 12px;
     }
     .history-item .result {
         font-weight: 600;
+        color: #1c1c1e;
     }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.25);
+        backdrop-filter: blur(6px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: white;
+        border-radius: 20px;
+        padding: 30px 35px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95) translateY(12px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-box h3 {
+        font-family: 'Playfair Display', serif;
+        margin-bottom: 8px;
+        color: #1c1c1e;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .modal-box .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #8e8e93;
+        transition: color 0.2s;
+    }
+    .modal-box .close-modal:hover { color: #1c1c1e; }
+    .modal-box input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #d2d2d7;
+        border-radius: 10px;
+        font-size: 15px;
+        margin: 12px 0;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        transition: border-color 0.2s;
+    }
+    .modal-box input:focus {
+        outline: none;
+        border-color: #1a1a1a;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+    }
+
     .badge {
-        background: #1a1a1a;
+        background: #1c1c1e;
         color: white;
-        border-radius: 12px;
-        padding: 2px 8px;
+        border-radius: 30px;
+        padding: 2px 10px;
         font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
     }
+
     @media (max-width: 768px) {
-        .calc-container {
-            flex-direction: column;
-        }
-        .form-grid-2 {
-            grid-template-columns: 1fr;
-        }
-        .history-panel {
-            width: 300px;
-        }
+        .calc-container { flex-direction: column; }
+        .form-grid-2 { grid-template-columns: 1fr; }
+        .history-panel { width: 300px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="content-card">
+<div class="card" style="padding: 28px 32px;">
+
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <h3 style="font-family:'Playfair Display', serif; font-size:22px; margin:0;">🧮 Calculadora de Carteles / Lona</h3>
+        <div>
+            <h3 style="font-family:'Playfair Display', serif; font-size:24px; margin:0; color:#1c1c1e;">🧮 Calculadora de Carteles / Lona</h3>
+            <p style="color:#8e8e93; margin:2px 0 0 0; font-size:14px;">Distribución automática en rollo</p>
+        </div>
         <div>
             <button class="btn btn-outline" onclick="toggleHistory()"><i class="fas fa-history"></i> Historial <span class="badge" id="historyCount">0</span></button>
             <button class="btn btn-outline" onclick="toggleFavoritos()"><i class="fas fa-star"></i> Favoritos</button>
         </div>
     </div>
 
-    <!-- Variables para simulación (se actualizan vía JS) -->
+    <!-- Variables para simulación -->
     <div id="simData" style="display:none;"
         data-ancho="{{ simData.anchoCm }}"
         data-alto="{{ simData.altoCm }}"
@@ -304,13 +403,13 @@
                     </div>
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (intercambiar ancho/alto)</label>
-                        <span style="font-size:13px; color:#888; margin-left:8px;">
+                        <span style="font-size:13px; color:#8e8e93; margin-left:8px;">
                             <i class="fas fa-info-circle"></i> Para varias piezas, se distribuyen automáticamente en el rollo.
                         </span>
                     </div>
                     <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#888;"></i>
-                        <p style="color:#666; margin:4px 0;">Subir imagen/PDF para extraer medidas (opcional)</p>
+                        <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#8e8e93;"></i>
+                        <p style="color:#8e8e93; margin:4px 0;">Subir imagen/PDF para extraer medidas (opcional)</p>
                         <input type="file" id="fileInput" accept=".pdf,.jpg,.png" onchange="handleFileUpload(event)">
                         <span class="file-name" id="fileName">Ningún archivo</span>
                     </div>
@@ -335,10 +434,10 @@
                     {% if resultado %}
                         {{ resultado|safe }}
                     {% else %}
-                        <p style="color:#999;">Introduce las dimensiones y haz clic en "Calcular".</p>
+                        <p style="color:#8e8e93;">Introduce las dimensiones y haz clic en "Calcular".</p>
                     {% endif %}
                 </div>
-                <div id="errorDisplay" style="color:#991b1b; background:#fee2e2; padding:10px; border-radius:8px; display:none; margin-bottom:12px;"></div>
+                <div id="errorDisplay" style="color:#991b1b; background:#fde8e5; padding:10px 16px; border-radius:8px; border-left:4px solid #dc2626; display:none; margin-bottom:12px;"></div>
                 <div style="display:flex; gap:8px; flex-wrap:wrap;">
                     <button class="btn btn-outline" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
                 </div>
@@ -349,7 +448,7 @@
                 <div class="canvas-wrapper">
                     <canvas id="simCanvas" width="600" height="300"></canvas>
                 </div>
-                <p style="font-size:12px; color:#999; text-align:center; margin-top:6px;">
+                <p style="font-size:12px; color:#8e8e93; text-align:center; margin-top:6px;">
                     Distribución: {{ simData.cols }} columna(s) × {{ simData.filas }} fila(s)
                     {% if 'girada' in simData.orientacion %} (giradas){% endif %}
                 </p>
@@ -369,18 +468,374 @@
 </div>
 
 <!-- PANEL DE FAVORITOS -->
-<div class="modal-overlay" id="favoritosModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); justify-content:center; align-items:center; z-index:1000;">
-    <div style="background:white; border-radius:20px; padding:30px; max-width:500px; width:90%; max-height:80vh; overflow-y:auto;">
-        <h3 style="font-family:'Playfair Display', serif; display:flex; justify-content:space-between; align-items:center;">
+<div class="modal-overlay" id="favoritosModal">
+    <div class="modal-box">
+        <h3>
             ⭐ Favoritos
-            <button onclick="toggleFavoritos()" style="background:none; border:none; font-size:24px; cursor:pointer;">✕</button>
+            <button class="close-modal" onclick="toggleFavoritos()">✕</button>
         </h3>
         <div id="favoritosList"></div>
-        <button class="btn btn-outline" onclick="toggleFavoritos()" style="margin-top:12px;">Cerrar</button>
+        <button class="btn btn-outline" onclick="toggleFavoritos()" style="margin-top:12px; width:100%;">Cerrar</button>
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- JAVASCRIPT -->
-<!-- ========================================== -->
+<!-- MODAL PARA GUARDAR FAVORITO -->
+<div class="modal-overlay" id="favoritoGuardarModal">
+    <div class="modal-box">
+        <h3>
+            ⭐ Guardar favorito
+            <button class="close-modal" onclick="cerrarGuardarFavorito()">✕</button>
+        </h3>
+        <p style="color:#8e8e93; font-size:14px;">Pon un nombre para esta configuración:</p>
+        <input type="text" id="favoritoNombre" placeholder="Ej. Cartel 100x200 cm">
+        <button class="btn btn-primary" style="width:100%;" onclick="guardarFavoritoEnviar()">Guardar</button>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ==========================================
+    // VARIABLES
+    // ==========================================
+    let history = JSON.parse(localStorage.getItem('carteles_history')) || [];
+    let favorites = JSON.parse(localStorage.getItem('carteles_favorites')) || [];
+    let historyIdCounter = history.length ? Math.max(...history.map(h => h.id)) + 1 : 1;
+    let favoriteIdCounter = favorites.length ? Math.max(...favorites.map(f => f.id)) + 1 : 1;
+
+    // ==========================================
+    // CÁLCULO EN VIVO (AJAX)
+    // ==========================================
+    function calcularEnVivo() {
+        const form = document.getElementById('calcForm');
+        const formData = new FormData(form);
+
+        fetch("{{ url_for('carteles.calcular_ajax') }}", {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                document.getElementById('errorDisplay').style.display = 'block';
+                document.getElementById('errorDisplay').textContent = '❌ ' + data.error;
+                document.getElementById('resultDisplay').innerHTML = '';
+            } else {
+                document.getElementById('errorDisplay').style.display = 'none';
+                document.getElementById('resultDisplay').innerHTML = data.resultado;
+                // Actualizar simData y canvas
+                const simData = data.simData;
+                drawSimulation(simData);
+                // Guardar historial
+                const config = {
+                    ancho: document.getElementById('ancho').value,
+                    alto: document.getElementById('alto').value,
+                    cantidad: document.getElementById('cantidad').value,
+                    material: document.getElementById('material').value,
+                    ancho_rollo: document.getElementById('ancho_rollo').value,
+                    girar: document.getElementById('girar').checked ? '1' : '0'
+                };
+                const resultText = data.resultado.replace(/<[^>]*>/g, '').substring(0, 60) + '...';
+                guardarHistorial(config, resultText);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            document.getElementById('errorDisplay').style.display = 'block';
+            document.getElementById('errorDisplay').textContent = '❌ Error de conexión.';
+        });
+    }
+
+    // ==========================================
+    // DIBUJAR SIMULACIÓN
+    // ==========================================
+    function drawSimulation(simData) {
+        const canvas = document.getElementById('simCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+
+        ctx.clearRect(0, 0, w, h);
+        ctx.fillStyle = '#f8f6f4';
+        ctx.fillRect(0, 0, w, h);
+
+        if (!simData || !simData.anchoCm || !simData.altoCm) {
+            ctx.fillStyle = '#8e8e93';
+            ctx.font = '16px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Calcula para ver la simulación', w/2, h/2);
+            return;
+        }
+
+        const cols = simData.cols || 1;
+        const filas = simData.filas || 1;
+        const anchoCm = simData.anchoEfectivo || simData.anchoCm;
+        const altoCm = simData.altoEfectivo || simData.altoCm;
+        const anchoRollo = simData.anchoRollo || 134;
+
+        // Escala
+        const maxAnchoPx = w * 0.9;
+        const maxAltoPx = h * 0.9;
+        const anchoPx = anchoCm * 3; // factor de escala
+        const altoPx = altoCm * 3;
+        const escalaX = Math.min(1, maxAnchoPx / (cols * anchoPx));
+        const escalaY = Math.min(1, maxAltoPx / (filas * altoPx));
+        const escala = Math.min(escalaX, escalaY, 1);
+
+        const anchoFinal = anchoPx * escala;
+        const altoFinal = altoPx * escala;
+        const totalAncho = cols * anchoFinal;
+        const totalAlto = filas * altoFinal;
+        const offsetX = (w - totalAncho) / 2;
+        const offsetY = (h - totalAlto) / 2;
+
+        for (let r = 0; r < filas; r++) {
+            for (let c = 0; c < cols; c++) {
+                const x = offsetX + c * anchoFinal;
+                const y = offsetY + r * altoFinal;
+                ctx.fillStyle = '#e8e0d8';
+                ctx.fillRect(x, y, anchoFinal, altoFinal);
+                ctx.strokeStyle = '#8e8e93';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x, y, anchoFinal, altoFinal);
+                ctx.fillStyle = '#8e8e93';
+                ctx.font = '10px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${c+1}×${r+1}`, x + anchoFinal/2, y + altoFinal/2 + 4);
+            }
+        }
+
+        ctx.strokeStyle = '#1c1c1e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(offsetX, offsetY, totalAncho, totalAlto);
+
+        ctx.fillStyle = '#1c1c1e';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`Distribución: ${cols}×${filas}`, 10, 20);
+        ctx.fillText(`Tamaño: ${anchoCm}×${altoCm} cm`, 10, 38);
+    }
+
+    // ==========================================
+    // SUBIR ARCHIVO (imagen/PDF)
+    // ==========================================
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        document.getElementById('fileName').textContent = file.name;
+        // Simulación de extracción de medidas (solo para demo)
+        // En una implementación real, se extraerían las dimensiones de la imagen/PDF
+        alert('📐 Las medidas se extraerán automáticamente en la versión completa.\nPor ahora, ajusta los valores manualmente.');
+    }
+
+    // ==========================================
+    // EXPORTAR PDF (con pdfmake)
+    // ==========================================
+    function exportPDF() {
+        const resultDiv = document.getElementById('resultDisplay');
+        const content = resultDiv ? resultDiv.innerText : 'Sin datos';
+        const docDefinition = {
+            content: [
+                { text: 'Calculadora de Carteles - CairoStudio', style: 'header' },
+                { text: 'Resultado del cálculo', style: 'subheader' },
+                { text: content, style: 'body' },
+                { text: `Fecha: ${new Date().toLocaleString()}`, style: 'footer' }
+            ],
+            styles: {
+                header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+                subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 6] },
+                body: { fontSize: 12, margin: [0, 0, 0, 10] },
+                footer: { fontSize: 10, color: '#888', margin: [0, 20, 0, 0] }
+            }
+        };
+        pdfMake.createPdf(docDefinition).download('carteles_resultado.pdf');
+    }
+
+    // ==========================================
+    // LIMPIAR CAMPOS
+    // ==========================================
+    function limpiarCampos() {
+        document.getElementById('ancho').value = '';
+        document.getElementById('alto').value = '';
+        document.getElementById('cantidad').value = '1';
+        document.getElementById('ancho_rollo').value = '134.0';
+        document.getElementById('material').value = 'Vinilo';
+        document.getElementById('girar').checked = false;
+        document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce las dimensiones y haz clic en "Calcular".</p>';
+        document.getElementById('errorDisplay').style.display = 'none';
+        document.getElementById('fileName').textContent = 'Ningún archivo';
+        drawSimulation(null);
+    }
+
+    // ==========================================
+    // HISTORIAL
+    // ==========================================
+    function guardarHistorial(config, resultText) {
+        const entry = {
+            id: historyIdCounter++,
+            date: new Date().toLocaleString(),
+            config: JSON.parse(JSON.stringify(config)),
+            resultado: resultText
+        };
+        history.unshift(entry);
+        if (history.length > 50) history.pop();
+        localStorage.setItem('carteles_history', JSON.stringify(history));
+        actualizarHistorialUI();
+        actualizarContadorHistorial();
+    }
+
+    function actualizarHistorialUI() {
+        const list = document.getElementById('historyList');
+        if (history.length === 0) {
+            list.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay cálculos guardados.</p>';
+            return;
+        }
+        list.innerHTML = history.map(item => `
+            <div class="history-item" onclick="cargarHistorial(${item.id})">
+                <div class="date">${item.date}</div>
+                <div class="result">${item.resultado}</div>
+            </div>
+        `).join('');
+    }
+
+    function cargarHistorial(id) {
+        const item = history.find(h => h.id === id);
+        if (item) {
+            const c = item.config;
+            document.getElementById('ancho').value = c.ancho || '';
+            document.getElementById('alto').value = c.alto || '';
+            document.getElementById('cantidad').value = c.cantidad || '1';
+            document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
+            document.getElementById('material').value = c.material || 'Vinilo';
+            document.getElementById('girar').checked = c.girar === '1';
+            calcularEnVivo();
+            toggleHistory();
+        }
+    }
+
+    function actualizarContadorHistorial() {
+        document.getElementById('historyCount').textContent = history.length;
+    }
+
+    function toggleHistory() {
+        document.getElementById('historyPanel').classList.toggle('open');
+    }
+
+    function limpiarHistorial() {
+        if (!confirm('¿Limpiar todo el historial?')) return;
+        history = [];
+        localStorage.setItem('carteles_history', JSON.stringify(history));
+        actualizarHistorialUI();
+        actualizarContadorHistorial();
+    }
+
+    // ==========================================
+    // FAVORITOS
+    // ==========================================
+    function toggleFavoritos() {
+        const modal = document.getElementById('favoritosModal');
+        modal.classList.toggle('active');
+        if (modal.classList.contains('active')) {
+            actualizarFavoritosUI();
+        }
+    }
+
+    function guardarFavorito() {
+        document.getElementById('favoritoNombre').value = '';
+        document.getElementById('favoritoGuardarModal').classList.add('active');
+    }
+
+    function cerrarGuardarFavorito() {
+        document.getElementById('favoritoGuardarModal').classList.remove('active');
+    }
+
+    function guardarFavoritoEnviar() {
+        const nombre = document.getElementById('favoritoNombre').value.trim();
+        if (!nombre) {
+            alert('Por favor, pon un nombre para el favorito.');
+            return;
+        }
+        const config = {
+            ancho: document.getElementById('ancho').value,
+            alto: document.getElementById('alto').value,
+            cantidad: document.getElementById('cantidad').value,
+            material: document.getElementById('material').value,
+            ancho_rollo: document.getElementById('ancho_rollo').value,
+            girar: document.getElementById('girar').checked ? '1' : '0'
+        };
+        const entry = {
+            id: favoriteIdCounter++,
+            name: nombre,
+            config: JSON.parse(JSON.stringify(config))
+        };
+        favorites.push(entry);
+        localStorage.setItem('carteles_favorites', JSON.stringify(favorites));
+        cerrarGuardarFavorito();
+        toggleFavoritos();
+        alert(`⭐ Favorito "${nombre}" guardado correctamente.`);
+    }
+
+    function actualizarFavoritosUI() {
+        const list = document.getElementById('favoritosList');
+        if (favorites.length === 0) {
+            list.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay favoritos guardados.</p>';
+            return;
+        }
+        list.innerHTML = favorites.map(f => `
+            <div class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <div onclick="cargarFavorito(${f.id})">
+                    <strong>${f.name}</strong>
+                    <div style="font-size:12px; color:#8e8e93;">${f.config.ancho || '?'}×${f.config.alto || '?'} cm · ${f.config.cantidad || '1'} pieza(s)</div>
+                </div>
+                <button onclick="eliminarFavorito(${f.id})" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:16px;">✕</button>
+            </div>
+        `).join('');
+    }
+
+    function cargarFavorito(id) {
+        const item = favorites.find(f => f.id === id);
+        if (item) {
+            const c = item.config;
+            document.getElementById('ancho').value = c.ancho || '';
+            document.getElementById('alto').value = c.alto || '';
+            document.getElementById('cantidad').value = c.cantidad || '1';
+            document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
+            document.getElementById('material').value = c.material || 'Vinilo';
+            document.getElementById('girar').checked = c.girar === '1';
+            calcularEnVivo();
+            toggleFavoritos();
+        }
+    }
+
+    function eliminarFavorito(id) {
+        if (!confirm('¿Eliminar este favorito?')) return;
+        favorites = favorites.filter(f => f.id !== id);
+        localStorage.setItem('carteles_favorites', JSON.stringify(favorites));
+        actualizarFavoritosUI();
+    }
+
+    // ==========================================
+    // INICIALIZACIÓN
+    // ==========================================
+    document.addEventListener('DOMContentLoaded', function() {
+        actualizarHistorialUI();
+        actualizarContadorHistorial();
+        // Dibujar simulación inicial si hay datos
+        const simDataEl = document.getElementById('simData');
+        if (simDataEl) {
+            const data = {
+                anchoCm: parseFloat(simDataEl.dataset.ancho) || 0,
+                altoCm: parseFloat(simDataEl.dataset.alto) || 0,
+                cols: parseInt(simDataEl.dataset.cols) || 1,
+                filas: parseInt(simDataEl.dataset.filas) || 1,
+                anchoEfectivo: parseFloat(simDataEl.dataset.anchoEfectivo) || 0,
+                altoEfectivo: parseFloat(simDataEl.dataset.altoEfectivo) || 0,
+                anchoRollo: parseFloat(simDataEl.dataset.anchoRollo) || 134,
+                orientacion: simDataEl.dataset.orientacion || 'normal'
+            };
+            drawSimulation(data);
+        }
+    });
+</script>
 {% endblock %}

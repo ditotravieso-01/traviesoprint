@@ -13,87 +13,97 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block extra_css %}{% endblock %}
 </head>
-<body style="background: #faf8f6; margin:0; padding:0; font-family: 'Inter', sans-serif; color: #1c1c1e; display: flex; min-height: 100vh;">
-    <div class="app-container" style="display: flex; width: 100%; min-height: 100vh; background: #faf8f6;">
+<body>
+    <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar" style="width: 240px; background: #ffffff; border-right: 1px solid rgba(0,0,0,0.04); padding: 20px 0; display: flex; flex-direction: column; flex-shrink: 0; height: 100vh; position: sticky; top: 0; box-shadow: 2px 0 20px rgba(0,0,0,0.02); transition: all 0.3s;">
-            <div class="sidebar-brand" style="padding: 0 20px 20px 20px; text-align: center; border-bottom: 1px solid #f0ece8;">
-                <a href="{{ url_for('home.home') }}">
-                    <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" alt="CairoStudio" height="40" style="max-height: 50px; width: auto;">
+        <aside class="sidebar" id="mainSidebar">
+            <div class="sidebar-brand">
+                <a href="{{ url_for('home.index') }}">
+                    <img src="{{ url_for('static', filename='img/logo_cairostudio.png') }}" alt="CairoStudio">
                 </a>
             </div>
-            <nav class="sidebar-nav" style="flex: 1; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px;">
-                <a href="{{ url_for('home.home') }}" class="nav-item {% if request.endpoint == 'home.home' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                    <i class="fas fa-home" style="width: 20px; text-align: center; font-size: 16px;"></i> Inicio
+            <nav class="sidebar-nav">
+                <a href="{{ url_for('home.index') }}" class="nav-item {% if request.endpoint == 'home.index' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Inicio</span>
                 </a>
                 {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('ordenes.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-clipboard-list" style="width: 20px; text-align: center; font-size: 16px;"></i> Órdenes
+                    <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('ordenes.') %}active{% endif %}">
+                        <i class="fas fa-clipboard-list"></i>
+                        <span>Órdenes</span>
                     </a>
-                    <a href="{{ url_for('workflow.board') }}" class="nav-item {% if request.endpoint == 'workflow.board' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-columns" style="width: 20px; text-align: center; font-size: 16px;"></i> Workflow
+                    <a href="{{ url_for('workflow.board') }}" class="nav-item {% if request.endpoint == 'workflow.board' %}active{% endif %}">
+                        <i class="fas fa-columns"></i>
+                        <span>Workflow</span>
                     </a>
-                    <a href="{{ url_for('inventario.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('inventario.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-warehouse" style="width: 20px; text-align: center; font-size: 16px;"></i> Inventario
+                    <a href="{{ url_for('inventario.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('inventario.') %}active{% endif %}">
+                        <i class="fas fa-warehouse"></i>
+                        <span>Inventario</span>
                     </a>
-                    <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('etiquetas.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-tag" style="width: 20px; text-align: center; font-size: 16px;"></i> Etiquetas
+                    <a href="{{ url_for('etiquetas.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('etiquetas.') %}active{% endif %}">
+                        <i class="fas fa-tag"></i>
+                        <span>Etiquetas</span>
                     </a>
-                    <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('carteles.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-image" style="width: 20px; text-align: center; font-size: 16px;"></i> Carteles
+                    <a href="{{ url_for('carteles.index') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('carteles.') %}active{% endif %}">
+                        <i class="fas fa-image"></i>
+                        <span>Carteles</span>
                     </a>
-                    <a href="{{ url_for('clientes.listar_clientes') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('clientes.') %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-users" style="width: 20px; text-align: center; font-size: 16px;"></i> Clientes
+                    <a href="{{ url_for('clientes.listar_clientes') }}" class="nav-item {% if request.endpoint and request.endpoint.startswith('clientes.') %}active{% endif %}">
+                        <i class="fas fa-users"></i>
+                        <span>Clientes</span>
                     </a>
                     {% if current_user.role == 'admin' %}
-                        <a href="{{ url_for('auth.admin_users') }}" class="nav-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                            <i class="fas fa-user-cog" style="width: 20px; text-align: center; font-size: 16px;"></i> Usuarios
+                        <a href="{{ url_for('auth.admin_users') }}" class="nav-item {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
+                            <i class="fas fa-user-cog"></i>
+                            <span>Usuarios</span>
                         </a>
                     {% endif %}
-                    <a href="{{ url_for('auth.logout') }}" class="nav-item logout" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif; margin-top: auto; color: #dc2626;">
-                        <i class="fas fa-sign-out-alt" style="width: 20px; text-align: center; font-size: 16px;"></i> Cerrar sesión
+                    <a href="{{ url_for('auth.logout') }}" class="nav-item logout">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Cerrar sesión</span>
                     </a>
                 {% else %}
-                    <a href="{{ url_for('auth.login') }}" class="nav-item" style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 12px; color: #5a5a5a; text-decoration: none; font-weight: 500; font-size: 14px; transition: all 0.2s; font-family: 'Inter', sans-serif;">
-                        <i class="fas fa-sign-in-alt" style="width: 20px; text-align: center; font-size: 16px;"></i> Iniciar sesión
+                    <a href="{{ url_for('auth.login') }}" class="nav-item">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Iniciar sesión</span>
                     </a>
                 {% endif %}
             </nav>
-            <div class="sidebar-footer" style="padding: 16px 20px; border-top: 1px solid #f0ece8; text-align: center; font-size: 12px; color: #8e8e93;">
+            <div class="sidebar-footer">
                 <span class="version">v0.1 - Interno</span>
             </div>
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content" style="flex: 1; padding: 24px 32px; overflow-y: auto; background: #faf8f6;">
+        <main class="main-content">
             <!-- Top Bar -->
-            <header class="topbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                <div class="topbar-left" style="display: flex; align-items: center; gap: 16px;">
-                    <button class="sidebar-toggle" onclick="toggleSidebar()" style="background: none; border: none; font-size: 22px; color: #1c1c1e; cursor: pointer; padding: 4px;">
-                        <i class="fas fa-bars"></i>
+            <header class="topbar">
+                <div class="topbar-left">
+                    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars" id="sidebarIcon"></i>
                     </button>
-                    <h1 class="page-title" style="font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1c1c1e; margin: 0;">{% block page_title %}CairoStudioKit{% endblock %}</h1>
+                    <h1 class="page-title">{% block page_title %}CairoStudioKit{% endblock %}</h1>
                 </div>
-                <div class="topbar-right" style="display: flex; align-items: center; gap: 12px;">
+                <div class="topbar-right">
                     {% if current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.profile') }}" class="user-badge" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 8px; font-size: 14px; color: #1c1c1e; font-weight: 500; transition: all 0.2s; padding: 4px 8px; border-radius: 8px;">
-                            <i class="fas fa-user-circle" style="font-size: 22px; color: #a8854f;"></i>
+                        <a href="{{ url_for('auth.profile') }}" class="user-badge">
+                            <i class="fas fa-user-circle"></i>
                             {{ current_user.username }}
-                            <span class="role-badge" style="background: #f0ece8; padding: 2px 10px; border-radius: 30px; font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.3px;">{{ current_user.role }}</span>
+                            <span class="role-badge">{{ current_user.role }}</span>
                         </a>
                     {% endif %}
                 </div>
             </header>
 
             <!-- Flash Messages -->
-            <div class="flash-messages" style="margin-bottom: 20px;">
+            <div class="flash-messages">
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
                         {% for category, message in messages %}
-                            <div class="flash-message flash-{{ category }}" style="padding: 12px 16px; border-radius: 12px; display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; margin-bottom: 8px; animation: flashIn 0.3s ease; border-left: 4px solid transparent; transition: opacity 0.3s;">
-                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}" style="font-size: 18px;"></i>
+                            <div class="flash-message flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
                                 {{ message }}
-                                <button class="flash-close" onclick="this.parentElement.remove()" style="margin-left: auto; background: none; border: none; font-size: 20px; cursor: pointer; color: inherit; opacity: 0.6; padding: 0 4px;">&times;</button>
+                                <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -107,27 +117,40 @@
         </main>
     </div>
 
-    <!-- JavaScripts -->
     <script>
         function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
+            const sidebar = document.getElementById('mainSidebar');
+            const icon = document.getElementById('sidebarIcon');
             sidebar.classList.toggle('collapsed');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'fas fa-times';
+            } else {
+                icon.className = 'fas fa-bars';
+            }
+            localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed'));
         }
 
-        // Cerrar flashes automáticamente después de 5 segundos
         document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const icon = document.getElementById('sidebarIcon');
+            const collapsed = localStorage.getItem('sidebar_collapsed') === 'true';
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                icon.className = 'fas fa-times';
+            }
+
+            // Cerrar flashes automáticamente después de 5 segundos
             setTimeout(function() {
                 document.querySelectorAll('.flash-message').forEach(function(el) {
                     el.style.opacity = '0';
-                    setTimeout(function() {
-                        el.remove();
-                    }, 300);
+                    setTimeout(function() { el.remove(); }, 300);
                 });
             }, 5000);
         });
     </script>
+
     <style>
-        /* Estilos base (Estudio Blanc) */
+        /* ===== RESET Y BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Inter', sans-serif;
@@ -142,7 +165,8 @@
             min-height: 100vh;
             background: #faf8f6;
         }
-        /* Sidebar */
+
+        /* ===== SIDEBAR ===== */
         .sidebar {
             width: 240px;
             background: #ffffff;
@@ -155,26 +179,28 @@
             position: sticky;
             top: 0;
             box-shadow: 2px 0 20px rgba(0,0,0,0.02);
-            transition: all 0.3s;
+            transition: width 0.3s ease;
+            overflow: hidden;
         }
         .sidebar.collapsed {
             width: 70px;
-        }
-        .sidebar.collapsed .sidebar-brand img {
-            max-width: 40px;
-        }
-        .sidebar.collapsed .nav-item span,
-        .sidebar.collapsed .sidebar-footer .version {
-            display: none;
         }
         .sidebar-brand {
             padding: 0 20px 20px 20px;
             text-align: center;
             border-bottom: 1px solid #f0ece8;
+            transition: padding 0.3s;
+        }
+        .sidebar.collapsed .sidebar-brand {
+            padding: 0 10px 20px 10px;
         }
         .sidebar-brand img {
             max-height: 50px;
             width: auto;
+            transition: max-width 0.3s;
+        }
+        .sidebar.collapsed .sidebar-brand img {
+            max-width: 40px;
         }
         .sidebar-nav {
             flex: 1;
@@ -195,11 +221,16 @@
             font-size: 14px;
             transition: all 0.2s;
             font-family: 'Inter', sans-serif;
+            white-space: nowrap;
         }
         .nav-item i {
             width: 20px;
             text-align: center;
             font-size: 16px;
+            flex-shrink: 0;
+        }
+        .nav-item span {
+            transition: opacity 0.2s;
         }
         .nav-item:hover {
             background: rgba(0,0,0,0.03);
@@ -217,21 +248,44 @@
         .nav-item.logout:hover {
             background: #fde8e5;
         }
+
+        /* Modo colapsado: ocultar textos y centrar iconos */
+        .sidebar.collapsed .nav-item {
+            justify-content: center;
+            padding: 10px 0;
+            gap: 0;
+        }
+        .sidebar.collapsed .nav-item span {
+            display: none !important;
+        }
+        .sidebar.collapsed .nav-item i {
+            margin: 0;
+            font-size: 20px;
+        }
+        .sidebar.collapsed .sidebar-footer .version {
+            display: none !important;
+        }
+
         .sidebar-footer {
             padding: 16px 20px;
             border-top: 1px solid #f0ece8;
             text-align: center;
             font-size: 12px;
             color: #8e8e93;
+            transition: padding 0.3s;
         }
-        /* Main */
+        .sidebar.collapsed .sidebar-footer {
+            padding: 16px 10px;
+        }
+
+        /* ===== MAIN CONTENT ===== */
         .main-content {
             flex: 1;
             padding: 24px 32px;
             overflow-y: auto;
             background: #faf8f6;
+            transition: padding 0.3s;
         }
-        /* Topbar */
         .topbar {
             display: flex;
             justify-content: space-between;
@@ -250,6 +304,10 @@
             color: #1c1c1e;
             cursor: pointer;
             padding: 4px;
+            transition: transform 0.3s;
+        }
+        .sidebar-toggle:hover {
+            color: #a8854f;
         }
         .page-title {
             font-family: 'Playfair Display', serif;
@@ -270,9 +328,10 @@
             font-size: 14px;
             color: #1c1c1e;
             font-weight: 500;
-            transition: all 0.2s;
+            text-decoration: none;
             padding: 4px 8px;
             border-radius: 8px;
+            transition: background 0.2s;
         }
         .user-badge:hover {
             background: rgba(0,0,0,0.03);
@@ -291,7 +350,8 @@
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
-        /* Flash Messages */
+
+        /* ===== FLASH MESSAGES ===== */
         .flash-messages {
             margin-bottom: 20px;
         }
@@ -308,9 +368,7 @@
             border-left: 4px solid transparent;
             transition: opacity 0.3s;
         }
-        .flash-message i {
-            font-size: 18px;
-        }
+        .flash-message i { font-size: 18px; }
         .flash-close {
             margin-left: auto;
             background: none;
@@ -346,7 +404,8 @@
             from { transform: translateY(-12px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        /* Cards */
+
+        /* ===== CARDS Y ELEMENTOS COMUNES ===== */
         .card {
             background: rgba(255,255,255,0.8);
             backdrop-filter: blur(10px);
@@ -434,16 +493,35 @@
             padding: 8px 10px;
             border-bottom: 1px solid rgba(0,0,0,0.02);
         }
+
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            .sidebar { width: 70px; }
+            .sidebar {
+                width: 70px;
+                transform: translateX(-70px);
+                position: fixed;
+                z-index: 1000;
+                height: 100%;
+                transition: transform 0.3s;
+            }
+            .sidebar:not(.collapsed) {
+                transform: translateX(0);
+                width: 240px;
+            }
+            .sidebar.collapsed {
+                transform: translateX(-70px);
+                width: 70px;
+            }
             .sidebar .sidebar-brand img { max-width: 40px; }
             .sidebar .nav-item span,
             .sidebar .sidebar-footer .version { display: none; }
+            .sidebar.collapsed .sidebar-brand { padding: 0 10px 20px 10px; }
             .main-content { padding: 16px; }
             .page-title { font-size: 22px; }
             .topbar { flex-wrap: wrap; }
         }
     </style>
+
     {% block extra_js %}{% endblock %}
 </body>
 </html>

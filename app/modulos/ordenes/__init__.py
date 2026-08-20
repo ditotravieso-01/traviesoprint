@@ -15,6 +15,19 @@ import math
 ordenes_bp = Blueprint('ordenes', __name__, url_prefix='/ordenes', template_folder='templates')
 
 # ==========================================
+# CONSTANTES DE COLUMNAS (para uso en templates)
+# ==========================================
+COLUMNAS_NOMBRES = {
+    'pendiente': 'Pendiente',
+    'por-preparar': 'Por preparar',
+    'preparados': 'Preparados',
+    'imprimir-hoy': 'Imprimir hoy',
+    'impreso-corte': 'Impreso y corte',
+    'listo': 'Listo',
+    'entregados': 'Entregados'
+}
+
+# ==========================================
 # DECORADORES DE PERMISOS
 # ==========================================
 
@@ -76,14 +89,54 @@ def _get_form_context(form_data=None, edit=False, order=None):
     return context
 
 # ==========================================
-# LISTAR ÓRDENES
+# LISTAR ÓRDENES (CON FILTRO POR ESTADO Y BÚSQUEDA) - MODIFICADO CON KPIs
 # ==========================================
 @ordenes_bp.route('/')
 @login_required
 @view_orders_or_admin_comercial_required
 def list_orders():
-    orders = Order.query.order_by(Order.created_at.desc()).all()
-    return render_template('list_ordenes.html', orders=orders)
+    estado = request.args.get('estado', '').strip()
+    search = request.args.get('search', '').strip()
+    query = Order.query
+
+    if estado and estado in COLUMNAS_NOMBRES:
+        query = query.filter_by(column=estado)
+    if search:
+        search_like = f'%{search}%'
+        query = query.filter(
+            db.or_(
+                Order.order_num.ilike(search_like),
+                Order.proyecto.ilike(search_like),
+                Order.client.has(Client.nombre.ilike(search_like))
+            )
+        )
+
+    orders = query.order_by(Order.created_at.desc()).all()
+
+    # ========== CÁLCULO DE KPIs ==========
+    total_ordenes = len(orders)
+
+    # Pendientes: sin entrada OK o en columnas iniciales
+    pendientes = sum(1 for o in orders if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados'])
+
+    # Completadas: entregadas o listas
+    completadas = sum(1 for o in orders if o.column in ['entregados', 'listo'])
+
+    # Facturación total (suma del campo total_facturado si existe, sino 0)
+    facturacion_total = sum(getattr(o, 'total_facturado', 0) or 0 for o in orders)
+
+    # Nuevas este mes (created_at >= primer día del mes actual)
+    inicio_mes = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    nuevas_ordenes_mes = sum(1 for o in orders if o.created_at and o.created_at >= inicio_mes)
+
+    return render_template('list_ordenes.html',
+                           orders=orders,
+                           columnas_nombres=COLUMNAS_NOMBRES,
+                           total_ordenes=total_ordenes,
+                           pendientes=pendientes,
+                           completadas=completadas,
+                           facturacion_total=facturacion_total,
+                           nuevas_ordenes_mes=nuevas_ordenes_mes)
 
 # ==========================================
 # DETALLE DE ORDEN
@@ -92,16 +145,10 @@ def list_orders():
 @login_required
 def detalle_order(order_id):
     order = Order.query.get_or_404(order_id)
-    columnas_nombres = {
-        'pendiente': 'Pendiente',
-        'por-preparar': 'Por preparar',
-        'preparados': 'Preparados',
-        'imprimir-hoy': 'Imprimir hoy',
-        'impreso-corte': 'Impreso y corte',
-        'listo': 'Listo',
-        'entregados': 'Entregados'
-    }
-    return render_template('detalle_orden.html', order=order, now=datetime.now(), columnas_nombres=columnas_nombres)
+    return render_template('detalle_orden.html',
+                           order=order,
+                           now=datetime.now(),
+                           columnas_nombres=COLUMNAS_NOMBRES)
 
 # ==========================================
 # FUNCIÓN AUXILIAR PARA GUARDAR ARCHIVO
@@ -358,7 +405,6 @@ def create_order():
                     producto.stock_comprometido = (producto.stock_comprometido or 0) + unidades_a_reservar
                 else:
                     producto.stock_comprometido = (producto.stock_comprometido or 0) + consumo
-                # ===== COMENTARIO CORREGIDO: usar area_total en m² =====
                 mov = Movimiento(
                     producto_id=producto.id,
                     tipo='reserva',
@@ -625,7 +671,6 @@ def edit_order(order_id):
                     producto.stock_comprometido = (producto.stock_comprometido or 0) + unidades_a_reservar
                 else:
                     producto.stock_comprometido = (producto.stock_comprometido or 0) + consumo
-                # ===== COMENTARIO CORREGIDO: usar area_total en m² =====
                 mov = Movimiento(
                     producto_id=producto.id,
                     tipo='reserva',

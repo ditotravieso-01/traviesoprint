@@ -34,6 +34,9 @@ def create_app():
             print('✅ Usuario admin creado por defecto (admin/admin)')
 
     # Registrar blueprints
+    from app.modulos.dashboard import dashboard_bp
+    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    
     from .auth import auth_bp
     app.register_blueprint(auth_bp, url_prefix='/auth')
 
