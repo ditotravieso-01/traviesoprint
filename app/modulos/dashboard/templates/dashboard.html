@@ -9,7 +9,7 @@
     /* ===== ESTUDIO BLANC BASE ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #f7f0e8; font-family: 'Inter', sans-serif; color: #1c1c1e; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .container { max-width: 100%; margin: 0 auto; padding: 20px; }
     .serif { font-family: 'Playfair Display', serif; }
 
     .dashboard-header {
@@ -20,16 +20,7 @@
         gap: 12px;
         margin-bottom: 24px;
     }
-    .dashboard-header h1 {
-        font-family: 'Playfair Display', serif;
-        font-size: 28px;
-        font-weight: 700;
-        color: #1c1c1e;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .dashboard-header h1 i { color: #a8854f; }
+    /* Eliminamos el h1 del contenido, pero mantenemos los estilos para otros elementos */
     .header-actions {
         display: flex;
         gap: 8px;
@@ -441,9 +432,8 @@
 
 {% block content %}
 <div class="container">
-    <!-- HEADER -->
+    <!-- HEADER (sin título duplicado) -->
     <div class="dashboard-header">
-        <h1><i class="fas fa-crown"></i> Panel de Control · CairoStudio</h1>
         <div class="header-actions">
             <span class="update-time" id="updateTime">cargando...</span>
             <button class="btn btn-icon" onclick="cargarDatos()"><i class="fas fa-sync-alt"></i></button>
@@ -612,7 +602,6 @@
     function initSortable() {
         console.log('🔧 Inicializando Sortable...');
 
-        // Módulos
         const moduloEl = document.getElementById('moduloGrid');
         if (moduloEl) {
             try {
@@ -633,7 +622,6 @@
             }
         }
 
-        // Gráficos
         const chartEl = document.getElementById('chartsGrid');
         if (chartEl) {
             try {
@@ -686,13 +674,13 @@
     // ================================================================
     async function cargarDatos() {
         try {
-            console.log('📡 Cargando datos desde /dashboard/data...');
             const response = await fetch('{{ url_for("dashboard.data") }}');
             if (!response.ok) throw new Error('Error al cargar datos');
             datos = await response.json();
             console.log('✅ Datos recibidos:', datos);
             actualizarTodo();
             document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('es-ES') + ' hs';
+            // ✅ Eliminada la llamada obsoleta a window.readyToShow()
         } catch (error) {
             console.error('❌ Error cargando datos:', error);
             document.getElementById('updateTime').textContent = '⚠️ Error de conexión';
@@ -794,7 +782,6 @@
             grid.appendChild(card);
         });
 
-        // Restaurar orden después de renderizar
         restaurarOrden('moduloOrder', '#moduloGrid');
         console.log('✅ Módulos renderizados');
     }
@@ -872,7 +859,6 @@
             charts[cfg.id] = new Chart(ctx, config);
         });
 
-        // Restaurar orden de gráficos
         restaurarOrden('chartOrder', '#chartsGrid');
         console.log('✅ Gráficos renderizados');
     }
@@ -1102,9 +1088,8 @@
     });
 
     // ================================================================
-    //  PERSONALIZACIÓN (CORREGIDA)
+    //  PERSONALIZACIÓN
     // ================================================================
-    // Asignar eventos a los tags de KPIs al cargar la página
     document.addEventListener('DOMContentLoaded', function() {
         const tags = document.querySelectorAll('#kpiSelector .tag');
         tags.forEach(tag => {
@@ -1182,17 +1167,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 DOM listo, inicializando dashboard...');
 
-        // Inicializar Sortable
         initSortable();
 
-        // Cargar pestaña guardada
         const tabGuardada = localStorage.getItem('dashboard_tab_activo') || 'resumen';
         activarPestana(tabGuardada);
 
-        // Cargar datos
         cargarDatos();
 
-        // Actualizar cada 30 segundos
         intervalId = setInterval(cargarDatos, 30000);
     });
 

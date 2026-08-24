@@ -1,15 +1,16 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
 from flask_login import login_required, current_user
 from app import db
 from app.models import User, Empleado, Asistencia, PeriodoNomina, DetalleNomina
 from datetime import datetime, timedelta
+from sqlalchemy import func
 import json
 
 empleados_bp = Blueprint('empleados', __name__, url_prefix='/empleados', template_folder='templates')
 
 
 # ============================================================
-#  FUNCIONES AUXILIARES (reutilizan la lógica de la demo)
+#  CONSTANTES Y FUNCIONES AUXILIARES
 # ============================================================
 
 TARIFA_NORMAL = 1.00
@@ -18,10 +19,9 @@ TARIFA_FIN_SEMANA = 1.50
 INICIO_NOCTURNO = 18.0
 
 def es_fin_semana(fecha):
-    return fecha.weekday() in (5, 6)  # sábado=5, domingo=6
+    return fecha.weekday() in (5, 6)
 
 def calcular_pago_dia(entrada, salida):
-    """entrada y salida son objetos datetime."""
     ent_dec = entrada.hour + entrada.minute / 60.0
     sal_dec = salida.hour + salida.minute / 60.0
     if es_fin_semana(entrada):
@@ -38,11 +38,7 @@ def calcular_pago_dia(entrada, salida):
         horas_nocturnas = sal_dec - INICIO_NOCTURNO
         return (horas_normales * TARIFA_NORMAL) + (horas_nocturnas * TARIFA_NOCTURNA)
 
-
 def calcular_horas_salario(asistencias):
-    """Recibe una lista de objetos Asistencia ordenados por timestamp.
-       Devuelve (horas_totales, salario_bruto).
-    """
     total_horas = 0.0
     total_salario = 0.0
     entrada = None
@@ -59,28 +55,19 @@ def calcular_horas_salario(asistencias):
             entrada = None
     return total_horas, total_salario
 
-
 def get_empleado_actual():
-    """Retorna el objeto Empleado del usuario autenticado, o None si no existe."""
-    if current_user.role != 'empleado':
+    if current_user.role not in ('operario', 'admin', 'disenador', 'disennador', 'comercial', 'economico'):
         return None
-    empleado = Empleado.query.filter_by(user_id=current_user.id).first()
-    return empleado
-
+    return Empleado.query.filter_by(user_id=current_user.id).first()
 
 def get_periodo_actual():
-    """Retorna el periodo de nómina actual (crea uno si no existe)."""
     return PeriodoNomina.crear_periodo_actual()
 
-
 def calcular_nomina_empleado(empleado_id, periodo_id):
-    """Calcula las horas y salario de un empleado en un periodo y guarda/actualiza el detalle."""
     periodo = PeriodoNomina.query.get_or_404(periodo_id)
     empleado = Empleado.query.get_or_404(empleado_id)
-
     asistencias = empleado.get_asistencias_periodo(periodo.fecha_inicio, periodo.fecha_fin)
     horas, salario = calcular_horas_salario(asistencias)
-
     detalle = DetalleNomina.query.filter_by(periodo_id=periodo_id, empleado_id=empleado_id).first()
     if not detalle:
         detalle = DetalleNomina(periodo_id=periodo_id, empleado_id=empleado_id)
@@ -98,123 +85,281 @@ def calcular_nomina_empleado(empleado_id, periodo_id):
 @empleados_bp.route('/')
 @login_required
 def index():
-    """Redirige según el rol del usuario."""
-    if current_user.role == 'empleado':
+    empleado = get_empleado_actual()
+    if empleado:
         return redirect(url_for('empleados.panel_empleado'))
-    elif current_user.role in ('economico', 'admin'):
+    if current_user.role in ('economico', 'admin'):
         return redirect(url_for('empleados.panel_economico'))
     else:
         flash('No tienes permiso para acceder a este módulo.', 'danger')
         return redirect(url_for('home.index'))
 
 
-@empleados_bp.route('/fichar', methods=['GET', 'POST'])
-@login_required
-def fichar():
-    """Página para fichar entrada/salida (accesible desde móvil)."""
-    if current_user.role != 'empleado':
-        flash('Solo los empleados pueden fichar.', 'danger')
-        return redirect(url_for('empleados.index'))
-
-    empleado = get_empleado_actual()
-    if not empleado:
-        flash('Tu usuario no está asociado a un empleado. Contacta con el administrador.', 'danger')
-        return redirect(url_for('home.index'))
-
-    if request.method == 'POST':
-        # Obtener última marca del día
-        hoy = datetime.utcnow().date()
-        ultima = Asistencia.query.filter(
-            Asistencia.empleado_id == empleado.id,
-            db.func.date(Asistencia.timestamp) == hoy
-        ).order_by(Asistencia.timestamp.desc()).first()
-
-        tipo = 'salida' if ultima and ultima.tipo == 'entrada' else 'entrada'
-        nueva = Asistencia(empleado_id=empleado.id, tipo=tipo, timestamp=datetime.utcnow())
-        db.session.add(nueva)
-        db.session.commit()
-
-        flash(f'✅ {tipo.capitalize()} registrada a las {datetime.utcnow().strftime("%H:%M")}', 'success')
-        return redirect(url_for('empleados.fichar'))
-
-    # GET: mostrar página para fichar
-    return render_template('empleado/fichar.html', empleado=empleado)
-
-
 @empleados_bp.route('/panel/empleado')
 @login_required
 def panel_empleado():
-    """Panel del empleado: resumen de hoy y semana actual."""
-    if current_user.role != 'empleado':
-        flash('Acceso denegado.', 'danger')
-        return redirect(url_for('empleados.index'))
-
     empleado = get_empleado_actual()
     if not empleado:
-        flash('Tu usuario no está asociado a un empleado.', 'danger')
+        flash('No tienes un empleado asociado.', 'danger')
         return redirect(url_for('home.index'))
 
     periodo = get_periodo_actual()
-    # Calcular nómina actual (si no existe, se calcula)
     detalle = calcular_nomina_empleado(empleado.id, periodo.id)
 
-    # Asistencias de hoy
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now().date()
+    inicio_mes = hoy.replace(day=1)
+    fin_mes = (inicio_mes + timedelta(days=32)).replace(day=1)
+    asistencias_mes = empleado.get_asistencias_periodo(
+        datetime.combine(inicio_mes, datetime.min.time()),
+        datetime.combine(fin_mes, datetime.min.time())
+    )
+    horas_mes, salario_mes = calcular_horas_salario(asistencias_mes)
+
     manana = hoy + timedelta(days=1)
     asistencias_hoy = empleado.get_asistencias_periodo(
         datetime.combine(hoy, datetime.min.time()),
         datetime.combine(manana, datetime.min.time())
     )
-
-    # Calcular horas de hoy
     horas_hoy, salario_hoy = calcular_horas_salario(asistencias_hoy)
 
-    # Historial de marcas de hoy (para mostrar lista)
+    historial_7d = []
+    for i in range(6, -1, -1):
+        dia = hoy - timedelta(days=i)
+        dia_sig = dia + timedelta(days=1)
+        asis_dia = empleado.get_asistencias_periodo(
+            datetime.combine(dia, datetime.min.time()),
+            datetime.combine(dia_sig, datetime.min.time())
+        )
+        h, _ = calcular_horas_salario(asis_dia)
+        historial_7d.append({
+            'fecha': dia.strftime('%a %d'),
+            'horas': round(h, 2)
+        })
+
     marcas_hoy = [{
         'tipo': a.tipo,
         'timestamp': a.timestamp,
         'hora': a.timestamp.strftime('%H:%M'),
-        'fecha': a.timestamp.strftime('%d/%m')
+        'fecha': a.timestamp.strftime('%d/%m'),
+        'comentario': a.comentario or ''
     } for a in asistencias_hoy]
 
-    return render_template('empleado/panel.html',
+    estado = 'dentro' if marcas_hoy and marcas_hoy[-1]['tipo'] == 'entrada' else 'libre'
+    jornada_actual = None
+    if estado == 'dentro' and marcas_hoy:
+        entrada_actual = marcas_hoy[-1]['timestamp']
+        jornada_actual = str(datetime.now() - entrada_actual).split('.')[0]
+
+    puede_ver_economico = current_user.role in ('economico', 'admin')
+
+    return render_template('panel_empleado.html',
                            empleado=empleado,
                            periodo=periodo,
                            detalle=detalle,
                            horas_hoy=horas_hoy,
                            salario_hoy=salario_hoy,
-                           marcas_hoy=marcas_hoy)
+                           horas_mes=horas_mes,
+                           salario_mes=salario_mes,
+                           historial_7d=json.dumps(historial_7d),
+                           marcas_hoy=marcas_hoy,
+                           estado=estado,
+                           jornada_actual=jornada_actual,
+                           puede_ver_economico=puede_ver_economico)
 
 
 @empleados_bp.route('/panel/economico')
 @login_required
 def panel_economico():
-    """Panel del económico: resumen de todos los empleados y aprobación."""
     if current_user.role not in ('economico', 'admin'):
-        flash('Acceso denegado.', 'danger')
-        return redirect(url_for('empleados.index'))
+        flash('No tienes permiso para ver esta vista.', 'danger')
+        return redirect(url_for('home.index'))
 
-    periodo = get_periodo_actual()
+    periodo_filtro = request.args.get('periodo', 'semana_actual')
+    empleado_id = request.args.get('empleado_id', type=int)
+    view = request.args.get('view', 'dashboard')
 
-    # Obtener todos los empleados con sus detalles de nómina
+    hoy = datetime.now().date()
+    if periodo_filtro == 'semana_actual':
+        dia = hoy.weekday()
+        if dia >= 4:
+            diff = dia - 4
+        else:
+            diff = dia + 3
+        inicio = hoy - timedelta(days=diff)
+        fin = inicio + timedelta(days=6)
+    elif periodo_filtro == 'semana_pasada':
+        inicio = hoy - timedelta(days=7)
+        fin = hoy - timedelta(days=1)
+    else:  # mes
+        inicio = hoy.replace(day=1)
+        fin = (inicio + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    periodo = PeriodoNomina.query.filter_by(fecha_inicio=inicio, fecha_fin=fin).first()
+    if not periodo:
+        periodo = PeriodoNomina(fecha_inicio=inicio, fecha_fin=fin, estado='abierto')
+        db.session.add(periodo)
+        db.session.commit()
+
     empleados = Empleado.query.all()
+    if empleado_id:
+        empleados = [e for e in empleados if e.id == empleado_id]
+
     resumen = []
     for emp in empleados:
         detalle = calcular_nomina_empleado(emp.id, periodo.id)
+        asistencias = emp.get_asistencias_periodo(inicio, fin)
+        dias_trabajados = len(set([a.timestamp.date() for a in asistencias if a.tipo == 'entrada']))
+        promedio = round(detalle.horas_totales / dias_trabajados, 2) if dias_trabajados > 0 else 0
         resumen.append({
             'empleado': emp,
-            'detalle': detalle
+            'detalle': detalle,
+            'dias_trabajados': dias_trabajados,
+            'promedio_diario': promedio
         })
 
-    return render_template('economico/panel.html',
+    labels = [r['empleado'].user.username for r in resumen]
+    values = [round(r['detalle'].horas_totales, 2) for r in resumen]
+
+    # KPIs
+    hoy_inicio = datetime.combine(hoy, datetime.min.time())
+    hoy_fin = datetime.combine(hoy + timedelta(days=1), datetime.min.time())
+    asistencias_hoy = Asistencia.query.filter(
+        Asistencia.timestamp >= hoy_inicio,
+        Asistencia.timestamp < hoy_fin
+    ).all()
+    empleados_activos_hoy = len(set([a.empleado_id for a in asistencias_hoy]))
+    total_empleados = Empleado.query.count()
+    ausentes_hoy = total_empleados - empleados_activos_hoy
+
+    horas_hoy = 0.0
+    for emp in empleados:
+        asis_hoy = emp.get_asistencias_periodo(hoy_inicio, hoy_fin)
+        h, _ = calcular_horas_salario(asis_hoy)
+        horas_hoy += h
+
+    evolucion_labels = []
+    evolucion_values = []
+    for i in range(6, -1, -1):
+        dia = hoy - timedelta(days=i)
+        dia_inicio = datetime.combine(dia, datetime.min.time())
+        dia_fin = datetime.combine(dia + timedelta(days=1), datetime.min.time())
+        total_dia = 0.0
+        for emp in empleados:
+            asis_dia = emp.get_asistencias_periodo(dia_inicio, dia_fin)
+            h, _ = calcular_horas_salario(asis_dia)
+            total_dia += h
+        evolucion_labels.append(dia.strftime('%a %d'))
+        evolucion_values.append(round(total_dia, 2))
+
+    empleados_ausentes = []
+    for emp in empleados:
+        asis_hoy = emp.get_asistencias_periodo(hoy_inicio, hoy_fin)
+        if not asis_hoy:
+            empleados_ausentes.append(emp.user.username)
+
+    # Datos para tabla de empleados
+    empleados_list = []
+    for emp in empleados:
+        detalle = calcular_nomina_empleado(emp.id, periodo.id)
+        asistencias_periodo = emp.get_asistencias_periodo(inicio, fin)
+        dias_trabajados = len(set([a.timestamp.date() for a in asistencias_periodo if a.tipo == 'entrada']))
+        empleados_list.append({
+            'id': emp.id,
+            'nombre': emp.user.username,
+            'area': getattr(emp, 'area', None) or '',
+            'horas': detalle.horas_totales,
+            'salario': detalle.salario_bruto,
+            'dias': dias_trabajados,
+            'promedio': detalle.horas_totales / dias_trabajados if dias_trabajados > 0 else 0,
+            'revisado': detalle.aprobado
+        })
+
+    # Áreas únicas para el filtro
+    areas = sorted(set([getattr(emp, 'area', None) for emp in empleados if getattr(emp, 'area', None)]))
+
+    empleado = get_empleado_actual()
+    puede_ver_empleado = empleado is not None
+
+    return render_template('panel_economico.html',
                            periodo=periodo,
-                           resumen=resumen)
+                           resumen=resumen,
+                           labels=json.dumps(labels),
+                           values=json.dumps(values),
+                           periodo_filtro=periodo_filtro,
+                           empleado_seleccionado=empleado_id,
+                           puede_ver_empleado=puede_ver_empleado,
+                           view=view,
+                           total_empleados=total_empleados,
+                           empleados_activos_hoy=empleados_activos_hoy,
+                           ausentes_hoy=ausentes_hoy,
+                           horas_hoy=round(horas_hoy, 2),
+                           evolucion_labels=json.dumps(evolucion_labels),
+                           evolucion_values=json.dumps(evolucion_values),
+                           empleados_ausentes=empleados_ausentes,
+                           empleados_list=empleados_list,
+                           areas=areas)
+
+
+# ============================================================
+#  RUTAS API
+# ============================================================
+
+@empleados_bp.route('/marcar', methods=['POST'])
+@login_required
+def marcar():
+    if current_user.role not in ('operario', 'admin', 'disenador', 'disennador', 'comercial', 'economico'):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    empleado = get_empleado_actual()
+    if not empleado:
+        return jsonify({'error': 'No tienes un empleado asociado.'}), 400
+
+    data = request.get_json() or {}
+    comentario = data.get('comentario', '').strip()
+
+    hoy = datetime.now().date()
+    ultima = Asistencia.query.filter(
+        Asistencia.empleado_id == empleado.id,
+        db.func.date(Asistencia.timestamp) == hoy
+    ).order_by(Asistencia.timestamp.desc()).first()
+
+    tipo = 'salida' if ultima and ultima.tipo == 'entrada' else 'entrada'
+    nueva = Asistencia(empleado_id=empleado.id, tipo=tipo, timestamp=datetime.now(), comentario=comentario)
+    db.session.add(nueva)
+    db.session.commit()
+
+    return jsonify({'success': True, 'tipo': tipo, 'hora': datetime.now().strftime('%H:%M')})
+
+
+@empleados_bp.route('/api/detalle_completo/<int:empleado_id>')
+@login_required
+def detalle_completo(empleado_id):
+    if current_user.role not in ('economico', 'admin'):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    empleado = Empleado.query.get_or_404(empleado_id)
+    hoy = datetime.now().date()
+    inicio = hoy - timedelta(days=30)
+    asistencias = empleado.get_asistencias_periodo(
+        datetime.combine(inicio, datetime.min.time()),
+        datetime.combine(hoy + timedelta(days=1), datetime.min.time())
+    )
+
+    data = []
+    for a in asistencias:
+        data.append({
+            'tipo': a.tipo,
+            'timestamp': a.timestamp.isoformat(),
+            'hora': a.timestamp.strftime('%H:%M'),
+            'fecha': a.timestamp.strftime('%d/%m/%Y'),
+            'comentario': a.comentario or ''
+        })
+    return jsonify(data)
 
 
 @empleados_bp.route('/api/aprobar', methods=['POST'])
 @login_required
 def aprobar_nomina():
-    """Aprobar el detalle de nómina de un empleado para el periodo actual."""
     if current_user.role not in ('economico', 'admin'):
         return jsonify({'error': 'No autorizado'}), 403
 
@@ -229,44 +374,20 @@ def aprobar_nomina():
         return jsonify({'error': 'No existe detalle de nómina para este empleado'}), 404
 
     detalle.aprobado = True
-    detalle.fecha_aprobacion = datetime.utcnow()
+    detalle.fecha_aprobacion = datetime.now()
     db.session.commit()
     return jsonify({'success': True, 'empleado_id': empleado_id, 'aprobado': True})
-
-
-@empleados_bp.route('/api/detalle/<int:empleado_id>')
-@login_required
-def detalle_empleado(empleado_id):
-    """Devuelve las asistencias de un empleado en el periodo actual (para el económico)."""
-    if current_user.role not in ('economico', 'admin'):
-        return jsonify({'error': 'No autorizado'}), 403
-
-    empleado = Empleado.query.get_or_404(empleado_id)
-    periodo = get_periodo_actual()
-    asistencias = empleado.get_asistencias_periodo(periodo.fecha_inicio, periodo.fecha_fin)
-
-    data = []
-    for a in asistencias:
-        data.append({
-            'tipo': a.tipo,
-            'timestamp': a.timestamp.isoformat(),
-            'hora': a.timestamp.strftime('%H:%M'),
-            'fecha': a.timestamp.strftime('%d/%m/%Y')
-        })
-    return jsonify(data)
 
 
 @empleados_bp.route('/api/exportar')
 @login_required
 def exportar():
-    """Exportar resumen semanal a CSV (ejemplo)."""
     if current_user.role not in ('economico', 'admin'):
         return jsonify({'error': 'No autorizado'}), 403
 
     periodo = get_periodo_actual()
     empleados = Empleado.query.all()
-    lines = []
-    lines.append('Empleado,Horas,Salario,Aprobado')
+    lines = ['Empleado,Horas,Salario,Aprobado']
     for emp in empleados:
         detalle = calcular_nomina_empleado(emp.id, periodo.id)
         lines.append(f'{emp.user.username},{detalle.horas_totales:.2f},{detalle.salario_bruto:.2f},{"Sí" if detalle.aprobado else "No"}')
@@ -278,17 +399,70 @@ def exportar():
     }
 
 
+@empleados_bp.route('/api/recalcular', methods=['POST'])
+@login_required
+def recalcular_nomina():
+    if current_user.role not in ('economico', 'admin'):
+        return jsonify({'error': 'No autorizado'}), 403
+
+    data = request.get_json() or {}
+    periodo_filtro = data.get('periodo', 'semana_actual')
+
+    hoy = datetime.now().date()
+    if periodo_filtro == 'semana_actual':
+        dia = hoy.weekday()
+        if dia >= 4:
+            diff = dia - 4
+        else:
+            diff = dia + 3
+        inicio = hoy - timedelta(days=diff)
+        fin = inicio + timedelta(days=6)
+    elif periodo_filtro == 'semana_pasada':
+        inicio = hoy - timedelta(days=7)
+        fin = hoy - timedelta(days=1)
+    else:  # mes
+        inicio = hoy.replace(day=1)
+        fin = (inicio + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+
+    periodo = PeriodoNomina.query.filter_by(fecha_inicio=inicio, fecha_fin=fin).first()
+    if not periodo:
+        periodo = PeriodoNomina(fecha_inicio=inicio, fecha_fin=fin, estado='abierto')
+        db.session.add(periodo)
+        db.session.commit()
+
+    empleados = Empleado.query.all()
+    for emp in empleados:
+        calcular_nomina_empleado(emp.id, periodo.id)
+
+    return jsonify({'success': True, 'periodo': periodo_filtro})
+
+
+@empleados_bp.route('/api/empleados/asignar-area', methods=['POST'])
+@login_required
+def asignar_area():
+    if current_user.role not in ('economico', 'admin'):
+        return jsonify({'error': 'No autorizado'}), 403
+    data = request.get_json()
+    empleado_id = data.get('empleado_id')
+    area = data.get('area', '').strip()
+    if not empleado_id:
+        return jsonify({'error': 'Falta empleado_id'}), 400
+    empleado = Empleado.query.get_or_404(empleado_id)
+    empleado.area = area if area else None
+    db.session.commit()
+    return jsonify({'success': True})
+
+
 # ============================================================
-#  FUNCIÓN PARA CREAR EMPLEADOS DESDE LA CONSOLA (opcional)
+#  FUNCIÓN PARA CREAR EMPLEADOS (desde consola)
 # ============================================================
 def create_empleado(username):
-    """Asocia un usuario existente a un empleado (para usar desde flask shell)."""
     user = User.query.filter_by(username=username).first()
     if not user:
         print(f'Usuario {username} no encontrado.')
         return
-    if user.role != 'empleado':
-        print(f'El usuario {username} no tiene rol "empleado".')
+    if user.role not in ('operario', 'admin', 'disenador', 'disennador', 'comercial', 'economico'):
+        print(f'El usuario {username} debe tener un rol válido.')
         return
     empleado = Empleado.query.filter_by(user_id=user.id).first()
     if empleado:

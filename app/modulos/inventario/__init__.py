@@ -17,7 +17,7 @@ from collections import defaultdict
 inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario', template_folder='templates')
 
 # ==========================================
-# DECORADORES DE PERMISOS
+# DECORADORES DE PERMISOS (CORREGIDOS)
 # ==========================================
 def economico_or_admin_required(func):
     from functools import wraps
@@ -25,7 +25,7 @@ def economico_or_admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['admin', 'economico']:
             flash('No tienes permiso para acceder al inventario.', 'danger')
-            return redirect(url_for('home.home'))
+            return redirect(url_for('home.index'))  # CORREGIDO
         return func(*args, **kwargs)
     return wrapper
 
@@ -35,7 +35,7 @@ def admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role != 'admin':
             flash('Solo el administrador puede realizar esta acción.', 'danger')
-            return redirect(url_for('inventario.index'))
+            return redirect(url_for('inventario.index'))  # CORREGIDO (no usaba home.home)
         return func(*args, **kwargs)
     return wrapper
 
@@ -102,7 +102,6 @@ def index():
     # ===== CALCULAR m² PARA CADA MOVIMIENTO =====
     for m in ultimos_movimientos:
         if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo and m.producto.ancho_rollo > 0:
-            # Usar cantidad_metros si existe, si no, cantidad (para entradas sin metros)
             metros = m.cantidad_metros if m.cantidad_metros else m.cantidad
             m.cantidad_m2 = metros * m.producto.ancho_rollo
         else:
@@ -330,8 +329,9 @@ def crear_categoria():
         db.session.commit()
         flash(f'Categoría "{nombre}" creada correctamente.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    padres = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
-    return render_template('form_categoria.html', padres=padres)
+    # Obtener todas las categorías con formato jerárquico
+    categoria_options = get_categoria_options()
+    return render_template('form_categoria.html', categoria_options=categoria_options)
 
 @inventario_bp.route('/categoria/editar/<int:categoria_id>', methods=['GET', 'POST'])
 @login_required
@@ -360,8 +360,9 @@ def editar_categoria(categoria_id):
         db.session.commit()
         flash('Categoría actualizada.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    padres = Categoria.query.filter(Categoria.id != cat.id, Categoria.parent_id.is_(None)).order_by(Categoria.nombre).all()
-    return render_template('form_categoria.html', categoria=cat, padres=padres)
+    # Obtener todas las categorías con formato jerárquico
+    categoria_options = get_categoria_options()
+    return render_template('form_categoria.html', categoria=cat, categoria_options=categoria_options)
 
 @inventario_bp.route('/categoria/eliminar/<int:categoria_id>', methods=['POST'])
 @login_required

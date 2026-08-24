@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from app.services.auth_service import AuthService
-from app.models import User
+from app.models import User, Empleado
 from app import db
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth', template_folder='templates')
@@ -13,7 +13,7 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/auth', template_folder='templ
 def login():
     if current_user.is_authenticated:
         print("DEBUG: usuario ya autenticado -> redirigiendo a home")
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -28,21 +28,24 @@ def login():
             login_user(user, remember=remember)
             next_page = request.args.get('next')
             flash(f'Bienvenido {user.username}', 'success')
-            print(f"DEBUG: login exitoso, redirigiendo a {next_page or url_for('home.home')}")
-            return redirect(next_page or url_for('home.home'))
+            print(f"DEBUG: login exitoso, redirigiendo a {next_page or url_for('home.index')}")
+            return redirect(next_page or url_for('home.index'))
         else:
             flash('Usuario o contraseña incorrectos, o cuenta desactivada.', 'danger')
             print("DEBUG: login fallido")
 
     return render_template('login.html')
 
-@auth_bp.route('/logout')
+
+# ===== CAMBIO AQUÍ: se añaden métodos GET y POST =====
+@auth_bp.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     username = current_user.username
     logout_user()
     flash(f'Sesión cerrada correctamente. Hasta luego, {username}.', 'success')
     return redirect(url_for('auth.login'))
+
 
 # ==========================================
 # ADMINISTRACIÓN DE USUARIOS (solo admin)
@@ -52,19 +55,26 @@ def logout():
 def admin_users():
     if current_user.role != 'admin':
         flash('No tienes permiso para acceder a esta página.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
+    
     users = User.query.order_by(User.username).all()
+    # Añadir atributo para saber si el usuario tiene empleado asociado
+    for u in users:
+        u.tiene_empleado = Empleado.query.filter_by(user_id=u.id).first() is not None
+    
     return render_template('admin/users.html', users=users)
+
 
 @auth_bp.route('/admin/user/<int:user_id>/role', methods=['POST'])
 @login_required
 def admin_change_role(user_id):
     if current_user.role != 'admin':
         flash('No tienes permiso.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
+    
     user = User.query.get_or_404(user_id)
     new_role = request.form.get('role')
-    if new_role in ['admin', 'operario', 'disenador', 'comercial', 'economico']:
+    if new_role in ['admin', 'operario', 'disenador', 'disennador', 'comercial', 'economico']:
         user.role = new_role
         db.session.commit()
         flash(f'Rol de {user.username} actualizado a {new_role}.', 'success')
@@ -72,12 +82,14 @@ def admin_change_role(user_id):
         flash('Rol no válido.', 'danger')
     return redirect(url_for('auth.admin_users'))
 
+
 @auth_bp.route('/admin/user/<int:user_id>/toggle', methods=['POST'])
 @login_required
 def admin_toggle_user(user_id):
     if current_user.role != 'admin':
         flash('No tienes permiso.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
+    
     user = User.query.get_or_404(user_id)
     if user.id == current_user.id:
         flash('No puedes desactivarte a ti mismo.', 'warning')
@@ -87,6 +99,7 @@ def admin_toggle_user(user_id):
         flash(f'Usuario {user.username} {"activado" if user.is_active else "desactivado"}.', 'success')
     return redirect(url_for('auth.admin_users'))
 
+
 # ==========================================
 # PERFIL DE USUARIO
 # ==========================================
@@ -94,6 +107,7 @@ def admin_toggle_user(user_id):
 @login_required
 def profile():
     return render_template('profile.html')
+
 
 # ==========================================
 # CAMBIAR CONTRASEÑA (solo usuarios locales)
@@ -129,6 +143,7 @@ def change_password():
 
     return render_template('change_password.html')
 
+
 # ==========================================
 # RESETEAR CONTRASEÑA DE OTRO USUARIO (solo admin)
 # ==========================================
@@ -137,7 +152,7 @@ def change_password():
 def admin_reset_password(user_id):
     if current_user.role != 'admin':
         flash('No tienes permiso.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
 
     user = User.query.get_or_404(user_id)
     if user.is_ldap_user():
@@ -163,6 +178,7 @@ def admin_reset_password(user_id):
 
     return render_template('admin/reset_password.html', user=user)
 
+
 # ==========================================
 # CREAR USUARIO LOCAL (solo admin)
 # ==========================================
@@ -171,7 +187,7 @@ def admin_reset_password(user_id):
 def admin_create_user():
     if current_user.role != 'admin':
         flash('No tienes permiso.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
 
     username = request.form.get('username')
     email = request.form.get('email')
@@ -199,6 +215,7 @@ def admin_create_user():
     flash(f'Usuario local {username} creado correctamente.', 'success')
     return redirect(url_for('auth.admin_users'))
 
+
 # ==========================================
 # ELIMINAR USUARIO LOCAL (solo admin)
 # ==========================================
@@ -207,7 +224,7 @@ def admin_create_user():
 def admin_delete_user(user_id):
     if current_user.role != 'admin':
         flash('No tienes permiso.', 'danger')
-        return redirect(url_for('home.home'))
+        return redirect(url_for('home.index'))
 
     user = User.query.get_or_404(user_id)
 
@@ -226,6 +243,7 @@ def admin_delete_user(user_id):
     db.session.commit()
     flash(f'Usuario {user.username} eliminado correctamente.', 'success')
     return redirect(url_for('auth.admin_users'))
+
 
 @auth_bp.route('/update-profile', methods=['POST'])
 @login_required
@@ -247,6 +265,7 @@ def update_profile():
     else:
         flash('El email no puede estar vacío.', 'danger')
     return redirect(url_for('auth.profile'))
+
 
 @auth_bp.route('/admin/user/<int:user_id>/update-email', methods=['POST'])
 @login_required
@@ -272,4 +291,36 @@ def admin_update_email(user_id):
         flash(f'Email de {user.username} actualizado.', 'success')
     else:
         flash('El email no puede estar vacío.', 'danger')
+    return redirect(url_for('auth.admin_users'))
+
+
+# ==========================================
+# CREAR EMPLEADO DESDE ADMIN (solo admin) - CORREGIDO
+# ==========================================
+@auth_bp.route('/admin/crear-empleado/<int:user_id>', methods=['POST'])
+@login_required
+def admin_crear_empleado(user_id):
+    if current_user.role != 'admin':
+        flash('No autorizado.', 'danger')
+        return redirect(url_for('auth.admin_users'))
+
+    user = User.query.get_or_404(user_id)
+    
+    # Permitir roles: operario, admin, disenador, disennador, comercial, economico
+    if user.role not in ('operario', 'admin', 'disenador', 'disennador', 'comercial', 'economico'):
+        flash('Solo se pueden crear empleados para usuarios con rol válido (operario, admin, diseñador, comercial, económico).', 'warning')
+        return redirect(url_for('auth.admin_users'))
+
+    # Verificar si ya tiene empleado asociado
+    empleado_existente = Empleado.query.filter_by(user_id=user.id).first()
+    if empleado_existente:
+        flash(f'El usuario {user.username} ya es un empleado.', 'info')
+        return redirect(url_for('auth.admin_users'))
+
+    # Crear empleado
+    nuevo_empleado = Empleado(user_id=user.id)
+    db.session.add(nuevo_empleado)
+    db.session.commit()
+    
+    flash(f'✅ Empleado {user.username} creado correctamente.', 'success')
     return redirect(url_for('auth.admin_users'))

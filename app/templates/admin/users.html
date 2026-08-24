@@ -137,6 +137,14 @@
                         {% endif %}
                     </td>
                     <td style="padding:8px 10px; border-bottom:1px solid #f5f2ef;">
+                        <!-- ===== BOTÓN CREAR EMPLEADO (CORREGIDO) ===== -->
+                        <!-- Ahora permite a operario, admin, disenador, disennador, comercial y economico -->
+                        {% if user.role in ('operario', 'admin', 'disenador', 'disennador', 'comercial', 'economico') and not user.tiene_empleado %}
+                            <form method="POST" action="{{ url_for('auth.admin_crear_empleado', user_id=user.id) }}" style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-success" title="Crear empleado"><i class="fas fa-user-plus"></i></button>
+                            </form>
+                        {% endif %}
+                        <!-- ===== FIN BOTÓN CREAR EMPLEADO ===== -->
                         <form method="POST" action="{{ url_for('auth.admin_toggle_user', user_id=user.id) }}" style="display:inline;">
                             <button type="submit" class="btn btn-sm btn-warning" title="Activar/Desactivar">
                                 <i class="fas fa-{% if user.is_active %}pause{% else %}play{% endif %}"></i>

@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block title %}Mi Jornada · CairoStudio{% endblock %}
+
+{% block page_title %}<i class="fas fa-user-clock" style="color:#a8854f;"></i> Mi Jornada{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== GENERAL ===== */
+    .panel-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+    .stat-card {
+        background: #fefcf9;
+        border-radius: 16px;
+        padding: 12px 14px;
+        border: 1px solid #f0ece8;
+        text-align: center;
+    }
+    .stat-card .valor {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .stat-card .label { font-size: 12px; color: #8e8e93; font-weight: 500; }
+    .stat-card .valor.verde { color: #10b981; }
+    .stat-card .valor.oro { color: #a8854f; }
+
+    /* ===== BOTÓN MARCAR ===== */
+    .btn-clock {
+        width: 100%;
+        padding: 24px 0;
+        border: none;
+        border-radius: 20px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 22px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+        margin-bottom: 16px;
+        position: relative;
+        overflow: hidden;
+    }
+    .btn-clock.entrada { background: #10b981; }
+    .btn-clock.entrada:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(16,185,129,0.2); }
+    .btn-clock.salida { background: #dc2626; }
+    .btn-clock.salida:hover { background: #b91c1c; transform: translateY(-2px); box-shadow: 0 8px 30px rgba(220,38,38,0.2); }
+    .btn-clock i { font-size: 28px; }
+    .btn-clock:active { transform: scale(0.97); }
+    .btn-clock .check-mark {
+        position: absolute;
+        font-size: 40px;
+        opacity: 0;
+        transition: all 0.3s;
+        color: white;
+    }
+    .btn-clock .check-mark.show {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+
+    /* ===== ESTADO ACTUAL ===== */
+    .estado-actual {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        background: #f0ece8;
+        border-radius: 30px;
+        font-size: 15px;
+        font-weight: 500;
+        margin-bottom: 16px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .estado-actual .punto {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+        animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+    .punto.verde { background: #10b981; }
+    .punto.rojo { background: #dc2626; }
+    .punto.gris { background: #8e8e93; animation: none; }
+    .estado-actual .jornada { font-size: 13px; color: #8e8e93; }
+
+    /* ===== ACORDEÓN ===== */
+    .accordion-item {
+        border-bottom: 1px solid #f0ece8;
+        margin-bottom: 4px;
+    }
+    .accordion-item:last-child { border-bottom: none; }
+    .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        color: #1c1c1e;
+        transition: 0.2s;
+        user-select: none;
+    }
+    .accordion-header:hover { color: #a8854f; }
+    .accordion-header i { transition: transform 0.3s; }
+    .accordion-header.open i { transform: rotate(180deg); }
+    .accordion-body {
+        display: none;
+        padding-bottom: 12px;
+        overflow: hidden;
+    }
+    .accordion-body.open { display: block; }
+
+    /* ===== MARCAS ===== */
+    .marca-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #f5f2ef;
+        font-size: 14px;
+    }
+    .marca-item .tipo { font-weight: 600; text-transform: uppercase; font-size: 12px; padding: 2px 10px; border-radius: 30px; }
+    .marca-item .tipo.entrada { background: #d1fae5; color: #065f46; }
+    .marca-item .tipo.salida { background: #fee2e2; color: #991b1b; }
+    .marca-item .hora { font-weight: 500; }
+    .marca-item .comentario { font-size: 12px; color: #8e8e93; font-style: italic; }
+    .marca-vacia { color: #8e8e93; font-size: 14px; text-align: center; padding: 12px 0; font-style: italic; }
+
+    .mini-chart { height: 70px; margin-top: 4px; }
+
+    /* ===== MODAL COMENTARIO (mejorado para móvil) ===== */
+    .modal-comentario {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.3);
+        backdrop-filter: blur(6px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+    }
+    .modal-comentario.active { display: flex; }
+    .modal-comentario .modal-box {
+        background: white;
+        border-radius: 24px;
+        padding: 24px 28px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95) translateY(20px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-comentario .modal-box h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-comentario .modal-box textarea {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1.5px solid #d2d2d7;
+        border-radius: 12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 15px;
+        resize: vertical;
+        min-height: 80px;
+        transition: 0.2s;
+    }
+    .modal-comentario .modal-box textarea:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+    }
+    .modal-comentario .modal-box .actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 14px;
+        justify-content: flex-end;
+    }
+    .modal-comentario .modal-box .btn {
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 15px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        transition: 0.2s;
+        flex: 1;
+        text-align: center;
+    }
+    .modal-comentario .modal-box .btn-primary {
+        background: #a8854f;
+        color: white;
+    }
+    .modal-comentario .modal-box .btn-primary:hover { background: #8a6f3f; }
+    .modal-comentario .modal-box .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #555;
+    }
+    .modal-comentario .modal-box .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; }
+
+    .toggle-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 16px;
+        padding: 10px 16px;
+        background: rgba(255,255,255,0.6);
+        border-radius: 12px;
+    }
+
+    @media (max-width: 480px) {
+        .btn-clock { font-size: 20px; padding: 20px 0; }
+        .estado-actual { font-size: 14px; flex-direction: column; gap: 4px; }
+        .panel-grid { grid-template-columns: 1fr; gap: 10px; }
+        .stat-card .valor { font-size: 22px; }
+        .modal-comentario .modal-box { padding: 20px; }
+        .modal-comentario .modal-box .btn { font-size: 14px; padding: 10px 16px; }
+        .accordion-header { font-size: 14px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if puede_ver_economico %}
+    <div class="toggle-bar">
+        <a href="{{ url_for('empleados.panel_empleado') }}" class="btn btn-primary"><i class="fas fa-user"></i> Vista Empleado</a>
+        <a href="{{ url_for('empleados.panel_economico') }}" class="btn btn-outline"><i class="fas fa-chart-pie"></i> Vista Económico</a>
+    </div>
+    {% endif %}
+
+    <!-- ===== ESTADO ACTUAL + BOTÓN MARCAR ===== -->
+    <div class="card" style="padding-bottom:12px;">
+        <div class="estado-actual">
+            <span class="punto {{ 'verde' if estado == 'dentro' else 'rojo' if marcas_hoy else 'gris' }}"></span>
+            <span>
+                {% if estado == 'dentro' %}
+                    Dentro del local · <span class="jornada">{{ jornada_actual }}</span>
+                {% elif marcas_hoy %}
+                    Fuera del local
+                {% else %}
+                    Sin marcar hoy
+                {% endif %}
+            </span>
+        </div>
+
+        <button class="btn-clock {{ 'salida' if estado == 'dentro' else 'entrada' }}" id="btnMarcar" onclick="abrirModalMarcar()">
+            <i class="fas fa-fingerprint"></i>
+            <span id="btnTexto">{{ 'Marcar salida' if estado == 'dentro' else 'Marcar entrada' }}</span>
+            <span class="check-mark" id="checkMark"><i class="fas fa-check-circle"></i></span>
+        </button>
+
+        <div class="panel-grid">
+            <div class="stat-card">
+                <div class="valor verde">{{ horas_hoy|round(1) }}</div>
+                <div class="label">Horas hoy</div>
+            </div>
+            <div class="stat-card">
+                <div class="valor oro">${{ salario_hoy|round(2) }}</div>
+                <div class="label">Salario hoy</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ACORDEONES ===== -->
+    <div class="card" style="padding-top:8px; padding-bottom:8px;">
+        <!-- Resumen semanal -->
+        <div class="accordion-item">
+            <div class="accordion-header open" onclick="toggleAccordion(this)">
+                <span><i class="fas fa-calendar-week" style="color:#a8854f;"></i> Resumen semanal</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="accordion-body open">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+                    <span style="font-size:13px; color:#8e8e93;">{{ periodo.fecha_inicio }} - {{ periodo.fecha_fin }}</span>
+                    <span style="font-size:14px; font-weight:600;">
+                        {{ detalle.horas_totales|round(1) }}h · ${{ detalle.salario_bruto|round(2) }}
+                    </span>
+                </div>
+                <div style="font-size:13px; color:#8e8e93;">
+                    Mes: {{ horas_mes|round(1) }}h · ${{ salario_mes|round(2) }}
+                    <span class="badge {{ 'badge-success' if detalle.aprobado else 'badge-warning' }}" style="margin-left:8px;">
+                        {{ '✅ Revisado' if detalle.aprobado else '⏳ Pendiente' }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico últimos 7 días -->
+        <div class="accordion-item">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span><i class="fas fa-chart-line" style="color:#a8854f;"></i> Últimos 7 días</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="accordion-body">
+                <div class="mini-chart"><canvas id="historialChart"></canvas></div>
+            </div>
+        </div>
+
+        <!-- Marcas de hoy -->
+        <div class="accordion-item">
+            <div class="accordion-header" onclick="toggleAccordion(this)">
+                <span><i class="fas fa-list-ul" style="color:#a8854f;"></i> Marcas de hoy</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="accordion-body">
+                {% for m in marcas_hoy %}
+                    <div class="marca-item">
+                        <span class="tipo {{ m.tipo }}">{{ m.tipo }}</span>
+                        <span class="hora">{{ m.hora }}</span>
+                        <span style="color:#8e8e93; font-size:12px;">{{ m.fecha }}</span>
+                        {% if m.comentario %}
+                            <span class="comentario"><i class="fas fa-comment"></i> {{ m.comentario }}</span>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="marca-vacia">Sin marcas hoy.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Próximas funcionalidades -->
+        <div class="accordion-item" style="border-bottom:none;">
+            <div class="accordion-header" onclick="toggleAccordion(this)" style="color:#8e8e93; font-size:13px;">
+                <span><i class="fas fa-rocket" style="color:#a8854f;"></i> Próximamente</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="accordion-body" style="font-size:12px; color:#8e8e93; display:flex; flex-wrap:wrap; gap:8px; padding-bottom:4px;">
+                <span><i class="fas fa-clock"></i> Nómina automática</span>
+                <span><i class="fas fa-umbrella-beach"></i> Solicitud de vacaciones</span>
+                <span><i class="fas fa-file-alt"></i> Reportes avanzados</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL COMENTARIO ===== -->
+    <div class="modal-comentario" id="modalComentario">
+        <div class="modal-box">
+            <h3><i class="fas fa-comment" style="color:#a8854f;"></i> Agregar comentario</h3>
+            <textarea id="comentarioInput" placeholder="Ej. Salgo a comer, entrada retrasada por..." rows="3"></textarea>
+            <div class="actions">
+                <button class="btn btn-outline" onclick="cerrarModalComentario()">Cancelar</button>
+                <button class="btn btn-primary" id="btnConfirmarMarca" onclick="marcarConComentario()">Confirmar marca</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // ================================================================
+    //  ACORDEÓN
+    // ================================================================
+    function toggleAccordion(header) {
+        const body = header.nextElementSibling;
+        const isOpen = body.classList.contains('open');
+        // Cerrar todos si quieres solo uno abierto, o permitir múltiples
+        // Permitimos múltiples para mejor experiencia
+        body.classList.toggle('open');
+        header.classList.toggle('open');
+    }
+
+    // ================================================================
+    //  MARCAR CON COMENTARIO (con feedback visual)
+    // ================================================================
+    function abrirModalMarcar() {
+        document.getElementById('comentarioInput').value = '';
+        document.getElementById('modalComentario').classList.add('active');
+        // Enfocar textarea después de la animación
+        setTimeout(() => {
+            document.getElementById('comentarioInput').focus();
+        }, 300);
+    }
+
+    function cerrarModalComentario() {
+        document.getElementById('modalComentario').classList.remove('active');
+    }
+
+    function marcarConComentario() {
+        const btn = document.getElementById('btnConfirmarMarca');
+        const originalText = btn.textContent;
+        btn.textContent = '⏳ Procesando...';
+        btn.disabled = true;
+
+        const comentario = document.getElementById('comentarioInput').value.trim();
+        fetch('{{ url_for("empleados.marcar") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comentario: comentario })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar feedback visual en el botón principal
+                const btnMarcar = document.getElementById('btnMarcar');
+                const checkMark = document.getElementById('checkMark');
+                checkMark.classList.add('show');
+                setTimeout(() => {
+                    checkMark.classList.remove('show');
+                }, 1500);
+                // Recargar después de un breve momento
+                setTimeout(() => location.reload(), 800);
+            } else {
+                alert('Error: ' + (data.error || 'Desconocido'));
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Error de conexión.');
+            btn.textContent = originalText;
+            btn.disabled = false;
+        });
+        cerrarModalComentario();
+    }
+
+    // Cerrar modal con click fuera
+    document.querySelector('.modal-comentario').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+
+    // ================================================================
+    //  GRÁFICO HISTORIAL
+    // ================================================================
+    const ctxHistorial = document.getElementById('historialChart').getContext('2d');
+    const historialData = {{ historial_7d|safe }};
+    if (historialData && historialData.length) {
+        new Chart(ctxHistorial, {
+            type: 'bar',
+            data: {
+                labels: historialData.map(d => d.fecha),
+                datasets: [{
+                    label: 'Horas',
+                    data: historialData.map(d => d.horas),
+                    backgroundColor: 'rgba(168,133,79,0.6)',
+                    borderColor: '#a8854f',
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 } } }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

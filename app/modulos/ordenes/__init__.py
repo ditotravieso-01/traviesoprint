@@ -28,7 +28,7 @@ COLUMNAS_NOMBRES = {
 }
 
 # ==========================================
-# DECORADORES DE PERMISOS
+# DECORADORES DE PERMISOS (CORREGIDOS)
 # ==========================================
 
 def comercial_or_admin_required(func):
@@ -37,7 +37,7 @@ def comercial_or_admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin']:
             flash('No tienes permiso.', 'danger')
-            return redirect(url_for('home.home'))
+            return redirect(url_for('home.index'))  # CORREGIDO
         return func(*args, **kwargs)
     return wrapper
 
@@ -47,7 +47,7 @@ def view_orders_or_admin_comercial_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin', 'economico']:
             flash('No tienes permiso.', 'danger')
-            return redirect(url_for('home.home'))
+            return redirect(url_for('home.index'))  # CORREGIDO
         return func(*args, **kwargs)
     return wrapper
 
@@ -97,6 +97,9 @@ def _get_form_context(form_data=None, edit=False, order=None):
 def list_orders():
     estado = request.args.get('estado', '').strip()
     search = request.args.get('search', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  # Órdenes por página
+
     query = Order.query
 
     if estado and estado in COLUMNAS_NOMBRES:
@@ -111,23 +114,22 @@ def list_orders():
             )
         )
 
-    orders = query.order_by(Order.created_at.desc()).all()
+    # Paginación
+    paginated = query.order_by(Order.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
+    orders = paginated.items
+    total = paginated.total
+    total_pages = paginated.pages
 
-    # ========== CÁLCULO DE KPIs ==========
-    total_ordenes = len(orders)
-
-    # Pendientes: sin entrada OK o en columnas iniciales
-    pendientes = sum(1 for o in orders if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados'])
-
-    # Completadas: entregadas o listas
-    completadas = sum(1 for o in orders if o.column in ['entregados', 'listo'])
-
-    # Facturación total (suma del campo total_facturado si existe, sino 0)
-    facturacion_total = sum(getattr(o, 'total_facturado', 0) or 0 for o in orders)
-
-    # Nuevas este mes (created_at >= primer día del mes actual)
+    # ========== CÁLCULO DE KPIs (sobre el total sin paginar) ==========
+    all_orders = query.all()  # Para KPIs, necesitamos el total real
+    total_ordenes = len(all_orders)
+    pendientes = sum(1 for o in all_orders if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados'])
+    completadas = sum(1 for o in all_orders if o.column in ['entregados', 'listo'])
+    facturacion_total = sum(getattr(o, 'total_facturado', 0) or 0 for o in all_orders)
     inicio_mes = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    nuevas_ordenes_mes = sum(1 for o in orders if o.created_at and o.created_at >= inicio_mes)
+    nuevas_ordenes_mes = sum(1 for o in all_orders if o.created_at and o.created_at >= inicio_mes)
 
     return render_template('list_ordenes.html',
                            orders=orders,
@@ -136,7 +138,13 @@ def list_orders():
                            pendientes=pendientes,
                            completadas=completadas,
                            facturacion_total=facturacion_total,
-                           nuevas_ordenes_mes=nuevas_ordenes_mes)
+                           nuevas_ordenes_mes=nuevas_ordenes_mes,
+                           page=page,
+                           per_page=per_page,
+                           total=total,
+                           total_pages=total_pages,
+                           search=search,
+                           estado=estado)
 
 # ==========================================
 # DETALLE DE ORDEN

@@ -7,24 +7,35 @@ from app.services.notification_service import notificar_usuarios
 
 workflow_bp = Blueprint('workflow', __name__, url_prefix='/workflow', template_folder='templates')
 
+# ============================================================
+# COLUMNAS Y PERMISOS (actualizados con 'produccion')
+# ============================================================
 COLUMNAS = [
-    {'id': 'pendiente', 'icono': '📋', 'nombre': 'Pendiente'},
-    {'id': 'por-preparar', 'icono': '🔧', 'nombre': 'Por preparar'},
-    {'id': 'preparados', 'icono': '✅', 'nombre': 'Preparados'},
-    {'id': 'imprimir-hoy', 'icono': '🖨️', 'nombre': 'Imprimir hoy'},
-    {'id': 'impreso-corte', 'icono': '✂️', 'nombre': 'Impreso y corte'},
-    {'id': 'listo', 'icono': '📦', 'nombre': 'Listo'},
-    {'id': 'entregados', 'icono': '🚚', 'nombre': 'Entregados'}
+    {'id': 'pendiente', 'icono': 'fa-clock', 'nombre': 'Pendiente'},
+    {'id': 'por-preparar', 'icono': 'fa-tools', 'nombre': 'Por preparar'},
+    {'id': 'preparados', 'icono': 'fa-check-circle', 'nombre': 'Preparados'},
+    {'id': 'imprimir-hoy', 'icono': 'fa-print', 'nombre': 'Imprimir hoy'},
+    {'id': 'impreso-corte', 'icono': 'fa-cut', 'nombre': 'Impreso y corte'},
+    {'id': 'produccion', 'icono': 'fa-industry', 'nombre': 'Producción'},
+    {'id': 'listo', 'icono': 'fa-box', 'nombre': 'Listo'},
+    {'id': 'entregados', 'icono': 'fa-truck', 'nombre': 'Entregados'}
 ]
 
+# Definición de rutas (para validación)
+RUTAS = {
+    'impresion': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'produccion', 'listo', 'entregados'],
+    'produccion': ['pendiente', 'por-preparar', 'preparados', 'produccion', 'listo', 'entregados']
+}
+
+# Permisos para mover (incluyendo 'produccion')
 PERMISOS_MOVER = {
     'comercial': ['pendiente', 'preparados', 'listo'],
     'disennador': ['por-preparar'],
     'diseñador': ['por-preparar'],
     'disenador': ['por-preparar'],
-    'operario': ['preparados', 'imprimir-hoy', 'impreso-corte'],
-    'odalys': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'listo'],
-    'admin': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'listo', 'entregados']
+    'operario': ['preparados', 'imprimir-hoy', 'impreso-corte', 'produccion'],
+    'odalys': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'produccion', 'listo'],
+    'admin': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'produccion', 'listo', 'entregados']
 }
 
 def obtener_permisos_mover(rol):
@@ -36,6 +47,7 @@ def obtener_permisos_mover(rol):
     return []
 
 def _order_to_dict(order):
+    """Convierte una orden a diccionario para el frontend, incluyendo 'ruta'."""
     return {
         'id': order.id,
         'order_num': order.order_num,
@@ -45,14 +57,19 @@ def _order_to_dict(order):
         } if order.client else None,
         'priority': order.priority,
         'column': order.column,
+        'ruta': getattr(order, 'ruta', 'impresion'),
         'entrada_ok': order.entrada_ok,
         'fecha_entregado': order.fecha_entregado.isoformat() if order.fecha_entregado else None,
         'created_at': order.created_at.isoformat() if order.created_at else None,
         'proyecto': order.proyecto,
         'descripcion': order.descripcion,
-        'servicios': order.get_servicios() if hasattr(order, 'get_servicios') else []
+        'servicios': order.get_servicios() if hasattr(order, 'get_servicios') else [],
+        'historial': order.get_history() if hasattr(order, 'get_history') else []
     }
 
+# ============================================================
+# RUTA PRINCIPAL (tablero)
+# ============================================================
 @workflow_bp.route('/')
 @login_required
 def board():
@@ -70,10 +87,14 @@ def board():
     columnas_permitidas = obtener_permisos_mover(current_user.role)
     puede_eliminar = current_user.role in ['comercial', 'admin']
 
-    print(f"🔍 Usuario: {current_user.username} (rol: {current_user.role})")
-    print(f"   Columnas permitidas para mover: {columnas_permitidas}")
-    for col_id, tarjetas in columnas.items():
-        print(f"   {col_id}: {[o['order_num'] for o in tarjetas]}")
+    total_activas = sum(1 for o in orders_dict if o['column'] != 'entregados')
+    total_entregadas = sum(1 for o in orders_dict if o['column'] == 'entregados')
+    pendientes = sum(1 for o in orders_dict if o['column'] in ['pendiente', 'por-preparar'])
+    en_proceso = sum(1 for o in orders_dict if o['column'] in ['preparados', 'imprimir-hoy', 'impreso-corte', 'produccion'])
+    listas = sum(1 for o in orders_dict if o['column'] == 'listo')
+
+    chart_labels = [col['nombre'] for col in COLUMNAS]
+    chart_data = [len(columnas[col['id']]) for col in COLUMNAS]
 
     return render_template('board.html',
                            columnas=columnas,
@@ -82,8 +103,18 @@ def board():
                            ahora=ahora,
                            puede_cambiar_prioridad=puede_cambiar_prioridad,
                            columnas_permitidas=columnas_permitidas,
-                           puede_eliminar=puede_eliminar)
+                           puede_eliminar=puede_eliminar,
+                           total_activas=total_activas,
+                           total_entregadas=total_entregadas,
+                           pendientes=pendientes,
+                           en_proceso=en_proceso,
+                           listas=listas,
+                           chart_labels=chart_labels,
+                           chart_data=chart_data)
 
+# ============================================================
+# MOVER ORDEN (con validación de ruta)
+# ============================================================
 @workflow_bp.route('/mover/<int:order_id>', methods=['POST'])
 @login_required
 def mover_ajax(order_id):
@@ -107,31 +138,32 @@ def mover_ajax(order_id):
     print(f"🔍 Orden {order.order_num} (ID: {order_id}) está en columna: '{order.column}'")
     print(f"   Permisos del usuario: {columnas_permitidas}")
 
-    # 1. Verificar permiso de columna
     if order.column not in columnas_permitidas:
         return jsonify({
             'error': f'No tienes permiso para mover desde "{order.column}". Solo puedes mover desde: {", ".join(columnas_permitidas)}'
         }), 403
 
-    # ============================================
-    # VALIDACIÓN: SOLO ÓRDENES CON ENTRADA AL SISTEMA PUEDEN MOVERSE
-    # ============================================
+    ruta_orden = getattr(order, 'ruta', 'impresion')
+    if ruta_orden not in RUTAS:
+        ruta_orden = 'impresion'
+    if nueva_columna not in RUTAS[ruta_orden]:
+        return jsonify({
+            'error': f'❌ La orden tiene ruta "{ruta_orden}" y no permite mover a "{nueva_columna}".\n'
+                     f'Ruta permitida: {" → ".join(RUTAS[ruta_orden])}'
+        }), 400
+
     if not order.entrada_ok and nueva_columna != 'pendiente':
         return jsonify({
             'error': '⚠️ Esta orden no tiene entrada al sistema. Debes marcarla como "Entrada" primero.\n\n'
                      'Por favor, ve a la lista de órdenes y asígnale el número de Odoo para poder avanzarla en el flujo de trabajo.'
         }), 400
 
-    # ============================================
-    # CONSUMIR MATERIALES AL PASAR A "IMPRESO Y CORTE"
-    # ============================================
     if nueva_columna == 'impreso-corte' and order.entrada_ok:
         from app.modulos.ordenes import consumir_materiales
         success, msg = consumir_materiales(order.id)
         if not success:
             return jsonify({'error': f'Error al consumir materiales: {msg}'}), 400
 
-    # Actualizar columna
     order.column = nueva_columna
     if nueva_columna == 'entregados':
         order.fecha_entregado = datetime.now()
@@ -146,7 +178,6 @@ def mover_ajax(order_id):
     })
     db.session.commit()
 
-    # Notificaciones
     usuarios = User.query.filter(User.is_active == True, User.id != current_user.id).all()
     if usuarios:
         mensaje = f"Orden {order.order_num} movida a '{nueva_columna}' por {current_user.username}"
@@ -155,30 +186,31 @@ def mover_ajax(order_id):
 
     return jsonify({'success': True, 'mensaje': f'Movida a {nueva_columna}'})
 
-@workflow_bp.route('/prioridad/<int:order_id>', methods=['POST'])
+# ============================================================
+# CAMBIAR RUTA
+# ============================================================
+@workflow_bp.route('/cambiar-ruta/<int:order_id>', methods=['POST'])
 @login_required
-def cambiar_prioridad(order_id):
+def cambiar_ruta(order_id):
     if current_user.role not in ['admin', 'comercial', 'odalys']:
         return jsonify({'error': 'No tienes permiso'}), 403
 
     data = request.get_json()
-    nueva_prioridad = data.get('prioridad')
-    if nueva_prioridad not in ['urgente', 'normal', 'critica']:
-        return jsonify({'error': 'Prioridad inválida'}), 400
+    nueva_ruta = data.get('ruta')
+    if nueva_ruta not in RUTAS:
+        return jsonify({'error': 'Ruta inválida'}), 400
 
     order = Order.query.get_or_404(order_id)
-    order.priority = nueva_prioridad
-    order.add_history(f'Prioridad cambiada a {nueva_prioridad} por {current_user.username}')
+    order.ruta = nueva_ruta
+    if order.column not in RUTAS[nueva_ruta]:
+        order.column = RUTAS[nueva_ruta][0]
+    order.add_history(f'Ruta cambiada a {nueva_ruta} por {current_user.username}')
     db.session.commit()
+    return jsonify({'success': True, 'mensaje': f'Ruta cambiada a {nueva_ruta}'})
 
-    usuarios = User.query.filter(User.is_active == True, User.id != current_user.id).all()
-    if usuarios:
-        mensaje = f"Prioridad de {order.order_num} cambiada a '{nueva_prioridad}' por {current_user.username}"
-        enlace = url_for('workflow.board', _external=True)
-        notificar_usuarios([u.id for u in usuarios], mensaje, 'prioridad_cambiada', order.id, enlace)
-
-    return jsonify({'success': True})
-
+# ============================================================
+# ELIMINAR ORDEN
+# ============================================================
 @workflow_bp.route('/eliminar/<int:order_id>', methods=['POST'])
 @login_required
 def eliminar_orden(order_id):
@@ -194,6 +226,9 @@ def eliminar_orden(order_id):
     db.session.commit()
     return jsonify({'success': True})
 
+# ============================================================
+# OBTENER COLUMNA
+# ============================================================
 @workflow_bp.route('/columna/<columna_id>')
 @login_required
 def obtener_columna(columna_id):
@@ -202,10 +237,6 @@ def obtener_columna(columna_id):
 
     query = Order.query.filter_by(column=columna_id)
     orders = query.all()
-    if columna_id == 'entregados':
-        limite = datetime.now() - timedelta(hours=24)
-        orders = [o for o in orders if o.fecha_entregado and o.fecha_entregado >= limite]
-
     data = [{
         'id': o.id,
         'num': o.order_num,
@@ -215,3 +246,38 @@ def obtener_columna(columna_id):
     } for o in orders]
 
     return jsonify(data)
+
+# ============================================================
+# DATOS PARA DASHBOARD (POLLING)
+# ============================================================
+@workflow_bp.route('/dashboard-data')
+@login_required
+def dashboard_data():
+    """Devuelve datos en JSON para actualizar el dashboard en tiempo real."""
+    orders = Order.query.all()
+    orders_dict = [_order_to_dict(o) for o in orders]
+
+    column_counts = {col['id']: 0 for col in COLUMNAS}
+    for o in orders_dict:
+        col = o['column'] if o['column'] in column_counts else 'pendiente'
+        column_counts[col] += 1
+
+    total_activas = sum(1 for o in orders_dict if o['column'] != 'entregados')
+    total_entregadas = sum(1 for o in orders_dict if o['column'] == 'entregados')
+    pendientes = sum(1 for o in orders_dict if o['column'] in ['pendiente', 'por-preparar'])
+    en_proceso = sum(1 for o in orders_dict if o['column'] in ['preparados', 'imprimir-hoy', 'impreso-corte', 'produccion'])
+    listas = sum(1 for o in orders_dict if o['column'] == 'listo')
+
+    chart_labels = [col['nombre'] for col in COLUMNAS]
+    chart_data = [column_counts[col['id']] for col in COLUMNAS]
+
+    return jsonify({
+        'column_counts': column_counts,
+        'total_activas': total_activas,
+        'total_entregadas': total_entregadas,
+        'pendientes': pendientes,
+        'en_proceso': en_proceso,
+        'listas': listas,
+        'chart_labels': chart_labels,
+        'chart_data': chart_data
+    })

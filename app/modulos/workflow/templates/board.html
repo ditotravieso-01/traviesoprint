@@ -2,540 +2,450 @@
 
 {% block title %}Workflow · CairoStudio{% endblock %}
 
-{% block page_title %}🌀 Workflow · Taller creativo{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:28px; font-weight:700;">Workflow</span>
+    <span style="font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
+        Flujo de trabajo · <span id="totalActivasBadge">{{ total_activas }}</span> activas, <span id="totalEntregadasBadge">{{ total_entregadas }}</span> entregadas
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ===== GENERAL ===== */
+    .content-card { max-width: 100%; padding: 0 20px; }
+
+    /* ===== TABS ===== */
+    .tabs {
+        display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid #f0ece8; padding-bottom: 4px;
+    }
+    .tab-btn {
+        background: none; border: none; padding: 8px 20px; border-radius: 30px 30px 0 0;
+        font-weight: 600; font-size: 14px; cursor: pointer; color: #8e8e93; transition: all 0.2s;
+        font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 6px;
+    }
+    .tab-btn:hover { color: #1c1c1e; background: rgba(0,0,0,0.02); }
+    .tab-btn.active { background: #1c1c1e; color: white; }
+    .tab-content { display: none; padding-top: 4px; }
+    .tab-content.active { display: block; }
+
+    /* ===== FILTROS ===== */
     .filters-bar {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 12px 16px;
-        background: rgba(255,255,255,0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 20px;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
+        padding: 10px 16px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px);
+        border-radius: 14px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px;
     }
     .filters-bar input, .filters-bar select {
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
-        color: #1c1c1e;
-        min-width: 120px;
-        flex: 1;
-        font-family: 'Inter', sans-serif;
+        padding: 4px 10px; border: 1.5px solid #e0dcd8; border-radius: 30px; font-size: 12px;
+        background: white; color: #1c1c1e; font-family: 'Inter', sans-serif; height: 30px; min-width: 120px;
     }
     .filters-bar input:focus, .filters-bar select:focus {
-        outline: none;
-        border-color: #007aff;
-        box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+        outline: none; border-color: #a8854f; box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
-    .filters-bar .filter-group { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    .filters-bar .filter-label { font-weight: 600; font-size: 13px; color: #8e8e93; }
     .filters-bar .result-count { font-size: 13px; color: #8e8e93; margin-left: auto; }
-
-    .kanban-container {
-        background: #f7f0e8;
-        border: 1px solid #e0d4c8;
-        border-radius: 24px;
-        padding: 20px;
-        min-height: 500px;
+    .filters-bar .filter-indicator {
+        font-size: 12px; font-weight: 600; color: #a8854f; background: rgba(168,133,79,0.1);
+        padding: 2px 12px; border-radius: 30px; display: none;
+        align-items: center; gap: 6px;
     }
+    .filters-bar .filter-indicator.active { display: inline-flex; }
+    .filters-bar .filter-indicator .btn-close-filter {
+        background: none; border: none; color: #a8854f; cursor: pointer; font-size: 14px; padding: 0 4px;
+        transition: transform 0.2s;
+    }
+    .filters-bar .filter-indicator .btn-close-filter:hover { transform: rotate(90deg); }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard-grid { display: flex; flex-direction: column; gap: 16px; }
+    .kpi-chips {
+        display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+        padding: 8px 12px; background: rgba(255,255,255,0.4); border-radius: 30px;
+        backdrop-filter: blur(4px); border: 1px solid rgba(0,0,0,0.04);
+        align-self: flex-start;
+    }
+    .kpi-chip {
+        display: inline-flex; align-items: center; gap: 4px;
+        padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;
+        background: white; color: #1c1c1e; border: 1px solid #f0ece8;
+    }
+    .kpi-chip .num { font-weight: 700; font-size: 14px; }
+    .kpi-chip .label { color: #8e8e93; font-weight: 400; }
+    .kpi-chip.total { border-left: 3px solid #a8854f; }
+    .kpi-chip.pendiente { border-left: 3px solid #f59e0b; }
+    .kpi-chip.proceso { border-left: 3px solid #3b82f6; }
+    .kpi-chip.listo { border-left: 3px solid #10b981; }
+    .kpi-chip.entregado { border-left: 3px solid #f59e0b; }
+
+    /* ===== MAPA D3 ===== */
+    .mapa-wrapper {
+        background: white; border-radius: 24px; padding: 16px;
+        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        overflow: auto; width: 100%; min-height: 320px;
+    }
+    .mapa-wrapper svg {
+        display: block; margin: 0 auto; width: 100%; height: 100%;
+        min-height: 300px;
+        background: #fafaf9;
+        border-radius: 8px;
+    }
+    .mapa-wrapper .node {
+        cursor: pointer;
+    }
+    /* Contenedor interno que flota */
+    .mapa-wrapper .node-inner {
+        animation: float 0.7s ease-in-out infinite;
+        transform-origin: center center;
+        transition: filter 0.2s ease;
+    }
+    .mapa-wrapper .node-inner.paused {
+        animation-play-state: paused;
+    }
+    .mapa-wrapper .node-inner:hover {
+        animation-play-state: paused;
+        filter: drop-shadow(0 4px 12px rgba(0,0,0,0.08));
+    }
+    .mapa-wrapper .node-inner rect {
+        transition: stroke-width 0.15s ease, stroke 0.15s ease;
+    }
+    .mapa-wrapper .node-inner:hover rect {
+        stroke-width: 2.5px;
+        filter: drop-shadow(0 2px 8px rgba(0,0,0,0.06));
+    }
+    .mapa-wrapper .node.filtro-activo .node-inner rect {
+        stroke: #a8854f !important;
+        stroke-width: 2.5px !important;
+        filter: drop-shadow(0 0 6px rgba(168,133,79,0.2));
+    }
+    .mapa-wrapper .edgePath path {
+        fill: none; stroke: #8e8e93; stroke-width: 2px;
+        stroke-dasharray: 4 3; opacity: 0.6;
+    }
+    .mapa-wrapper .leyenda {
+        display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+        margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0ece8;
+    }
+    .leyenda-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
+    .leyenda-item .color { width: 10px; height: 10px; border-radius: 50%; }
+
+    /* Animación de flotación suave */
+    @keyframes float {
+        0% { transform: translateY(1px); }
+        50% { transform: translateY(-6px); }
+        100% { transform: translateY(1px); }
+    }
+
+    /* ===== GRÁFICO ===== */
+    .chart-container {
+        background: rgba(255,255,255,0.6); backdrop-filter: blur(4px);
+        border-radius: 16px; padding: 16px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .chart-container .chart-header {
+        display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;
+    }
+    .chart-container .chart-header h4 {
+        font-family: 'Playfair Display', serif; font-size: 16px; margin: 0;
+    }
+    .chart-container .chart-header select {
+        padding: 4px 10px; border-radius: 30px; border: 1px solid #d2d2d7;
+        font-size: 12px; background: white; font-family: 'Inter', sans-serif;
+    }
+    .chart-container canvas { max-height: 140px; width: 100% !important; }
+
+    /* ===== KANBAN ===== */
+    .kanban-wrapper { background: rgba(255,255,255,0.3); border-radius: 24px; padding: 20px; border: 1px solid rgba(0,0,0,0.04); }
     .board {
-        display: flex;
-        gap: 18px;
-        overflow-x: auto;
-        padding: 8px 4px 16px;
-        min-height: 400px;
+        display: flex; gap: 16px; overflow-x: auto; padding: 8px 4px 16px; min-height: 350px;
     }
     .columna {
-        flex: 0 0 250px;
-        min-width: 220px;
-        background: rgba(255,255,255,0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 14px 14px 10px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        flex: 0 0 180px; min-width: 150px;
+        background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
+        border-radius: 20px; padding: 14px 14px 10px;
+        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        overflow: hidden;
-        cursor: default;
+        display: flex; flex-direction: column; position: relative; overflow: hidden;
     }
     .columna::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        border-radius: 20px 20px 0 0;
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 20px 20px 0 0;
     }
-    .columna.pendiente::after { background: #f1c40f; }
-    .columna.por-preparar::after { background: #e67e22; }
-    .columna.preparados::after { background: #3498db; }
-    .columna.imprimir-hoy::after { background: #e74c3c; }
-    .columna.impreso-corte::after { background: #9b59b6; }
-    .columna.listo::after { background: #27ae60; }
-    .columna.entregados::after { background: #f39c12; }
+    .columna.pendiente::after { background: #f59e0b; }
+    .columna.por-preparar::after { background: #f97316; }
+    .columna.preparados::after { background: #3b82f6; }
+    .columna.imprimir-hoy::after { background: #dc2626; }
+    .columna.impreso-corte::after { background: #8b5cf6; }
+    .columna.produccion::after { background: #f472b6; }
+    .columna.listo::after { background: #10b981; }
+    .columna.entregados::after { background: #f59e0b; }
 
-    .columna:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
-    }
-    .columna.drag-over {
-        background: rgba(0,122,255,0.04);
-        border-color: #007aff;
-    }
+    .columna:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
     .columna .cabecera {
-        font-family: 'Playfair Display', serif;
-        font-weight: 700;
-        font-size: 17px;
-        color: #1c1c1e;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-bottom: 6px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        user-select: none;
+        font-family: 'Playfair Display', serif; font-weight: 700; font-size: 17px;
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: 6px; margin-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.04);
     }
-    .columna .cabecera .icono { font-size: 22px; margin-right: 4px; }
     .columna .cabecera .contador {
-        background: rgba(0,0,0,0.04);
-        padding: 0 12px;
-        border-radius: 30px;
-        font-size: 13px;
-        font-weight: 600;
-        color: #1c1c1e;
+        background: rgba(0,0,0,0.04); padding: 0 12px; border-radius: 30px; font-size: 13px; font-weight: 600;
     }
-    .columna .card-list {
-        min-height: 80px;
-        flex: 1;
-        border-radius: 8px;
-        padding: 2px;
-        transition: all 0.3s;
-    }
+    .columna .card-list { min-height: 80px; flex: 1; border-radius: 8px; padding: 2px; transition: all 0.3s; }
 
     .tarjeta {
-        background: white;
-        border-radius: 14px;
-        padding: 10px 12px;
-        margin-bottom: 6px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        cursor: pointer;
-        transition: all 0.2s;
-        color: #1c1c1e;
-        position: relative;
+        background: white; border-radius: 14px; padding: 10px 12px; margin-bottom: 6px;
+        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        cursor: grab; transition: all 0.2s;
     }
-    .tarjeta:hover {
-        transform: translateY(-2px) scale(1.01);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.04);
-        border-color: rgba(0,0,0,0.08);
-    }
-    .tarjeta .titulo {
-        font-weight: 600;
-        font-size: 13px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 6px;
-    }
-    .tarjeta .titulo .order-num { flex-shrink: 0; }
-    .tarjeta .sub {
-        font-size: 11px;
-        color: #8e8e93;
-        display: flex;
-        justify-content: space-between;
-        margin-top: 2px;
-        align-items: center;
-        gap: 4px;
-    }
-    .tarjeta .sub .cliente {
-        color: #1c1c1e;
-        font-weight: 500;
-        flex-shrink: 0;
-        cursor: pointer;
-    }
-    .tarjeta .sub .cliente:hover { text-decoration: underline; }
+    .tarjeta:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .tarjeta .titulo { font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+    .tarjeta .sub { font-size: 11px; color: #8e8e93; display: flex; justify-content: space-between; margin-top: 2px; align-items: center; gap: 4px; }
+    .tarjeta .sub .cliente { color: #1c1c1e; font-weight: 500; cursor: pointer; }
     .tarjeta .sub .prioridad {
-        font-size: 10px;
-        font-weight: 700;
-        text-transform: uppercase;
-        padding: 2px 8px;
-        border-radius: 30px;
-        flex-shrink: 0;
+        font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 30px;
     }
     .prioridad.urgente { color: #ff3b30; background: rgba(255,59,48,0.08); }
     .prioridad.normal { color: #34c759; background: rgba(52,199,89,0.08); }
     .prioridad.critica { color: #ff9500; background: rgba(255,149,0,0.08); }
-
-    .tarjeta .sub .tiempo-columna {
-        font-size: 10px;
-        color: #8e8e93;
-        font-weight: 500;
-        background: rgba(0,0,0,0.04);
-        padding: 1px 8px;
-        border-radius: 30px;
-        white-space: nowrap;
+    .tarjeta .ruta-badge {
+        font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 1px 8px; border-radius: 30px;
+        background: #f0ece8; color: #555;
     }
+    .ruta-badge.impresion { background: #dbeafe; color: #1e40af; }
+    .ruta-badge.produccion { background: #fce7f3; color: #be185d; }
+
     .tarjeta .acciones-mini {
-        margin-top: 6px;
-        display: flex;
-        gap: 6px;
-        border-top: 1px solid rgba(0,0,0,0.04);
-        padding-top: 4px;
-        align-items: center;
+        margin-top: 6px; display: flex; gap: 6px; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 4px; align-items: center;
     }
     .tarjeta .btn-hecho {
-        background: rgba(0,0,0,0.04);
-        border: none;
-        border-radius: 30px;
-        padding: 1px 10px;
-        font-size: 10px;
-        cursor: pointer;
-        white-space: nowrap;
-        color: #1c1c1e;
-        transition: background 0.2s;
+        background: rgba(0,0,0,0.04); border: none; border-radius: 30px; padding: 1px 10px; font-size: 10px; cursor: pointer;
     }
     .tarjeta .btn-hecho:hover { background: rgba(0,0,0,0.08); }
 
-    .tarjeta .badge-tipo {
-        font-size: 9px;
-        font-weight: 700;
-        text-transform: uppercase;
-        padding: 1px 6px;
-        border-radius: 4px;
-        background: rgba(0,0,0,0.04);
-        color: #8e8e93;
+    /* ===== HISTORIAL ===== */
+    .historial-wrapper { background: white; border-radius: 24px; padding: 20px; border: 1px solid #f0ece8; }
+    .historial-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+    .historial-item {
+        background: #fafaf9; border-radius: 14px; padding: 12px 16px;
+        border: 1px solid #f0ece8; display: flex; justify-content: space-between; align-items: center;
     }
-    .badge-tipo.etiqueta { background: #dbeafe; color: #1e40af; }
-    .badge-tipo.cartel { background: #fef3c7; color: #92400e; }
-    .badge-tipo.otros { background: #e5e7eb; color: #4b5563; }
+    .historial-item .info { display: flex; flex-direction: column; gap: 2px; }
+    .historial-item .info .num { font-weight: 600; font-size: 14px; }
+    .historial-item .info .cliente { font-size: 12px; color: #8e8e93; }
+    .historial-item .fecha { font-size: 12px; color: #8e8e93; }
 
-    /* Panel lateral (Estudio Blanc) */
+    /* ===== PANEL LATERAL ===== */
     .panel-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.2);
-        z-index: 9998;
-        display: none;
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.2); z-index: 9998; display: none; backdrop-filter: blur(6px);
     }
     .panel-overlay.active { display: block; }
-
     .panel-lateral {
-        position: fixed;
-        top: 20px;
-        right: -560px;
-        width: 520px;
-        max-width: 92vw;
-        height: calc(100% - 40px);
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(20px);
-        -webkit-backdrop-filter: blur(20px);
-        border-radius: 32px 0 0 32px;
-        border-left: 6px solid #a8854f;
-        box-shadow: -12px 0 60px rgba(0,0,0,0.06);
-        z-index: 9999;
+        position: fixed; top: 20px; right: -560px; width: 520px; max-width: 92vw;
+        height: calc(100% - 40px); background: rgba(255,255,255,0.92); backdrop-filter: blur(20px);
+        border-radius: 32px 0 0 32px; border-left: 6px solid #a8854f;
+        box-shadow: -12px 0 60px rgba(0,0,0,0.06); z-index: 9999;
         transition: right 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        padding: 28px 30px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        color: #1c1c1e;
+        padding: 28px 30px; overflow-y: auto; display: flex; flex-direction: column; color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
     }
     .panel-lateral.open { right: 20px; }
-
     .panel-lateral .panel-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        padding-bottom: 14px;
-        margin-bottom: 20px;
-        flex-shrink: 0;
+        display: flex; justify-content: space-between; align-items: center;
+        border-bottom: 1px solid rgba(0,0,0,0.04); padding-bottom: 14px; margin-bottom: 20px; flex-shrink: 0;
     }
     .panel-lateral .panel-header h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 24px;
-        font-weight: 700;
-        color: #1c1c1e;
-        margin: 0;
+        font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; margin: 0;
     }
     .panel-lateral .panel-close {
-        font-size: 28px;
-        cursor: pointer;
-        background: none;
-        border: none;
-        color: #8e8e93;
-        transition: transform 0.3s, color 0.2s;
-        line-height: 1;
+        font-size: 28px; cursor: pointer; background: none; border: none; color: #8e8e93;
+        transition: transform 0.3s, color 0.2s; line-height: 1;
     }
-    .panel-lateral .panel-close:hover {
-        color: #1c1c1e;
-        transform: rotate(90deg);
-    }
-
-    .panel-lateral .panel-body {
-        flex: 1;
-        overflow-y: auto;
-        padding-right: 4px;
-    }
-    .panel-lateral .panel-body::-webkit-scrollbar {
-        width: 4px;
-    }
-    .panel-lateral .panel-body::-webkit-scrollbar-track {
-        background: rgba(0,0,0,0.03);
-        border-radius: 8px;
-    }
-    .panel-lateral .panel-body::-webkit-scrollbar-thumb {
-        background: #a8854f;
-        border-radius: 8px;
-    }
+    .panel-lateral .panel-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .panel-lateral .panel-body { flex: 1; overflow-y: auto; padding-right: 4px; }
+    .panel-lateral .panel-body::-webkit-scrollbar { width: 4px; }
+    .panel-lateral .panel-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.03); border-radius: 8px; }
+    .panel-lateral .panel-body::-webkit-scrollbar-thumb { background: #a8854f; border-radius: 8px; }
 
     .panel-lateral .campo {
-        display: flex;
-        flex-direction: column;
-        margin-bottom: 14px;
-        padding: 6px 0;
+        display: flex; flex-direction: column; margin-bottom: 14px; padding: 6px 0;
         border-bottom: 1px solid rgba(0,0,0,0.04);
     }
     .panel-lateral .campo .label {
-        font-weight: 600;
-        font-size: 11px;
-        color: #8e8e93;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-weight: 600; font-size: 11px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.5px;
         margin-bottom: 2px;
     }
-    .panel-lateral .campo .valor {
-        font-size: 15px;
-        color: #1c1c1e;
-        padding-top: 2px;
-    }
-    .panel-lateral .campo .valor a {
-        color: #007aff;
-        text-decoration: none;
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-    .panel-lateral .campo .valor a:hover {
-        color: #0055b3;
-        text-decoration: underline;
-    }
-    .panel-lateral .campo .valor .badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 30px;
-    }
+    .panel-lateral .campo .valor { font-size: 15px; color: #1c1c1e; padding-top: 2px; }
+    .panel-lateral .campo .valor a { color: #007aff; text-decoration: none; cursor: pointer; }
+    .panel-lateral .campo .valor a:hover { text-decoration: underline; }
+    .panel-lateral .campo .valor .badge { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 30px; }
 
     .panel-lateral .seccion {
-        margin-top: 18px;
-        border-top: 1px solid rgba(0,0,0,0.04);
-        padding-top: 14px;
+        margin-top: 18px; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 14px;
     }
     .panel-lateral .seccion h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 16px;
-        font-weight: 700;
-        color: #1c1c1e;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
+        font-family: 'Playfair Display', serif; font-size: 16px; font-weight: 700;
+        display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
     }
     .panel-lateral .historial-item {
-        font-size: 13px;
-        padding: 6px 0;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        display: flex;
-        justify-content: space-between;
-        color: #1c1c1e;
+        font-size: 13px; padding: 6px 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+        display: flex; justify-content: space-between; color: #1c1c1e;
     }
-    .panel-lateral .historial-item .fecha {
-        color: #8e8e93;
-        font-size: 12px;
-    }
+    .panel-lateral .historial-item .fecha { color: #8e8e93; font-size: 12px; }
 
     .panel-lateral .panel-actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-        margin-top: 16px;
-        padding-top: 16px;
-        border-top: 1px solid rgba(0,0,0,0.04);
-        flex-shrink: 0;
+        display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px;
+        border-top: 1px solid rgba(0,0,0,0.04); flex-shrink: 0;
     }
     .panel-lateral .panel-actions .btn {
-        padding: 8px 16px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        background: #1c1c1e;
-        color: white;
+        padding: 8px 16px; border-radius: 30px; border: none; font-weight: 600; font-size: 13px;
+        cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+        text-decoration: none; background: #1c1c1e; color: white;
     }
-    .panel-lateral .panel-actions .btn:hover {
-        background: #333;
-        transform: translateY(-1px);
-    }
+    .panel-lateral .panel-actions .btn:hover { background: #333; transform: translateY(-1px); }
     .panel-lateral .panel-actions .btn-outline {
-        background: transparent;
-        border: 1px solid #d2d2d7;
-        color: #1c1c1e;
+        background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e;
     }
-    .panel-lateral .panel-actions .btn-outline:hover {
-        border-color: #007aff;
-        color: #007aff;
-    }
-    .panel-lateral .panel-actions .btn-success {
-        background: #10b981;
-        color: white;
-    }
+    .panel-lateral .panel-actions .btn-outline:hover { border-color: #007aff; color: #007aff; }
+    .panel-lateral .panel-actions .btn-success { background: #10b981; color: white; }
     .panel-lateral .panel-actions .btn-success:hover { background: #059669; }
-    .panel-lateral .panel-actions .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
+    .panel-lateral .panel-actions .btn-danger { background: #dc2626; color: white; }
     .panel-lateral .panel-actions .btn-danger:hover { background: #b91c1c; }
-    .panel-lateral .panel-actions .btn-whatsapp {
-        background: #25D366;
-        color: white;
-    }
+    .panel-lateral .panel-actions .btn-whatsapp { background: #25D366; color: white; }
     .panel-lateral .panel-actions .btn-whatsapp:hover { background: #1DA851; }
 
+    /* ===== TOAST ===== */
     .toast {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        background: #1c1c1e;
-        color: white;
-        padding: 10px 20px;
-        border-radius: 30px;
-        font-weight: 500;
-        z-index: 10000;
-        font-size: 14px;
-        opacity: 0;
-        transition: opacity 0.3s;
-        pointer-events: none;
+        position: fixed; bottom: 20px; right: 20px; background: #1c1c1e; color: white;
+        padding: 10px 20px; border-radius: 30px; font-weight: 500; z-index: 10000;
+        font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         font-family: 'Inter', sans-serif;
     }
     .toast.show { opacity: 1; }
     .toast.success { background: #10b981; }
     .toast.error { background: #dc2626; }
 
-    /* Modal de error (Estudio Blanc) */
+    /* ===== MODAL ===== */
     .modal-overlay {
-        display: none;
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.2);
-        z-index: 9999;
-        backdrop-filter: blur(4px);
-        justify-content: center;
-        align-items: center;
+        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2); z-index: 9999; backdrop-filter: blur(4px);
+        justify-content: center; align-items: center;
     }
     .modal-overlay.active { display: flex; }
     .modal {
-        background: white;
-        border-radius: 24px;
-        padding: 28px 32px;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease;
+        background: white; border-radius: 24px; padding: 28px 32px; max-width: 500px; width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08); animation: modalIn 0.3s ease;
     }
     @keyframes modalIn {
         from { transform: scale(0.95); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
     }
     .modal .modal-close {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #8e8e93;
-        float: right;
+        background: none; border: none; font-size: 24px; cursor: pointer; color: #8e8e93; float: right;
     }
     .modal .modal-close:hover { color: #1c1c1e; }
-    .modal h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 16px;
-    }
-    .modal .modal-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-        justify-content: flex-end;
-    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
+    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
 
     @media (max-width: 768px) {
+        .kpi-chips { align-self: stretch; justify-content: center; }
         .board { flex-direction: column; align-items: stretch; }
         .columna { flex: 1 1 auto; min-width: unset; }
         .panel-lateral { width: 100%; max-width: 100%; right: -100%; top: 0; height: 100%; border-radius: 0; padding: 16px; }
         .panel-lateral.open { right: 0; }
         .panel-lateral .panel-actions .btn { font-size: 12px; padding: 6px 12px; }
+        .chart-container canvas { max-height: 120px; }
+        .mapa-wrapper { padding: 10px; min-height: 180px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="kanban-container">
-    <!-- Filtros -->
-    <div class="filters-bar" id="filtersBar">
-        <div class="filter-group">
-            <span class="filter-label"><i class="fas fa-search"></i></span>
-            <input type="text" id="searchInput" placeholder="Buscar cliente o referencia..." />
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Prioridad</span>
-            <select id="priorityFilter">
-                <option value="">Todas</option>
-                <option value="urgente">Urgente</option>
-                <option value="normal">Normal</option>
-                <option value="critica">Crítica</option>
-            </select>
-        </div>
-        <div class="filter-group">
-            <span class="filter-label">Tipo</span>
-            <select id="typeFilter">
-                <option value="">Todos</option>
-                <option value="grafica">Gráfica</option>
-                <option value="produccion">Producción</option>
-                <option value="mixto">Mixto</option>
-                <option value="otro">Otro</option>
-            </select>
-        </div>
-        <button class="btn" onclick="aplicarFiltros()" style="background:#1c1c1e;color:white;border:none;border-radius:30px;padding:6px 16px;font-weight:600;cursor:pointer;">Filtrar</button>
-        <button class="btn" onclick="limpiarFiltros()" style="background:transparent;border:1px solid #d2d2d7;color:#1c1c1e;border-radius:30px;padding:6px 16px;font-weight:600;cursor:pointer;">Limpiar</button>
+<div class="content-card">
+
+    <!-- FILTROS GLOBALES -->
+    <div class="filters-bar">
+        <input type="text" id="searchInput" placeholder="Buscar cliente o referencia..." />
+        <select id="priorityFilter">
+            <option value="">Todas</option>
+            <option value="urgente">Urgente</option>
+            <option value="normal">Normal</option>
+            <option value="critica">Crítica</option>
+        </select>
+        <select id="rutaFilter">
+            <option value="">Todas las rutas</option>
+            <option value="impresion">Impresión</option>
+            <option value="produccion">Producción</option>
+        </select>
         <span class="result-count" id="resultCount"></span>
+        <span class="filter-indicator" id="filterIndicator">
+            <i class="fas fa-filter"></i> Filtro: <span id="filterColumna"></span>
+            <button class="btn-close-filter" onclick="limpiarFiltroColumna()">&times;</button>
+        </span>
     </div>
 
-    <!-- Tablero -->
-    <div class="board" id="board"></div>
+    <!-- PESTAÑAS -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="dashboard"><i class="fas fa-sitemap"></i> Dashboard</button>
+        <button class="tab-btn" data-tab="tareas"><i class="fas fa-tasks"></i> Tareas</button>
+        <button class="tab-btn" data-tab="entregados"><i class="fas fa-history"></i> Entregados</button>
+    </div>
+
+    <!-- ===== TAB DASHBOARD ===== -->
+    <div class="tab-content active" id="tab-dashboard">
+        <div class="dashboard-grid">
+
+            <!-- KPIs -->
+            <div class="kpi-chips">
+                <span class="kpi-chip total"><span class="num" id="kpiTotalActivas">{{ total_activas }}</span> <span class="label">activas</span></span>
+                <span class="kpi-chip pendiente"><span class="num" id="kpiPendientes">{{ pendientes }}</span> <span class="label">pendientes</span></span>
+                <span class="kpi-chip proceso"><span class="num" id="kpiEnProceso">{{ en_proceso }}</span> <span class="label">en proceso</span></span>
+                <span class="kpi-chip listo"><span class="num" id="kpiListas">{{ listas }}</span> <span class="label">listas</span></span>
+                <span class="kpi-chip entregado"><span class="num" id="kpiEntregadas">{{ total_entregadas }}</span> <span class="label">entregadas</span></span>
+                <span style="font-size:12px; color:#8e8e93; margin-left:4px;">
+                    <i class="fas fa-sync-alt" id="pollingIcon" style="font-size:11px;"></i> <span id="lastUpdate">actualizando...</span>
+                </span>
+            </div>
+
+            <!-- MAPA -->
+            <div class="mapa-wrapper" id="mapaWrapper">
+                <svg id="mapaSvg" width="100%" height="400"></svg>
+                <div class="leyenda" id="leyendaMapa"></div>
+                <div style="text-align:center; margin-top:8px; font-size:11px; color:#8e8e93;">
+                    <i class="fas fa-mouse-pointer"></i> Haz clic en un nodo para filtrar las tareas
+                </div>
+            </div>
+
+            <!-- GRÁFICO -->
+            <div class="chart-container">
+                <div class="chart-header">
+                    <h4><i class="fas fa-chart-bar"></i> Distribución por columna</h4>
+                    <select id="chartTypeSelector">
+                        <option value="bar">Barras</option>
+                        <option value="doughnut">Dona</option>
+                        <option value="line">Línea</option>
+                    </select>
+                </div>
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== TAB TAREAS ===== -->
+    <div class="tab-content" id="tab-tareas">
+        <div class="kanban-wrapper">
+            <div class="board" id="board"></div>
+        </div>
+    </div>
+
+    <!-- ===== TAB ENTREGADOS ===== -->
+    <div class="tab-content" id="tab-entregados">
+        <div class="historial-wrapper">
+            <h3 style="font-family:'Playfair Display',serif; margin-bottom:12px;"><i class="fas fa-history"></i> Órdenes completadas</h3>
+            <div id="historialList" class="historial-list"></div>
+        </div>
+    </div>
+
 </div>
 
-<!-- Panel lateral -->
+<!-- ===== PANEL LATERAL ===== -->
 <div class="panel-overlay" id="panelOverlay" onclick="cerrarPanel()"></div>
 <div class="panel-lateral" id="panelLateral">
     <div class="panel-header">
@@ -546,7 +456,7 @@
     <div class="panel-actions" id="panelActions"></div>
 </div>
 
-<!-- Modal de error -->
+<!-- ===== MODAL ===== -->
 <div class="modal-overlay" id="modalError">
     <div class="modal">
         <button class="modal-close" onclick="cerrarModalError()">&times;</button>
@@ -562,25 +472,69 @@
     </div>
 </div>
 
-<!-- Toast -->
+<!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
-
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dagre@0.8.5/dist/dagre.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
     // ============================================================
-    // VARIABLES GLOBALES
+    // DATOS DESDE EL BACKEND
     // ============================================================
-    let columnasInfo = [];
-    let columnasAgrupadas = {};
-    let ahora = null;
-    let puedeCambiarPrioridad = false;
-    let columnasPermitidas = [];
-    let puedeEliminar = false;
+    const columnasInfo = {{ columnas_info|tojson }};
+    const columnasAgrupadas = {{ columnas|tojson }};
+    const columnasPermitidas = {{ columnas_permitidas|tojson }};
+    const puedeCambiarPrioridad = {{ puede_cambiar_prioridad|tojson }};
+    const puedeEliminar = {{ puede_eliminar|tojson }};
+    const userRole = {{ current_user.role|tojson }};
+    const chartLabelsIniciales = {{ chart_labels|tojson }};
+    const chartDataIniciales = {{ chart_data|tojson }};
+
+    // ============================================================
+    // COLORES Y MAPEO DE ICONOS
+    // ============================================================
+    const COLORES = {
+        'pendiente': '#f59e0b',
+        'por-preparar': '#f97316',
+        'preparados': '#3b82f6',
+        'imprimir-hoy': '#dc2626',
+        'impreso-corte': '#8b5cf6',
+        'produccion': '#f472b6',
+        'listo': '#10b981',
+        'entregados': '#f59e0b'
+    };
+
+    const ICON_UNICODE = {
+        'fa-clock': '\uf017',
+        'fa-tools': '\uf7d9',
+        'fa-check-circle': '\uf058',
+        'fa-print': '\uf02f',
+        'fa-cut': '\uf0c4',
+        'fa-industry': '\uf275',
+        'fa-box': '\uf466',
+        'fa-truck': '\uf0d1'
+    };
+
+    // ============================================================
+    // RUTAS (para validar avance)
+    // ============================================================
+    const RUTAS = {
+        'impresion': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'listo', 'entregados'],
+        'produccion': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'produccion', 'listo', 'entregados']
+    };
+
+    // ============================================================
+    // ESTADO
+    // ============================================================
+    let columnaFiltroActiva = null;
     let ordenesCache = [];
-    let userRole = '';
+    let chartInstance = null;
+    let pollingInterval = null;
+    let isRendering = false;
 
     // ============================================================
     // UTILIDADES
@@ -646,6 +600,21 @@
         return ordenesCache.find(o => o.id === id);
     }
 
+    function obtenerSiguienteColumna(orden) {
+        const ruta = orden.ruta || 'impresion';
+        const rutaArray = RUTAS[ruta] || RUTAS.impresion;
+        const idx = rutaArray.indexOf(orden.column);
+        if (idx === -1 || idx === rutaArray.length - 1) {
+            return null;
+        }
+        return rutaArray[idx + 1];
+    }
+
+    function esSiguienteColumna(orden, columna) {
+        const sig = obtenerSiguienteColumna(orden);
+        return sig === columna;
+    }
+
     function mostrarToast(mensaje, tipo = '') {
         const toast = document.getElementById('toast');
         toast.textContent = mensaje;
@@ -662,21 +631,18 @@
         document.getElementById('errorMensaje').textContent = mensaje;
         document.getElementById('modalError').classList.add('active');
     }
-
     function cerrarModalError() {
         document.getElementById('modalError').classList.remove('active');
     }
-
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') cerrarModalError();
     });
-
     document.getElementById('modalError').addEventListener('click', function(e) {
         if (e.target === this) cerrarModalError();
     });
 
     // ============================================================
-    // ACCIONES (expuestas globalmente)
+    // ACCIONES (globales)
     // ============================================================
     window.enviarWhatsApp = function(id) {
         fetch('/ordenes/detalle_json/' + id)
@@ -720,7 +686,8 @@
             .then(data => {
                 if (data.success) {
                     mostrarToast('Orden eliminada', 'success');
-                    window.location.reload();
+                    // Recargar datos completos
+                    location.reload();
                 } else {
                     mostrarToast('Error: ' + (data.error || 'No autorizado'), 'error');
                 }
@@ -728,23 +695,21 @@
             .catch(() => mostrarToast('Error de conexión', 'error'));
     };
 
-    window.moverSiguiente = function(id) {
+    // ============================================================
+    // MOVER ORDEN (solo hacia adelante + actualización forzada)
+    // ============================================================
+    function moverOrden(id, nuevaColumna) {
         const orden = obtenerOrden(id);
         if (!orden) {
             mostrarToast('Orden no encontrada', 'error');
             return;
         }
-        const indices = columnasInfo.map(c => c.id);
-        const idx = indices.indexOf(orden.column);
-        if (idx === -1 || idx === indices.length - 1) {
-            mostrarToast('Ya está en la última columna', 'error');
+        if (!esSiguienteColumna(orden, nuevaColumna)) {
+            mostrarError('⚠️ Solo puedes mover a la siguiente columna de la ruta.\n' +
+                         `Ruta: ${orden.ruta || 'impresion'} → Siguiente: ${obtenerSiguienteColumna(orden) || 'Final'}`);
             return;
         }
-        const nuevaColumna = indices[idx + 1];
-        moverOrden(id, nuevaColumna);
-    };
 
-    window.moverOrden = function(id, nuevaColumna) {
         fetch('/workflow/mover/' + id, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -757,7 +722,7 @@
                         mostrarError(data.error);
                     } else if (response.status === 403) {
                         alert('No tienes permiso o la orden ha cambiado de columna. Recargando...');
-                        window.location.reload();
+                        location.reload();
                     } else {
                         throw new Error('Error en la petición');
                     }
@@ -768,18 +733,497 @@
         })
         .then(data => {
             if (data && data.success) {
-                mostrarToast('Orden movida a ' + columnasInfo.find(c => c.id === nuevaColumna)?.nombre, 'success');
-                window.location.reload();
+                mostrarToast('✅ ' + (data.mensaje || 'Movida'), 'success');
+
+                // Actualizar caché local
+                const ordenLocal = ordenesCache.find(o => o.id === id);
+                if (ordenLocal) {
+                    ordenLocal.column = nuevaColumna;
+                    if (nuevaColumna === 'entregados') {
+                        ordenLocal.fecha_entregado = new Date().toISOString();
+                    } else {
+                        ordenLocal.fecha_entregado = null;
+                    }
+                    ordenLocal.historial = ordenLocal.historial || [];
+                    ordenLocal.historial.push({
+                        columna: nuevaColumna,
+                        fecha: new Date().toISOString(),
+                        mensaje: `Movida a ${nuevaColumna}`
+                    });
+                }
+
+                // Re-renderizar Kanban e historial (rápido)
+                renderizarKanban();
+                renderizarHistorial();
+
+                // FORZAR ACTUALIZACIÓN DEL MAPA DESPUÉS DE UN BREVE RETRASO
+                // para asegurar que el servidor ya tenga los datos actualizados
+                setTimeout(() => {
+                    console.log('🔄 Forzando actualización del mapa después de mover...');
+                    actualizarDashboardCompleto();
+                }, 300);
+
             } else if (data && data.error) {
                 mostrarError(data.error);
             }
         })
         .catch(err => {
+            console.error('Error al mover:', err);
             alert('Error de conexión. Recargando...');
-            window.location.reload();
+            location.reload();
         });
-    };
+    }
 
+    // ============================================================
+    // ACTUALIZAR DASHBOARD COMPLETO (mapa, KPIs, gráfico)
+    // ============================================================
+    function actualizarDashboardCompleto() {
+        if (isRendering) return;
+        isRendering = true;
+
+        console.log('🔄 Obteniendo datos de /workflow/dashboard-data...');
+        fetch('/workflow/dashboard-data')
+            .then(r => {
+                if (!r.ok) throw new Error('Error en la respuesta');
+                return r.json();
+            })
+            .then(data => {
+                console.log('📊 Datos del dashboard:', data);
+                // 1. Actualizar KPIs
+                document.getElementById('kpiTotalActivas').textContent = data.total_activas;
+                document.getElementById('kpiPendientes').textContent = data.pendientes;
+                document.getElementById('kpiEnProceso').textContent = data.en_proceso;
+                document.getElementById('kpiListas').textContent = data.listas;
+                document.getElementById('kpiEntregadas').textContent = data.total_entregadas;
+                document.getElementById('totalActivasBadge').textContent = data.total_activas;
+                document.getElementById('totalEntregadasBadge').textContent = data.total_entregadas;
+
+                // 2. Actualizar mapa con los conteos del servidor
+                if (data.column_counts) {
+                    console.log('🗺️ Renderizando mapa con column_counts:', data.column_counts);
+                    renderizarMapa(data.column_counts);
+                } else {
+                    console.warn('⚠️ No hay column_counts en la respuesta');
+                }
+
+                // 3. Actualizar gráfico
+                if (chartInstance) {
+                    chartInstance.data.datasets[0].data = data.chart_data;
+                    chartInstance.update();
+                }
+
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                document.getElementById('pollingIcon').className = 'fas fa-check-circle';
+            })
+            .catch(err => {
+                console.error('❌ Error en actualizarDashboardCompleto:', err);
+                document.getElementById('pollingIcon').className = 'fas fa-exclamation-triangle';
+                document.getElementById('lastUpdate').textContent = 'error';
+            })
+            .finally(() => {
+                setTimeout(() => { isRendering = false; }, 300);
+            });
+    }
+
+    // ============================================================
+    // RENDERIZAR MAPA (con flotación y pausa en hover)
+    // ============================================================
+    function renderizarMapa(columnCounts) {
+        const svg = d3.select('#mapaSvg');
+        svg.selectAll('*').remove();
+
+        if (!columnCounts) {
+            console.warn('⚠️ renderizarMapa sin conteos, abortando');
+            svg.append('text')
+                .attr('x', '50%')
+                .attr('y', '50%')
+                .attr('text-anchor', 'middle')
+                .style('font-family', 'Inter, sans-serif')
+                .style('font-size', '16px')
+                .style('fill', '#8e8e93')
+                .text('No hay datos');
+            return;
+        }
+
+        console.log('📊 Conteos para mapa:', columnCounts);
+
+        const nodes = columnasInfo.map(c => ({
+            id: c.id,
+            label: `${c.icono} (${columnCounts[c.id] || 0})`,
+            width: 80,
+            height: 60,
+            color: COLORES[c.id] || '#a8854f',
+            icono: c.icono,
+            unicode: ICON_UNICODE[c.icono] || '?'
+        }));
+
+        // Aristas
+        const edgeSet = new Set();
+        Object.values(RUTAS).forEach(r => {
+            for (let i = 0; i < r.length - 1; i++) {
+                edgeSet.add(`${r[i]}→${r[i+1]}`);
+            }
+        });
+        edgeSet.add('preparados→imprimir-hoy');
+        edgeSet.add('preparados→produccion');
+        edgeSet.add('impreso-corte→listo');
+        edgeSet.add('produccion→listo');
+
+        const edges = Array.from(edgeSet).map(e => {
+            const [from, to] = e.split('→');
+            return { from, to };
+        });
+
+        const g = new dagre.graphlib.Graph();
+        g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 80, marginx: 20, marginy: 20 });
+        g.setDefaultEdgeLabel(() => ({}));
+
+        nodes.forEach(n => {
+            g.setNode(n.id, { label: n.label, width: n.width, height: n.height });
+        });
+        edges.forEach(e => {
+            g.setEdge(e.from, e.to);
+        });
+
+        dagre.layout(g);
+
+        const graphWidth = g.graph().width || 800;
+        const graphHeight = g.graph().height || 400;
+        console.log(`📐 Dimensiones del grafo: ${graphWidth}x${graphHeight}`);
+
+        const margin = 40;
+        const width = graphWidth + margin * 2;
+        const height = graphHeight + margin * 2;
+
+        svg.attr('viewBox', `0 0 ${width} ${height}`)
+            .attr('width', '100%')
+            .attr('height', height);
+
+        // Fondo del SVG
+        svg.append('rect')
+            .attr('width', width)
+            .attr('height', height)
+            .attr('fill', '#fafaf9')
+            .attr('rx', 8);
+
+        // Aristas
+        const edgeGroup = svg.append('g').attr('class', 'edges');
+        g.edges().forEach(e => {
+            const edge = g.edge(e);
+            const points = edge.points;
+            if (points && points.length > 1) {
+                const line = d3.line()
+                    .x(d => d.x + margin)
+                    .y(d => d.y + margin)
+                    .curve(d3.curveBasis);
+                edgeGroup.append('path')
+                    .attr('d', line(points))
+                    .attr('class', 'edgePath')
+                    .style('fill', 'none')
+                    .style('stroke', '#8e8e93')
+                    .style('stroke-width', '2px')
+                    .style('stroke-dasharray', '4 3')
+                    .style('opacity', 0.6);
+            }
+        });
+
+        // Nodos con grupo interior para flotación
+        const nodeGroup = svg.append('g').attr('class', 'nodes');
+        g.nodes().forEach(id => {
+            const node = g.node(id);
+            if (!node) return;
+            const color = nodes.find(n => n.id === id)?.color || '#a8854f';
+            const unicode = nodes.find(n => n.id === id)?.unicode || '?';
+            const count = columnCounts[id] || 0;
+
+            // Grupo exterior (posición fija)
+            const group = nodeGroup.append('g')
+                .attr('transform', `translate(${node.x + margin}, ${node.y + margin})`)
+                .attr('class', 'node')
+                .attr('data-id', id)
+                .style('cursor', 'pointer');
+
+            // Grupo interior (flota)
+            const innerGroup = group.append('g')
+                .attr('class', 'node-inner');
+
+            // Rectángulo (píldora)
+            innerGroup.append('rect')
+                .attr('x', -node.width / 2)
+                .attr('y', -node.height / 2)
+                .attr('width', node.width)
+                .attr('height', node.height)
+                .attr('rx', 28)
+                .attr('ry', 28)
+                .style('fill', color + '30')
+                .style('stroke', color)
+                .style('stroke-width', '2px');
+
+            // Icono (usando unicode)
+            innerGroup.append('text')
+                .attr('x', 0)
+                .attr('y', -4)
+                .attr('text-anchor', 'middle')
+                .style('font-family', '"Font Awesome 6 Free", "Font Awesome 6 Pro", sans-serif')
+                .style('font-weight', '900')
+                .style('font-size', '20px')
+                .style('fill', color)
+                .style('pointer-events', 'none')
+                .text(unicode);
+
+            // Número
+            innerGroup.append('text')
+                .attr('x', 0)
+                .attr('y', 18)
+                .attr('text-anchor', 'middle')
+                .style('font-family', 'Inter, sans-serif')
+                .style('font-weight', '600')
+                .style('font-size', '12px')
+                .style('fill', '#1c1c1e')
+                .style('pointer-events', 'none')
+                .text(count);
+
+            // Eventos para pausar/reanudar la animación
+            group.on('mouseenter', function() {
+                d3.select(this).select('.node-inner').classed('paused', true);
+            });
+            group.on('mouseleave', function() {
+                d3.select(this).select('.node-inner').classed('paused', false);
+            });
+
+            // Evento click (mantiene el filtro)
+            group.on('click', function() {
+                const id = d3.select(this).attr('data-id');
+                if (columnaFiltroActiva === id) {
+                    columnaFiltroActiva = null;
+                    document.getElementById('filterIndicator').classList.remove('active');
+                    document.getElementById('filterColumna').textContent = '';
+                    mostrarToast('Filtro de columna eliminado', 'success');
+                } else {
+                    columnaFiltroActiva = id;
+                    const colNombre = columnasInfo.find(c => c.id === id)?.nombre || id;
+                    document.getElementById('filterColumna').textContent = colNombre;
+                    document.getElementById('filterIndicator').classList.add('active');
+                    mostrarToast(`🔍 Filtrado: ${colNombre}`, 'success');
+                }
+                renderizarKanban();
+            });
+
+            if (columnaFiltroActiva === id) {
+                group.classed('filtro-activo', true);
+            } else {
+                group.classed('filtro-activo', false);
+            }
+        });
+
+        // Leyenda
+        const leyenda = document.getElementById('leyendaMapa');
+        if (leyenda) {
+            leyenda.innerHTML = columnasInfo.map(c =>
+                `<span class="leyenda-item"><span class="color" style="background:${COLORES[c.id] || '#a8854f'}"></span> ${c.nombre}</span>`
+            ).join('');
+        }
+    }
+
+    // ============================================================
+    // RENDERIZAR KANBAN (usa ordenesCache)
+    // ============================================================
+    function renderizarKanban() {
+        const board = document.getElementById('board');
+        board.innerHTML = '';
+
+        const filtros = obtenerFiltros();
+        let filtradas = ordenesCache.filter(o => o.column !== 'entregados');
+
+        if (filtros.search) {
+            const s = filtros.search.toLowerCase();
+            filtradas = filtradas.filter(o =>
+                (o.order_num && o.order_num.toLowerCase().includes(s)) ||
+                (o.client && o.client.nombre && o.client.nombre.toLowerCase().includes(s))
+            );
+        }
+        if (filtros.prioridad) {
+            filtradas = filtradas.filter(o => o.priority === filtros.prioridad);
+        }
+        if (filtros.ruta) {
+            filtradas = filtradas.filter(o => o.ruta === filtros.ruta);
+        }
+        if (columnaFiltroActiva) {
+            filtradas = filtradas.filter(o => o.column === columnaFiltroActiva);
+        }
+
+        const entregadas = ordenesCache.filter(o => o.column === 'entregados');
+        document.getElementById('resultCount').textContent = `(${filtradas.length} activas, ${entregadas.length} entregadas)`;
+
+        const agrupadas = {};
+        columnasInfo.filter(c => c.id !== 'entregados').forEach(c => agrupadas[c.id] = []);
+        filtradas.forEach(o => {
+            const col = o.column || 'pendiente';
+            if (agrupadas[col]) agrupadas[col].push(o);
+            else agrupadas['pendiente'].push(o);
+        });
+
+        columnasInfo.filter(c => c.id !== 'entregados').forEach(colInfo => {
+            const div = document.createElement('div');
+            div.className = `columna ${colInfo.id}`;
+            div.dataset.columna = colInfo.id;
+            const items = agrupadas[colInfo.id] || [];
+            const ordenPrioridad = { 'critica': 0, 'urgente': 1, 'normal': 2 };
+            items.sort((a, b) => (ordenPrioridad[a.priority] ?? 3) - (ordenPrioridad[b.priority] ?? 3));
+
+            div.innerHTML = `
+                <div class="cabecera">
+                    <span><i class="fas ${colInfo.icono}" style="margin-right: 6px;"></i> ${colInfo.nombre}</span>
+                    <span class="contador">${items.length}</span>
+                </div>
+                <div class="card-list" data-columna="${colInfo.id}"></div>
+            `;
+            const list = div.querySelector('.card-list');
+            items.forEach(orden => {
+                const card = document.createElement('div');
+                card.className = 'tarjeta';
+                card.dataset.id = orden.id;
+                card.addEventListener('click', function(e) {
+                    if (e.target.closest('button')) return;
+                    abrirPanel(orden.id);
+                });
+
+                const prioridadClass = orden.priority || 'normal';
+                const cliente = orden.client ? orden.client.nombre : 'Sin cliente';
+                const clienteId = orden.client ? orden.client.id : null;
+                const ruta = orden.ruta || 'impresion';
+                const tiempo = tiempoEnColumna(orden, orden.column);
+                const sig = obtenerSiguienteColumna(orden);
+
+                card.innerHTML = `
+                    <div class="titulo">
+                        <span class="order-num">${orden.order_num}</span>
+                        <span class="ruta-badge ${ruta}">${ruta}</span>
+                    </div>
+                    <div class="sub">
+                        <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
+                        <span class="prioridad ${prioridadClass}">${orden.priority}</span>
+                    </div>
+                    <div class="sub" style="margin-top:2px;">
+                        <span><i class="far fa-clock"></i> ${tiempo}</span>
+                    </div>
+                    <div class="acciones-mini">
+                        ${sig ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
+                    </div>
+                `;
+                list.appendChild(card);
+
+                card.querySelector('.btn-hecho')?.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const id = parseInt(this.dataset.id);
+                    const ord = obtenerOrden(id);
+                    if (!ord) return;
+                    const sig2 = obtenerSiguienteColumna(ord);
+                    if (sig2) {
+                        moverOrden(id, sig2);
+                    } else {
+                        mostrarToast('Ya está en la última columna', 'error');
+                    }
+                });
+            });
+
+            board.appendChild(div);
+            new Sortable(list, {
+                group: 'kanban',
+                animation: 150,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                onEnd: function(evt) {
+                    const item = evt.item;
+                    const ordenId = parseInt(item.dataset.id);
+                    const nuevaColumna = evt.to.closest('.columna').dataset.columna;
+                    if (ordenId && nuevaColumna) {
+                        moverOrden(ordenId, nuevaColumna);
+                    }
+                }
+            });
+        });
+    }
+
+    // ============================================================
+    // RENDERIZAR HISTORIAL
+    // ============================================================
+    function renderizarHistorial() {
+        const container = document.getElementById('historialList');
+        const entregadas = ordenesCache.filter(o => o.column === 'entregados');
+
+        if (entregadas.length === 0) {
+            container.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px;">No hay órdenes entregadas.</p>';
+            return;
+        }
+        entregadas.sort((a, b) => new Date(b.fecha_entregado) - new Date(a.fecha_entregado));
+        container.innerHTML = entregadas.map(o =>
+            `<div class="historial-item">
+                <div class="info">
+                    <span class="num">${o.order_num}</span>
+                    <span class="cliente">${o.client ? o.client.nombre : '—'} · ${o.ruta || 'impresion'}</span>
+                </div>
+                <span class="fecha">${o.fecha_entregado ? new Date(o.fecha_entregado).toLocaleDateString() : '—'}</span>
+            </div>`
+        ).join('');
+    }
+
+    // ============================================================
+    // GRÁFICO
+    // ============================================================
+    function renderizarGrafico(labels, data, tipo) {
+        const ctx = document.getElementById('distChart').getContext('2d');
+        if (chartInstance) {
+            chartInstance.destroy();
+        }
+
+        const colorMap = {
+            'Pendiente': '#f59e0b',
+            'Por preparar': '#f97316',
+            'Preparados': '#3b82f6',
+            'Imprimir hoy': '#dc2626',
+            'Impreso y corte': '#8b5cf6',
+            'Producción': '#f472b6',
+            'Listo': '#10b981',
+            'Entregados': '#f59e0b'
+        };
+        const colorArray = labels.map(l => colorMap[l] || '#a8854f');
+
+        let config = {
+            type: tipo || 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Órdenes',
+                    data: data,
+                    backgroundColor: colorArray,
+                    borderColor: colorArray,
+                    borderWidth: 1.5,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: { legend: { display: false } },
+                scales: {}
+            }
+        };
+
+        if (tipo === 'bar' || tipo === 'line') {
+            config.options.scales = {
+                x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 1, font: { size: 8 } } }
+            };
+        } else if (tipo === 'doughnut') {
+            config.options.scales = {};
+        }
+
+        chartInstance = new Chart(ctx, config);
+    }
+
+    // ============================================================
+    // PANEL LATERAL
+    // ============================================================
     window.abrirPanel = function(id) {
         const panel = document.getElementById('panelLateral');
         const overlay = document.getElementById('panelOverlay');
@@ -792,15 +1236,7 @@
         fetch('/ordenes/detalle_json/' + id)
             .then(r => r.json())
             .then(data => {
-                const color = {
-                    'pendiente': '#f1c40f',
-                    'por-preparar': '#e67e22',
-                    'preparados': '#3498db',
-                    'imprimir-hoy': '#e74c3c',
-                    'impreso-corte': '#9b59b6',
-                    'listo': '#27ae60',
-                    'entregados': '#f39c12'
-                }[data.columna] || '#a8854f';
+                const color = COLORES[data.columna] || '#a8854f';
                 document.getElementById('panelLateral').style.borderLeftColor = color;
 
                 document.getElementById('panelTitulo').textContent = `📄 ${data.numero}`;
@@ -836,6 +1272,10 @@
                         <span class="valor">${data.tipo || 'otros'}</span>
                     </div>
                     <div class="campo">
+                        <span class="label">Ruta</span>
+                        <span class="valor">${data.ruta || 'impresion'}</span>
+                    </div>
+                    <div class="campo">
                         <span class="label">Columna actual</span>
                         <span class="valor">${columnasInfo.find(c=>c.id===data.columna)?.nombre || data.columna}</span>
                     </div>
@@ -869,7 +1309,10 @@
                 let accionesHtml = '';
 
                 if (data.columna !== 'entregados') {
-                    accionesHtml += `<button class="btn btn-success" onclick="moverSiguiente(${data.id});cerrarPanel();"><i class="fas fa-arrow-right"></i> Mover</button>`;
+                    const sig = obtenerSiguienteColumna(data);
+                    if (sig) {
+                        accionesHtml += `<button class="btn btn-success" onclick="moverOrden(${data.id}, '${sig}');cerrarPanel();"><i class="fas fa-arrow-right"></i> Mover</button>`;
+                    }
                 }
 
                 if (userRole === 'comercial' || userRole === 'admin') {
@@ -902,132 +1345,15 @@
     };
 
     // ============================================================
-    // RENDERIZADO
+    // LIMPIAR FILTRO DE COLUMNA
     // ============================================================
-    function renderizar(filtros = {}) {
-        const board = document.getElementById('board');
-        board.innerHTML = '';
-
-        let todas = [];
-        columnasInfo.forEach(col => {
-            const items = columnasAgrupadas[col.id] || [];
-            items.forEach(o => {
-                todas.push(o);
-            });
-        });
-        ordenesCache = todas;
-
-        let filtradas = [...todas];
-        if (filtros.search) {
-            const s = filtros.search.toLowerCase();
-            filtradas = filtradas.filter(o =>
-                o.order_num.toLowerCase().includes(s) ||
-                (o.client && o.client.nombre && o.client.nombre.toLowerCase().includes(s))
-            );
-        }
-        if (filtros.prioridad) {
-            filtradas = filtradas.filter(o => o.priority === filtros.prioridad);
-        }
-        if (filtros.tipo) {
-            filtradas = filtradas.filter(o => o.tipo_proyecto === filtros.tipo);
-        }
-
-        document.getElementById('resultCount').textContent = `(${filtradas.length} órdenes)`;
-
-        columnasInfo.forEach(col => {
-            const colDiv = document.createElement('div');
-            colDiv.className = `columna ${col.id}`;
-            colDiv.dataset.columna = col.id;
-
-            let tarjetasCol = filtradas.filter(o => o.column === col.id);
-
-            const ordenPrioridad = { 'critica': 0, 'urgente': 1, 'normal': 2 };
-            tarjetasCol.sort((a, b) => {
-                const prioA = ordenPrioridad[a.priority] ?? 3;
-                const prioB = ordenPrioridad[b.priority] ?? 3;
-                return prioA - prioB;
-            });
-
-            const header = document.createElement('div');
-            header.className = 'cabecera';
-            header.innerHTML = `<span><span class="icono">${col.icono}</span> ${col.nombre}</span><span class="contador">${tarjetasCol.length}</span>`;
-            colDiv.appendChild(header);
-
-            const list = document.createElement('div');
-            list.className = 'card-list';
-            list.dataset.columna = col.id;
-
-            tarjetasCol.forEach(orden => {
-                const card = document.createElement('div');
-                card.className = 'tarjeta';
-                card.dataset.id = orden.id;
-                card.dataset.columna = orden.column;
-                card.addEventListener('click', function(e) {
-                    if (e.target.closest('button') || e.target.closest('.btn-hecho')) return;
-                    abrirPanel(orden.id);
-                });
-
-                const prioridadClass = orden.priority || 'normal';
-                const tipo = orden.tipo_proyecto || 'otros';
-                const cliente = orden.client ? orden.client.nombre : 'Sin cliente';
-                const clienteId = orden.client ? orden.client.id : null;
-                const tiempo = tiempoEnColumna(orden, orden.column);
-
-                card.innerHTML = `
-                    <div class="titulo">
-                        <span class="order-num">${orden.order_num}</span>
-                        <span class="badge-tipo ${tipo}">${tipo}</span>
-                    </div>
-                    <div class="sub">
-                        <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
-                        <span class="prioridad ${prioridadClass}">${orden.priority}</span>
-                    </div>
-                    <div class="sub" style="margin-top:2px;">
-                        <span class="tiempo-columna"><i class="far fa-clock"></i> ${tiempo}</span>
-                    </div>
-                    <div class="acciones-mini">
-                        ${col.id !== 'entregados' && columnasPermitidas.includes(col.id) ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
-                    </div>
-                `;
-                list.appendChild(card);
-
-                card.querySelector('.btn-hecho')?.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const id = parseInt(this.dataset.id);
-                    moverSiguiente(id);
-                });
-            });
-
-            colDiv.appendChild(list);
-            board.appendChild(colDiv);
-
-            // Sortable
-            new Sortable(list, {
-                group: 'kanban',
-                animation: 150,
-                easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
-                onStart: function(evt) {
-                    evt.from.closest('.columna').style.transform = 'scale(0.98)';
-                },
-                onEnd: function(evt) {
-                    const item = evt.item;
-                    const ordenId = parseInt(item.dataset.id);
-                    const nuevaColumna = evt.to.closest('.columna').dataset.columna;
-                    const colOrigen = evt.from.closest('.columna');
-                    const colDestino = evt.to.closest('.columna');
-                    colOrigen.style.transform = '';
-                    colDestino.style.transform = '';
-
-                    if (ordenId && nuevaColumna) {
-                        const orden = obtenerOrden(ordenId);
-                        if (orden && orden.column !== nuevaColumna) {
-                            moverOrden(ordenId, nuevaColumna);
-                        }
-                    }
-                }
-            });
-        });
-    }
+    window.limpiarFiltroColumna = function() {
+        columnaFiltroActiva = null;
+        document.getElementById('filterIndicator').classList.remove('active');
+        document.getElementById('filterColumna').textContent = '';
+        renderizarKanban();
+        mostrarToast('Filtro de columna eliminado', 'success');
+    };
 
     // ============================================================
     // FILTROS
@@ -1036,46 +1362,84 @@
         return {
             search: document.getElementById('searchInput').value.trim(),
             prioridad: document.getElementById('priorityFilter').value,
-            tipo: document.getElementById('typeFilter').value
+            ruta: document.getElementById('rutaFilter').value
         };
     }
 
-    window.aplicarFiltros = function() {
-        renderizar(obtenerFiltros());
-    };
+    // ============================================================
+    // PESTAÑAS
+    // ============================================================
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
 
-    window.limpiarFiltros = function() {
-        document.getElementById('searchInput').value = '';
-        document.getElementById('priorityFilter').value = '';
-        document.getElementById('typeFilter').value = '';
-        renderizar(obtenerFiltros());
-    };
+            if (this.dataset.tab === 'dashboard') {
+                setTimeout(() => {
+                    actualizarDashboardCompleto();
+                }, 50);
+            }
+        });
+    });
 
     // ============================================================
     // INICIALIZACIÓN
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
-        columnasInfo = {{ columnas_info|tojson }};
-        columnasAgrupadas = {{ columnas|tojson }};
-        ahora = {{ ahora.isoformat()|tojson }};
-        puedeCambiarPrioridad = {{ puede_cambiar_prioridad|tojson }};
-        columnasPermitidas = {{ columnas_permitidas|tojson }};
-        puedeEliminar = {{ puede_eliminar|tojson }};
-        userRole = {{ current_user.role|tojson }};
+        // 1. Poblar ordenesCache desde los datos iniciales
+        const todas = [];
+        columnasInfo.forEach(col => {
+            const items = columnasAgrupadas[col.id] || [];
+            items.forEach(o => todas.push(o));
+        });
+        ordenesCache = todas;
+        console.log('📦 ordenesCache inicializada con', ordenesCache.length, 'órdenes');
 
-        renderizar(obtenerFiltros());
+        // 2. Inicializar gráfico
+        const tipoInicial = document.getElementById('chartTypeSelector').value;
+        renderizarGrafico(chartLabelsIniciales, chartDataIniciales, tipoInicial);
 
+        document.getElementById('chartTypeSelector').addEventListener('change', function() {
+            const nuevoTipo = this.value;
+            const labels = chartInstance ? chartInstance.data.labels : chartLabelsIniciales;
+            const data = chartInstance ? chartInstance.data.datasets[0].data : chartDataIniciales;
+            renderizarGrafico(labels, data, nuevoTipo);
+        });
+
+        // 3. Cargar datos iniciales completos (mapa, KPIs, gráfico)
+        actualizarDashboardCompleto();
+
+        // 4. Renderizar Kanban e historial
+        renderizarKanban();
+        renderizarHistorial();
+
+        // 5. Filtros con debounce
         const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
-        const applyFiltersDebounced = debounce(aplicarFiltros, 300);
-        document.getElementById('searchInput').addEventListener('input', applyFiltersDebounced);
-        document.getElementById('priorityFilter').addEventListener('change', aplicarFiltros);
-        document.getElementById('typeFilter').addEventListener('change', aplicarFiltros);
+        const applyFilters = debounce(() => {
+            renderizarKanban();
+            renderizarHistorial();
+        }, 300);
+
+        document.getElementById('searchInput').addEventListener('input', applyFilters);
+        document.getElementById('priorityFilter').addEventListener('change', applyFilters);
+        document.getElementById('rutaFilter').addEventListener('change', applyFilters);
+
+        // 6. Polling cada 5 segundos para mantener el dashboard actualizado
+        pollingInterval = setInterval(() => {
+            actualizarDashboardCompleto();
+        }, 5000);
+
+        window.addEventListener('beforeunload', function() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') cerrarPanel();
         });
 
-        console.log('🚀 Workflow con validación de entrada al sistema activada.');
+        console.log('🚀 Workflow D3 con flotación suave y actualización forzada.');
     });
 </script>
 {% endblock %}

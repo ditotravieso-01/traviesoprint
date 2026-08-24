@@ -1,8 +1,9 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_login import UserMixin, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from app import db, login_manager
+
 
 # ==========================================
 # MODELO DE USUARIO
@@ -206,6 +207,7 @@ class Order(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
     archivos = db.relationship('ArchivoAdjunto', backref='orden', lazy=True, cascade='all, delete-orphan')
     usuarios_notificados = db.Column(db.Text, default='[]')
+    ruta = db.Column(db.String(20), default='impresion')
 
     def get_usuarios_notificados(self):
         return json.loads(self.usuarios_notificados) if self.usuarios_notificados else []
@@ -463,6 +465,7 @@ class Empleado(db.Model):
     tarifa_normal = db.Column(db.Float, default=1.00)
     tarifa_nocturna = db.Column(db.Float, default=1.30)
     tarifa_fin_semana = db.Column(db.Float, default=1.50)
+    area = db.Column(db.String(50), nullable=True)  # <--- Campo de texto para área
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -473,28 +476,25 @@ class Empleado(db.Model):
         return f'<Empleado {self.user.username}>'
 
     def get_nomina_periodo(self, periodo_id):
-        """Retorna el detalle de nómina para un periodo dado, o None si no existe."""
         return self.detalles_nomina.filter_by(periodo_id=periodo_id).first()
 
     def get_asistencias_periodo(self, fecha_inicio, fecha_fin):
-        """Retorna todas las asistencias del empleado en el rango de fechas."""
         return self.asistencias.filter(
             Asistencia.timestamp >= fecha_inicio,
             Asistencia.timestamp <= fecha_fin
         ).order_by(Asistencia.timestamp.asc()).all()
 
-
 class Asistencia(db.Model):
     __tablename__ = 'asistencias'
     id = db.Column(db.Integer, primary_key=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
-    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
     tipo = db.Column(db.String(10), nullable=False)  # 'entrada' o 'salida'
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    comentario = db.Column(db.String(200), nullable=True)  # NUEVO: comentario opcional
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
         return f'<Asistencia {self.empleado_id} {self.tipo} {self.timestamp}>'
-
 
 class PeriodoNomina(db.Model):
     __tablename__ = 'periodos_nomina'
@@ -502,8 +502,8 @@ class PeriodoNomina(db.Model):
     fecha_inicio = db.Column(db.Date, nullable=False)  # viernes
     fecha_fin = db.Column(db.Date, nullable=False)    # jueves
     estado = db.Column(db.String(20), default='abierto')  # abierto, cerrado, aprobado
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     detalles = db.relationship('DetalleNomina', backref='periodo', lazy='dynamic', cascade='all, delete-orphan')
 
@@ -512,21 +512,18 @@ class PeriodoNomina(db.Model):
 
     @classmethod
     def get_periodo_actual(cls):
-        """Devuelve el periodo de nómina actual (viernes a jueves)."""
         hoy = datetime.utcnow().date()
-        # Calcular viernes anterior (si hoy es viernes, es el viernes de hoy; si no, el viernes pasado)
-        dia = hoy.weekday()  # 0=lunes, 4=viernes
-        if dia >= 4:  # viernes, sábado, domingo
+        dia = hoy.weekday()
+        if dia >= 4:  # viernes(4), sábado(5), domingo(6)
             diff = dia - 4
         else:
-            diff = dia + 3  # días hasta el viernes anterior
+            diff = dia + 3
         viernes = hoy - timedelta(days=diff)
         jueves = viernes + timedelta(days=6)
         return cls.query.filter_by(fecha_inicio=viernes, fecha_fin=jueves).first()
 
     @classmethod
     def crear_periodo_actual(cls):
-        """Crea el periodo actual si no existe."""
         periodo = cls.get_periodo_actual()
         if not periodo:
             hoy = datetime.utcnow().date()
@@ -552,8 +549,9 @@ class DetalleNomina(db.Model):
     salario_bruto = db.Column(db.Float, default=0.0)
     aprobado = db.Column(db.Boolean, default=False)
     fecha_aprobacion = db.Column(db.DateTime, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
     def __repr__(self):
         return f'<DetalleNomina {self.empleado_id} {self.periodo_id}>'
+

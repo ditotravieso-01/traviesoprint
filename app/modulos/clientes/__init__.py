@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_required, current_user
 from app.models import Client, User, Order, ArchivoAdjunto, Producto
 from app import db
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import io
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
@@ -22,8 +22,18 @@ def comercial_or_admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin']:
-            flash('No tienes permiso para acceder a clientes.', 'danger')
-            return redirect(url_for('home.home'))
+            flash('No tienes permiso para realizar esta acción.', 'danger')
+            return redirect(url_for('home.index'))
+        return func(*args, **kwargs)
+    return wrapper
+
+def view_required(func):
+    from functools import wraps
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if current_user.role not in ['comercial', 'admin', 'economico']:
+            flash('No tienes permiso para ver clientes.', 'danger')
+            return redirect(url_for('home.index'))
         return func(*args, **kwargs)
     return wrapper
 
@@ -84,7 +94,7 @@ def get_nivel_info(nivel):
     return niveles.get(nivel, niveles['standard'])
 
 # ==========================================
-# INSIGHTS DEL CLIENTE (aprendizaje automático)
+# INSIGHTS DEL CLIENTE
 # ==========================================
 
 def calcular_insights_cliente(cliente):
@@ -142,9 +152,17 @@ def calcular_insights_cliente(cliente):
 def calcular_frecuencia(orders):
     if len(orders) < 2:
         return 'eventual'
-    fechas = sorted(o.date for o in orders if o.date)
+    # Convertir fechas a date si son datetime
+    fechas = []
+    for o in orders:
+        if o.date:
+            if isinstance(o.date, datetime):
+                fechas.append(o.date.date())
+            else:
+                fechas.append(o.date)
     if len(fechas) < 2:
         return 'eventual'
+    fechas.sort()
     diffs = [(fechas[i+1] - fechas[i]).days for i in range(len(fechas)-1)]
     avg_days = sum(diffs) / len(diffs)
     if avg_days <= 1:
@@ -160,17 +178,20 @@ def calcular_frecuencia(orders):
     return 'eventual'
 
 # ==========================================
-# LISTAR CLIENTES (con dashboard, niveles y KPIs)
+# LISTAR CLIENTES (CON PAGINACIÓN, SIN FACTURACIÓN)
 # ==========================================
 
 @clientes_bp.route('/')
 @login_required
-@comercial_or_admin_required
+@view_required
 def listar_clientes():
     search = request.args.get('search', '').strip()
     sort = request.args.get('sort', 'nombre')
     order = request.args.get('order', 'asc')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
+    # Consulta base
     query = Client.query
     if search:
         query = query.filter(
@@ -181,7 +202,54 @@ def listar_clientes():
                 Client.telefono.ilike(f'%{search}%')
             )
         )
-    
+
+    # Subconsulta de IDs de clientes filtrados (para KPIs)
+    subquery = query.with_entities(Client.id).subquery()
+
+    total_clientes = query.count()
+    total_ordenes = db.session.query(func.count(Order.id)).filter(
+        Order.client_id.in_(subquery)
+    ).scalar() or 0
+
+    fecha_limite = datetime.now() - timedelta(days=30)
+    clientes_activos = db.session.query(func.count(func.distinct(Order.client_id))).filter(
+        Order.date >= fecha_limite,
+        Order.client_id.in_(subquery)
+    ).scalar() or 0
+
+    # FACTURACIÓN DESACTIVADA
+    total_facturado = 0
+    top_cliente_nombre = '—'
+    top_cliente_monto = 0
+
+    # Niveles (basados en todos los clientes filtrados, solo por número de pedidos)
+    clientes_todos = query.all()
+    if len(clientes_todos) >= 5:
+        sorted_by_pedidos = sorted(clientes_todos, key=lambda c: len(c.orders) if c.orders else 0, reverse=True)
+        n = len(clientes_todos)
+        top_5 = max(1, int(n * 0.05))
+        top_20 = max(1, int(n * 0.20))
+        top_black_ids = set([c.id for c in sorted_by_pedidos[:top_5]])
+        top_golden_ids = set([c.id for c in sorted_by_pedidos[:top_20]])
+    else:
+        top_black_ids = set()
+        top_golden_ids = set()
+
+    nivel_map = {}
+    black_count = 0
+    golden_count = 0
+    standard_count = 0
+    for c in clientes_todos:
+        nivel = calcular_nivel_cliente(c, top_black_ids, top_golden_ids)
+        nivel_map[c.id] = nivel
+        if nivel == 'black':
+            black_count += 1
+        elif nivel == 'golden':
+            golden_count += 1
+        else:
+            standard_count += 1
+
+    # Orden y paginación
     if sort == 'nombre':
         col = Client.nombre
     elif sort == 'referencia':
@@ -190,118 +258,52 @@ def listar_clientes():
         col = Client.telefono
     elif sort == 'email':
         col = Client.email
-    elif sort == 'total_facturado':
-        col = Client.total_facturado
     else:
         col = Client.nombre
-    
+
     if order == 'desc':
         query = query.order_by(col.desc())
     else:
         query = query.order_by(col.asc())
-    
-    clients = query.all()
-    
-    # ==========================================
-    # KPIs DEL DASHBOARD
-    # ==========================================
-    total_clientes = len(clients)
-    total_ordenes = db.session.query(func.count(Order.id)).filter(Order.client_id.in_([c.id for c in clients])).scalar() or 0
-    clientes_activos = db.session.query(func.count(func.distinct(Order.client_id))).filter(
-        Order.date >= datetime.now() - timedelta(days=30)
-    ).scalar() or 0
-    total_facturado = sum(c.total_facturado or 0 for c in clients)
-    top_cliente = max(clients, key=lambda c: c.total_facturado or 0) if clients else None
-    top_cliente_nombre = top_cliente.nombre if top_cliente else '—'
-    top_cliente_monto = top_cliente.total_facturado or 0 if top_cliente else 0
-    
-    # Clientes inactivos (60 días sin pedidos)
-    fecha_limite = datetime.now() - timedelta(days=60)
-    clientes_inactivos = 0
+
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    clients = paginated.items
+    total_pages = paginated.pages
+    total = paginated.total
+
+    # Asignar datos a cada cliente paginado (sin facturación)
     for c in clients:
-        ultimo_pedido = Order.query.filter_by(client_id=c.id).order_by(Order.date.desc()).first()
-        if not ultimo_pedido or ultimo_pedido.date < fecha_limite.date():
-            clientes_inactivos += 1
-    
-    # Clientes nuevos (últimos 30 días)
-    fecha_inicio_mes = datetime.now().replace(day=1)
-    clientes_nuevos = sum(1 for c in clients if c.created_at and c.created_at >= fecha_inicio_mes)
-    
-    # ==========================================
-    # CÁLCULO DE NIVELES (Black, Golden, Standard)
-    # ==========================================
-    # Solo asignar niveles si hay al menos 5 clientes con actividad (pedidos o facturación)
-    clientes_con_datos = [c for c in clients if len(c.orders) > 0 or (c.total_facturado or 0) > 0]
-    
-    if len(clientes_con_datos) >= 5:
-        sorted_by_facturacion = sorted(clientes_con_datos, key=lambda c: c.total_facturado or 0, reverse=True)
-        sorted_by_pedidos = sorted(clientes_con_datos, key=lambda c: len(c.orders) if c.orders else 0, reverse=True)
-        n = len(clientes_con_datos)
-        top_5 = max(1, int(n * 0.05))
-        top_20 = max(1, int(n * 0.20))
-        top_black_ids = set([c.id for c in sorted_by_facturacion[:top_5]] + [c.id for c in sorted_by_pedidos[:top_5]])
-        top_golden_ids = set([c.id for c in sorted_by_facturacion[:top_20]] + [c.id for c in sorted_by_pedidos[:top_20]])
-    else:
-        top_black_ids = set()
-        top_golden_ids = set()
-    
-    # Asignar nivel a cada cliente y calcular insights
-    for c in clients:
-        c.nivel = calcular_nivel_cliente(c, top_black_ids, top_golden_ids)
+        c.nivel = nivel_map.get(c.id, 'standard')
         c.nivel_info = get_nivel_info(c.nivel)
         insights = calcular_insights_cliente(c)
         c.top_materiales = insights['top_materiales'][:2]
         c.top_servicios = insights['top_servicios'][:2]
         c.total_pedidos = len(c.orders) if c.orders else 0
+        c.total_facturado = 0  # Desactivado
         c.frecuencia = insights['frecuencia']
-        ultimo_pedido = Order.query.filter_by(client_id=c.id).order_by(Order.date.desc()).first()
-        c.ultimo_pedido_fecha = ultimo_pedido.date if ultimo_pedido else None
-    
-    # ==========================================
-    # EVOLUCIÓN DE CLIENTES NUEVOS (últimos 12 meses)
-    # ==========================================
-    ahora = datetime.now()
-    meses = []
-    valores = []
-    for i in range(11, -1, -1):
-        mes = ahora.replace(day=1) - timedelta(days=30*i)
-        nombre_mes = mes.strftime('%b %Y')
-        meses.append(nombre_mes)
-        inicio = mes.replace(day=1)
-        fin = (inicio + timedelta(days=32)).replace(day=1)
-        count = sum(1 for c in clients if c.created_at and inicio <= c.created_at < fin)
-        valores.append(count)
-    
-    evolucion_data = {
-        'labels': meses,
-        'values': valores
-    }
-    
-    # ==========================================
-    # CONTEXTO PARA EL TEMPLATE
-    # ==========================================
+
     context = {
         'clients': clients,
         'search': search,
         'sort': sort,
         'order': order,
-        # KPIs
+        'page': page,
+        'per_page': per_page,
+        'total': total,
+        'total_pages': total_pages,
         'total_clientes': total_clientes,
         'total_ordenes': total_ordenes,
         'clientes_activos': clientes_activos,
-        'clientes_inactivos': clientes_inactivos,
-        'clientes_nuevos': clientes_nuevos,
         'total_facturado': total_facturado,
         'top_cliente_nombre': top_cliente_nombre,
         'top_cliente_monto': top_cliente_monto,
-        'evolucion_data': evolucion_data,
-        # Conteos por nivel
-        'black_count': sum(1 for c in clients if c.nivel == 'black'),
-        'golden_count': sum(1 for c in clients if c.nivel == 'golden'),
-        'standard_count': sum(1 for c in clients if c.nivel == 'standard'),
+        'black_count': black_count,
+        'golden_count': golden_count,
+        'standard_count': standard_count,
     }
-    
+
     return render_template('clientes.html', **context)
+
 
 # ==========================================
 # CREAR CLIENTE
@@ -375,6 +377,7 @@ def crear_cliente():
     
     return render_template('form_cliente.html')
 
+
 # ==========================================
 # EDITAR CLIENTE
 # ==========================================
@@ -430,6 +433,7 @@ def editar_cliente(cliente_id):
     
     return render_template('form_cliente.html', cliente=cliente)
 
+
 # ==========================================
 # ELIMINAR CLIENTE
 # ==========================================
@@ -449,13 +453,14 @@ def eliminar_cliente(cliente_id):
     flash(f'Cliente "{nombre}" eliminado.', 'success')
     return redirect(url_for('clientes.listar_clientes'))
 
+
 # ==========================================
-# DETALLE DE CLIENTE
+# DETALLE DE CLIENTE (CORREGIDO – FECHAS)
 # ==========================================
 
 @clientes_bp.route('/detalle/<int:cliente_id>')
 @login_required
-@comercial_or_admin_required
+@view_required
 def detalle_cliente(cliente_id):
     cliente = Client.query.get_or_404(cliente_id)
     
@@ -463,33 +468,28 @@ def detalle_cliente(cliente_id):
     orders_recientes = sorted(orders, key=lambda o: o.date if o.date else datetime.min, reverse=True)[:10]
     
     total_ordenes = len(orders)
-    total_facturado = sum(o.total_facturado or 0 for o in orders)
+    total_facturado = 0  # Desactivado
     ordenes_pendientes = sum(1 for o in orders if o.column in ['pendiente', 'por-preparar', 'preparados'])
     ordenes_completadas = sum(1 for o in orders if o.column in ['entregados', 'listo'])
     
     insights = calcular_insights_cliente(cliente)
     
-    # Calcular evolución del nivel en el tiempo (basado en pedidos)
     nivel_historial = []
     pedidos_acumulados = 0
-    facturacion_acumulada = 0
     for o in sorted(orders, key=lambda x: x.date if x.date else datetime.min):
         pedidos_acumulados += 1
-        facturacion_acumulada += o.total_facturado or 0
-        if pedidos_acumulados >= 50 or facturacion_acumulada >= 10000:
+        if pedidos_acumulados >= 50:
             nivel = 'black'
-        elif pedidos_acumulados >= 20 or facturacion_acumulada >= 5000:
+        elif pedidos_acumulados >= 20:
             nivel = 'golden'
         else:
             nivel = 'standard'
         nivel_historial.append({
             'fecha': o.date.strftime('%Y-%m-%d') if o.date else '—',
             'nivel': nivel,
-            'pedidos': pedidos_acumulados,
-            'facturado': facturacion_acumulada
+            'pedidos': pedidos_acumulados
         })
     
-    # Evolución mensual de pedidos
     ahora = datetime.now()
     meses = []
     valores = []
@@ -497,8 +497,13 @@ def detalle_cliente(cliente_id):
         mes = ahora.replace(day=1) - timedelta(days=30*i)
         nombre_mes = mes.strftime('%b %Y')
         meses.append(nombre_mes)
-        inicio = mes.replace(day=1)
-        fin = (inicio + timedelta(days=32)).replace(day=1)
+        # Convertir a date para comparar con o.date (que es date)
+        inicio = mes.replace(day=1).date()
+        # Calcular fin como el primer día del mes siguiente
+        if mes.month == 12:
+            fin = datetime(mes.year + 1, 1, 1).date()
+        else:
+            fin = datetime(mes.year, mes.month + 1, 1).date()
         count = sum(1 for o in orders if o.date and inicio <= o.date < fin)
         valores.append(count)
     
@@ -522,6 +527,7 @@ def detalle_cliente(cliente_id):
     
     return render_template('detalle_cliente.html', **context)
 
+
 # ==========================================
 # EXPORTAR CLIENTES
 # ==========================================
@@ -541,7 +547,7 @@ def exportar_clientes():
         'Comercial', 'Carnet Identidad', 'Fecha Nacimiento',
         'Tipo Cliente', 'Sector', 'Preferencias Diseño',
         'Método Pago', 'Referido Por', 'Frecuencia Pedido',
-        'Notas', 'Observaciones', 'Etiquetas', 'Pedidos', 'Total Facturado'
+        'Notas', 'Observaciones', 'Etiquetas', 'Pedidos'
     ]
     
     for col, header in enumerate(headers, 1):
@@ -570,7 +576,6 @@ def exportar_clientes():
         ws.cell(row=row_idx, column=17, value=c.observaciones_internas or '')
         ws.cell(row=row_idx, column=18, value=c.etiquetas or '')
         ws.cell(row=row_idx, column=19, value=len(c.orders) if c.orders else 0)
-        ws.cell(row=row_idx, column=20, value=round(c.total_facturado, 2) if c.total_facturado else 0)
     
     for col in range(1, len(headers)+1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
@@ -585,6 +590,7 @@ def exportar_clientes():
         download_name=f'clientes_{datetime.now().strftime("%Y%m%d")}.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
 
 # ==========================================
 # IMPORTAR CLIENTES
@@ -784,6 +790,7 @@ def importar_clientes():
             return redirect(url_for('clientes.importar_clientes'))
     
     return render_template('importar_clientes.html')
+
 
 # ==========================================
 # DESCARGAR PLANTILLA

@@ -1,0 +1,1021 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Empleados · CairoStudio{% endblock %}
+
+{% block page_title %}<i class="fas fa-users-cog" style="color:#a8854f;"></i> Gestión de Empleados{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== ESTILOS BASE ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .kpi-card {
+        background: #fefcf9;
+        border-radius: 16px;
+        padding: 16px 18px;
+        border: 1px solid #f0ece8;
+        text-align: center;
+        border-top: 4px solid #a8854f;
+        transition: 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .kpi-card .valor {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: #1c1c1e;
+        line-height: 1.2;
+    }
+    .kpi-card .label { font-size: 13px; color: #8e8e93; font-weight: 500; margin-top: 2px; }
+    .kpi-card .icon { font-size: 24px; color: #a8854f; opacity: 0.4; display: block; margin-bottom: 2px; }
+    .kpi-card.verde { border-top-color: #10b981; }
+    .kpi-card.verde .icon { color: #10b981; }
+    .kpi-card.rojo { border-top-color: #dc2626; }
+    .kpi-card.rojo .icon { color: #dc2626; }
+    .kpi-card.azul { border-top-color: #3b82f6; }
+    .kpi-card.azul .icon { color: #3b82f6; }
+
+    /* ===== GRÁFICOS ===== */
+    .charts-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .charts-row .single { grid-column: 1 / -1; max-width: 60%; margin: 0 auto; }
+    .chart-box { height: 180px; position: relative; }
+    .chart-box canvas { width: 100% !important; height: 100% !important; }
+
+    .chart-controls {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+        padding: 10px 14px;
+        background: rgba(255,255,255,0.5);
+        border-radius: 12px;
+        border: 1px solid #f0ece8;
+        align-items: center;
+    }
+    .chart-controls label {
+        font-weight: 500;
+        font-size: 13px;
+        color: #555;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .chart-controls select {
+        padding: 4px 12px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        background: white;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        cursor: pointer;
+    }
+    .chart-controls select:focus { outline: none; border-color: #a8854f; }
+    .chart-controls .checkbox-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    .chart-controls .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-weight: 400;
+        cursor: pointer;
+    }
+    .chart-controls .checkbox-group input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #a8854f;
+        cursor: pointer;
+    }
+
+    /* ===== TABLA EMPLEADOS ===== */
+    .empleados-toolbar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        align-items: center;
+    }
+    .empleados-toolbar input, .empleados-toolbar select {
+        padding: 6px 14px;
+        border: 1px solid #d2d2d7;
+        border-radius: 30px;
+        font-size: 13px;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        min-width: 150px;
+    }
+    .empleados-toolbar input:focus, .empleados-toolbar select:focus {
+        outline: none;
+        border-color: #a8854f;
+    }
+    .area-input {
+        padding: 4px 8px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        font-size: 13px;
+        font-family: 'Inter', sans-serif;
+        background: white;
+        width: 100%;
+        min-width: 80px;
+    }
+    .area-input:focus { outline: none; border-color: #a8854f; }
+
+    .tabla-empleados {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+    }
+    .tabla-empleados th {
+        text-align: left;
+        padding: 8px 6px;
+        font-weight: 600;
+        color: #8e8e93;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 12px;
+        text-transform: uppercase;
+        cursor: pointer;
+        user-select: none;
+        transition: 0.2s;
+    }
+    .tabla-empleados th:hover { color: #1c1c1e; }
+    .tabla-empleados th .sort-icon { margin-left: 4px; font-size: 10px; }
+    .tabla-empleados td {
+        padding: 8px 6px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+    }
+    .badge-revisado { background: #d1fae5; color: #065f46; padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; }
+    .badge-pendiente { background: #fef3c7; color: #78350f; padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; }
+
+    .btn-accion {
+        background: none;
+        border: 1px solid #d2d2d7;
+        border-radius: 30px;
+        padding: 4px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        transition: 0.2s;
+        color: #555;
+    }
+    .btn-accion:hover { border-color: #a8854f; background: #fafaf9; }
+    .btn-accion.revisar { border-color: #10b981; color: #065f46; }
+    .btn-accion.revisar:hover { background: #d1fae5; }
+    .btn-recalcular {
+        background: #a8854f;
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-recalcular:hover { background: #8a6f3f; transform: translateY(-1px); }
+
+    .filtros-periodo {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+    .filtros-periodo .btn-filtro {
+        padding: 4px 16px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        background: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        cursor: pointer;
+        transition: 0.2s;
+        color: #555;
+    }
+    .filtros-periodo .btn-filtro.active {
+        background: #a8854f;
+        color: white;
+        border-color: #a8854f;
+    }
+    .filtros-periodo .btn-filtro:hover { border-color: #a8854f; }
+
+    .toggle-bar {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 16px;
+        padding: 10px 16px;
+        background: rgba(255,255,255,0.6);
+        border-radius: 12px;
+    }
+
+    .collapse-toggle {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 15px;
+        color: #1c1c1e;
+        user-select: none;
+        border-top: 2px solid #f0ece8;
+        margin-top: 16px;
+        padding-top: 14px;
+    }
+    .collapse-toggle i { transition: transform 0.3s; }
+    .collapse-toggle.open i { transform: rotate(180deg); }
+    .collapse-body {
+        display: none;
+        overflow: hidden;
+        padding-top: 8px;
+    }
+    .collapse-body.open { display: block; }
+
+    .marca-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        border-bottom: 1px solid #f5f2ef;
+        font-size: 14px;
+    }
+    .marca-item .tipo { font-weight: 600; text-transform: uppercase; font-size: 12px; padding: 2px 10px; border-radius: 30px; }
+    .marca-item .tipo.entrada { background: #d1fae5; color: #065f46; }
+    .marca-item .tipo.salida { background: #fee2e2; color: #991b1b; }
+    .marca-item .hora { font-weight: 500; }
+    .marca-item .comentario { font-size: 12px; color: #8e8e93; font-style: italic; }
+
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2);
+        backdrop-filter: blur(4px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+        background: white;
+        border-radius: 24px;
+        padding: 28px 32px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal-box .close-btn {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #8e8e93;
+        float: right;
+    }
+    .modal-box .close-btn:hover { color: #1c1c1e; }
+
+    .toast-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .toast {
+        padding: 12px 20px;
+        border-radius: 12px;
+        color: white;
+        font-weight: 500;
+        font-size: 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        animation: slideIn 0.3s ease;
+        font-family: 'Inter', sans-serif;
+        min-width: 200px;
+    }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #dc2626; }
+    .toast.info { background: #3b82f6; }
+    @keyframes slideIn {
+        from { transform: translateX(100px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+        .charts-row { grid-template-columns: 1fr; }
+        .charts-row .single { max-width: 100%; }
+        .kpi-grid { grid-template-columns: 1fr 1fr; }
+        .tabla-empleados { font-size: 13px; }
+        .toast-container { bottom: 10px; right: 10px; left: 10px; }
+        .toast { width: 100%; }
+        .modal-box { padding: 20px; }
+        .chart-controls { flex-direction: column; align-items: stretch; }
+        .empleados-toolbar { flex-direction: column; align-items: stretch; }
+        .empleados-toolbar input, .empleados-toolbar select { width: 100%; }
+        .area-input { width: 100%; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- TOGGLE -->
+    {% if puede_ver_empleado %}
+    <div class="toggle-bar">
+        <a href="{{ url_for('empleados.panel_empleado') }}" class="btn btn-outline"><i class="fas fa-user"></i> Vista Empleado</a>
+        <a href="{{ url_for('empleados.panel_economico') }}" class="btn btn-primary"><i class="fas fa-chart-pie"></i> Vista Económico</a>
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
+            <h3 class="serif" style="font-size:18px;"><i class="fas fa-calendar-week" style="color:#a8854f;"></i> Resumen del período</h3>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <button class="btn-recalcular" onclick="recalcularNomina()"><i class="fas fa-sync-alt"></i> Recalcular</button>
+                <button class="btn-accion" onclick="exportar()"><i class="fas fa-file-export"></i> Exportar</button>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filtros-periodo">
+            <button class="btn-filtro {% if periodo_filtro == 'semana_actual' %}active{% endif %}" onclick="cambiarPeriodo('semana_actual')">Semana actual</button>
+            <button class="btn-filtro {% if periodo_filtro == 'semana_pasada' %}active{% endif %}" onclick="cambiarPeriodo('semana_pasada')">Semana pasada</button>
+            <button class="btn-filtro {% if periodo_filtro == 'mes' %}active{% endif %}" onclick="cambiarPeriodo('mes')">Mes</button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="filtros-periodo" style="border-bottom:2px solid #f0ece8; padding-bottom:8px; margin-bottom:16px;">
+            <button class="btn-filtro {% if view == 'dashboard' or not view %}active{% endif %}" onclick="cambiarView('dashboard')">📊 Dashboard</button>
+            <button class="btn-filtro {% if view == 'empleados' %}active{% endif %}" onclick="cambiarView('empleados')">👥 Empleados</button>
+            <button class="btn-filtro {% if view == 'resumen' %}active{% endif %}" onclick="cambiarView('resumen')">📋 Resumen</button>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: DASHBOARD -->
+        <!-- ============================================================ -->
+        <div id="tab-dashboard" class="tab-content" style="display: {% if view == 'dashboard' or not view %}block{% else %}none{% endif %};">
+            <!-- KPIs -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="icon"><i class="fas fa-users"></i></div>
+                    <div class="valor">{{ total_empleados }}</div>
+                    <div class="label">Total empleados</div>
+                </div>
+                <div class="kpi-card verde">
+                    <div class="icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="valor">{{ empleados_activos_hoy }}</div>
+                    <div class="label">Activos hoy</div>
+                </div>
+                <div class="kpi-card rojo">
+                    <div class="icon"><i class="fas fa-user-slash"></i></div>
+                    <div class="valor">{{ ausentes_hoy }}</div>
+                    <div class="label">Ausentes hoy</div>
+                </div>
+                <div class="kpi-card azul">
+                    <div class="icon"><i class="fas fa-clock"></i></div>
+                    <div class="valor">{{ horas_hoy }}</div>
+                    <div class="label">Horas hoy</div>
+                </div>
+            </div>
+
+            <!-- Controles de gráficos -->
+            <div class="chart-controls">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="showHorasEmpleado" checked onchange="toggleChartVisibility()"> Horas por empleado</label>
+                    <label><input type="checkbox" id="showEvolucion" checked onchange="toggleChartVisibility()"> Evolución diaria</label>
+                </div>
+                <div>
+                    <label>Tipo gráfico:
+                        <select id="chartTypeSelector" onchange="cambiarTipoGrafico()">
+                            <option value="bar">📊 Barras</option>
+                            <option value="line">📈 Línea</option>
+                            <option value="doughnut">🍩 Dona</option>
+                            <option value="area">📉 Área</option>
+                        </select>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Gráficos -->
+            <div class="charts-row" id="chartsContainer">
+                <div class="card" style="padding:12px 16px; margin:0;" id="chartHorasContainer">
+                    <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Horas por empleado (semana)</div>
+                    <div class="chart-box"><canvas id="chartHorasEmpleado"></canvas></div>
+                </div>
+                <div class="card" style="padding:12px 16px; margin:0;" id="chartEvolucionContainer">
+                    <div style="font-weight:600; font-size:14px; margin-bottom:6px;">Evolución diaria (7 días)</div>
+                    <div class="chart-box"><canvas id="chartEvolucion"></canvas></div>
+                </div>
+            </div>
+
+            <!-- Ausentes -->
+            <div class="card" style="padding:12px 16px; margin-bottom:16px;">
+                <div style="font-weight:600; font-size:14px; margin-bottom:6px;">👤 Empleados sin marcar hoy</div>
+                <div class="ausentes-list" style="display:flex; flex-wrap:wrap; gap:6px 12px;">
+                    {% if empleados_ausentes %}
+                        {% for nombre in empleados_ausentes %}
+                            <span class="tag" style="background:#f0ece8; padding:2px 12px; border-radius:30px; font-size:13px; color:#555;">{{ nombre }}</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="tag" style="background:#d1fae5; color:#065f46; padding:2px 12px; border-radius:30px; font-size:13px;">✅ Todos han marcado hoy</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: EMPLEADOS (con asignación de área) -->
+        <!-- ============================================================ -->
+        <div id="tab-empleados" class="tab-content" style="display: {% if view == 'empleados' %}block{% else %}none{% endif %};">
+            <div class="empleados-toolbar">
+                <input type="text" id="searchEmpleado" placeholder="🔍 Buscar por nombre..." onkeyup="filtrarTabla()">
+                <select id="filterArea" onchange="filtrarTabla()">
+                    <option value="">Todas las áreas</option>
+                    {% for area in areas %}
+                        <option value="{{ area }}">{{ area }}</option>
+                    {% endfor %}
+                </select>
+                <span style="font-size:13px; color:#8e8e93; margin-left:auto;" id="empleadosCount">{{ empleados_list|length }} empleados</span>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="tabla-empleados" id="tablaEmpleados">
+                    <thead>
+                        <tr>
+                            <th data-sort="nombre" onclick="ordenarTabla('nombre')">Nombre <span class="sort-icon">⇅</span></th>
+                            <th data-sort="area" onclick="ordenarTabla('area')">Área <span class="sort-icon">⇅</span></th>
+                            <th data-sort="horas" onclick="ordenarTabla('horas')">Horas <span class="sort-icon">⇅</span></th>
+                            <th data-sort="salario" onclick="ordenarTabla('salario')">Salario <span class="sort-icon">⇅</span></th>
+                            <th data-sort="dias" onclick="ordenarTabla('dias')">Días <span class="sort-icon">⇅</span></th>
+                            <th data-sort="promedio" onclick="ordenarTabla('promedio')">Promedio <span class="sort-icon">⇅</span></th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoEmpleados">
+                        {% for emp in empleados_list %}
+                        <tr data-id="{{ emp.id }}" data-nombre="{{ emp.nombre }}" data-area="{{ emp.area or '' }}" data-horas="{{ emp.horas }}" data-salario="{{ emp.salario }}" data-dias="{{ emp.dias }}" data-promedio="{{ emp.promedio }}">
+                            <td><strong>{{ emp.nombre }}</strong></td>
+                            <td>
+                                <input type="text" class="area-input" data-emp-id="{{ emp.id }}" value="{{ emp.area or '' }}" placeholder="Área" onchange="asignarArea(this)">
+                            </td>
+                            <td>{{ emp.horas|round(1) }} h</td>
+                            <td>${{ emp.salario|round(2) }}</td>
+                            <td>{{ emp.dias }}</td>
+                            <td>{{ emp.promedio|round(2) }} h</td>
+                            <td><span class="{{ 'badge-revisado' if emp.revisado else 'badge-pendiente' }}">{{ '✅ Revisado' if emp.revisado else '⏳ Pendiente' }}</span></td>
+                            <td>
+                                <button class="btn-accion" onclick="verDetalle({{ emp.id }})"><i class="fas fa-eye"></i></button>
+                                {% if not emp.revisado %}
+                                    <button class="btn-accion revisar" onclick="marcarRevisado({{ emp.id }})"><i class="fas fa-check"></i></button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ============================================================ -->
+        <!-- TAB: RESUMEN (tabla colapsable) -->
+        <!-- ============================================================ -->
+        <div id="tab-resumen" class="tab-content" style="display: {% if view == 'resumen' %}block{% else %}none{% endif %};">
+            <div style="height:150px; margin-bottom:12px;">
+                <canvas id="chartEconomico"></canvas>
+            </div>
+
+            <div style="overflow-x:auto;">
+                <table class="tabla-empleados" id="tablaResumen">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Horas</th>
+                            <th>Salario</th>
+                            <th>Días</th>
+                            <th>Promedio</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="cuerpoResumen">
+                        {% for item in resumen %}
+                        <tr id="fila-{{ item.empleado.id }}">
+                            <td><strong>{{ item.empleado.user.username }}</strong></td>
+                            <td>{{ item.detalle.horas_totales|round(1) }} h</td>
+                            <td>${{ item.detalle.salario_bruto|round(2) }}</td>
+                            <td>{{ item.dias_trabajados }}</td>
+                            <td>{{ item.promedio_diario|round(2) }} h</td>
+                            <td id="estado-{{ item.empleado.id }}">
+                                <span class="{{ 'badge-revisado' if item.detalle.aprobado else 'badge-pendiente' }}">
+                                    {{ '✅ Revisado' if item.detalle.aprobado else '⏳ Pendiente' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if not item.detalle.aprobado %}
+                                    <button class="btn-accion revisar" data-emp="{{ item.empleado.id }}" onclick="marcarRevisado({{ item.empleado.id }})"><i class="fas fa-check"></i> Revisar</button>
+                                {% else %}
+                                    <span style="color:#10b981;"><i class="fas fa-check-circle"></i> Revisado</span>
+                                {% endif %}
+                                <button class="btn-accion" onclick="verDetalle({{ item.empleado.id }})"><i class="fas fa-eye"></i> Detalle</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                <button class="btn-accion aprobar" onclick="aprobarTodos()"><i class="fas fa-check-double"></i> Revisar todos</button>
+                <button class="btn-accion" onclick="exportar()"><i class="fas fa-file-export"></i> Exportar CSV</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== MODAL DETALLE ===== -->
+    <div class="modal-overlay" id="modalDetalle">
+        <div class="modal-box">
+            <button class="close-btn" onclick="cerrarDetalle()">&times;</button>
+            <h3 class="serif" style="font-size:20px; margin-bottom:12px;"><i class="fas fa-clock" style="color:#a8854f;"></i> Detalle de marcas</h3>
+            <div id="detalleContenido" style="max-height:400px; overflow-y:auto;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // ================================================================
+    //  TOAST
+    // ================================================================
+    function mostrarToast(mensaje, tipo = 'success') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'toast ' + tipo;
+        toast.textContent = mensaje;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+
+    // ================================================================
+    //  VARIABLES GLOBALES
+    // ================================================================
+    let chartHoras = null;
+    let chartEvol = null;
+    let chartResumen = null;
+    let chartInitialized = false;
+    let currentChartType = localStorage.getItem('chartType') || 'bar';
+
+    // ================================================================
+    //  GRÁFICOS
+    // ================================================================
+    function initCharts() {
+        if (chartInitialized) return;
+        chartInitialized = true;
+
+        const labelsEco = {{ labels|safe }};
+        const valuesEco = {{ values|safe }};
+        const evolLabels = {{ evolucion_labels|safe }};
+        const evolValues = {{ evolucion_values|safe }};
+
+        // Restaurar tipo de gráfico
+        document.getElementById('chartTypeSelector').value = currentChartType;
+
+        // Gráfico horas por empleado (dashboard)
+        const ctxHoras = document.getElementById('chartHorasEmpleado').getContext('2d');
+        chartHoras = crearGrafico(ctxHoras, labelsEco, valuesEco, currentChartType, '#3b82f6', 'rgba(59,130,246,0.6)');
+
+        // Gráfico evolución diaria (dashboard)
+        const ctxEvol = document.getElementById('chartEvolucion').getContext('2d');
+        chartEvol = crearGraficoEvolucion(ctxEvol, evolLabels, evolValues, currentChartType);
+
+        // Gráfico resumen (tab resumen)
+        const ctxResumen = document.getElementById('chartEconomico').getContext('2d');
+        chartResumen = crearGrafico(ctxResumen, labelsEco, valuesEco, 'bar', '#a8854f', 'rgba(168,133,79,0.6)');
+
+        // Restaurar visibilidad
+        const showHoras = localStorage.getItem('showHorasEmpleado') !== 'false';
+        const showEvol = localStorage.getItem('showEvolucion') !== 'false';
+        document.getElementById('showHorasEmpleado').checked = showHoras;
+        document.getElementById('showEvolucion').checked = showEvol;
+        aplicarVisibilidad(showHoras, showEvol);
+    }
+
+    function crearGrafico(ctx, labels, data, type, borderColor, bgColor) {
+        let config = {
+            type: type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Horas',
+                    data: data,
+                    backgroundColor: bgColor,
+                    borderColor: borderColor,
+                    borderWidth: 2,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 400 },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 } } }
+                }
+            }
+        };
+
+        if (type === 'doughnut') {
+            config.options.scales = undefined;
+            config.options.plugins.legend = { display: true, position: 'bottom', labels: { font: { size: 9 } } };
+            config.options.cutout = '50%';
+        }
+
+        if (type === 'area') {
+            config.type = 'line';
+            config.data.datasets[0].fill = true;
+            config.data.datasets[0].backgroundColor = bgColor;
+            config.data.datasets[0].borderColor = borderColor;
+            config.data.datasets[0].tension = 0.3;
+        }
+
+        return new Chart(ctx, config);
+    }
+
+    function crearGraficoEvolucion(ctx, labels, data, type) {
+        let config = {
+            type: type === 'area' ? 'line' : type,
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Horas totales',
+                    data: data,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.1)',
+                    fill: type === 'area',
+                    tension: 0.3,
+                    pointBackgroundColor: '#10b981',
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 400 },
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 } } }
+                }
+            }
+        };
+
+        if (type === 'doughnut') {
+            config.type = 'doughnut';
+            config.options.scales = undefined;
+            config.options.plugins.legend = { display: true, position: 'bottom', labels: { font: { size: 9 } } };
+            config.options.cutout = '50%';
+        }
+
+        return new Chart(ctx, config);
+    }
+
+    function cambiarTipoGrafico() {
+        const type = document.getElementById('chartTypeSelector').value;
+        currentChartType = type;
+        localStorage.setItem('chartType', type);
+
+        const labelsEco = {{ labels|safe }};
+        const valuesEco = {{ values|safe }};
+        const evolLabels = {{ evolucion_labels|safe }};
+        const evolValues = {{ evolucion_values|safe }};
+
+        if (chartHoras) {
+            chartHoras.destroy();
+            const ctx = document.getElementById('chartHorasEmpleado').getContext('2d');
+            chartHoras = crearGrafico(ctx, labelsEco, valuesEco, type, '#3b82f6', 'rgba(59,130,246,0.6)');
+        }
+        if (chartEvol) {
+            chartEvol.destroy();
+            const ctx = document.getElementById('chartEvolucion').getContext('2d');
+            chartEvol = crearGraficoEvolucion(ctx, evolLabels, evolValues, type);
+        }
+    }
+
+    function toggleChartVisibility() {
+        const showHoras = document.getElementById('showHorasEmpleado').checked;
+        const showEvol = document.getElementById('showEvolucion').checked;
+        localStorage.setItem('showHorasEmpleado', showHoras);
+        localStorage.setItem('showEvolucion', showEvol);
+        aplicarVisibilidad(showHoras, showEvol);
+    }
+
+    function aplicarVisibilidad(showHoras, showEvol) {
+        const contHoras = document.getElementById('chartHorasContainer');
+        const contEvol = document.getElementById('chartEvolucionContainer');
+        contHoras.style.display = showHoras ? 'block' : 'none';
+        contEvol.style.display = showEvol ? 'block' : 'none';
+        const container = document.getElementById('chartsContainer');
+        if (showHoras && !showEvol) {
+            container.className = 'charts-row single';
+        } else if (!showHoras && showEvol) {
+            container.className = 'charts-row single';
+        } else {
+            container.className = 'charts-row';
+        }
+        setTimeout(() => {
+            if (chartHoras) chartHoras.resize();
+            if (chartEvol) chartEvol.resize();
+        }, 100);
+    }
+
+    // ================================================================
+    //  TABLA DE EMPLEADOS - FILTROS Y ORDENACIÓN
+    // ================================================================
+    let sortKey = 'nombre';
+    let sortAsc = true;
+
+    function filtrarTabla() {
+        const search = document.getElementById('searchEmpleado').value.toLowerCase();
+        const areaFilter = document.getElementById('filterArea').value;
+        const rows = document.querySelectorAll('#cuerpoEmpleados tr');
+        let visible = 0;
+        rows.forEach(row => {
+            const nombre = row.dataset.nombre.toLowerCase();
+            const area = row.dataset.area;
+            const matchNombre = nombre.includes(search);
+            const matchArea = !areaFilter || area === areaFilter;
+            if (matchNombre && matchArea) {
+                row.style.display = '';
+                visible++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        document.getElementById('empleadosCount').textContent = visible + ' empleados';
+    }
+
+    function ordenarTabla(key) {
+        const tbody = document.getElementById('cuerpoEmpleados');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (sortKey === key) {
+            sortAsc = !sortAsc;
+        } else {
+            sortKey = key;
+            sortAsc = true;
+        }
+        rows.sort((a, b) => {
+            let valA, valB;
+            if (key === 'nombre') {
+                valA = a.dataset.nombre;
+                valB = b.dataset.nombre;
+            } else if (key === 'area') {
+                valA = a.dataset.area;
+                valB = b.dataset.area;
+            } else {
+                valA = parseFloat(a.dataset[key]) || 0;
+                valB = parseFloat(b.dataset[key]) || 0;
+            }
+            if (typeof valA === 'string') {
+                return sortAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            }
+            return sortAsc ? valA - valB : valB - valA;
+        });
+        rows.forEach(row => tbody.appendChild(row));
+        document.querySelectorAll('#tablaEmpleados th .sort-icon').forEach(el => {
+            el.textContent = '⇅';
+        });
+        const th = document.querySelector(`#tablaEmpleados th[data-sort="${key}"] .sort-icon`);
+        if (th) th.textContent = sortAsc ? '↑' : '↓';
+        filtrarTabla();
+    }
+
+    // ================================================================
+    //  ASIGNAR ÁREA
+    // ================================================================
+    function asignarArea(input) {
+        const empleadoId = input.dataset.empId;
+        const area = input.value.trim();
+        fetch('/empleados/api/empleados/asignar-area', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ empleado_id: empleadoId, area: area })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                mostrarToast('Área actualizada', 'success');
+                // Actualizar el filtro de áreas si es necesario
+                actualizarFiltroAreas(area);
+                // Actualizar dataset del row
+                const row = input.closest('tr');
+                row.dataset.area = area;
+            } else {
+                mostrarToast('Error: ' + (data.error || 'Desconocido'), 'error');
+            }
+        })
+        .catch(() => mostrarToast('Error de conexión', 'error'));
+    }
+
+    function actualizarFiltroAreas(area) {
+        if (!area) return;
+        const filter = document.getElementById('filterArea');
+        // Verificar si ya existe la opción
+        let exists = false;
+        for (let opt of filter.options) {
+            if (opt.value === area) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            const opt = document.createElement('option');
+            opt.value = area;
+            opt.textContent = area;
+            filter.appendChild(opt);
+        }
+    }
+
+    // ================================================================
+    //  CAMBIAR VISTA (TABS)
+    // ================================================================
+    function cambiarView(view) {
+        const url = new URL(window.location);
+        url.searchParams.set('view', view);
+        window.location.href = url;
+    }
+
+    // ================================================================
+    //  FUNCIONES EXISTENTES (reutilizadas)
+    // ================================================================
+    function cambiarPeriodo(periodo) {
+        const url = new URL(window.location);
+        url.searchParams.set('periodo', periodo);
+        window.location.href = url;
+    }
+
+    function recalcularNomina() {
+        const btn = event.target.closest('.btn-recalcular');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Recalculando...';
+        btn.disabled = true;
+        fetch('/empleados/api/recalcular', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ periodo: '{{ periodo_filtro }}' })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                mostrarToast('✅ Nómina recalculada', 'success');
+                setTimeout(() => location.reload(), 800);
+            } else {
+                mostrarToast('❌ Error: ' + (data.error || 'Desconocido'), 'error');
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            mostrarToast('❌ Error de conexión.', 'error');
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        });
+    }
+
+    function marcarRevisado(empleadoId) {
+        fetch('/empleados/api/aprobar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ empleado_id: empleadoId })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const estadoCellResumen = document.getElementById('estado-' + empleadoId);
+                if (estadoCellResumen) {
+                    estadoCellResumen.innerHTML = '<span class="badge-revisado">✅ Revisado</span>';
+                }
+                const filaEmp = document.querySelector(`#cuerpoEmpleados tr[data-id="${empleadoId}"]`);
+                if (filaEmp) {
+                    const estadoCell = filaEmp.querySelector('td:nth-child(7)');
+                    if (estadoCell) estadoCell.innerHTML = '<span class="badge-revisado">✅ Revisado</span>';
+                    const accionCell = filaEmp.querySelector('td:last-child');
+                    if (accionCell) {
+                        accionCell.innerHTML = `<button class="btn-accion" onclick="verDetalle(${empleadoId})"><i class="fas fa-eye"></i></button>`;
+                    }
+                }
+                mostrarToast('✅ Nómina revisada', 'success');
+            } else {
+                mostrarToast('❌ Error: ' + (data.error || 'Desconocido'), 'error');
+            }
+        })
+        .catch(() => mostrarToast('❌ Error de conexión.', 'error'));
+    }
+
+    function verDetalle(empleadoId) {
+        const modal = document.getElementById('modalDetalle');
+        const contenido = document.getElementById('detalleContenido');
+        contenido.innerHTML = '<div style="text-align:center; padding:20px; color:#8e8e93;">Cargando...</div>';
+        modal.classList.add('active');
+        fetch(`/empleados/api/detalle_completo/${empleadoId}`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data || data.length === 0) {
+                    contenido.innerHTML = '<div style="color:#8e8e93; padding:20px; text-align:center;">Sin marcas en los últimos 30 días.</div>';
+                    return;
+                }
+                let html = '';
+                data.forEach(m => {
+                    html += `
+                        <div class="marca-item">
+                            <span class="tipo ${m.tipo}">${m.tipo}</span>
+                            <span class="hora">${m.hora}</span>
+                            <span style="color:#8e8e93; font-size:12px;">${m.fecha}</span>
+                            ${m.comentario ? `<span class="comentario"><i class="fas fa-comment"></i> ${m.comentario}</span>` : ''}
+                        </div>
+                    `;
+                });
+                contenido.innerHTML = html;
+            })
+            .catch(() => {
+                contenido.innerHTML = '<div style="color:#dc2626; padding:20px;">Error al cargar datos.</div>';
+            });
+    }
+
+    function cerrarDetalle() {
+        document.getElementById('modalDetalle').classList.remove('active');
+    }
+
+    function aprobarTodos() {
+        if (!confirm('¿Revisar la nómina de todos los empleados?')) return;
+        const btns = document.querySelectorAll('#cuerpoResumen .revisar');
+        let promises = [];
+        btns.forEach(btn => {
+            const empId = btn.dataset.emp;
+            if (empId) {
+                promises.push(
+                    fetch('/empleados/api/aprobar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ empleado_id: parseInt(empId) })
+                    })
+                );
+            }
+        });
+        Promise.all(promises).then(() => {
+            mostrarToast('✅ Todos revisados', 'success');
+            location.reload();
+        });
+    }
+
+    function exportar() {
+        window.location.href = '/empleados/api/exportar';
+    }
+
+    // ================================================================
+    //  CERRAR MODALES CON CLICK FUERA
+    // ================================================================
+    document.getElementById('modalDetalle').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.remove('active');
+    });
+
+    // ================================================================
+    //  INICIALIZACIÓN
+    // ================================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        initCharts();
+        filtrarTabla();
+        ordenarTabla('nombre');
+    });
+</script>
+{% endblock %}

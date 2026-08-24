@@ -2,31 +2,252 @@
 
 {% block title %}Órdenes de Trabajo · CairoStudio{% endblock %}
 
-{% block page_title %}📋 Órdenes de Trabajo{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:28px; font-weight:700;">Órdenes</span>
+    <span style="font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
+        Gestión de producción · {{ total }} registros
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== BADGES DE ESTADO (workflow) ===== */
+    /* ===== ESTILOS GENERALES ===== */
+    .content-card {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* ===== KPIs ===== */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .kpi-card {
+        background: white;
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border-top: 3px solid #a8854f;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.04); }
+    .kpi-card .kpi-info { display: flex; flex-direction: column; }
+    .kpi-card .kpi-value {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        line-height: 1.2;
+    }
+    .kpi-card .kpi-label {
+        font-size: 11px;
+        color: #8e8e93;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .kpi-card .kpi-icon { font-size: 20px; color: #a8854f; opacity: 0.4; }
+    .kpi-card.total { border-top-color: #a8854f; }
+    .kpi-card.pendiente { border-top-color: #f59e0b; }
+    .kpi-card.finalizada { border-top-color: #10b981; }
+    .kpi-card.nuevas { border-top-color: #3b82f6; }
+    .kpi-card.facturacion { border-top-color: #8b5cf6; }
+
+    /* ===== BARRA DE ACCIONES ===== */
+    .actions-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(8px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .actions-bar .left-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 0 0 auto;
+    }
+    .actions-bar .center-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1 1 auto;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .actions-bar .right-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    .btn {
+        padding: 6px 16px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #1c1c1e;
+        color: white;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .filters-group select,
+    .filters-group input {
+        padding: 4px 10px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 30px;
+        font-size: 12px;
+        background: white;
+        color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        height: 30px;
+        min-width: 120px;
+    }
+    .filters-group select:focus,
+    .filters-group input:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .filters-group input { min-width: 160px; }
+    .filters-group .filter-icon { color: #8e8e93; font-size: 13px; }
+    .filters-group .btn-limpiar {
+        background: none;
+        border: none;
+        color: #8e8e93;
+        font-size: 12px;
+        cursor: pointer;
+        padding: 0 4px;
+    }
+    .filters-group .btn-limpiar:hover { color: #1c1c1e; }
+
+    .view-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid #e0dcd8;
+    }
+    .view-toggle .view-btn {
+        padding: 4px 8px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #555;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .view-toggle .view-btn i { font-size: 15px; }
+    .view-toggle .view-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .view-toggle .view-btn:hover { color: #1c1c1e; }
+    .view-toggle .view-btn .label { display: none; }
+    @media (min-width: 600px) {
+        .view-toggle .view-btn .label { display: inline; font-size: 12px; margin-left: 2px; }
+    }
+
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* ===== TABLA ===== */
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid #f0ece8;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 700px;
+    }
+    .table th {
+        background: #f8f6f4;
+        text-align: left;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 11px;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e8e0da;
+        cursor: pointer;
+        user-select: none;
+    }
+    .table th:hover { background: #f0ece8; }
+    .table th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.3; }
+    .table th.sorted-asc .sort-icon { opacity: 1; color: #a8854f; }
+    .table th.sorted-desc .sort-icon { opacity: 1; color: #a8854f; transform: rotate(180deg); }
+    .table td { padding: 8px 14px; border-bottom: 1px solid #f0ece8; vertical-align: middle; }
+    .table tr:hover td { background: #fafaf9; }
+    .table .order-num { font-weight: 700; color: #1c1c1e; }
+    .table .client-name { font-weight: 500; }
+
     .status-badge {
         display: inline-flex;
         align-items: center;
-        gap: 6px;
-        padding: 4px 14px;
+        gap: 5px;
+        padding: 3px 12px;
         border-radius: 30px;
         font-weight: 600;
-        font-size: 13px;
+        font-size: 11px;
         font-family: 'Inter', sans-serif;
         text-transform: capitalize;
         letter-spacing: 0.3px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        transition: all 0.2s;
     }
-    .status-badge .dot {
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        display: inline-block;
-    }
+    .status-badge .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
     .status-pendiente { background: #fef3c7; color: #78350f; }
     .status-pendiente .dot { background: #f59e0b; }
     .status-por-preparar { background: #ffedd5; color: #9a3412; }
@@ -42,89 +263,39 @@
     .status-entregados { background: #fefce8; color: #78350f; }
     .status-entregados .dot { background: #f59e0b; }
 
-    /* ===== TOGGLE DE VISTA ===== */
-    .view-toggle {
-        display: inline-flex;
-        background: #f0ece8;
-        border-radius: 30px;
-        padding: 4px;
-        gap: 2px;
-        border: 1px solid #d2d2d7;
-    }
-    .view-toggle .view-btn {
-        padding: 4px 16px;
-        border-radius: 30px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 12px;
-        color: #555;
-        transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
-    }
-    .view-toggle .view-btn.active {
-        background: white;
-        color: #1c1c1e;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .view-toggle .view-btn:hover { color: #1c1c1e; }
+    .badge { font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
+    .badge-ok { background: #10b981; color: white; }
+    .badge-pendiente { background: #f59e0b; color: white; }
 
-    .view-section { display: none; }
-    .view-section.active { display: block; }
-
-    /* ===== KANBAN CARDS ===== */
+    /* ===== KANBAN ===== */
     .kanban-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: 16px;
-        margin-top: 12px;
+        margin-top: 6px;
     }
     .kanban-card {
         background: white;
-        border-radius: 16px;
+        border-radius: 14px;
         padding: 14px 16px;
         border: 1px solid #f0ece8;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        transition: all 0.2s;
-        position: relative;
-        border-top: 4px solid #8e8e93; /* color por defecto */
-    }
-    .kanban-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-    }
-    .kanban-card .header {
+        transition: all 0.25s ease;
+        border-top: 4px solid #8e8e93;
         display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 4px;
-        gap: 8px;
+        flex-direction: column;
+        gap: 4px;
     }
-    .kanban-card .order-num {
-        font-family: 'Playfair Display', serif;
-        font-size: 17px;
-        font-weight: 700;
-        color: #1c1c1e;
-    }
-    .kanban-card .client {
-        font-size: 14px;
-        color: #1c1c1e;
-        font-weight: 500;
-    }
-    .kanban-card .sub {
-        font-size: 13px;
-        color: #8e8e93;
-        margin-top: 2px;
-    }
-    .kanban-card .sub .highlight {
-        font-weight: 600;
-        color: #1c1c1e;
-    }
+    .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+    .kanban-card .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+    .kanban-card .order-num { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #1c1c1e; }
+    .kanban-card .client { font-size: 14px; color: #1c1c1e; font-weight: 500; }
+    .kanban-card .sub { font-size: 12px; color: #8e8e93; }
+    .kanban-card .sub .highlight { font-weight: 600; color: #1c1c1e; }
     .kanban-card .badge-prioridad {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: 700;
-        padding: 2px 10px;
+        padding: 2px 8px;
         border-radius: 30px;
         text-transform: uppercase;
         letter-spacing: 0.3px;
@@ -136,32 +307,29 @@
 
     .kanban-card .actions {
         display: flex;
-        gap: 6px;
+        gap: 4px;
         flex-wrap: wrap;
-        margin-top: 10px;
-        padding-top: 8px;
+        margin-top: 6px;
+        padding-top: 6px;
         border-top: 1px solid #f0ece8;
     }
     .kanban-card .actions .btn {
-        padding: 4px 12px;
+        padding: 3px 10px;
         border-radius: 20px;
         border: 1px solid #d2d2d7;
         background: transparent;
         font-weight: 600;
-        font-size: 12px;
+        font-size: 11px;
         cursor: pointer;
-        transition: all 0.2s;
+        transition: 0.2s;
         font-family: 'Inter', sans-serif;
         color: #1c1c1e;
         text-decoration: none;
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
     }
-    .kanban-card .actions .btn:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-    }
+    .kanban-card .actions .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
     .kanban-card .actions .btn-warning { border-color: #f59e0b; color: #d97706; }
     .kanban-card .actions .btn-warning:hover { background: #fef3c7; }
     .kanban-card .actions .btn-pdf { border-color: #dc2626; color: #dc2626; }
@@ -171,7 +339,6 @@
     .kanban-card .actions .btn-outline { border-color: #d2d2d7; color: #1c1c1e; }
     .kanban-card .actions .btn-outline:hover { background: #f5f5f5; }
 
-    /* Colores de borde según estado (workflow) */
     .kanban-card.border-pendiente { border-top-color: #f59e0b; }
     .kanban-card.border-por-preparar { border-top-color: #f97316; }
     .kanban-card.border-preparados { border-top-color: #3b82f6; }
@@ -180,47 +347,34 @@
     .kanban-card.border-listo { border-top-color: #10b981; }
     .kanban-card.border-entregados { border-top-color: #f59e0b; }
 
-    /* ===== DASHBOARD KPIs ===== */
-    .kpi-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 12px;
-        margin-bottom: 16px;
+    /* ===== PAGINACIÓN ===== */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin-top: 20px;
+        padding: 8px 0;
+        flex-wrap: wrap;
     }
-    .kpi-card {
-        background: white;
-        border-radius: 12px;
-        padding: 12px 14px;
-        border-top: 4px solid #a8854f;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .kpi-card .kpi-value {
-        font-family: 'Playfair Display', serif;
-        font-size: 24px;
-        font-weight: 700;
+    .pagination .btn {
+        padding: 4px 12px;
+        font-size: 13px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        background: transparent;
         color: #1c1c1e;
+        cursor: pointer;
+        transition: 0.2s;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
     }
-    .kpi-card .kpi-label {
-        font-size: 12px;
-        color: #8e8e93;
-        font-weight: 500;
-    }
-    .kpi-card .kpi-icon {
-        float: right;
-        font-size: 18px;
-        color: #a8854f;
-        opacity: 0.4;
-    }
-    .kpi-card.verde { border-top-color: #10b981; }
-    .kpi-card.verde .kpi-icon { color: #10b981; }
-    .kpi-card.amarillo { border-top-color: #f59e0b; }
-    .kpi-card.amarillo .kpi-icon { color: #f59e0b; }
-    .kpi-card.azul { border-top-color: #3b82f6; }
-    .kpi-card.azul .kpi-icon { color: #3b82f6; }
-    .kpi-card.morado { border-top-color: #8b5cf6; }
-    .kpi-card.morado .kpi-icon { color: #8b5cf6; }
+    .pagination .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
+    .pagination .btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+    .pagination .btn.disabled { opacity: 0.3; pointer-events: none; }
+    .pagination .info { font-size: 13px; color: #8e8e93; padding: 0 8px; }
 
-    /* ===== MODAL (Estudio Blanc) ===== */
+    /* ===== MODAL ===== */
     .modal-overlay {
         display: none;
         position: fixed;
@@ -246,32 +400,11 @@
         from { transform: scale(0.95); opacity: 0; }
         to { transform: scale(1); opacity: 1; }
     }
-    .modal .modal-close {
-        background: none;
-        border: none;
-        font-size: 28px;
-        cursor: pointer;
-        color: #8e8e93;
-        float: right;
-        line-height: 1;
-    }
+    .modal .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #8e8e93; float: right; line-height: 1; }
     .modal .modal-close:hover { color: #1c1c1e; }
-    .modal h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 16px;
-        color: #1c1c1e;
-    }
-    .modal .form-group {
-        margin-bottom: 16px;
-    }
-    .modal .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
-    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; color: #1c1c1e; }
+    .modal .form-group { margin-bottom: 16px; }
+    .modal .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
     .modal .form-group input {
         width: 100%;
         padding: 10px 14px;
@@ -288,283 +421,208 @@
         background: white;
         box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
-    .modal .modal-actions {
-        display: flex;
-        gap: 10px;
-        margin-top: 16px;
-        justify-content: flex-end;
-    }
-    .modal .btn {
-        padding: 8px 20px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 14px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-    }
-    .modal .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .modal .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-    }
-    .modal .btn-success {
-        background: #10b981;
-        color: white;
-    }
-    .modal .btn-success:hover {
-        background: #059669;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(16,185,129,0.2);
-    }
-
-    /* ===== BOTONES GENERALES ===== */
-    .btn {
-        padding: 6px 14px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 13px;
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        background: #1c1c1e;
-        color: white;
-        font-family: 'Inter', sans-serif;
-        text-decoration: none;
-        transition: all 0.2s;
-    }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
-    .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
-    .btn-warning { background: #f59e0b; color: white; }
-    .btn-warning:hover { background: #d97706; box-shadow: 0 4px 12px rgba(245,158,11,0.2); }
-    .btn-pdf { background: #dc2626; color: white; }
-    .btn-pdf:hover { background: #b91c1c; }
-    .btn-primary { background: #1c1c1e; color: white; }
-    .btn-primary:hover { background: #333; }
-    .btn-danger { background: #dc2626; color: white; }
-    .btn-danger:hover { background: #b91c1c; }
-
-    .badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 30px;
-        display: inline-block;
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* ===== FILTROS (Estudio Blanc) ===== */
-    .filters-bar {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-        padding: 12px 16px;
-        background: rgba(255,255,255,0.6);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 16px;
-    }
-    .filters-bar select,
-    .filters-bar input {
-        padding: 8px 14px;
-        border: 1.5px solid #e0dcd8;
-        border-radius: 10px;
-        font-size: 14px;
-        background: white;
-        color: #1c1c1e;
-        min-width: 140px;
-        font-family: 'Inter', sans-serif;
-        transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .filters-bar select:focus,
-    .filters-bar input:focus {
-        outline: none;
-        border-color: #a8854f;
-        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
-    }
-    .filters-bar .filter-group {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-    .filters-bar .filter-label {
-        font-weight: 600;
-        font-size: 13px;
-        color: #8e8e93;
-    }
-    .filters-bar .btn {
-        padding: 6px 16px;
-        border-radius: 30px;
-        font-size: 13px;
-    }
+    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .modal .btn { padding: 8px 20px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .modal .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .modal .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; }
+    .modal .btn-success { background: #10b981; color: white; }
+    .modal .btn-success:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
 
     @media (max-width: 768px) {
-        .filters-bar { flex-direction: column; align-items: stretch; }
-        .filters-bar .filter-group { width: 100%; }
+        .actions-bar { flex-direction: column; align-items: stretch; gap: 10px; }
+        .actions-bar .left-group { justify-content: center; }
+        .actions-bar .center-group { justify-content: center; flex-wrap: wrap; }
+        .actions-bar .right-group { justify-content: center; margin-left: 0; }
+        .filters-group { flex-wrap: wrap; justify-content: center; }
+        .filters-group select, .filters-group input { min-width: 100px; width: auto; }
         .kpi-grid { grid-template-columns: 1fr 1fr; }
         .kanban-grid { grid-template-columns: 1fr; }
-        .view-toggle { width: 100%; justify-content: center; }
+        .table-wrapper { border-radius: 12px; }
+        .view-toggle .view-btn .label { display: inline; }
+        .pagination .btn { padding: 4px 10px; font-size: 12px; }
     }
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr; }
+        .view-toggle .view-btn .label { display: none; }
+        .page-title { flex-direction: column; align-items: flex-start; gap: 4px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+{# ===== MACRO DE PAGINACIÓN (definida antes de usarla) ===== #}
+{% macro render_pagination(page, total_pages, search, estado) %}
+{% if total_pages > 1 %}
+<div class="pagination">
+    <a href="{{ url_for('ordenes.list_orders', page=1, search=search, estado=estado) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
+    <a href="{{ url_for('ordenes.list_orders', page=page-1 if page>1 else 1, search=search, estado=estado) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
+
+    {% set start = [page - 2, 1]|max %}
+    {% set end = [page + 2, total_pages]|min %}
+    {% if start > 1 %}<span class="info">…</span>{% endif %}
+    {% for p in range(start, end + 1) %}
+        <a href="{{ url_for('ordenes.list_orders', page=p, search=search, estado=estado) }}" class="btn {% if p == page %}active{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if end < total_pages %}<span class="info">…</span>{% endif %}
+
+    <a href="{{ url_for('ordenes.list_orders', page=page+1 if page<total_pages else total_pages, search=search, estado=estado) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
+    <a href="{{ url_for('ordenes.list_orders', page=total_pages, search=search, estado=estado) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
+    <span class="info">Página {{ page }} de {{ total_pages }}</span>
+</div>
+{% endif %}
+{% endmacro %}
+
 <div class="content-card">
-    <!-- ===== DASHBOARD KPIs ===== -->
+
+    <!-- ===== KPIs ===== -->
     <div class="kpi-grid">
-        <div class="kpi-card">
+        <div class="kpi-card total">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ total_ordenes }}</span>
+                <span class="kpi-label">Total</span>
+            </div>
             <i class="fas fa-file-alt kpi-icon"></i>
-            <div class="kpi-value">{{ total_ordenes }}</div>
-            <div class="kpi-label">Total órdenes</div>
         </div>
-        <div class="kpi-card amarillo">
+        <div class="kpi-card pendiente">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ pendientes }}</span>
+                <span class="kpi-label">Pendientes</span>
+            </div>
             <i class="fas fa-clock kpi-icon"></i>
-            <div class="kpi-value">{{ pendientes }}</div>
-            <div class="kpi-label">Pendientes</div>
         </div>
-        <div class="kpi-card verde">
+        <div class="kpi-card finalizada">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ completadas }}</span>
+                <span class="kpi-label">Finalizadas</span>
+            </div>
             <i class="fas fa-check-circle kpi-icon"></i>
-            <div class="kpi-value">{{ completadas }}</div>
-            <div class="kpi-label">Completadas</div>
         </div>
-        <div class="kpi-card morado">
+        <div class="kpi-card nuevas">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ nuevas_ordenes_mes }}</span>
+                <span class="kpi-label">Nuevas (mes)</span>
+            </div>
+            <i class="fas fa-calendar-plus kpi-icon"></i>
+        </div>
+        <div class="kpi-card facturacion">
+            <div class="kpi-info">
+                <span class="kpi-value">${{ facturacion_total|round(2) }}</span>
+                <span class="kpi-label">Facturación</span>
+            </div>
             <i class="fas fa-dollar-sign kpi-icon"></i>
-            <div class="kpi-value">${{ facturacion_total|round(2) }}</div>
-            <div class="kpi-label">Facturación total</div>
-        </div>
-        <div class="kpi-card azul">
-            <i class="fas fa-user-plus kpi-icon"></i>
-            <div class="kpi-value">{{ nuevas_ordenes_mes }}</div>
-            <div class="kpi-label">Nuevas este mes</div>
         </div>
     </div>
 
-    <!-- ===== BARRA DE FILTROS ===== -->
-    <form method="GET" action="{{ url_for('ordenes.list_orders') }}" class="filters-bar">
-        <div class="filter-group">
-            <span class="filter-label"><i class="fas fa-search"></i></span>
-            <input type="text" name="search" value="{{ request.args.get('search', '') }}" placeholder="Buscar por N° orden o cliente..." onkeyup="if(event.key==='Enter') this.form.submit()">
+    <!-- ===== BARRA DE ACCIONES ===== -->
+    <div class="actions-bar">
+        <div class="left-group">
+            {% if current_user.role in ['comercial', 'admin'] %}
+                <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva orden
+                </a>
+            {% endif %}
         </div>
-        <div class="filter-group">
-            <span class="filter-label">Estado:</span>
-            <select name="estado" onchange="this.form.submit()">
-                <option value="">Todos</option>
-                {% for col_id, col_nombre in columnas_nombres.items() %}
-                    <option value="{{ col_id }}" {% if request.args.get('estado') == col_id %}selected{% endif %}>{{ col_nombre }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <button type="submit" class="btn btn-primary"><i class="fas fa-filter"></i> Filtrar</button>
-        {% if request.args.get('estado') or request.args.get('search') %}
-            <a href="{{ url_for('ordenes.list_orders') }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
-        {% endif %}
-    </form>
 
-    <!-- ===== TOGGLE DE VISTA Y BOTÓN NUEVO ===== -->
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <div class="view-toggle" id="viewToggle">
-            <button class="view-btn active" data-view="lista" onclick="cambiarVista('lista')"><i class="fas fa-list"></i> Lista</button>
-            <button class="view-btn" data-view="kanban" onclick="cambiarVista('kanban')"><i class="fas fa-th"></i> Kanban</button>
+        <div class="center-group">
+            <form method="GET" action="{{ url_for('ordenes.list_orders') }}" id="filterForm" class="filters-group">
+                <i class="fas fa-search filter-icon"></i>
+                <input type="text" name="search" id="searchInput" value="{{ search }}" placeholder="Buscar orden o cliente..." autocomplete="off">
+                <select name="estado" id="estadoSelect">
+                    <option value="">Todos los estados</option>
+                    {% for col_id, col_nombre in columnas_nombres.items() %}
+                        <option value="{{ col_id }}" {% if estado == col_id %}selected{% endif %}>{{ col_nombre }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" style="display:none;"></button>
+                {% if search or estado %}
+                    <a href="{{ url_for('ordenes.list_orders') }}" class="btn-limpiar" title="Limpiar filtros">
+                        <i class="fas fa-times-circle"></i>
+                    </a>
+                {% endif %}
+            </form>
         </div>
-        {% if current_user.role in ['comercial', 'admin'] %}
-            <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Nueva orden</a>
-        {% endif %}
+
+        <div class="right-group">
+            <div class="view-toggle" id="viewToggle">
+                <button class="view-btn active" data-view="kanban" onclick="cambiarVista('kanban')">
+                    <i class="fas fa-th"></i>
+                    <span class="label">Kanban</span>
+                </button>
+                <button class="view-btn" data-view="lista" onclick="cambiarVista('lista')">
+                    <i class="fas fa-list"></i>
+                    <span class="label">Lista</span>
+                </button>
+            </div>
+        </div>
     </div>
 
-    <!-- ===== VISTA LISTA (TABLA) ===== -->
-    <div class="view-section active" id="vistaLista">
-        <div style="overflow-x:auto;">
-            <table class="table" style="width:100%; border-collapse:collapse; font-size:14px;">
+    <!-- ===== VISTA LISTA ===== -->
+    <div class="view-section" id="vistaLista">
+        <div class="table-wrapper">
+            <table class="table" id="ordersTable">
                 <thead>
-                    <tr style="border-bottom:2px solid #ddd; text-align:left;">
-                        <th style="padding:8px 0;">N° Orden</th>
-                        <th style="padding:8px 0;">Cliente</th>
-                        <th style="padding:8px 0;">Proyecto</th>
-                        <th style="padding:8px 0;">Líneas</th>
-                        <th style="padding:8px 0;">Entrada</th>
-                        <th style="padding:8px 0; min-width:140px;">Estado</th>
-                        <th style="padding:8px 0;">Acciones</th>
+                    <tr>
+                        <th data-sort="order_num">N° Orden <span class="sort-icon">⇅</span></th>
+                        <th data-sort="client">Cliente <span class="sort-icon">⇅</span></th>
+                        <th data-sort="proyecto">Proyecto <span class="sort-icon">⇅</span></th>
+                        <th data-sort="lineas">Líneas <span class="sort-icon">⇅</span></th>
+                        <th data-sort="entrada">Entrada <span class="sort-icon">⇅</span></th>
+                        <th data-sort="estado">Estado <span class="sort-icon">⇅</span></th>
+                        <th data-sort="acciones" style="min-width:150px;">Acciones <span class="sort-icon">⇅</span></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for order in orders %}
-                    <tr style="border-bottom:1px solid #eee;">
-                        <td style="padding:8px 0;"><strong>{{ order.order_num or 'Sin número' }}</strong></td>
-                        <td style="padding:8px 0;">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
-                        <td style="padding:8px 0;">{{ order.proyecto or '-' }}</td>
-                        <td style="padding:8px 0;">{{ order.archivos|length }}</td>
-                        <td style="padding:8px 0;">
+                    <tr>
+                        <td class="order-num">{{ order.order_num or 'Sin número' }}</td>
+                        <td class="client-name">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
+                        <td>{{ order.proyecto or '-' }}</td>
+                        <td>{{ order.archivos|length }}</td>
+                        <td>
                             {% if order.entrada_ok %}
-                                <span class="badge" style="background:#10b981; color:white;">✅ OK</span>
+                                <span class="badge badge-ok">✅ OK</span>
                             {% else %}
-                                <span class="badge" style="background:#f59e0b; color:white;">⏳ Pendiente</span>
+                                <span class="badge badge-pendiente">⏳ Pendiente</span>
                             {% endif %}
                         </td>
-                        <td style="padding:8px 0;">
+                        <td>
                             {% set columna = order.column or 'pendiente' %}
                             {% set estado_nombre = columnas_nombres.get(columna, columna) %}
                             {% set clase_estado = 'status-' + columna.replace('_', '-') %}
                             <span class="status-badge {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
                         </td>
-                        <td style="padding:8px 0;">
-                            {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin', 'economico'] %}
-                                <button class="btn btn-success btn-sm" onclick="abrirModalEntrada({{ order.id }})">
-                                    Entrada
-                                </button>
-                            {% endif %}
-                            <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
-                            {% if current_user.role in ['comercial', 'admin'] %}
-                                <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
-                                <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
-                            {% endif %}
-                            {% if current_user.role == 'admin' %}
-                                <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">
-                                    <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
-                                </form>
-                            {% endif %}
+                        <td>
+                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                                {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin', 'economico'] %}
+                                    <button class="btn btn-success btn-sm" onclick="abrirModalEntrada({{ order.id }})">
+                                        Entrada
+                                    </button>
+                                {% endif %}
+                                <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+                                {% if current_user.role in ['comercial', 'admin'] %}
+                                    <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
+                                    <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
+                                {% endif %}
+                                {% if current_user.role == 'admin' %}
+                                    <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">
+                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
+                    {% if orders|length == 0 %}
+                    <tr><td colspan="7" style="text-align:center; padding:30px; color:#999;">No hay órdenes con estos filtros.</td></tr>
+                    {% endif %}
                 </tbody>
             </table>
-            {% if orders|length == 0 %}
-                <p style="color:#999; text-align:center; padding:20px 0;">No hay órdenes con estos filtros. Crea una nueva.</p>
-            {% endif %}
         </div>
+        {{ render_pagination(page, total_pages, search, estado) }}
     </div>
 
     <!-- ===== VISTA KANBAN ===== -->
-    <div class="view-section" id="vistaKanban">
+    <div class="view-section active" id="vistaKanban">
         <div class="kanban-grid">
             {% for order in orders %}
             {% set columna = order.column or 'pendiente' %}
@@ -583,7 +641,7 @@
                     <br>
                     {{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}
                 </div>
-                <div style="margin: 6px 0;">
+                <div style="margin: 4px 0;">
                     {% set estado_nombre = columnas_nombres.get(columna, columna) %}
                     {% set clase_estado = 'status-' + columna.replace('_', '-') %}
                     <span class="status-badge {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
@@ -606,31 +664,103 @@
             </div>
             {% endfor %}
         </div>
+        {{ render_pagination(page, total_pages, search, estado) }}
     </div>
-</div>
 
-<!-- ===== MODAL PARA MARCAR ENTRADA ===== -->
-<div class="modal-overlay" id="modalEntrada">
-    <div class="modal">
-        <button class="modal-close" onclick="cerrarModalEntrada()">&times;</button>
-        <h2><i class="fas fa-check-circle" style="color:#10b981;"></i> Marcar entrada al sistema</h2>
-        <form method="POST" id="formEntrada">
-            <div class="form-group">
-                <label>Número de orden de Odoo *</label>
-                <input type="text" id="odoo_order_num" name="odoo_order_num" placeholder="Ej. S03055" required>
-                <small style="color:#8e8e93; font-size:12px;">Este número será el identificador principal de la orden.</small>
-            </div>
-            <div class="modal-actions">
-                <button type="button" class="btn btn-outline" onclick="cerrarModalEntrada()">Cancelar</button>
-                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Marcar entrada</button>
-            </div>
-        </form>
+    <!-- ===== MODAL ===== -->
+    <div class="modal-overlay" id="modalEntrada">
+        <div class="modal">
+            <button class="modal-close" onclick="cerrarModalEntrada()">&times;</button>
+            <h2><i class="fas fa-check-circle" style="color:#10b981;"></i> Marcar entrada al sistema</h2>
+            <form method="POST" id="formEntrada">
+                <div class="form-group">
+                    <label>Número de orden de Odoo *</label>
+                    <input type="text" id="odoo_order_num" name="odoo_order_num" placeholder="Ej. S03055" required>
+                    <small style="color:#8e8e93; font-size:12px;">Este número será el identificador principal de la orden.</small>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-outline" onclick="cerrarModalEntrada()">Cancelar</button>
+                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Marcar entrada</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // ================================================================
+    //  FILTROS EN TIEMPO REAL
+    // ================================================================
+    (function() {
+        const filterForm = document.getElementById('filterForm');
+        const searchInput = document.getElementById('searchInput');
+        const estadoSelect = document.getElementById('estadoSelect');
+        let timeoutId = null;
+
+        function submitForm() {
+            if (timeoutId) clearTimeout(timeoutId);
+            timeoutId = setTimeout(function() {
+                filterForm.submit();
+            }, 300);
+        }
+
+        searchInput.addEventListener('input', submitForm);
+        estadoSelect.addEventListener('change', submitForm);
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); submitForm(); }
+        });
+    })();
+
+    // ================================================================
+    //  ORDENACIÓN DE TABLA
+    // ================================================================
+    (function() {
+        const table = document.getElementById('ordersTable');
+        if (!table) return;
+        const headers = table.querySelectorAll('thead th');
+        const tbody = table.querySelector('tbody');
+        let currentSort = { column: null, asc: true };
+
+        headers.forEach((header, index) => {
+            header.addEventListener('click', function() {
+                const sortKey = this.dataset.sort;
+                if (!sortKey) return;
+                if (currentSort.column === sortKey) {
+                    currentSort.asc = !currentSort.asc;
+                } else {
+                    currentSort.column = sortKey;
+                    currentSort.asc = true;
+                }
+                headers.forEach(th => th.classList.remove('sorted-asc', 'sorted-desc'));
+                this.classList.add(currentSort.asc ? 'sorted-asc' : 'sorted-desc');
+
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                rows.sort((rowA, rowB) => {
+                    let valA = getCellValue(rowA, index);
+                    let valB = getCellValue(rowB, index);
+                    if (valA === valB) return 0;
+                    if (currentSort.asc) return valA > valB ? 1 : -1;
+                    else return valA < valB ? 1 : -1;
+                });
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        });
+
+        function getCellValue(row, colIndex) {
+            const cell = row.cells[colIndex];
+            if (!cell) return '';
+            let text = cell.innerText.trim();
+            const num = parseFloat(text.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(num)) return num;
+            return text.toLowerCase();
+        }
+    })();
+
+    // ================================================================
+    //  MODAL DE ENTRADA
+    // ================================================================
     function abrirModalEntrada(orderId) {
         const modal = document.getElementById('modalEntrada');
         const form = document.getElementById('formEntrada');
@@ -646,12 +776,13 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') cerrarModalEntrada();
     });
-
     document.getElementById('modalEntrada').addEventListener('click', function(e) {
         if (e.target === this) cerrarModalEntrada();
     });
 
-    // ===== CAMBIO DE VISTA =====
+    // ================================================================
+    //  CAMBIO DE VISTA
+    // ================================================================
     function cambiarVista(vista) {
         document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
         document.querySelector(`.view-btn[data-view="${vista}"]`).classList.add('active');
@@ -660,8 +791,11 @@
         localStorage.setItem('ordenes_view_preference', vista);
     }
 
+    // ================================================================
+    //  INICIALIZACIÓN
+    // ================================================================
     document.addEventListener('DOMContentLoaded', function() {
-        const pref = localStorage.getItem('ordenes_view_preference') || 'lista';
+        const pref = localStorage.getItem('ordenes_view_preference') || 'kanban';
         cambiarVista(pref);
     });
 </script>
