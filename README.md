@@ -1,40 +1,29 @@
-# Cairostudiokit
+# TraviesoPrint - Gestión para talleres de impresión
 
-Herramientas internas de **CairoStudio**, desarrolladas por TraviesoWorks.
+**TraviesoPrint** es una plataforma web para gestionar talleres de impresión y estudios creativos. Permite administrar órdenes, inventario híbrido (unidades y metros), workflow Kanban, clientes, empleados, calendario, generación de etiquetas y más.
 
-## 🧰 Calculadoras incluidas
+**Versión actual:** v1.0
 
-- **Calculadora de Etiquetas** – distribución en rollo de 1.30 m, marcas de corte, margen de mesa.
-- **Calculadora de Lona / Merma** – cálculo de impresión y desperdicio lateral para vinilo, lona, lienzo, etc.
-- **Portal** – punto de entrada común con acceso a ambas herramientas.
+---
 
-## 🚀 Despliegue rápido (LXC Ubuntu)
+## Instalación en servidor (Ubuntu 24.04 LTS)
 
-1. Clonar el repositorio:  
-   `git clone https://github.com/ditotravieso-01/cairostudiokit.git /opt/cairostudiokit`
-2. Ejecutar el script de instalación:  
-   `cd /opt/cairostudiokit && sudo bash setup.sh`
-3. Acceder al portal: `http://<IP-DEL-LXC>/`
+### Requisitos mínimos
 
-Las actualizaciones se aplican automáticamente cada minuto mediante `cron` + `deploy.sh`.
+- Ubuntu 24.04 LTS (o Debian 12+)
+- 2 GB RAM (recomendado 4 GB)
+- 20 GB de disco
+- IP pública o dominio
+- Conexión a Internet
 
+### Instalación automática (recomendada)
 
-```text
-## 🛠️ Mantenimiento
+Ejecuta estos comandos como **root**:
 
-- `git push` desde el entorno de desarrollo.
-- El servidor se actualiza solo en el siguiente ciclo del cron.
-```
+```bash
+# 1. Descargar el script de instalación
+wget -O install.sh https://raw.githubusercontent.com/ditotravieso-01/cairostudiokit/main/install.sh
 
-## 📁 Estructura
-Cairostudiokit/
-├── tools/
-│ ├── etiquetas/ (app.py + templates/)
-│ ├── lona/ (app.py + templates/)
-│ ├── portal/ (index.html)
-│ └── services/ (systemd units)
-├── monitor/ (monitor.py)
-├── config/ (nginx)
-├── setup.sh (instalación inicial)
-├── deploy.sh (actualización automática)
-└── requirements.txt
+# 2. Dar permisos y ejecutar
+chmod +x install.sh
+sudo ./install.sh

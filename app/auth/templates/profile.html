@@ -2,7 +2,7 @@
 
 {% block title %}Mi Perfil · CairoStudio{% endblock %}
 
-{% block page_title %}👤 Mi Perfil{% endblock %}
+{% block page_title %}Mi Perfil{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -27,18 +27,68 @@
         color: #a8854f;
         margin: 0 auto 16px;
     }
-    .profile-card .field {
+    .form-group {
+        margin-bottom: 16px;
+    }
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 4px;
+    }
+    .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #d2d2d7;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group input:focus {
+        outline: none;
+        border-color: #1c1c1e;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+    }
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .btn-group .btn {
+        min-width: 120px;
+        justify-content: center;
+    }
+    .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        border-left: 4px solid transparent;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .alert-danger { background: #fde8e5; color: #991b1b; border-left-color: #dc2626; }
+    .alert-success { background: #d1fae5; color: #065f46; border-left-color: #10b981; }
+    .alert-info { background: #e0f2fe; color: #1e3a8a; border-left-color: #3b82f6; }
+    .alert-warning { background: #fef3c7; color: #78350f; border-left-color: #f59e0b; }
+    hr { border: 0; border-top: 1px solid #f0ece8; margin: 20px 0; }
+    .field {
         display: flex;
         padding: 8px 0;
         border-bottom: 1px solid #f5f2ef;
     }
-    .profile-card .field .label {
+    .field .label {
         font-weight: 600;
         color: #8e8e93;
         width: 120px;
         flex-shrink: 0;
     }
-    .profile-card .field .value {
+    .field .value {
         color: #1c1c1e;
     }
 </style>
@@ -50,13 +100,53 @@
     <h2 class="serif" style="text-align:center; font-size:24px; margin-bottom:4px;">{{ current_user.username }}</h2>
     <p style="text-align:center; color:#8e8e93; margin-bottom:20px;">{{ current_user.role }}</p>
 
-    <div class="field"><span class="label">Nombre de usuario</span><span class="value">{{ current_user.username }}</span></div>
-    <div class="field"><span class="label">Rol</span><span class="value">{{ current_user.role }}</span></div>
-    <div class="field"><span class="label">Email</span><span class="value">{{ current_user.email or 'No especificado' }}</span></div>
-    <div class="field"><span class="label">Último acceso</span><span class="value">{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Nunca' }}</span></div>
+    <!-- Mostrar mensajes flash -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
 
-    <div style="display:flex; gap:12px; margin-top:20px; justify-content:center;">
-        <a href="{{ url_for('home.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver al inicio</a>
-    </div>
+    <form method="POST" action="{{ url_for('auth.update_profile') }}">
+        <!-- Campo: Nombre de usuario -->
+        <div class="form-group">
+            <label for="username">Nombre de usuario</label>
+            <input type="text" id="username" name="username" value="{{ current_user.username }}" required>
+        </div>
+
+        <!-- Campo: Email -->
+        <div class="form-group">
+            <label for="email">Correo electrónico</label>
+            <input type="email" id="email" name="email" value="{{ current_user.email or '' }}">
+        </div>
+
+        <hr>
+
+        <h5 style="font-weight:600; font-size:16px;">Cambiar contraseña</h5>
+        <p style="font-size:13px; color:#8e8e93;">Deja los campos en blanco si no deseas cambiarla.</p>
+
+        <div class="form-group">
+            <label for="current_password">Contraseña actual</label>
+            <input type="password" id="current_password" name="current_password" placeholder="••••••••">
+        </div>
+        <div class="form-group">
+            <label for="new_password">Nueva contraseña</label>
+            <input type="password" id="new_password" name="new_password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="form-group">
+            <label for="confirm_password">Confirmar nueva contraseña</label>
+            <input type="password" id="confirm_password" name="confirm_password" placeholder="••••••••">
+        </div>
+
+        <div class="btn-group">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar cambios</button>
+            <a href="{{ url_for('home.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        </div>
+    </form>
+
+    <!-- Mostrar información adicional (solo lectura) -->
+    <hr>
+    <div class="field"><span class="label">Rol</span><span class="value">{{ current_user.role }}</span></div>
+    <div class="field"><span class="label">Último acceso</span><span class="value">{{ current_user.last_login.strftime('%d/%m/%Y %H:%M') if current_user.last_login else 'Nunca' }}</span></div>
 </div>
 {% endblock %}

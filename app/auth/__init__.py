@@ -249,21 +249,52 @@ def admin_delete_user(user_id):
 @login_required
 def update_profile():
     if current_user.is_ldap_user():
-        flash('No puedes modificar el email de un usuario LDAP.', 'warning')
+        flash('No puedes modificar el perfil de un usuario LDAP.', 'warning')
         return redirect(url_for('auth.profile'))
 
-    email = request.form.get('email')
-    if email:
-        # Verificar que el email no esté en uso por otro usuario
-        existing = User.query.filter(User.email == email, User.id != current_user.id).first()
+    # Obtener datos del formulario
+    new_username = request.form.get('username', '').strip()
+    new_email = request.form.get('email', '').strip()
+    current_password = request.form.get('current_password', '')
+    new_password = request.form.get('new_password', '')
+    confirm_password = request.form.get('confirm_password', '')
+
+    # Validar y actualizar username
+    if new_username and new_username != current_user.username:
+        existing = User.query.filter(User.username == new_username, User.id != current_user.id).first()
+        if existing:
+            flash('El nombre de usuario ya está en uso.', 'danger')
+            return redirect(url_for('auth.profile'))
+        current_user.username = new_username
+        flash('Nombre de usuario actualizado.', 'success')
+
+    # Validar y actualizar email (opcional)
+    if new_email and new_email != current_user.email:
+        existing = User.query.filter(User.email == new_email, User.id != current_user.id).first()
         if existing:
             flash('El email ya está en uso por otro usuario.', 'danger')
             return redirect(url_for('auth.profile'))
-        current_user.email = email
-        db.session.commit()
-        flash('Email actualizado correctamente.', 'success')
-    else:
-        flash('El email no puede estar vacío.', 'danger')
+        current_user.email = new_email
+        flash('Email actualizado.', 'success')
+
+    # Cambiar contraseña (solo si se proporciona)
+    if new_password:
+        if not current_password:
+            flash('Debes ingresar tu contraseña actual para cambiarla.', 'danger')
+            return redirect(url_for('auth.profile'))
+        if not current_user.check_password(current_password):
+            flash('Contraseña actual incorrecta.', 'danger')
+            return redirect(url_for('auth.profile'))
+        if new_password != confirm_password:
+            flash('Las contraseñas nuevas no coinciden.', 'danger')
+            return redirect(url_for('auth.profile'))
+        if len(new_password) < 6:
+            flash('La nueva contraseña debe tener al menos 6 caracteres.', 'danger')
+            return redirect(url_for('auth.profile'))
+        current_user.set_password(new_password)
+        flash('Contraseña actualizada correctamente.', 'success')
+
+    db.session.commit()
     return redirect(url_for('auth.profile'))
 
 
