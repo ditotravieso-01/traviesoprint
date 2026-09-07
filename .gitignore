@@ -8,3 +8,5 @@ instance/
 *.db
 app/traviesoprint.db
 app/traviesoprint.db
+*.db
+instance/
