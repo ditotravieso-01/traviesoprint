@@ -53,11 +53,78 @@
         .filters-bar .filter-group { width:100%; }
         .chart-grid { grid-template-columns:1fr; }
         .chart-container { height:220px; }
+        /* Tabla a tarjetas */
+        .table-wrap table,
+        .table-wrap thead,
+        .table-wrap tbody,
+        .table-wrap tr,
+        .table-wrap th,
+        .table-wrap td {
+            display: block;
+        }
+        .table-wrap thead {
+            display: none;
+        }
+        .table-wrap tbody {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .table-wrap tr {
+            background: white;
+            border-radius: 14px;
+            padding: 14px 16px;
+            border: 1px solid #f0ece8;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 12px;
+        }
+        .table-wrap td {
+            border: none;
+            padding: 2px 0;
+            white-space: normal;
+            word-break: break-word;
+            text-align: left;
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+        .table-wrap td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #8e8e93;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .table-wrap td:first-child {
+            flex-basis: 100%;
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+        }
+        .table-wrap td:first-child:before {
+            display: none;
+        }
+    }
+    @media (max-width: 480px) {
+        .chart-container { height: 180px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+    <div>
+        <p style="color:#8e8e93; margin:0;">Análisis de pérdidas de inventario</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+</div>
+
 <div class="card">
     <form method="GET" action="{{ url_for('inventario.merma') }}" class="filters-bar">
         <div class="filter-group">
@@ -135,14 +202,14 @@
             <tbody>
                 {% for d in datos %}
                 <tr>
-                    <td><strong>{{ d.nombre }}</strong></td>
-                    {% if agrupar_por == 'producto' %}<td>{{ d.categoria }}</td>{% endif %}
-                    <td>{{ d.entradas|round(2) }}</td>
-                    <td>{{ d.consumos|round(2) }}</td>
-                    <td class="{% if d.merma > 0 %}badge-merma-positive{% elif d.merma < 0 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
+                    <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}"><strong>{{ d.nombre }}</strong></td>
+                    {% if agrupar_por == 'producto' %}<td data-label="Categoría">{{ d.categoria }}</td>{% endif %}
+                    <td data-label="Entradas">{{ d.entradas|round(2) }}</td>
+                    <td data-label="Consumos">{{ d.consumos|round(2) }}</td>
+                    <td data-label="Merma" class="{% if d.merma > 0 %}badge-merma-positive{% elif d.merma < 0 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
                         {{ d.merma > 0 and '+' or '' }}{{ d.merma|round(2) }}
                     </td>
-                    <td class="{% if d.porcentaje > 10 %}badge-merma-positive{% elif d.porcentaje > 5 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
+                    <td data-label="% Merma" class="{% if d.porcentaje > 10 %}badge-merma-positive{% elif d.porcentaje > 5 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
                         {{ d.porcentaje|round(1) }}%
                     </td>
                 </tr>

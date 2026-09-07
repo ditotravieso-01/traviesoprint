@@ -759,18 +759,27 @@
     })();
 
     // ================================================================
-    //  MODAL DE ENTRADA
+    //  MODAL DE ENTRADA (CORREGIDO)
     // ================================================================
     function abrirModalEntrada(orderId) {
         const modal = document.getElementById('modalEntrada');
         const form = document.getElementById('formEntrada');
+        if (!modal || !form) {
+            console.error('Modal o formulario no encontrados');
+            return;
+        }
         form.action = '/ordenes/marcar-entrada/' + orderId;
         document.getElementById('odoo_order_num').value = '';
         modal.classList.add('active');
+        modal.style.display = 'flex'; // Aseguramos visibilidad
     }
 
     function cerrarModalEntrada() {
-        document.getElementById('modalEntrada').classList.remove('active');
+        const modal = document.getElementById('modalEntrada');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+        }
     }
 
     document.addEventListener('keydown', function(e) {

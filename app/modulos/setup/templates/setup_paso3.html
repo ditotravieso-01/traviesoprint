@@ -1,0 +1,74 @@
+{% extends "setup_base.html" %}
+
+{% block content %}
+<h2 style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:16px;">
+    <i class="fas fa-check-circle" style="color:#10b981;"></i> Resumen de configuración
+</h2>
+<p style="color:#8e8e93; font-size:14px; margin-bottom:20px;">
+    Revisa los datos antes de finalizar la instalación.
+</p>
+
+<div class="summary-grid">
+    <span class="label">Nombre de la empresa</span>
+    <span class="value">{{ empresa.nombre }}</span>
+
+    <span class="label">Subtítulo</span>
+    <span class="value">{{ empresa.subtitulo }}</span>
+
+    <span class="label">Logo</span>
+    <span class="value">
+        {% if 'logo.png' in empresa.logo_url %}
+            <img src="{{ url_for('static', filename='uploads/logo.png') }}" alt="Logo" class="logo-preview" style="max-height:40px;">
+        {% else %}
+            <span class="text-muted">(Por defecto)</span>
+        {% endif %}
+    </span>
+
+    <span class="label">Fondo de login</span>
+    <span class="value">
+        {% if 'login_bg.jpg' in empresa.login_bg_url %}
+            <img src="{{ url_for('static', filename='uploads/login_bg.jpg') }}" alt="Fondo" class="bg-preview-small" style="max-height:40px; width:60px; object-fit:cover; border-radius:4px;">
+        {% else %}
+            <span class="text-muted">(Por defecto)</span>
+        {% endif %}
+    </span>
+
+    <span class="label">Color primario</span>
+    <span class="value">
+        <span class="color-swatch" style="background:{{ empresa.color_primario }};"></span>
+        {{ empresa.color_primario }}
+    </span>
+
+    <span class="label">Color secundario</span>
+    <span class="value">
+        <span class="color-swatch" style="background:{{ empresa.color_secundario }};"></span>
+        {{ empresa.color_secundario }}
+    </span>
+
+    <span class="label full" style="border-top:1px solid #e5e5ea; padding-top:8px; margin-top:4px; color:#1c1c1e; font-weight:600;">
+        👤 Usuario administrador
+    </span>
+
+    <span class="label">Usuario</span>
+    <span class="value"><strong>{{ admin.username }}</strong></span>
+
+    <span class="label">Email</span>
+    <span class="value">{{ admin.email or '(No especificado)' }}</span>
+</div>
+
+<div style="margin-top:20px; background:#fef3c7; border-radius:12px; padding:12px 16px; border-left:4px solid #f59e0b; font-size:13px; color:#78350f;">
+    <i class="fas fa-exclamation-triangle"></i> Al finalizar, se creará el usuario administrador y se guardará la configuración. <br>
+    <strong>No podrás acceder a este asistente nuevamente.</strong>
+</div>
+
+<form method="POST">
+    <div class="btn-group">
+        <a href="{{ url_for('setup.paso2') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Atrás
+        </a>
+        <button type="submit" class="btn btn-success" style="flex:1;">
+            <i class="fas fa-check"></i> Finalizar instalación
+        </button>
+    </div>
+</form>
+{% endblock %}

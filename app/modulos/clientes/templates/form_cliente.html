@@ -2,125 +2,306 @@
 
 {% block title %}{% if cliente %}Editar {{ cliente.nombre }}{% else %}Nuevo Cliente{% endif %} · CairoStudio{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if cliente else '📄 Nuevo' }} Cliente{% endblock %}
+{# Ocultamos el título de página #}
+{% block page_title %}{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width: 700px; margin: 0 auto; }
-    .form-section {
+    /* ===== CONTENEDOR ===== */
+    .form-container {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* ===== CABECERA ===== */
+    .form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding: 20px 24px;
         background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(10px);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .form-header .info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .form-header .avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #f0ece8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #a8854f;
+        flex-shrink: 0;
+    }
+    .form-header .name-group h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 2px 0;
+    }
+    .form-header .name-group .sub {
+        font-size: 14px;
+        color: #8e8e93;
+        font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .form-header .name-group .sub .ref {
+        font-weight: 500;
+        color: #1c1c1e;
+    }
+    .badge-nivel-personalizado {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .form-header .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== TARJETA DEL FORMULARIO ===== */
+    .form-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(12px);
         border-radius: 20px;
         padding: 28px 32px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
         border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        margin-bottom: 24px;
     }
-    .form-section h4 {
+    .form-card .card-title {
         font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 20px;
+        font-size: 20px;
+        font-weight: 700;
         color: #1c1c1e;
-        border-bottom: 2px solid #f0ece8;
-        padding-bottom: 12px;
+        margin: 0 0 20px 0;
         display: flex;
         align-items: center;
         gap: 10px;
+        border-bottom: 1px solid #f0ece8;
+        padding-bottom: 12px;
     }
-    .form-section h4 i { color: #a8854f; font-size: 22px; }
-    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { margin-bottom: 16px; }
+    .form-card .card-title i {
+        color: #a8854f;
+        font-size: 20px;
+    }
+
+    /* ===== CAMPOS ===== */
+    .form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+    .form-group {
+        margin-bottom: 18px;
+    }
     .form-group label {
         display: block;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 13px;
         color: #333;
         margin-bottom: 4px;
         font-family: 'Inter', sans-serif;
     }
-    .form-group input, .form-group select, .form-group textarea {
+    .form-group label .required {
+        color: #dc2626;
+        margin-left: 2px;
+    }
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
         width: 100%;
-        padding: 12px 16px;
+        padding: 10px 14px;
         border: 1.5px solid #e0dcd8;
         border-radius: 10px;
-        font-size: 15px;
+        font-size: 14px;
         background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
         font-family: 'Inter', sans-serif;
         color: #1c1c1e;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
         outline: none;
         border-color: #a8854f;
         background: white;
         box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 60px;
+    }
+    .form-group small {
+        display: block;
+        color: #8e8e93;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    /* ===== BOTONES ===== */
+    .btn {
+        padding: 8px 20px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+        background: #1c1c1e;
+        color: white;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+
     .btn-group {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-        margin-top: 24px;
-        padding-top: 16px;
+        margin-top: 8px;
+        padding-top: 20px;
         border-top: 1px solid #f0ece8;
+        justify-content: space-between;
     }
-    .btn { padding: 10px 28px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-family: 'Inter', sans-serif; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(16,185,129,0.2); }
-    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-group .left-buttons,
+    .btn-group .right-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
-        .form-grid-2 { grid-template-columns: 1fr; }
-        .form-section { padding: 20px; }
-        .btn-group { flex-direction: column; }
+        .form-grid-2 { grid-template-columns: 1fr; gap: 0; }
+        .form-container { padding: 0 12px; }
+        .form-card { padding: 20px; }
+        .form-header { flex-direction: column; align-items: flex-start; }
+        .form-header .actions { width: 100%; justify-content: flex-start; }
+        .btn-group { flex-direction: column; align-items: stretch; }
+        .btn-group .left-buttons,
+        .btn-group .right-buttons { justify-content: center; }
         .btn { justify-content: center; }
+    }
+    @media (max-width: 480px) {
+        .form-header .name-group h1 { font-size: 20px; }
+        .form-card .card-title { font-size: 17px; }
+        .form-group input, .form-group select, .form-group textarea { font-size: 13px; padding: 8px 12px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="form-container">
-    <div class="form-section">
-        <h4><i class="fas fa-user"></i> {{ 'Editar cliente' if cliente else 'Nuevo cliente' }}</h4>
-        <form method="POST">
+
+    <!-- ===== CABECERA ===== -->
+    <div class="form-header">
+        <div class="info">
+            <div class="avatar">
+                <i class="fas fa-user{% if cliente %}-edit{% else %}-plus{% endif %}"></i>
+            </div>
+            <div class="name-group">
+                <h1>{% if cliente %}{{ cliente.nombre }}{% else %}Nuevo Cliente{% endif %}</h1>
+                <div class="sub">
+                    {% if cliente %}
+                        <span class="ref">Ref: {{ cliente.referencia }}</span>
+                        <span>·</span>
+                        <span>{{ total_ordenes }} pedidos</span>
+                        <span>·</span>
+                        <span class="badge-nivel-personalizado" style="background:{{ color_nivel }}; color:{% if nivel_actual == 'black' %}#ffffff{% elif nivel_actual == 'golden' %}#ffffff{% else %}#1c1c1e{% endif %}; border-color:{{ color_nivel }};">
+                            {{ nombre_nivel }}
+                        </span>
+                    {% else %}
+                        <span>Completa los datos del nuevo cliente</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="actions">
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== FORMULARIO ===== -->
+    <form method="POST" id="clienteForm">
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-id-card"></i> Datos personales</div>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" name="nombre" value="{{ cliente.nombre if cliente else '' }}" required>
+                    <label>Nombre <span class="required">*</span></label>
+                    <input type="text" name="nombre" value="{{ cliente.nombre if cliente else '' }}" required placeholder="Nombre completo">
                 </div>
                 <div class="form-group">
                     <label>Referencia</label>
                     <input type="text" name="referencia" value="{{ cliente.referencia if cliente else '' }}" placeholder="Opcional, se genera automáticamente">
+                    <small>Si se deja vacío, se generará automáticamente.</small>
                 </div>
             </div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Teléfono</label>
-                    <input type="text" name="telefono" value="{{ cliente.telefono if cliente else '' }}">
+                    <input type="text" name="telefono" value="{{ cliente.telefono if cliente else '' }}" placeholder="Ej. 555-1234">
                 </div>
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" name="email" value="{{ cliente.email if cliente else '' }}">
+                    <input type="email" name="email" value="{{ cliente.email if cliente else '' }}" placeholder="cliente@ejemplo.com">
                 </div>
             </div>
             <div class="form-group">
                 <label>Dirección</label>
-                <input type="text" name="direccion" value="{{ cliente.direccion if cliente else '' }}">
+                <input type="text" name="direccion" value="{{ cliente.direccion if cliente else '' }}" placeholder="Calle, número, ciudad">
             </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-briefcase"></i> Información comercial</div>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label>Comercial</label>
-                    <input type="text" name="comercial" value="{{ cliente.comercial if cliente else '' }}" placeholder="Nombre del comercial asignado">
-                </div>
-                <div class="form-group">
-                    <label>Carnet de Identidad</label>
-                    <input type="text" name="carnet_identidad" value="{{ cliente.carnet_identidad if cliente else '' }}">
-                </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Fecha de Nacimiento</label>
-                    <input type="date" name="fecha_nacimiento" value="{{ cliente.fecha_nacimiento.strftime('%Y-%m-%d') if cliente and cliente.fecha_nacimiento else '' }}">
+                    <label>Comercial asignado</label>
+                    <input type="text" name="comercial" value="{{ cliente.comercial if cliente else '' }}" placeholder="Nombre del comercial">
                 </div>
                 <div class="form-group">
                     <label>Tipo de Cliente</label>
@@ -137,17 +318,17 @@
                 </div>
                 <div class="form-group">
                     <label>Preferencias de Diseño</label>
-                    <input type="text" name="preferencias_diseno" value="{{ cliente.preferencias_diseno if cliente else '' }}">
+                    <input type="text" name="preferencias_diseno" value="{{ cliente.preferencias_diseno if cliente else '' }}" placeholder="Moderno, minimalista, etc.">
                 </div>
             </div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Método de Pago Favorito</label>
-                    <input type="text" name="metodo_pago_favorito" value="{{ cliente.metodo_pago_favorito if cliente else '' }}">
+                    <input type="text" name="metodo_pago_favorito" value="{{ cliente.metodo_pago_favorito if cliente else '' }}" placeholder="Transferencia, Efectivo, etc.">
                 </div>
                 <div class="form-group">
                     <label>Referido Por</label>
-                    <input type="text" name="referido_por" value="{{ cliente.referido_por if cliente else '' }}">
+                    <input type="text" name="referido_por" value="{{ cliente.referido_por if cliente else '' }}" placeholder="Nombre de quien lo refirió">
                 </div>
             </div>
             <div class="form-group">
@@ -162,32 +343,71 @@
                     <option value="anual" {% if cliente and cliente.frecuencia_pedido == 'anual' %}selected{% endif %}>Anual</option>
                     <option value="eventual" {% if cliente and cliente.frecuencia_pedido == 'eventual' %}selected{% endif %}>Eventual</option>
                 </select>
+                <small>Frecuencia estimada de pedidos del cliente.</small>
             </div>
+        </div>
+
+        <div class="form-card">
+            <div class="card-title"><i class="fas fa-notes-medical"></i> Información adicional</div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Notas</label>
-                    <textarea name="notas" rows="3">{{ cliente.notas if cliente else '' }}</textarea>
+                    <textarea name="notas" rows="3" placeholder="Información relevante sobre el cliente...">{{ cliente.notas if cliente else '' }}</textarea>
                 </div>
                 <div class="form-group">
                     <label>Observaciones Internas</label>
-                    <textarea name="observaciones_internas" rows="3">{{ cliente.observaciones_internas if cliente else '' }}</textarea>
+                    <textarea name="observaciones_internas" rows="3" placeholder="Notas internas del equipo...">{{ cliente.observaciones_internas if cliente else '' }}</textarea>
+                </div>
+            </div>
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Carnet de Identidad</label>
+                    <input type="text" name="carnet_identidad" value="{{ cliente.carnet_identidad if cliente else '' }}" placeholder="Número de identificación">
+                </div>
+                <div class="form-group">
+                    <label>Fecha de Nacimiento</label>
+                    <input type="date" name="fecha_nacimiento" value="{{ cliente.fecha_nacimiento.strftime('%Y-%m-%d') if cliente and cliente.fecha_nacimiento else '' }}">
                 </div>
             </div>
             <div class="form-group">
                 <label>Etiquetas</label>
-                <input type="text" name="etiquetas" value="{{ cliente.etiquetas if cliente else '' }}" placeholder="Ej. VIP, Premium, Socio">
+                <input type="text" name="etiquetas" value="{{ cliente.etiquetas if cliente else '' }}" placeholder="Ej. VIP, Premium, Socio, etc.">
                 <small>Etiquetas separadas por comas.</small>
             </div>
+        </div>
 
+        <!-- ===== BOTONES ===== -->
+        <div class="form-card" style="border: none; box-shadow: none; padding: 0 0 20px 0; background: transparent;">
             <div class="btn-group">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> {{ 'Actualizar' if cliente else 'Crear cliente' }}
-                </button>
-                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
+                <div class="left-buttons">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-save"></i> {{ 'Actualizar' if cliente else 'Crear cliente' }}
+                    </button>
+                    <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                </div>
+                <div class="right-buttons">
+                    {% if cliente %}
+                        <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-primary">
+                            <i class="fas fa-eye"></i> Ver detalle
+                        </a>
+                        <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Nueva orden
+                        </a>
+                        {% if current_user.role == 'admin' %}
+                            <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?')">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fas fa-trash-alt"></i> Eliminar
+                                </button>
+                            </form>
+                        {% endif %}
+                    {% endif %}
+                </div>
             </div>
-        </form>
-    </div>
+        </div>
+
+    </form>
+
 </div>
 {% endblock %}

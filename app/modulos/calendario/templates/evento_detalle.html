@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}{{ empresa_nombre }} - Detalle del evento{% endblock %}
+
+{% block page_title %}<i class="fas fa-calendar-alt" style="color:var(--color-secondary);"></i> Detalle del evento{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalle-container {
+        max-width: 720px;
+        margin: 0 auto;
+    }
+    .detalle-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 32px 36px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+    .detalle-card .cabecera {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0ece8;
+    }
+    .detalle-card .cabecera .icono {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        color: white;
+        flex-shrink: 0;
+    }
+    .detalle-card .cabecera .info h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 4px 0;
+    }
+    .detalle-card .cabecera .info .tipo {
+        font-size: 13px;
+        color: #8e8e93;
+        font-weight: 500;
+    }
+    .detalle-card .cabecera .info .tipo .badge {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #f0ece8;
+        color: #555;
+    }
+    .detalle-card .cabecera .info .tipo .badge.entrega { background: #fef3c7; color: #78350f; }
+    .detalle-card .cabecera .info .tipo .badge.reunion { background: #dbeafe; color: #1e40af; }
+    .detalle-card .cabecera .info .tipo .badge.recordatorio { background: #d1fae5; color: #065f46; }
+    .detalle-card .cabecera .info .tipo .badge.alerta { background: #fde8e5; color: #991b1b; }
+    
+    .detalle-card .campo {
+        display: flex;
+        padding: 10px 0;
+        border-bottom: 1px solid #f5f2ef;
+    }
+    .detalle-card .campo:last-child {
+        border-bottom: none;
+    }
+    .detalle-card .campo .etiqueta {
+        width: 120px;
+        font-weight: 600;
+        font-size: 14px;
+        color: #555;
+        flex-shrink: 0;
+    }
+    .detalle-card .campo .valor {
+        flex: 1;
+        font-size: 14px;
+        color: #1c1c1e;
+    }
+    .detalle-card .campo .valor .color-muestra {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        vertical-align: middle;
+        margin-right: 8px;
+        border: 1px solid #e5e5ea;
+    }
+    
+    .acciones {
+        display: flex;
+        gap: 12px;
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #f0ece8;
+        flex-wrap: wrap;
+    }
+    .acciones .btn {
+        flex: 1;
+        min-width: 120px;
+        justify-content: center;
+    }
+    .btn-volver {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+        padding: 10px 24px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-family: 'Inter', sans-serif;
+    }
+    .btn-volver:hover {
+        border-color: var(--color-secondary, #a8854f);
+        background: #f5f5f5;
+    }
+
+    @media (max-width: 600px) {
+        .detalle-card {
+            padding: 20px;
+        }
+        .detalle-card .cabecera {
+            flex-direction: column;
+            text-align: center;
+        }
+        .detalle-card .campo {
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px 0;
+        }
+        .detalle-card .campo .etiqueta {
+            width: 100%;
+            font-size: 12px;
+            color: #8e8e93;
+        }
+        .acciones {
+            flex-direction: column;
+        }
+        .acciones .btn {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detalle-container">
+    <div class="detalle-card">
+        <div class="cabecera">
+            <div class="icono" style="background:{{ evento.color or '#3b82f6' }};">
+                <i class="fas fa-calendar-day"></i>
+            </div>
+            <div class="info">
+                <h2>{{ evento.titulo }}</h2>
+                <div class="tipo">
+                    <span class="badge {{ evento.tipo }}">{{ evento.tipo|capitalize }}</span>
+                    {% if evento.orden_id %}
+                        <span style="margin-left:8px;">
+                            <i class="fas fa-link" style="color:var(--color-secondary);"></i>
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=evento.orden_id) }}" style="color:var(--color-secondary); font-weight:500;">
+                                Ver orden #{{ evento.orden_id }}
+                            </a>
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="campo">
+            <span class="etiqueta"><i class="fas fa-calendar-alt" style="width:16px;margin-right:6px;color:var(--color-secondary);"></i> Inicio</span>
+            <span class="valor">{{ evento.fecha_inicio.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+
+        {% if evento.fecha_fin %}
+        <div class="campo">
+            <span class="etiqueta"><i class="fas fa-calendar-check" style="width:16px;margin-right:6px;color:var(--color-secondary);"></i> Fin</span>
+            <span class="valor">{{ evento.fecha_fin.strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+        {% endif %}
+
+        <div class="campo">
+            <span class="etiqueta"><i class="fas fa-palette" style="width:16px;margin-right:6px;color:var(--color-secondary);"></i> Color</span>
+            <span class="valor">
+                <span class="color-muestra" style="background:{{ evento.color or '#3b82f6' }};"></span>
+                {{ evento.color or '#3b82f6' }}
+            </span>
+        </div>
+
+        <div class="campo">
+            <span class="etiqueta"><i class="fas fa-user" style="width:16px;margin-right:6px;color:var(--color-secondary);"></i> Creado por</span>
+            <span class="valor">{{ evento.usuario.username if evento.usuario else 'Desconocido' }}</span>
+        </div>
+
+        {% if evento.descripcion %}
+        <div class="campo" style="border-bottom: none; padding-bottom:0;">
+            <span class="etiqueta"><i class="fas fa-align-left" style="width:16px;margin-right:6px;color:var(--color-secondary);"></i> Descripción</span>
+            <span class="valor">{{ evento.descripcion }}</span>
+        </div>
+        {% endif %}
+
+        <div class="acciones">
+            <a href="{{ url_for('calendario.index') }}" class="btn-volver">
+                <i class="fas fa-arrow-left"></i> Volver al calendario
+            </a>
+            {% if has_perm('calendario', 'edit') and (current_user.role == 'admin' or evento.usuario_id == current_user.id) %}
+                <button class="btn btn-primary" onclick="window.location.href='{{ url_for('calendario.index') }}?edit={{ evento.id }}'">
+                    <i class="fas fa-edit"></i> Editar
+                </button>
+                <button class="btn btn-danger" onclick="eliminarEvento()">
+                    <i class="fas fa-trash-alt"></i> Eliminar
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function eliminarEvento() {
+        if (!confirm('¿Eliminar este evento permanentemente?')) return;
+        fetch('{{ url_for("calendario.eliminar_evento", evento_id=evento.id) }}', {
+            method: 'DELETE'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Error: ' + data.error);
+                return;
+            }
+            window.location.href = '{{ url_for("calendario.index") }}';
+        })
+        .catch(error => {
+            alert('Error al eliminar: ' + error.message);
+        });
+    }
+</script>
+{% endblock %}

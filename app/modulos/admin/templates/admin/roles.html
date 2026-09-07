@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Roles · {{ empresa_nombre }}{% endblock %}
+
+{% block page_title %}👥 Administrar roles{% endblock %}
+
+{% block extra_css %}
+<style>
+    .roles-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    .rol-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        position: relative;
+    }
+    .rol-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .rol-card .badge-sistema {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        background: #f0ece8;
+        color: #555;
+    }
+    .rol-card .badge-sistema.sistema {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+    .rol-card .nombre {
+        font-weight: 700;
+        font-size: 18px;
+        color: #1c1c1e;
+        margin-bottom: 4px;
+    }
+    .rol-card .descripcion {
+        font-size: 13px;
+        color: #8e8e93;
+        margin-bottom: 12px;
+    }
+    .rol-card .stats {
+        font-size: 12px;
+        color: #8e8e93;
+        display: flex;
+        gap: 16px;
+        border-top: 1px solid #f0ece8;
+        padding-top: 10px;
+    }
+    .rol-card .stats span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .rol-card .acciones {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+    .btn-sm {
+        padding: 4px 12px;
+        font-size: 12px;
+        border-radius: 20px;
+    }
+    @media (max-width: 600px) {
+        .roles-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <h3 class="serif" style="font-size:20px; margin:0;">
+            <i class="fas fa-users-cog" style="color:var(--color-secondary);"></i> Roles del sistema
+        </h3>
+        <a href="{{ url_for('admin.crear_rol') }}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Nuevo rol
+        </a>
+    </div>
+    <p style="color:#8e8e93; font-size:14px; margin-bottom:8px;">
+        Los roles determinan qué permisos tienen los usuarios en el sistema. Los roles marcados como <strong>"Sistema"</strong> no se pueden eliminar ni modificar.
+    </p>
+
+    <div class="roles-grid">
+        {% for rol in roles %}
+        <div class="rol-card">
+            {% if rol.es_sistema %}
+            <span class="badge-sistema sistema">🔒 Sistema</span>
+            {% else %}
+            <span class="badge-sistema">Personalizado</span>
+            {% endif %}
+            
+            <div class="nombre">{{ rol.nombre }}</div>
+            <div class="descripcion">{{ rol.descripcion or 'Sin descripción' }}</div>
+            
+            <div class="stats">
+                <span><i class="fas fa-users"></i> {{ rol.usuarios|length }} usuarios</span>
+                <span><i class="fas fa-key"></i> {{ rol.permisos|length }} permisos</span>
+            </div>
+            
+            <div class="acciones">
+                {% if not rol.es_sistema %}
+                <a href="{{ url_for('admin.editar_rol', rol_id=rol.id) }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-edit"></i> Editar
+                </a>
+                <form method="POST" action="{{ url_for('admin.eliminar_rol', rol_id=rol.id) }}" style="display:inline;" 
+                      onsubmit="return confirm('¿Eliminar este rol? Se eliminarán también sus permisos.')">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <i class="fas fa-trash-alt"></i> Eliminar
+                    </button>
+                </form>
+                {% else %}
+                <span style="font-size:12px; color:#8e8e93;">Protegido</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h4 style="font-family:'Playfair Display',serif; font-size:16px; margin-bottom:8px;">
+        <i class="fas fa-info-circle" style="color:var(--color-secondary);"></i> ¿Cómo funcionan los roles?
+    </h4>
+    <ul style="color:#555; font-size:14px; line-height:1.8; padding-left:20px;">
+        <li>Los roles <strong>personalizados</strong> pueden crearse, editarse y eliminarse libremente.</li>
+        <li>Los roles de <strong>sistema</strong> (admin, operario, etc.) son necesarios para el funcionamiento básico.</li>
+        <li>Los permisos se asignan desde la página <a href="{{ url_for('admin.permisos') }}" style="color:var(--color-secondary);">Administrar permisos</a>.</li>
+        <li>Para asignar un rol a un usuario, ve a <a href="{{ url_for('auth.admin_users') }}" style="color:var(--color-secondary);">Administrar usuarios</a>.</li>
+    </ul>
+</div>
+{% endblock %}

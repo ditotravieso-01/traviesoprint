@@ -2,7 +2,7 @@
 
 {% block title %}Inventario · Dashboard{% endblock %}
 
-{% block page_title %}📊 Inventario{% endblock %}
+{% block page_title %}Inventario{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -53,6 +53,7 @@
         position: relative;
         height: 240px;
         margin-top: 8px;
+        width: 100%;
     }
 
     .categoria-grid {
@@ -99,6 +100,225 @@
     .btn-admin:hover {
         background: #4b5563;
     }
+
+    /* ===== TOGGLE UNIDADES ===== */
+    .unit-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 4px;
+        gap: 2px;
+        border: 1px solid #d2d2d7;
+    }
+    .unit-toggle .unit-btn {
+        padding: 4px 16px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+    .unit-toggle .unit-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .unit-toggle .unit-btn:hover { color: #1c1c1e; }
+    .unit-label {
+        font-size: 14px;
+        color: #8e8e93;
+        margin-left: 8px;
+        font-weight: 400;
+    }
+
+    /* ===== TABLA MOVIMIENTOS ===== */
+    .movimientos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .movimientos-header h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        margin: 0;
+        color: #1c1c1e;
+    }
+    .movimientos-header .toggle-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .movimientos-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .movimientos-table-wrap table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        min-width: 0;
+    }
+    .movimientos-table-wrap th,
+    .movimientos-table-wrap td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .movimientos-table-wrap th {
+        font-weight: 600;
+        color: #8e8e93;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #f0ece8;
+    }
+
+    /* Columnas de cantidad (toggle) */
+    .movimientos-table-wrap .col-cantidad-u {
+        display: none;
+    }
+    .movimientos-table-wrap .col-cantidad-m {
+        display: table-cell;
+    }
+    .movimientos-table-wrap .col-cantidad-m2 {
+        display: table-cell;
+    }
+    .movimientos-table-wrap.show-unidades .col-cantidad-u {
+        display: table-cell;
+    }
+    .movimientos-table-wrap.show-unidades .col-cantidad-m {
+        display: none;
+    }
+    .movimientos-table-wrap.show-unidades .col-cantidad-m2 {
+        display: none;
+    }
+    .movimientos-table-wrap.show-metros-lineales .col-cantidad-u {
+        display: none;
+    }
+    .movimientos-table-wrap.show-metros-lineales .col-cantidad-m {
+        display: table-cell;
+    }
+    .movimientos-table-wrap.show-metros-lineales .col-cantidad-m2 {
+        display: none;
+    }
+    .movimientos-table-wrap.show-metros-cuadrados .col-cantidad-u {
+        display: none;
+    }
+    .movimientos-table-wrap.show-metros-cuadrados .col-cantidad-m {
+        display: none;
+    }
+    .movimientos-table-wrap.show-metros-cuadrados .col-cantidad-m2 {
+        display: table-cell;
+    }
+
+    /* En móvil mostramos ambas cantidades de forma natural */
+    @media (max-width: 768px) {
+        .movimientos-table-wrap {
+            overflow-x: visible;
+        }
+        .movimientos-table-wrap table,
+        .movimientos-table-wrap thead,
+        .movimientos-table-wrap tbody,
+        .movimientos-table-wrap tr,
+        .movimientos-table-wrap th,
+        .movimientos-table-wrap td {
+            display: block;
+        }
+        .movimientos-table-wrap thead {
+            display: none;
+        }
+        .movimientos-table-wrap tbody {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .movimientos-table-wrap tr {
+            background: white;
+            border-radius: 14px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            border: 1px solid #f0ece8;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .movimientos-table-wrap td {
+            border: none;
+            padding: 2px 0;
+            white-space: normal;
+            word-break: break-word;
+            text-align: left;
+            font-size: 14px;
+            width: 100%;
+        }
+        .movimientos-table-wrap td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #8e8e93;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .movimientos-table-wrap td:first-child {
+            order: 1;
+            font-weight: 500;
+            color: #555;
+        }
+        .movimientos-table-wrap td:nth-child(2) { order: 2; font-weight: 600; font-size: 16px; }
+        .movimientos-table-wrap td:nth-child(3) { order: 3; }
+        .movimientos-table-wrap td:nth-child(4) { order: 4; display: inline-block; width: auto; margin-right: 12px; }
+        .movimientos-table-wrap td:nth-child(5) { order: 5; display: inline-block; width: auto; margin-right: 12px; }
+        .movimientos-table-wrap td:nth-child(6) { order: 6; display: inline-block; width: auto; }
+        .movimientos-table-wrap td:nth-child(7) { order: 7; }
+        .movimientos-table-wrap td .badge { display: inline-block; padding: 2px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; }
+        .movimientos-table-wrap td:nth-child(4)::after { content: " u"; font-size: 11px; color: #8e8e93; font-weight: 400; }
+        .movimientos-table-wrap td:nth-child(5)::after { content: " m lineales"; font-size: 11px; color: #8e8e93; font-weight: 400; }
+        .movimientos-table-wrap td:nth-child(6)::after { content: " m²"; font-size: 11px; color: #8e8e93; font-weight: 400; }
+        /* Siempre mostrar ambas en móvil, ignorando toggle */
+        .movimientos-table-wrap td:nth-child(4) { display: inline-block !important; }
+        .movimientos-table-wrap td:nth-child(5) { display: inline-block !important; }
+        .movimientos-table-wrap td:nth-child(6) { display: inline-block !important; }
+        .movimientos-header .toggle-group {
+            display: none;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .kpi-card .kpi-value { font-size: 22px; }
+        .categoria-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+        .categoria-card { padding: 12px 14px; }
+        .categoria-card .cat-name { font-size: 15px; }
+        .categoria-card .cat-stats { font-size: 12px; gap: 10px; }
+        .chart-container { height: 180px; }
+        .btn { font-size: 12px; padding: 6px 14px; }
+        .movimientos-header { flex-direction: column; align-items: stretch; }
+        .movimientos-header .toggle-group { justify-content: flex-start; }
+    }
+    @media (max-width: 480px) {
+        .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+        .kpi-card { padding: 12px 14px; }
+        .kpi-card .kpi-value { font-size: 20px; }
+        .kpi-card .kpi-label { font-size: 11px; }
+        .categoria-grid { grid-template-columns: 1fr; }
+        .categoria-card .cat-stats { flex-direction: column; gap: 4px; }
+    }
 </style>
 {% endblock %}
 
@@ -131,7 +351,12 @@
     <div class="kpi-card amarillo">
         <i class="fas fa-ruler-combined kpi-icon"></i>
         <div class="kpi-value">{{ stock_metros_total }}</div>
-        <div class="kpi-label">Stock (metros)</div>
+        <div class="kpi-label">Stock (metros lineales)</div>
+    </div>
+    <div class="kpi-card" style="border-top-color: #8b5cf6;">
+        <i class="fas fa-vector-square kpi-icon"></i>
+        <div class="kpi-value">{{ stock_m2_total }}</div>
+        <div class="kpi-label">Stock (m²)</div>
     </div>
     <div class="kpi-card">
         <i class="fas fa-dollar-sign kpi-icon"></i>
@@ -163,8 +388,8 @@
             <div class="cat-name">{{ item.categoria.nombre }}</div>
             <div class="cat-stats">
                 <span><strong>{{ item.total_productos }}</strong> productos</span>
-                <span><strong>{{ item.stock_total }}</strong> stock</span>
-                <span>$<strong>{{ item.inversion_total }}</strong></span>
+                <span><strong>{{ "%.2f"|format(item.stock_total) }}</strong> stock</span>
+                <span>$<strong>{{ "%.2f"|format(item.inversion_total) }}</strong></span>
             </div>
         </a>
         {% else %}
@@ -174,29 +399,67 @@
 </div>
 
 <div class="card">
-    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">🔄 Últimos movimientos</h4>
-    <div class="table-wrap">
+    <div class="movimientos-header">
+        <h4>🔄 Últimos movimientos</h4>
+        <div class="toggle-group">
+            <div class="unit-toggle" id="unitToggleMovimientos">
+                <button class="unit-btn" data-unit="unidades" onclick="cambiarUnidadMovimientos('unidades')">Unidades</button>
+                <button class="unit-btn active" data-unit="metros-lineales" onclick="cambiarUnidadMovimientos('metros-lineales')">Metros lineales</button>
+                <button class="unit-btn" data-unit="metros-cuadrados" onclick="cambiarUnidadMovimientos('metros-cuadrados')">m²</button>
+            </div>
+            <span class="unit-label" id="unitLabelMovimientos">(mostrando en metros lineales)</span>
+        </div>
+    </div>
+    <div class="movimientos-table-wrap" id="movimientosTableWrap">
         <table>
             <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Producto</th>
                     <th>Tipo</th>
-                    <th>Cantidad</th>
-                    <th>Comentario</th>
+                    <th class="col-cantidad-u">Cantidad (u)</th>
+                    <th class="col-cantidad-m">Cantidad (m lineales)</th>
+                    <th class="col-cantidad-m2">Área (m²)</th>
+                    <th>Comentario / Orden</th>
                 </tr>
             </thead>
             <tbody>
                 {% for m in ultimos_movimientos %}
+                {% set metros_lineales = (m.cantidad_metros or 0) %}
+                {% set area_m2 = m.cantidad_m2 if m.cantidad_m2 else None %}
                 <tr>
-                    <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td>{{ m.producto.nombre if m.producto else '—' }}</td>
-                    <td><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% else %}#fde8e5{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% else %}#dc2626{% endif %};">{{ m.tipo }}</span></td>
-                    <td>{{ m.cantidad }}</td>
-                    <td>{{ m.comentario or '-' }}</td>
+                    <td data-label="Fecha">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td data-label="Producto"><strong>{{ m.producto.nombre if m.producto else '—' }}</strong></td>
+                    <td data-label="Tipo">
+                        <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'salida_ajuste' %}#fde8e5{% elif m.tipo == 'entrada_ajuste' %}#e0f2fe{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'salida_ajuste' %}#dc2626{% elif m.tipo == 'entrada_ajuste' %}#0ea5e9{% else %}#555{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">
+                            {{ m.tipo.replace('_', ' ').title() }}
+                        </span>
+                    </td>
+                    <td class="col-cantidad-u" data-label="Cantidad (u)">{{ "%.2f"|format(m.cantidad) }}</td>
+                    <td class="col-cantidad-m" data-label="Cantidad (m lineales)">{{ "%.2f"|format(metros_lineales) }}</td>
+                    <td class="col-cantidad-m2" data-label="Área (m²)">{% if area_m2 is not none %}{{ "%.2f"|format(area_m2) }}{% else %}—{% endif %}</td>
+                    <td data-label="Comentario / Orden">
+                        {% if m.orden %}
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=m.orden.id) }}" 
+                               target="_blank" 
+                               style="color: #3b82f6; text-decoration: none; font-weight: 500;"
+                               onmouseover="this.style.textDecoration='underline'"
+                               onmouseout="this.style.textDecoration='none'">
+                                {{ m.orden.order_num }}
+                            </a>
+                            {% if m.orden.cliente %}
+                                <span style="color:#555; font-size:13px;">({{ m.orden.cliente.nombre }})</span>
+                            {% endif %}
+                            {% if m.comentario and m.comentario not in ['Compra', 'Ajuste por conteo físico (merma)', 'Ajuste por conteo físico (sobrante)'] %}
+                                <span style="color:#8e8e93; font-size:12px; display:block;">{{ m.comentario }}</span>
+                            {% endif %}
+                        {% else %}
+                            {{ m.comentario or '-' }}
+                        {% endif %}
+                    </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="text-muted text-center">No hay movimientos recientes.</td></tr>
+                <tr><td colspan="7" class="text-muted text-center">No hay movimientos recientes.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -240,6 +503,34 @@
                 }
             }
         });
+
+        // Restaurar preferencia de unidad para movimientos
+        const pref = localStorage.getItem('movimientos_unit_preference') || 'metros-lineales';
+        cambiarUnidadMovimientos(pref);
     });
+
+    // =============================================
+    // TOGGLE DE UNIDADES PARA MOVIMIENTOS
+    // =============================================
+    function cambiarUnidadMovimientos(unidad) {
+        localStorage.setItem('movimientos_unit_preference', unidad);
+        const wrap = document.getElementById('movimientosTableWrap');
+        const btns = document.querySelectorAll('#unitToggleMovimientos .unit-btn');
+        btns.forEach(b => b.classList.toggle('active', b.dataset.unit === unidad));
+        const labelMap = {
+            'unidades': '(mostrando en unidades)',
+            'metros-lineales': '(mostrando en metros lineales)',
+            'metros-cuadrados': '(mostrando en m²)'
+        };
+        document.getElementById('unitLabelMovimientos').textContent = labelMap[unidad] || '';
+        wrap.className = 'movimientos-table-wrap';
+        if (unidad === 'unidades') {
+            wrap.classList.add('show-unidades');
+        } else if (unidad === 'metros-lineales') {
+            wrap.classList.add('show-metros-lineales');
+        } else if (unidad === 'metros-cuadrados') {
+            wrap.classList.add('show-metros-cuadrados');
+        }
+    }
 </script>
 {% endblock %}

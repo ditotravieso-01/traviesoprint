@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}Administrar módulos · {{ empresa_nombre }}{% endblock %}
+
+{% block page_title %}⚙️ Administrar módulos{% endblock %}
+
+{% block extra_css %}
+<style>
+    .modulo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 16px;
+        margin-top: 16px;
+    }
+    .modulo-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 16px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .modulo-card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .modulo-card .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .modulo-card .header .icono {
+        font-size: 24px;
+        color: var(--color-secondary, #a8854f);
+        width: 40px;
+        text-align: center;
+    }
+    .modulo-card .header .nombre {
+        font-weight: 600;
+        font-size: 16px;
+        color: #1c1c1e;
+        flex: 1;
+    }
+    .modulo-card .toggle {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+    .modulo-card .toggle input[type="checkbox"] {
+        width: 44px;
+        height: 24px;
+        appearance: none;
+        background: #d2d2d7;
+        border-radius: 30px;
+        position: relative;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+    .modulo-card .toggle input[type="checkbox"]:checked {
+        background: var(--color-secondary, #a8854f);
+    }
+    .modulo-card .toggle input[type="checkbox"]::after {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        transition: transform 0.2s;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .modulo-card .toggle input[type="checkbox"]:checked::after {
+        transform: translateX(20px);
+    }
+    .modulo-card .orden-input {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+    .modulo-card .orden-input input[type="number"] {
+        width: 50px;
+        padding: 4px 6px;
+        border: 1px solid #e5e5ea;
+        border-radius: 8px;
+        font-size: 13px;
+        text-align: center;
+        background: rgba(255,255,255,0.8);
+    }
+    .modulo-card .orden-input input[type="number"]:focus {
+        border-color: var(--color-secondary, #a8854f);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+    }
+    .modulo-card .descripcion {
+        font-size: 12px;
+        color: #b0b0b5;
+        margin-top: 4px;
+    }
+    .btn-group-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    @media (max-width: 600px) {
+        .modulo-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:8px;">
+        <h3 class="serif" style="font-size:20px; margin:0;">
+            <i class="fas fa-puzzle-piece" style="color:var(--color-secondary);"></i> Módulos del sistema
+        </h3>
+        <span style="font-size:13px; color:#8e8e93;">
+            <i class="fas fa-info-circle"></i> Activa/desactiva módulos según tus necesidades
+        </span>
+    </div>
+    <p style="color:#8e8e93; font-size:14px; margin-bottom:16px;">
+        Los módulos desactivados no aparecerán en el menú y sus rutas no serán accesibles.
+    </p>
+
+    <form method="POST">
+        <div class="modulo-grid">
+            {% for modulo in modulos %}
+            <div class="modulo-card">
+                <div class="header">
+                    <div class="icono"><i class="fas {{ modulo.icono }}"></i></div>
+                    <div class="nombre">{{ modulo.nombre }}</div>
+                </div>
+                <div class="toggle">
+                    <input type="checkbox" id="activo_{{ modulo.id }}" name="activo_{{ modulo.id }}" {% if modulo.activo %}checked{% endif %}>
+                    <label for="activo_{{ modulo.id }}">{{ 'Activo' if modulo.activo else 'Inactivo' }}</label>
+                </div>
+                <div class="orden-input">
+                    <label for="orden_{{ modulo.id }}">Orden:</label>
+                    <input type="number" id="orden_{{ modulo.id }}" name="orden_{{ modulo.id }}" 
+                           value="{{ modulo.orden }}" min="0" max="99">
+                </div>
+                {% if modulo.descripcion %}
+                <div class="descripcion">{{ modulo.descripcion }}</div>
+                {% endif %}
+                <div style="font-size:11px; color:#b0b0b5; margin-top:4px;">
+                    Clave: <code>{{ modulo.clave }}</code>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="btn-group-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar cambios
+            </button>
+            <a href="{{ url_for('admin.configuracion') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.querySelectorAll('.toggle input[type="checkbox"]').forEach(cb => {
+        cb.addEventListener('change', function() {
+            const label = this.nextElementSibling;
+            label.textContent = this.checked ? 'Activo' : 'Inactivo';
+        });
+    });
+</script>
+{% endblock %}

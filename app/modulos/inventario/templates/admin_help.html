@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+
+{% block title %}Guía de Ayuda · Administración de Inventario{% endblock %}
+
+{% block page_title %}❓ Guía de Ayuda{% endblock %}
+
+{% block extra_css %}
+<style>
+    .help-header {
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        border: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .help-header h2 {
+        font-family: 'Playfair Display', serif;
+        margin: 0;
+        font-size: 24px;
+    }
+    .help-header p {
+        margin: 0;
+        color: #8e8e93;
+        font-size: 16px;
+    }
+    .help-header .header-icon {
+        font-size: 32px;
+        color: #a8854f;
+        background: rgba(168,133,79,0.1);
+        padding: 12px;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .help-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+    }
+    .help-card {
+        background: white;
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.02);
+        border: 1px solid rgba(0,0,0,0.04);
+        transition: all 0.2s;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+    .help-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+    }
+    .help-card .card-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        border-bottom: 1px solid #f0ece8;
+        padding-bottom: 12px;
+    }
+    .help-card .card-header .icon {
+        font-size: 28px;
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #fafaf9;
+        color: #a8854f;
+        flex-shrink: 0;
+    }
+    .help-card .card-header h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        margin: 0;
+        color: #1c1c1e;
+    }
+    .help-card .card-body {
+        flex: 1;
+    }
+    .help-card .card-body p {
+        color: #333;
+        font-size: 14px;
+        line-height: 1.6;
+        margin-bottom: 12px;
+    }
+    .help-card .card-body ul {
+        padding-left: 20px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        color: #444;
+    }
+    .help-card .card-body ul li {
+        margin-bottom: 6px;
+    }
+    .help-card .card-body .flow-diagram {
+        background: #fafaf9;
+        padding: 16px;
+        border-radius: 12px;
+        border: 1px solid #f0ece8;
+        margin: 12px 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 8px 4px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1c1c1e;
+    }
+    .flow-diagram .step {
+        background: white;
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+    }
+    .flow-diagram .step .fa {
+        color: #a8854f;
+    }
+    .flow-diagram .arrow {
+        color: #8e8e93;
+        font-size: 18px;
+    }
+    .help-card .card-footer {
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+        font-size: 13px;
+        color: #8e8e93;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .help-card .card-footer .fa {
+        color: #f59e0b;
+    }
+    .btn-back {
+        background: #1c1c1e;
+        color: white;
+        border: none;
+        padding: 8px 20px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        font-family: 'Inter', sans-serif;
+    }
+    .btn-back:hover {
+        background: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    @media (max-width: 768px) {
+        .help-grid {
+            grid-template-columns: 1fr;
+        }
+        .flow-diagram {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .flow-diagram .step {
+            white-space: normal;
+            justify-content: center;
+        }
+        .flow-diagram .arrow {
+            transform: rotate(90deg);
+        }
+        .help-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .help-header .header-icon {
+            margin: 0 auto;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="help-header">
+    <div class="header-icon"><i class="fas fa-question-circle"></i></div>
+    <div>
+        <h2>¿Cómo funciona la administración del inventario?</h2>
+        <p>Aquí tienes una guía rápida para entender y usar cada sección. ¡Es más fácil de lo que parece!</p>
+    </div>
+    <div style="margin-left: auto;">
+        <a href="{{ url_for('inventario.admin_panel') }}" class="btn-back"><i class="fas fa-arrow-left"></i> Volver al Panel</a>
+    </div>
+</div>
+
+<div class="help-grid">
+
+    <!-- ========== CARD: CATEGORÍAS ========== -->
+    <div class="help-card">
+        <div class="card-header">
+            <div class="icon"><i class="fas fa-folder-tree"></i></div>
+            <h3>Categorías</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>¿Para qué sirven?</strong> Organizan tus productos como si fueran carpetas. Así es más fácil encontrar y gestionar todo.</p>
+            <ul>
+                <li><strong>Jerarquía:</strong> Puedes crear <strong>Categorías principales</strong> (ej. "Materiales") y dentro <strong>Subcategorías</strong> (ej. "Rollos", "Tintas").</li>
+                <li><strong>Material de impresión:</strong> Marca esta opción si los productos de esta categoría se usan en el <strong>módulo de Workflow</strong> (producción). Esto permitirá calcular consumos y reservas.</li>
+            </ul>
+            <div class="flow-diagram">
+                <span class="step"><i class="fas fa-folder-open"></i> Categoría Raíz</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-folder"></i> Subcategoría</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-boxes"></i> Productos</span>
+            </div>
+            <div class="flow-diagram" style="background: #fef3c7; border-color: #f59e0b;">
+                <span class="step" style="border-color: #f59e0b;"><i class="fas fa-info-circle" style="color:#f59e0b;"></i> ¿Material de impresión? → Activa el flag</span>
+            </div>
+            <p><strong>Consejo:</strong> Crea primero las categorías principales y luego las subcategorías. Así mantienes el orden.</p>
+        </div>
+        <div class="card-footer">
+            <i class="fas fa-lightbulb"></i> Ejemplo: "Materiales" → "Rollos" → "Vinilo Brillante"
+        </div>
+    </div>
+
+    <!-- ========== CARD: ATRIBUTOS ========== -->
+    <div class="help-card">
+        <div class="card-header">
+            <div class="icon"><i class="fas fa-tags"></i></div>
+            <h3>Atributos</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>¿Para qué sirven?</strong> Añaden campos personalizados a tus productos para almacenar información específica (ej. color, gramaje, serie).</p>
+            <ul>
+                <li><strong>Grupo de Atributos:</strong> Agrupa atributos relacionados (ej. "Características del Rollo").</li>
+                <li><strong>Asignación a Categoría:</strong> Asigna el grupo a una categoría. Todos los productos de esa categoría heredarán los atributos.</li>
+                <li><strong>Tipos:</strong> Puedes crear atributos de tipo <strong>Texto, Número, Fecha, Selección (desplegable) o Sí/No</strong>.</li>
+            </ul>
+            <div class="flow-diagram">
+                <span class="step"><i class="fas fa-layer-group"></i> Grupo</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-tag"></i> Atributos</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-folder-open"></i> Categoría</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-edit"></i> Producto</span>
+            </div>
+            <p><strong>Consejo:</strong> Crea un grupo "Datos de Rollo" con atributos como "Ancho (m)", "Largo (m)", "Acabado" y asígnalo a la categoría "Rollos".</p>
+        </div>
+        <div class="card-footer">
+            <i class="fas fa-lightbulb"></i> Ejemplo: Atributo "Color" → Tipo "Selección" → Opciones "Blanco, Negro, Azul"
+        </div>
+    </div>
+
+    <!-- ========== CARD: UBICACIONES ========== -->
+    <div class="help-card">
+        <div class="card-header">
+            <div class="icon"><i class="fas fa-map-pin"></i></div>
+            <h3>Ubicaciones</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>¿Para qué sirven?</strong> Indican el lugar físico donde se almacena cada producto. Muy útil para el conteo y la búsqueda.</p>
+            <ul>
+                <li><strong>Simple y directo:</strong> Solo necesitas un nombre descriptivo (ej. "Estante A-3", "Almacén Central").</li>
+                <li><strong>Asignación:</strong> Se asigna al producto en el formulario de creación/edición.</li>
+            </ul>
+            <div class="flow-diagram">
+                <span class="step"><i class="fas fa-plus-circle"></i> Crear Ubicación</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-box"></i> Asignar a Producto</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-search"></i> Encontrar fácilmente</span>
+            </div>
+            <p><strong>Consejo:</strong> Crea ubicaciones físicas reales para agilizar el trabajo en el almacén.</p>
+        </div>
+        <div class="card-footer">
+            <i class="fas fa-lightbulb"></i> Ejemplo: "Almacén Principal", "Oficina", "Garaje"
+        </div>
+    </div>
+
+    <!-- ========== CARD: PROVEEDORES ========== -->
+    <div class="help-card">
+        <div class="card-header">
+            <div class="icon"><i class="fas fa-truck"></i></div>
+            <h3>Proveedores</h3>
+        </div>
+        <div class="card-body">
+            <p><strong>¿Para qué sirven?</strong> Gestionan tus compras. Permiten saber quién te vende cada material y cuánto gastas con cada uno.</p>
+            <ul>
+                <li><strong>Registro:</strong> Guarda RUC, teléfono, contacto, etc.</li>
+                <li><strong>Asociación a compras:</strong> Al comprar stock, selecciona el proveedor.</li>
+                <li><strong>Estadísticas:</strong> Consulta el ranking de proveedores en <strong>Estadísticas de Proveedores</strong>.</li>
+            </ul>
+            <div class="flow-diagram">
+                <span class="step"><i class="fas fa-user-plus"></i> Crear Proveedor</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-shopping-cart"></i> Comprar (seleccionar)</span>
+                <span class="arrow"><i class="fas fa-arrow-right"></i></span>
+                <span class="step"><i class="fas fa-chart-bar"></i> Ver Estadísticas</span>
+            </div>
+            <p><strong>Consejo:</strong> Añade toda la información de contacto. Te será útil para futuros pedidos.</p>
+        </div>
+        <div class="card-footer">
+            <i class="fas fa-lightbulb"></i> Ejemplo: "Suministros XYZ" → RUC: 12345678 → Compras mensuales: $500
+        </div>
+    </div>
+</div>
+
+<div style="margin-top: 24px; text-align: center; padding: 16px; background: #fafaf9; border-radius: 12px; border: 1px solid #f0ece8;">
+    <p style="color: #8e8e93; margin: 0;">¿Necesitas más ayuda? Consulta la documentación o contacta al administrador.</p>
+</div>
+{% endblock %}

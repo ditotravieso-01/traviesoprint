@@ -83,7 +83,19 @@
     .admin-card.ubicacion { border-top: 5px solid #f59e0b; }
     .admin-card.categoria { border-top: 5px solid #3b82f6; }
     .admin-card.atributos { border-top: 5px solid #8b5cf6; }
-    @media (max-width:768px) { .admin-grid { grid-template-columns: 1fr; } }
+    .admin-card.proveedores { border-top: 5px solid #10b981; }
+    .btn-help {
+        background: #a8854f;
+        color: white;
+    }
+    .btn-help:hover { background: #8c7040; }
+    @media (max-width: 768px) { 
+        .admin-grid { grid-template-columns: 1fr; } 
+        .admin-card .card-actions { flex-direction: column; }
+        .admin-card .card-actions .btn { width: 100%; }
+        .admin-header { flex-direction: column; align-items: stretch; text-align: center; }
+        .admin-header .header-actions { justify-content: center; }
+    }
 </style>
 {% endblock %}
 
@@ -92,7 +104,10 @@
     <div>
         <p style="color:#8e8e93; margin:4px 0 0 0;">Gestiona la configuración del inventario</p>
     </div>
-    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('inventario.admin_help') }}" class="btn btn-help" target="_blank"><i class="fas fa-question-circle"></i> Guía de Ayuda</a>
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
 </div>
 
 <div class="admin-grid">
@@ -124,7 +139,7 @@
         </div>
     </div>
 
-    <!-- Ubicaciones (NUEVO) -->
+    <!-- Ubicaciones -->
     <div class="admin-card ubicacion">
         <div class="card-icon">📍</div>
         <h4>Ubicaciones</h4>
@@ -135,6 +150,20 @@
         <div class="card-actions">
             <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
             <a href="{{ url_for('inventario.crear_ubicacion') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
+        </div>
+    </div>
+
+    <!-- Proveedores -->
+    <div class="admin-card proveedores">
+        <div class="card-icon">🏢</div>
+        <h4>Proveedores</h4>
+        <div class="card-desc">Gestiona los proveedores de materiales</div>
+        <div class="card-stats">
+            <div><div class="count">{{ proveedores|length }}</div><div class="count-label">registros</div></div>
+        </div>
+        <div class="card-actions">
+            <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
+            <a href="{{ url_for('inventario.crear_proveedor') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
         </div>
     </div>
 </div>

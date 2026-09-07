@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+
+{% block title %}Permisos por rol · {{ empresa_nombre }}{% endblock %}
+
+{% block page_title %}🔐 Permisos por rol{% endblock %}
+
+{% block extra_css %}
+<style>
+    .permisos-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .permisos-table th {
+        padding: 12px 8px;
+        text-align: center;
+        background: #f8f6f4;
+        font-weight: 600;
+        color: #555;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .permisos-table td {
+        padding: 10px 8px;
+        text-align: center;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+    }
+    .permisos-table .rol-header {
+        font-weight: 700;
+        color: #1c1c1e;
+        text-align: left;
+        padding-left: 12px;
+        background: #fafaf9;
+    }
+    .permisos-table .modulo-label {
+        text-align: left;
+        padding-left: 12px;
+        font-weight: 500;
+        color: #1c1c1e;
+    }
+    .permisos-table .modulo-label i {
+        color: var(--color-secondary, #a8854f);
+        width: 20px;
+    }
+    .permisos-table .checkbox-group {
+        display: inline-flex;
+        gap: 8px;
+        align-items: center;
+        justify-content: center;
+    }
+    .permisos-table .checkbox-group label {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #555;
+        cursor: pointer;
+    }
+    .permisos-table .checkbox-group input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--color-secondary, #a8854f);
+        cursor: pointer;
+    }
+    .permisos-table .checkbox-group input[type="checkbox"]:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+    .permisos-table .rol-admin-note {
+        text-align: center;
+        padding: 12px;
+        color: #8e8e93;
+        font-size: 13px;
+        background: #fafaf9;
+        font-style: italic;
+    }
+    .btn-group-actions {
+        display: flex;
+        gap: 12px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    @media (max-width: 768px) {
+        .permisos-table {
+            font-size: 12px;
+        }
+        .permisos-table th, .permisos-table td {
+            padding: 6px 4px;
+        }
+        .permisos-table .checkbox-group label {
+            font-size: 10px;
+        }
+        .permisos-table .modulo-label {
+            font-size: 12px;
+            padding-left: 4px;
+        }
+        .permisos-table .rol-header {
+            font-size: 13px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <h3 class="serif" style="font-size:20px; margin:0;">
+            <i class="fas fa-shield-alt" style="color:var(--color-secondary,#a8854f);"></i> Matriz de permisos
+        </h3>
+        <span style="font-size:13px; color:#8e8e93;">
+            <i class="fas fa-info-circle"></i> El rol <strong>admin</strong> tiene todos los permisos por defecto.
+        </span>
+    </div>
+
+    <form method="POST">
+        <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+            <table class="permisos-table">
+                <thead>
+                    <tr>
+                        <th style="min-width:120px; text-align:left; padding-left:12px;">Módulo</th>
+                        {% for rol in roles %}
+                            <th style="min-width:100px;">
+                                {{ rol.nombre|capitalize }}
+                                <div style="font-size:10px; font-weight:400; color:#8e8e93;">
+                                    <span style="display:inline-flex; gap:4px;">
+                                        <span>Ver</span>
+                                        <span style="color:#ddd;">|</span>
+                                        <span>Editar</span>
+                                    </span>
+                                </div>
+                            </th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for modulo in modulos %}
+                    <tr>
+                        <td class="modulo-label">
+                            <i class="fas 
+                                {% if modulo == 'ordenes' %}fa-clipboard-list
+                                {% elif modulo == 'workflow' %}fa-columns
+                                {% elif modulo == 'inventario' %}fa-warehouse
+                                {% elif modulo == 'clientes' %}fa-users
+                                {% elif modulo == 'empleados' %}fa-user-clock
+                                {% elif modulo == 'etiquetas' %}fa-tag
+                                {% elif modulo == 'carteles' %}fa-image
+                                {% elif modulo == 'calendario' %}fa-calendar-alt
+                                {% elif modulo == 'usuarios' %}fa-user-cog
+                                {% elif modulo == 'configuracion' %}fa-sliders-h
+                                {% else %}fa-circle
+                                {% endif %}"></i>
+                            {{ modulo|capitalize }}
+                        </td>
+                        {% for rol in roles %}
+                            <td>
+                                <div class="checkbox-group">
+                                    {% for permiso in permisos_list %}
+                                        <label>
+                                            <input type="checkbox" 
+                                                   name="{{ rol.id }}_{{ modulo }}_{{ permiso }}"
+                                                   {% if permiso in permisos_data[rol.id].get(modulo, []) %}checked{% endif %}>
+                                            <span style="font-size:10px; color:#8e8e93;">
+                                                {{ permiso|capitalize }}
+                                            </span>
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <td colspan="{{ roles|length + 1 }}" class="rol-admin-note">
+                            <i class="fas fa-crown" style="color:#f59e0b;"></i>
+                            El rol <strong>admin</strong> tiene acceso completo a todos los módulos y no necesita permisos específicos.
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="btn-group-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar permisos
+            </button>
+            <a href="{{ url_for('admin.configuracion') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver a configuración
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="card" style="margin-top:16px;">
+    <div style="display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:#555;">
+        <span><i class="fas fa-check-circle" style="color:#10b981;"></i> <strong>Ver</strong> = Acceso de lectura (listar, ver detalles)</span>
+        <span><i class="fas fa-edit" style="color:#f59e0b;"></i> <strong>Editar</strong> = Crear, modificar y eliminar</span>
+        <span><i class="fas fa-info-circle" style="color:#3b82f6;"></i> Los cambios afectan a todos los usuarios con ese rol</span>
+    </div>
+</div>
+{% endblock %}

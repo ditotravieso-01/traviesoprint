@@ -1,23 +1,27 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad, GrupoAtributos, Atributo
+from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad, GrupoAtributos, Atributo, Client, Proveedor, User
 from app import db
 from datetime import datetime, timedelta, date
 from sqlalchemy import func
-import io
-import openpyxl
+from sqlalchemy.orm import joinedload
+from collections import defaultdict
 from openpyxl.styles import Font, Alignment, PatternFill
 from werkzeug.utils import secure_filename
+import io
+import openpyxl
 import os
 import tempfile
 import json
 import math
-from collections import defaultdict
+
+# Importar servicio de notificaciones
+from app.services.notification_service import notificar_usuarios
 
 inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario', template_folder='templates')
 
 # ==========================================
-# DECORADORES DE PERMISOS (CORREGIDOS)
+# DECORADORES DE PERMISOS
 # ==========================================
 def economico_or_admin_required(func):
     from functools import wraps
@@ -25,7 +29,7 @@ def economico_or_admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['admin', 'economico']:
             flash('No tienes permiso para acceder al inventario.', 'danger')
-            return redirect(url_for('home.index'))  # CORREGIDO
+            return redirect(url_for('home.index'))
         return func(*args, **kwargs)
     return wrapper
 
@@ -35,16 +39,35 @@ def admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role != 'admin':
             flash('Solo el administrador puede realizar esta acción.', 'danger')
-            return redirect(url_for('inventario.index'))  # CORREGIDO (no usaba home.home)
+            return redirect(url_for('inventario.index'))
         return func(*args, **kwargs)
     return wrapper
 
 # ==========================================
+# FUNCIÓN PARA NOTIFICAR STOCK BAJO
+# ==========================================
+def verificar_y_notificar_stock_bajo(producto):
+    if not producto or producto.stock_minimo is None or producto.stock_minimo <= 0:
+        return
+    if producto.stock < producto.stock_minimo:
+        usuarios = User.query.filter(User.role.in_(['economico', 'admin'])).all()
+        if not usuarios:
+            return
+        mensaje = f"⚠️ Stock crítico: {producto.nombre} (stock: {producto.stock:.2f} {producto.unidad or 'u'}, mínimo: {producto.stock_minimo:.2f})"
+        enlace = url_for('inventario.detalle_producto', producto_id=producto.id, _external=True)
+        usuario_ids = [u.id for u in usuarios]
+        notificar_usuarios(
+            usuario_ids=usuario_ids,
+            mensaje=mensaje,
+            tipo='stock_bajo',
+            order_id=None,
+            enlace=enlace
+        )
+
+# ==========================================
 # FUNCIONES AUXILIARES
 # ==========================================
-
 def get_categoria_tree():
-    """Retorna un árbol de categorías (lista de diccionarios con 'id', 'nombre', 'children', 'es_material_impresion')"""
     root_cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
     def build_tree(cat):
         children = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
@@ -58,7 +81,6 @@ def get_categoria_tree():
     return [build_tree(c) for c in root_cats]
 
 def get_categoria_options(cats=None, prefix=''):
-    """Genera opciones para select con sangría"""
     if cats is None:
         cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
     options = []
@@ -69,7 +91,6 @@ def get_categoria_options(cats=None, prefix=''):
     return options
 
 def get_all_subcategory_ids(categoria_id):
-    """Retorna una lista con el id de la categoría y todos sus descendientes"""
     if not categoria_id:
         return []
     cat = Categoria.query.get(categoria_id)
@@ -94,31 +115,37 @@ def index():
     total_productos = Producto.query.count()
     stock_total = db.session.query(func.sum(Producto.stock)).scalar() or 0
     stock_metros_total = db.session.query(func.sum(Producto.stock_metros)).scalar() or 0
+    productos = Producto.query.all()
+    stock_m2_total = 0
+    for p in productos:
+        if p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0:
+            stock_m2_total += (p.stock_metros or 0) * p.ancho_rollo
+        else:
+            stock_m2_total += (p.stock_metros or 0)
+    stock_m2_total = round(stock_m2_total, 2)
     valor_total = db.session.query(func.sum(Producto.inversion_total)).scalar() or 0
     criticos = Producto.query.filter(Producto.stock < Producto.stock_minimo).count()
-    
+
     ultimos_movimientos = Movimiento.query.order_by(Movimiento.fecha.desc()).limit(10).all()
-    
-    # ===== CALCULAR m² PARA CADA MOVIMIENTO =====
     for m in ultimos_movimientos:
         if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo and m.producto.ancho_rollo > 0:
             metros = m.cantidad_metros if m.cantidad_metros else m.cantidad
             m.cantidad_m2 = metros * m.producto.ancho_rollo
         else:
-            m.cantidad_m2 = None  # o 0, pero None indica que no aplica
-    
+            m.cantidad_m2 = None
+
     root_cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
     categorias_data = []
     for cat in root_cats:
         cat_ids = get_all_subcategory_ids(cat.id)
-        productos = Producto.query.filter(Producto.categoria_id.in_(cat_ids)).all()
+        productos_cat = Producto.query.filter(Producto.categoria_id.in_(cat_ids)).all()
         categorias_data.append({
             'categoria': cat,
-            'total_productos': len(productos),
-            'stock_total': sum(p.stock or 0 for p in productos),
-            'inversion_total': sum(p.inversion_total or 0 for p in productos)
+            'total_productos': len(productos_cat),
+            'stock_total': sum(p.stock or 0 for p in productos_cat),
+            'inversion_total': sum(p.inversion_total or 0 for p in productos_cat)
         })
-    
+
     hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     inicio = hoy - timedelta(days=30)
     movs = Movimiento.query.filter(Movimiento.fecha >= inicio).order_by(Movimiento.fecha).all()
@@ -135,11 +162,12 @@ def index():
             elif m.tipo in ['consumo', 'salida_ajuste', 'reserva']:
                 saldo -= m.cantidad
         valores.append(round(saldo, 2))
-    
+
     return render_template('inventario.html',
                            total_productos=total_productos,
                            stock_total=round(stock_total, 2),
                            stock_metros_total=round(stock_metros_total, 2),
+                           stock_m2_total=stock_m2_total,
                            valor_total=round(valor_total, 2),
                            criticos=criticos,
                            ultimos_movimientos=ultimos_movimientos,
@@ -148,7 +176,7 @@ def index():
                            valores_json=json.dumps(valores))
 
 # ==========================================
-# TODOS LOS PRODUCTOS (CON m² PARA MATERIALES DE IMPRESIÓN)
+# TODOS LOS PRODUCTOS (CON PAGINACIÓN)
 # ==========================================
 @inventario_bp.route('/todos')
 @login_required
@@ -158,7 +186,9 @@ def todos_productos():
     search = request.args.get('search', '').strip()
     sort = request.args.get('sort', 'nombre')
     order = request.args.get('order', 'asc')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
     query = Producto.query
     if categoria_id:
         cat_ids = get_all_subcategory_ids(categoria_id)
@@ -166,7 +196,8 @@ def todos_productos():
             query = query.filter(Producto.categoria_id.in_(cat_ids))
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
-    
+
+    # Ordenar
     if sort == 'nombre':
         col = Producto.nombre
     elif sort == 'stock':
@@ -181,17 +212,22 @@ def todos_productos():
         col = Producto.categoria_id
     else:
         col = Producto.nombre
-    
+
     if order == 'desc':
         query = query.order_by(col.desc())
     else:
         query = query.order_by(col.asc())
-    
-    productos = query.all()
+
+    # Paginación
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    productos = paginated.items
+    total = paginated.total
+    total_pages = paginated.pages
+
+    # Calcular métricas para cada producto
     for p in productos:
         p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
         p.disponible_metros = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0)
-        # Convertir a m² si es material de impresión y tiene ancho_rollo
         if p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0:
             p.stock_metros_m2 = (p.stock_metros or 0) * p.ancho_rollo
             p.comprometido_metros_m2 = (p.stock_comprometido_metros or 0) * p.ancho_rollo
@@ -200,10 +236,11 @@ def todos_productos():
             p.stock_metros_m2 = p.stock_metros or 0
             p.comprometido_metros_m2 = p.stock_comprometido_metros or 0
             p.disponible_metros_m2 = p.disponible_metros or 0
-    
+
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     categoria_options = get_categoria_options()
-    
+    proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
+
     return render_template('todos_productos.html',
                            productos=productos,
                            categorias=categorias,
@@ -211,10 +248,15 @@ def todos_productos():
                            categoria_seleccionada=categoria_id,
                            search=search,
                            sort=sort,
-                           order=order)
+                           order=order,
+                           proveedores=proveedores,
+                           page=page,
+                           total=total,
+                           total_pages=total_pages,
+                           per_page=per_page)
 
 # ==========================================
-# PRODUCTOS POR CATEGORÍA (CON m²)
+# PRODUCTOS POR CATEGORÍA (CON PAGINACIÓN)
 # ==========================================
 @inventario_bp.route('/categoria/<int:categoria_id>')
 @login_required
@@ -225,15 +267,17 @@ def productos_por_categoria(categoria_id):
     search = request.args.get('search', '').strip()
     sort = request.args.get('sort', 'nombre')
     order = request.args.get('order', 'asc')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
     cat_ids = get_all_subcategory_ids(categoria_id)
     query = Producto.query.filter(Producto.categoria_id.in_(cat_ids))
-    
+
     if subcategoria_id:
         query = query.filter_by(categoria_id=subcategoria_id)
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
-    
+
     if sort == 'nombre':
         col = Producto.nombre
     elif sort == 'stock':
@@ -248,13 +292,17 @@ def productos_por_categoria(categoria_id):
         col = Producto.categoria_id
     else:
         col = Producto.nombre
-    
+
     if order == 'desc':
         query = query.order_by(col.desc())
     else:
         query = query.order_by(col.asc())
-    
-    productos = query.all()
+
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    productos = paginated.items
+    total = paginated.total
+    total_pages = paginated.pages
+
     for p in productos:
         p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
         p.disponible_metros = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0)
@@ -266,10 +314,11 @@ def productos_por_categoria(categoria_id):
             p.stock_metros_m2 = p.stock_metros or 0
             p.comprometido_metros_m2 = p.stock_comprometido_metros or 0
             p.disponible_metros_m2 = p.disponible_metros or 0
-    
+
     subcategorias = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
     categoria_options = get_categoria_options()
-    
+    proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
+
     return render_template('productos_por_categoria.html',
                            categoria=cat,
                            productos=productos,
@@ -278,7 +327,12 @@ def productos_por_categoria(categoria_id):
                            search=search,
                            sort=sort,
                            order=order,
-                           categoria_options=categoria_options)
+                           categoria_options=categoria_options,
+                           proveedores=proveedores,
+                           page=page,
+                           total=total,
+                           total_pages=total_pages,
+                           per_page=per_page)
 
 # ==========================================
 # PANEL DE ADMINISTRACIÓN
@@ -292,15 +346,17 @@ def admin_panel():
     ubicaciones = Ubicacion.query.order_by(Ubicacion.nombre).all()
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
+    proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
     return render_template('admin_panel.html',
                            areas=areas,
                            categorias=categorias,
                            ubicaciones=ubicaciones,
                            tipos=tipos,
-                           unidades=unidades)
+                           unidades=unidades,
+                           proveedores=proveedores)
 
 # ==========================================
-# GESTIÓN DE CATEGORÍAS (JERÁRQUICA)
+# GESTIÓN DE CATEGORÍAS
 # ==========================================
 @inventario_bp.route('/categorias')
 @login_required
@@ -329,7 +385,6 @@ def crear_categoria():
         db.session.commit()
         flash(f'Categoría "{nombre}" creada correctamente.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    # Obtener todas las categorías con formato jerárquico
     categoria_options = get_categoria_options()
     return render_template('form_categoria.html', categoria_options=categoria_options)
 
@@ -360,7 +415,6 @@ def editar_categoria(categoria_id):
         db.session.commit()
         flash('Categoría actualizada.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
-    # Obtener todas las categorías con formato jerárquico
     categoria_options = get_categoria_options()
     return render_template('form_categoria.html', categoria=cat, categoria_options=categoria_options)
 
@@ -381,7 +435,7 @@ def eliminar_categoria(categoria_id):
     return redirect(url_for('inventario.listar_categorias'))
 
 # ==========================================
-# GESTIÓN DE ÁREAS (OBSOLETO, pero se mantiene)
+# GESTIÓN DE ÁREAS (OBSOLETO)
 # ==========================================
 @inventario_bp.route('/areas')
 @login_required
@@ -661,7 +715,7 @@ def crear_producto():
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
     categoria_options = get_categoria_options()
-    
+
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
@@ -678,7 +732,7 @@ def crear_producto():
         largo_rollo = request.form.get('largo_rollo', type=float)
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
-        
+
         atributos_extra = {}
         if categoria_id:
             grupo = GrupoAtributos.query.filter_by(categoria_id=categoria_id).first()
@@ -694,22 +748,22 @@ def crear_producto():
                         elif attr.tipo == 'booleano':
                             val = val == '1' or val == 'on' or val == 'true'
                         atributos_extra[attr.nombre] = val
-        
+
         if not nombre or not categoria_id:
             flash('Nombre y categoría son obligatorios.', 'danger')
             return render_template('form_producto.html', categorias=categorias, areas=areas,
                                    ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
                                    categoria_options=categoria_options)
-        
+
         if Producto.query.filter_by(nombre=nombre).first():
             flash('Ya existe un producto con ese nombre.', 'danger')
             return render_template('form_producto.html', categorias=categorias, areas=areas,
                                    ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
                                    categoria_options=categoria_options)
-        
+
         if largo_rollo and largo_rollo > 0 and stock > 0 and not stock_metros:
             stock_metros = stock * largo_rollo
-        
+
         producto = Producto(
             nombre=nombre,
             descripcion=descripcion,
@@ -733,10 +787,10 @@ def crear_producto():
                 producto.fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
             except:
                 pass
-        
+
         db.session.add(producto)
         db.session.commit()
-        
+
         if stock > 0:
             movimiento = Movimiento(
                 producto_id=producto.id,
@@ -748,10 +802,12 @@ def crear_producto():
             )
             db.session.add(movimiento)
             db.session.commit()
-        
+
+        verificar_y_notificar_stock_bajo(producto)
+
         flash(f'Producto "{nombre}" creado correctamente.', 'success')
         return redirect(url_for('inventario.productos_por_categoria', categoria_id=producto.categoria_id))
-    
+
     return render_template('form_producto.html', producto=None, categorias=categorias, areas=areas,
                            ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
                            categoria_options=categoria_options)
@@ -770,7 +826,7 @@ def editar_producto(producto_id):
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
     categoria_options = get_categoria_options()
-    
+
     if request.method == 'POST':
         producto.nombre = request.form.get('nombre', '').strip()
         producto.descripcion = request.form.get('descripcion', '').strip()
@@ -788,7 +844,7 @@ def editar_producto(producto_id):
         stock_metros = request.form.get('stock_metros', type=float)
         if stock_metros is not None:
             producto.stock_metros = stock_metros
-        
+
         atributos_extra = {}
         if producto.categoria_id:
             grupo = GrupoAtributos.query.filter_by(categoria_id=producto.categoria_id).first()
@@ -804,9 +860,9 @@ def editar_producto(producto_id):
                         elif attr.tipo == 'booleano':
                             val = val == '1' or val == 'on' or val == 'true'
                         atributos_extra[attr.nombre] = val
-        
+
         producto.atributos_extra = atributos_extra if atributos_extra else None
-        
+
         if fecha_vencimiento:
             try:
                 producto.fecha_vencimiento = datetime.strptime(fecha_vencimiento, '%Y-%m-%d').date()
@@ -814,11 +870,14 @@ def editar_producto(producto_id):
                 producto.fecha_vencimiento = None
         else:
             producto.fecha_vencimiento = None
-        
+
         db.session.commit()
+
+        verificar_y_notificar_stock_bajo(producto)
+
         flash(f'Producto "{producto.nombre}" actualizado.', 'success')
         return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
-    
+
     return render_template('form_producto.html', producto=producto, categorias=categorias, areas=areas,
                            ubicaciones=ubicaciones, tipos=tipos, unidades=unidades,
                            categoria_options=categoria_options)
@@ -885,7 +944,13 @@ def detalle_producto(producto_id):
     producto = Producto.query.get_or_404(producto_id)
     producto.disponible = producto.get_stock_unidades_disponible()
     producto.disponible_metros = producto.get_stock_metros_disponible()
-    
+    if producto.es_material_impresion and producto.ancho_rollo and producto.ancho_rollo > 0:
+        producto.stock_m2 = (producto.stock_metros or 0) * producto.ancho_rollo
+        producto.disponible_m2 = (producto.disponible_metros or 0) * producto.ancho_rollo
+    else:
+        producto.stock_m2 = producto.stock_metros or 0
+        producto.disponible_m2 = producto.disponible_metros or 0
+
     movimientos = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.asc()).all()
     saldo = 0
     saldo_metros = 0
@@ -910,18 +975,20 @@ def detalle_producto(producto_id):
         fechas = fechas[-50:]
         saldos = saldos[-50:]
         saldos_metros = saldos_metros[-50:]
-    
+
     movimientos_recientes = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
-    
+    proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
+
     return render_template('detalle_producto.html',
                            producto=producto,
                            movimientos=movimientos_recientes,
+                           proveedores=proveedores,
                            fechas_json=json.dumps(fechas),
                            saldos_json=json.dumps(saldos),
                            saldos_metros_json=json.dumps(saldos_metros))
 
 # ==========================================
-# REGISTRAR COMPRA
+# REGISTRAR COMPRA (CON PROVEEDOR)
 # ==========================================
 @inventario_bp.route('/comprar', methods=['POST'])
 @login_required
@@ -932,16 +999,17 @@ def comprar():
     cantidad_metros = request.form.get('cantidad_metros', type=float)
     costo_unitario = request.form.get('costo', type=float, default=0.0)
     comentario = request.form.get('comentario', '').strip()
-    
+    proveedor_id = request.form.get('proveedor_id', type=int)
+
     if not producto_id or not cantidad or cantidad <= 0:
         flash('Datos inválidos.', 'danger')
         return redirect(url_for('inventario.index'))
-    
+
     producto = Producto.query.get(producto_id)
     if not producto:
         flash('Producto no encontrado.', 'danger')
         return redirect(url_for('inventario.index'))
-    
+
     producto.stock += cantidad
     if producto.largo_rollo and producto.largo_rollo > 0:
         metros_agregados = cantidad * producto.largo_rollo
@@ -949,15 +1017,15 @@ def comprar():
     else:
         metros_agregados = cantidad_metros if cantidad_metros else cantidad
         producto.stock_metros += metros_agregados
-    
+
     if costo_unitario > 0:
         producto.costo = costo_unitario
     else:
         costo_unitario = producto.costo
-    
+
     costo_total = cantidad * costo_unitario
     producto.inversion_total += costo_total
-    
+
     movimiento = Movimiento(
         producto_id=producto.id,
         tipo='entrada',
@@ -966,12 +1034,15 @@ def comprar():
         costo_unitario=costo_unitario,
         costo_total=costo_total,
         comentario=comentario or 'Compra',
-        usuario_id=current_user.id
+        usuario_id=current_user.id,
+        proveedor_id=proveedor_id if proveedor_id else None
     )
     db.session.add(movimiento)
     db.session.commit()
-    
-    flash(f'Compra registrada. Stock: {producto.stock} {producto.unidad}. Metros: {producto.stock_metros:.2f}m', 'success')
+
+    verificar_y_notificar_stock_bajo(producto)
+
+    flash(f'Compra registrada. Stock: {producto.stock} {producto.unidad}. Metros lineales: {producto.stock_metros:.2f}m', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 # ==========================================
@@ -1012,6 +1083,9 @@ def ajustar():
     )
     db.session.add(movimiento)
     db.session.commit()
+
+    verificar_y_notificar_stock_bajo(producto)
+
     flash(f'Ajuste registrado. {diferencia > 0 and "Merma" or "Sobrante"}: {cantidad} {producto.unidad}', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
@@ -1026,7 +1100,7 @@ def merma():
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     agrupar_por = request.args.get('agrupar_por', 'producto')
-    
+
     hoy = datetime.now()
     if fecha_inicio_str and fecha_fin_str:
         try:
@@ -1049,9 +1123,9 @@ def merma():
         else:  # year
             fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
             fecha_fin = hoy
-    
+
     movimientos = Movimiento.query.filter(Movimiento.fecha >= fecha_inicio, Movimiento.fecha <= fecha_fin).all()
-    
+
     if agrupar_por == 'categoria':
         datos = {}
         for m in movimientos:
@@ -1120,10 +1194,10 @@ def merma():
                 'porcentaje': porcentaje
             })
         datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
-    
+
     labels = [d['nombre'][:20] for d in datos_lista[:10]]
     merma_values = [round(d['merma'], 2) for d in datos_lista[:10]]
-    
+
     if agrupar_por == 'producto':
         categorias_merma = {}
         for d in datos_lista:
@@ -1136,7 +1210,7 @@ def merma():
     else:
         pie_labels = labels
         pie_values = merma_values
-    
+
     return render_template('merma.html',
                            datos=datos_lista,
                            periodo=periodo,
@@ -1171,7 +1245,7 @@ def movimientos_json(producto_id):
     return jsonify(data)
 
 # ==========================================
-# LISTADO DE MOVIMIENTOS
+# LISTADO DE MOVIMIENTOS (CON PAGINACIÓN)
 # ==========================================
 @inventario_bp.route('/movimientos', methods=['GET'])
 @login_required
@@ -1182,11 +1256,16 @@ def movimientos():
     tipo = request.args.get('tipo', '').strip()
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
+    cliente_id = request.args.get('cliente_id', type=int)
+    order_num = request.args.get('order_num', '').strip()
     export = request.args.get('export', '0') == '1'
     sort = request.args.get('sort', 'fecha')
     order = request.args.get('order', 'desc')
-    
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+
     query = Movimiento.query.join(Producto, Movimiento.producto_id == Producto.id)
+
     if categoria_id:
         cat_ids = get_all_subcategory_ids(categoria_id)
         if cat_ids:
@@ -1207,7 +1286,14 @@ def movimientos():
             query = query.filter(Movimiento.fecha <= fecha_fin)
         except:
             pass
-    
+
+    if cliente_id or order_num:
+        query = query.join(Order, Movimiento.orden_id == Order.id)
+        if cliente_id:
+            query = query.filter(Order.client_id == cliente_id)
+        if order_num:
+            query = query.filter(Order.order_num.ilike(f'%{order_num}%'))
+
     if sort == 'fecha':
         sort_col = Movimiento.fecha
     elif sort == 'producto':
@@ -1222,39 +1308,47 @@ def movimientos():
         sort_col = Producto.categoria_id
     else:
         sort_col = Movimiento.fecha
-    
+
     if order == 'asc':
         query = query.order_by(sort_col.asc())
     else:
         query = query.order_by(sort_col.desc())
-    
-    movimientos = query.all()
-    
-    # ==========================================
-    # CALCULAR m² PARA MATERIALES DE IMPRESIÓN
-    # ==========================================
+
+    query = query.options(
+        joinedload(Movimiento.producto),
+        joinedload(Movimiento.orden).joinedload(Order.client)
+    )
+
+    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+    movimientos = paginated.items
+    total_movimientos = paginated.total
+    total_pages = paginated.pages
+
     for m in movimientos:
         if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo and m.producto.ancho_rollo > 0:
             m.cantidad_metros_m2 = (m.cantidad_metros or 0) * m.producto.ancho_rollo
         else:
-            m.cantidad_metros_m2 = m.cantidad_metros or 0
-    
+            m.cantidad_metros_m2 = None
+
     if export:
         return exportar_movimientos_excel(movimientos)
-    
-    # DATOS PARA GRÁFICOS
+
     chart_data = generar_datos_graficos_movimientos(movimientos)
-    
+
     productos = Producto.query.order_by(Producto.nombre).all()
     categorias = Categoria.query.order_by(Categoria.nombre).all()
+    clientes = Client.query.order_by(Client.nombre).all()
     tipos_lista = ['entrada', 'consumo', 'reserva', 'salida_ajuste', 'entrada_ajuste']
     fecha_inicio_defecto = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
     fecha_fin_defecto = datetime.now().strftime('%Y-%m-%d')
-    
+
     return render_template('movimientos.html',
                            movimientos=movimientos,
                            productos=productos,
                            categorias=categorias,
+                           clientes=clientes,
+                           cliente_seleccionado=cliente_id,
+                           order_num=order_num,
                            tipos=tipos_lista,
                            producto_seleccionado=producto_id,
                            categoria_seleccionada=categoria_id,
@@ -1264,13 +1358,16 @@ def movimientos():
                            chart_data=json.dumps(chart_data),
                            sort=sort,
                            order=order,
-                           total_movimientos=len(movimientos))
+                           total_movimientos=total_movimientos,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page)
 
 def exportar_movimientos_excel(movimientos):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = 'Movimientos'
-    headers = ['ID', 'Producto', 'Categoría', 'Tipo', 'Cantidad', 'Cantidad (m)', 'Costo', 'Fecha', 'Comentario', 'Orden']
+    headers = ['ID', 'Producto', 'Categoría', 'Tipo', 'Cantidad', 'Cantidad (m lineales)', 'Área (m²)', 'Costo', 'Fecha', 'Comentario', 'Orden']
     for col, header in enumerate(headers, 1):
         cell = ws.cell(row=1, column=col, value=header)
         cell.font = Font(bold=True)
@@ -1283,13 +1380,18 @@ def exportar_movimientos_excel(movimientos):
         ws.cell(row=row_idx, column=4, value=mov.tipo)
         ws.cell(row=row_idx, column=5, value=round(mov.cantidad, 2))
         ws.cell(row=row_idx, column=6, value=round(mov.cantidad_metros, 2) if mov.cantidad_metros else '')
-        if mov.tipo == 'entrada' and mov.costo_total:
-            ws.cell(row=row_idx, column=7, value=round(mov.costo_total, 2))
+        if mov.producto and mov.producto.es_material_impresion and mov.producto.ancho_rollo:
+            area = (mov.cantidad_metros or 0) * mov.producto.ancho_rollo
+            ws.cell(row=row_idx, column=7, value=round(area, 2) if area else '')
         else:
             ws.cell(row=row_idx, column=7, value='')
-        ws.cell(row=row_idx, column=8, value=mov.fecha.strftime('%Y-%m-%d %H:%M') if mov.fecha else '')
-        ws.cell(row=row_idx, column=9, value=mov.comentario or '')
-        ws.cell(row=row_idx, column=10, value=mov.orden.order_num if mov.orden else '')
+        if mov.tipo == 'entrada' and mov.costo_total:
+            ws.cell(row=row_idx, column=8, value=round(mov.costo_total, 2))
+        else:
+            ws.cell(row=row_idx, column=8, value='')
+        ws.cell(row=row_idx, column=9, value=mov.fecha.strftime('%Y-%m-%d %H:%M') if mov.fecha else '')
+        ws.cell(row=row_idx, column=10, value=mov.comentario or '')
+        ws.cell(row=row_idx, column=11, value=mov.orden.order_num if mov.orden else '')
     for col in range(1, len(headers)+1):
         ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
     output = io.BytesIO()
@@ -1327,15 +1429,15 @@ def generar_datos_graficos_movimientos(movimientos):
         dict_tipos[m.tipo] += m.cantidad
     pie_labels = list(dict_tipos.keys())
     pie_values = [round(v, 2) for v in dict_tipos.values()]
-    
+
     dict_productos = defaultdict(float)
     for m in movimientos:
         if m.producto:
             dict_productos[m.producto.nombre] += m.cantidad
     top_productos = sorted(dict_productos.items(), key=lambda x: x[1], reverse=True)[:10]
-    top_labels = [p[0][:20] for p in top_productos]
+    top_labels = [p[0] for p in top_productos]
     top_values = [round(p[1], 2) for p in top_productos]
-    
+
     return {
         'fechas': fechas_ordenadas,
         'datasets': datasets,
@@ -1357,7 +1459,7 @@ def exportar_productos():
         if not columnas:
             flash('Selecciona al menos una columna.', 'danger')
             return redirect(url_for('inventario.exportar_productos'))
-        
+
         categoria_id = request.form.get('categoria_id', type=int)
         query = Producto.query
         if categoria_id:
@@ -1365,7 +1467,7 @@ def exportar_productos():
             if cat_ids:
                 query = query.filter(Producto.categoria_id.in_(cat_ids))
         productos = query.order_by(Producto.nombre).all()
-        
+
         mapa_columnas = {
             'id': 'id',
             'nombre': 'nombre',
@@ -1390,7 +1492,7 @@ def exportar_productos():
             'atributos_extra': 'atributos_extra',
             'created_at': 'created_at'
         }
-        
+
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = 'Productos'
@@ -1399,7 +1501,7 @@ def exportar_productos():
             cell.font = Font(bold=True)
             cell.alignment = Alignment(horizontal='center')
             cell.fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
-        
+
         for row_idx, prod in enumerate(productos, 2):
             for col_idx, col_name in enumerate(columnas, 1):
                 attr = mapa_columnas.get(col_name)
@@ -1425,7 +1527,7 @@ def exportar_productos():
                     elif isinstance(valor, dict) or isinstance(valor, list):
                         valor = json.dumps(valor, ensure_ascii=False)
                 ws.cell(row=row_idx, column=col_idx, value=valor)
-        
+
         for col in range(1, len(columnas)+1):
             ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
         output = io.BytesIO()
@@ -1435,12 +1537,12 @@ def exportar_productos():
                          as_attachment=True,
                          download_name=f'productos_{datetime.now().strftime("%Y%m%d")}.xlsx',
                          mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    
+
     categoria_id = request.args.get('categoria_id', type=int)
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     areas = Area.query.order_by(Area.nombre).all()
     categoria_options = get_categoria_options()
-    
+
     columnas_disponibles = [
         {'id': 'id', 'label': 'ID'},
         {'id': 'nombre', 'label': 'Nombre'},
@@ -1448,10 +1550,10 @@ def exportar_productos():
         {'id': 'costo', 'label': 'Costo Unitario'},
         {'id': 'inversion_total', 'label': 'Inversión Total'},
         {'id': 'stock', 'label': 'Stock (unidades)'},
-        {'id': 'stock_metros', 'label': 'Stock (metros)'},
+        {'id': 'stock_metros', 'label': 'Stock (metros lineales)'},
         {'id': 'stock_minimo', 'label': 'Stock Mínimo'},
         {'id': 'stock_comprometido', 'label': 'Comprometido (unidades)'},
-        {'id': 'stock_comprometido_metros', 'label': 'Comprometido (metros)'},
+        {'id': 'stock_comprometido_metros', 'label': 'Comprometido (metros lineales)'},
         {'id': 'fecha_vencimiento', 'label': 'Fecha Vencimiento'},
         {'id': 'categoria', 'label': 'Categoría'},
         {'id': 'area', 'label': 'Área'},
@@ -1490,11 +1592,11 @@ def importar_productos():
         if not archivo.filename.endswith(('.xlsx', '.xls')):
             flash('Formato no soportado. Use .xlsx o .xls', 'danger')
             return redirect(url_for('inventario.importar_productos'))
-        
+
         try:
             wb = openpyxl.load_workbook(archivo)
             ws = wb.active
-            
+
             headers = [cell.value.strip() if cell.value else '' for cell in ws[1]]
             col_map = {}
             for idx, h in enumerate(headers):
@@ -1535,21 +1637,21 @@ def importar_productos():
                     col_map['simbolo_unidad'] = idx
                 elif 'atributos_extra' in h_clean or 'atributos' in h_clean:
                     col_map['atributos_extra'] = idx
-            
+
             if 'nombre' not in col_map:
                 flash('El archivo debe contener una columna "Nombre".', 'danger')
                 return redirect(url_for('inventario.importar_productos'))
-            
+
             contador = 0
             actualizados = 0
-            
+
             for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
                 if not row or not any(row):
                     continue
                 nombre = str(row[col_map['nombre']]).strip() if col_map.get('nombre') is not None and row[col_map['nombre']] else ''
                 if not nombre:
                     continue
-                
+
                 producto = Producto.query.filter_by(nombre=nombre).first()
                 if producto:
                     if col_map.get('descripcion') is not None and row[col_map['descripcion']]:
@@ -1614,7 +1716,7 @@ def importar_productos():
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
                         val = str(row[col_map['es_material_impresion']]).strip().lower()
                         producto.es_material_impresion = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
-                    
+
                     if col_map.get('categoria') is not None and row[col_map['categoria']]:
                         cat_nombre = str(row[col_map['categoria']]).strip()
                         if cat_nombre:
@@ -1643,7 +1745,7 @@ def importar_productos():
                                 db.session.add(uni)
                                 db.session.flush()
                             producto.unidad_id = uni.id
-                    
+
                     if col_map.get('atributos_extra') is not None and row[col_map['atributos_extra']]:
                         try:
                             attr_val = row[col_map['atributos_extra']]
@@ -1653,7 +1755,7 @@ def importar_productos():
                                 producto.atributos_extra = attr_val
                         except:
                             pass
-                    
+
                     producto.updated_at = datetime.now()
                     actualizados += 1
                 else:
@@ -1720,7 +1822,7 @@ def importar_productos():
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
                         val = str(row[col_map['es_material_impresion']]).strip().lower()
                         nuevo.es_material_impresion = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
-                    
+
                     if col_map.get('categoria') is not None and row[col_map['categoria']]:
                         cat_nombre = str(row[col_map['categoria']]).strip()
                         if cat_nombre:
@@ -1758,10 +1860,10 @@ def importar_productos():
                                 nuevo.atributos_extra = attr_val
                         except:
                             pass
-                    
+
                     db.session.add(nuevo)
                     contador += 1
-            
+
             db.session.commit()
             flash(f'Importación completada: {contador} nuevos, {actualizados} actualizados.', 'success')
             return redirect(url_for('inventario.index'))
@@ -1769,7 +1871,7 @@ def importar_productos():
             db.session.rollback()
             flash(f'Error al importar: {str(e)}', 'danger')
             return redirect(url_for('inventario.importar_productos'))
-    
+
     return render_template('importar_productos.html')
 
 # ==========================================
@@ -1790,7 +1892,7 @@ def api_atributos_por_categoria(categoria_id):
             'requerido': a.requerido,
             'opciones': a.opciones.split(',') if a.opciones else []
         } for a in grupo.atributos.order_by(Atributo.orden).all()]
-    
+
     return jsonify({
         'atributos': atributos,
         'es_material_impresion': cat.es_material_impresion
@@ -1936,6 +2038,103 @@ def eliminar_atributo(grupo_id, atributo_id):
     db.session.commit()
     flash('Atributo eliminado.', 'success')
     return redirect(url_for('inventario.listar_atributos', grupo_id=grupo_id))
+
+# ==========================================
+# GESTIÓN DE PROVEEDORES
+# ==========================================
+@inventario_bp.route('/proveedores')
+@login_required
+@economico_or_admin_required
+def listar_proveedores():
+    proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
+    return render_template('proveedores.html', proveedores=proveedores)
+
+@inventario_bp.route('/proveedor/crear', methods=['GET', 'POST'])
+@login_required
+@economico_or_admin_required
+def crear_proveedor():
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return render_template('form_proveedor.html')
+        proveedor = Proveedor(
+            nombre=nombre,
+            ruc=request.form.get('ruc', '').strip(),
+            telefono=request.form.get('telefono', '').strip(),
+            email=request.form.get('email', '').strip(),
+            direccion=request.form.get('direccion', '').strip(),
+            contacto=request.form.get('contacto', '').strip(),
+            notas=request.form.get('notas', '').strip()
+        )
+        db.session.add(proveedor)
+        db.session.commit()
+        flash(f'Proveedor "{nombre}" creado correctamente.', 'success')
+        return redirect(url_for('inventario.listar_proveedores'))
+    return render_template('form_proveedor.html')
+
+@inventario_bp.route('/proveedor/editar/<int:proveedor_id>', methods=['GET', 'POST'])
+@login_required
+@economico_or_admin_required
+def editar_proveedor(proveedor_id):
+    proveedor = Proveedor.query.get_or_404(proveedor_id)
+    if request.method == 'POST':
+        nombre = request.form.get('nombre', '').strip()
+        if not nombre:
+            flash('El nombre es obligatorio.', 'danger')
+            return render_template('form_proveedor.html', proveedor=proveedor)
+        proveedor.nombre = nombre
+        proveedor.ruc = request.form.get('ruc', '').strip()
+        proveedor.telefono = request.form.get('telefono', '').strip()
+        proveedor.email = request.form.get('email', '').strip()
+        proveedor.direccion = request.form.get('direccion', '').strip()
+        proveedor.contacto = request.form.get('contacto', '').strip()
+        proveedor.notas = request.form.get('notas', '').strip()
+        db.session.commit()
+        flash('Proveedor actualizado.', 'success')
+        return redirect(url_for('inventario.listar_proveedores'))
+    return render_template('form_proveedor.html', proveedor=proveedor)
+
+@inventario_bp.route('/proveedor/eliminar/<int:proveedor_id>', methods=['POST'])
+@login_required
+@economico_or_admin_required
+def eliminar_proveedor(proveedor_id):
+    proveedor = Proveedor.query.get_or_404(proveedor_id)
+    if Movimiento.query.filter_by(proveedor_id=proveedor.id).first():
+        flash('No se puede eliminar un proveedor con movimientos asociados.', 'danger')
+        return redirect(url_for('inventario.listar_proveedores'))
+    db.session.delete(proveedor)
+    db.session.commit()
+    flash('Proveedor eliminado.', 'success')
+    return redirect(url_for('inventario.listar_proveedores'))
+
+# ==========================================
+# ESTADÍSTICAS DE PROVEEDORES
+# ==========================================
+@inventario_bp.route('/proveedores/estadisticas')
+@login_required
+@economico_or_admin_required
+def estadisticas_proveedores():
+    from sqlalchemy import func
+    stats = db.session.query(
+        Proveedor.id,
+        Proveedor.nombre,
+        func.sum(Movimiento.cantidad).label('total_unidades'),
+        func.sum(Movimiento.costo_total).label('total_inversion')
+    ).join(Movimiento, Movimiento.proveedor_id == Proveedor.id)\
+     .filter(Movimiento.tipo == 'entrada')\
+     .group_by(Proveedor.id, Proveedor.nombre)\
+     .order_by(func.sum(Movimiento.costo_total).desc()).all()
+    return render_template('estadisticas_proveedores.html', stats=stats)
+
+# ==========================================
+# GUÍA DE AYUDA PARA ADMINISTRACIÓN
+# ==========================================
+@inventario_bp.route('/admin/help')
+@login_required
+@admin_required
+def admin_help():
+    return render_template('admin_help.html')
 
 # ==========================================
 # RUTAS LEGACY (REDIRECCIONES)

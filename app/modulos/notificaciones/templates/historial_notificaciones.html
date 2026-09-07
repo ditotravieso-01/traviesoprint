@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block page_title %}Historial de Notificaciones{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+        <h2 class="playfair" style="font-size: 24px;">📜 Historial de Notificaciones</h2>
+        <div class="btn-group" role="group">
+            <a href="{{ url_for('notificaciones.historial') }}?filtro=todas" class="btn btn-sm {% if filtro_actual == 'todas' %}btn-primary{% else %}btn-outline{% endif %}">Todas</a>
+            <a href="{{ url_for('notificaciones.historial') }}?filtro=no_leidas" class="btn btn-sm {% if filtro_actual == 'no_leidas' %}btn-primary{% else %}btn-outline{% endif %}">No leídas</a>
+            <a href="{{ url_for('notificaciones.historial') }}?filtro=leidas" class="btn btn-sm {% if filtro_actual == 'leidas' %}btn-primary{% else %}btn-outline{% endif %}">Leídas</a>
+        </div>
+    </div>
+
+    {% if notificaciones %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Mensaje</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for notif in notificaciones %}
+                    <tr class="{% if not notif.leida %}table-warning{% endif %}">
+                        <td>
+                            {% if notif.enlace %}
+                                <a href="{{ notif.enlace }}" class="text-decoration-none">{{ notif.mensaje }}</a>
+                            {% else %}
+                                {{ notif.mensaje }}
+                            {% endif %}
+                        </td>
+                        <td>{{ notif.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% if notif.leida %}
+                                <span class="badge bg-success">Leída</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">No leída</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not notif.leida %}
+                                <form action="{{ url_for('notificaciones.marcar_leida', notif_id=notif.id) }}" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-primary">Marcar como leída</button>
+                                </form>
+                            {% else %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        <nav aria-label="Paginación">
+            <ul class="pagination justify-content-center">
+                {% if paginacion.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('notificaciones.historial', page=paginacion.prev_num, filtro=filtro_actual) }}">&laquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&laquo;</span></li>
+                {% endif %}
+
+                {% for p in paginacion.iter_pages(left_edge=2, right_edge=2, left_current=2, right_current=2) %}
+                    {% if p %}
+                        <li class="page-item {% if p == paginacion.page %}active{% endif %}">
+                            <a class="page-link" href="{{ url_for('notificaciones.historial', page=p, filtro=filtro_actual) }}">{{ p }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item disabled"><span class="page-link">…</span></li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if paginacion.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('notificaciones.historial', page=paginacion.next_num, filtro=filtro_actual) }}">&raquo;</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">&raquo;</span></li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% else %}
+        <div class="alert alert-info">No hay notificaciones.</div>
+    {% endif %}
+</div>
+{% endblock %}

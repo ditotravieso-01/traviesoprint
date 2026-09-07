@@ -2,242 +2,504 @@
 
 {% block title %}{{ cliente.nombre }} · CairoStudio{% endblock %}
 
-{% block page_title %}👤 {{ cliente.nombre }}{% endblock %}
+{# Ocultamos el título de página #}
+{% block page_title %}{% endblock %}
 
 {% block extra_css %}
 <style>
-    .detail-grid {
+    /* ===== CONTENEDOR ===== */
+    .detalle-container {
+        max-width: 100%;
+        padding: 0 20px;
+    }
+
+    /* ===== CABECERA ===== */
+    .detalle-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 28px;
+        padding: 20px 24px;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .detalle-header .info {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .detalle-header .avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #f0ece8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        color: #a8854f;
+        flex-shrink: 0;
+    }
+    .detalle-header .name-group h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 2px 0;
+    }
+    .detalle-header .name-group .sub {
+        font-size: 14px;
+        color: #8e8e93;
+        font-weight: 400;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .detalle-header .name-group .sub .ref {
+        font-weight: 500;
+        color: #1c1c1e;
+    }
+    .badge-nivel-personalizado {
+        display: inline-block;
+        padding: 2px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 1px solid rgba(0,0,0,0.1);
+    }
+    .detalle-header .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .btn {
+        padding: 6px 16px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+
+    /* ===== GRID DE TARJETAS ===== */
+    .detalle-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 4px 30px;
-        margin-top: 8px;
+        gap: 20px;
+        margin-bottom: 28px;
     }
-    .detail-item {
+    .detalle-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 20px 24px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+    }
+    .detalle-card:hover {
+        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+        border-color: rgba(168,133,79,0.1);
+    }
+    .detalle-card .card-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 14px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .detalle-card .card-title i {
+        color: #a8854f;
+        font-size: 18px;
+    }
+
+    /* ===== INFORMACIÓN DE CONTACTO ===== */
+    .contact-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px 20px;
+    }
+    .contact-item {
         display: flex;
         padding: 4px 0;
         border-bottom: 1px solid #f5f2ef;
+        font-size: 14px;
     }
-    .detail-item .label {
+    .contact-item .label {
         font-weight: 600;
         color: #555;
-        width: 140px;
+        width: 100px;
         flex-shrink: 0;
         font-size: 13px;
     }
-    .detail-item .value {
-        color: #1a1a1a;
+    .contact-item .value {
+        color: #1c1c1e;
         font-size: 14px;
+        word-break: break-word;
     }
+
+    /* ===== ESTADÍSTICAS ===== */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(140px,1fr));
-        gap: 16px;
-        margin-top: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+        margin-top: 4px;
     }
-    .stat-card {
+    .stat-item {
         background: #fafaf9;
         border-radius: 12px;
-        padding: 12px 16px;
+        padding: 12px 8px;
         text-align: center;
         border: 1px solid #f0ece8;
+        transition: all 0.2s;
     }
-    .stat-card .stat-value {
+    .stat-item:hover {
+        border-color: #a8854f;
+        background: #fcfaf8;
+    }
+    .stat-item .stat-value {
         font-family: 'Playfair Display', serif;
         font-size: 24px;
         font-weight: 700;
         color: #1c1c1e;
+        line-height: 1.2;
     }
-    .stat-card .stat-label {
-        font-size: 12px;
+    .stat-item .stat-label {
+        font-size: 11px;
         color: #8e8e93;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin-top: 2px;
     }
-    .stat-card .stat-icon {
-        font-size: 20px;
+    .stat-item .stat-icon {
+        font-size: 16px;
         color: #a8854f;
         opacity: 0.6;
+        margin-bottom: 2px;
     }
+
+    /* ===== INSIGHTS ===== */
     .insights-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px,1fr));
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 16px;
-        margin-top: 12px;
+        margin-top: 4px;
     }
     .insight-card {
-        background: white;
+        background: #fafaf9;
         border-radius: 12px;
         padding: 12px 16px;
         border: 1px solid #f0ece8;
     }
     .insight-card .insight-label {
-        font-size: 12px;
+        font-size: 11px;
         color: #8e8e93;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.3px;
     }
     .insight-card .insight-value {
-        font-size: 16px;
+        font-size: 15px;
         font-weight: 600;
         color: #1c1c1e;
         margin-top: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
     }
-    .insight-card .insight-tag {
+    .insight-tag {
         display: inline-block;
         background: #f0ece8;
         padding: 2px 10px;
         border-radius: 12px;
-        font-size: 13px;
-        margin: 2px 4px 2px 0;
+        font-size: 12px;
+        font-weight: 500;
+        color: #1c1c1e;
     }
-    .insight-card .insight-tag.green { background: #d1fae5; color: #065f46; }
-    .insight-card .insight-tag.blue { background: #e0f2fe; color: #1e3a8a; }
-    .insight-card .insight-tag.amber { background: #fef3c7; color: #78350f; }
-    .chart-container {
-        position: relative;
-        height: 200px;
+    .insight-tag.green { background: #d1fae5; color: #065f46; }
+    .insight-tag.blue { background: #e0f2fe; color: #1e3a8a; }
+    .insight-tag.amber { background: #fef3c7; color: #78350f; }
+
+    /* ===== GRÁFICO ===== */
+    .chart-wrapper {
         margin-top: 8px;
+        height: 200px;
+        position: relative;
+    }
+
+    /* ===== TABLA DE ÓRDENES ===== */
+    .table-wrap {
+        overflow-x: auto;
+        margin-top: 8px;
+    }
+    .table-wrap table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+    }
+    .table-wrap th {
+        text-align: left;
+        padding: 8px 10px;
+        font-weight: 600;
+        color: #8e8e93;
+        border-bottom: 1px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .table-wrap td {
+        padding: 8px 10px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+    }
+    .table-wrap tr:hover td { background: #fafaf9; }
+    .table-wrap .badge-estado {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        display: inline-block;
+        font-family: 'Inter', sans-serif;
     }
     .badge-success { background: #d1fae5; color: #065f46; }
     .badge-warning { background: #fef3c7; color: #78350f; }
     .badge-info { background: #e0f2fe; color: #1e3a8a; }
+
+    /* Tooltip para explicar cálculo de metros */
+    .metric-tooltip {
+        cursor: help;
+        border-bottom: 1px dashed #d2d2d7;
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 992px) {
+        .detalle-grid { grid-template-columns: 1fr; }
+    }
     @media (max-width: 768px) {
-        .detail-grid { grid-template-columns: 1fr; }
+        .detalle-header { flex-direction: column; align-items: flex-start; }
+        .detalle-header .actions { width: 100%; justify-content: flex-start; }
+        .contact-grid { grid-template-columns: 1fr; }
         .stats-grid { grid-template-columns: 1fr 1fr; }
         .insights-grid { grid-template-columns: 1fr; }
+        .detalle-header .info { width: 100%; }
     }
     @media (max-width: 480px) {
         .stats-grid { grid-template-columns: 1fr; }
+        .detalle-header .name-group h1 { font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
-        <div class="detail-grid" style="flex:1;">
-            <div class="detail-item"><span class="label">Referencia:</span><span class="value">{{ cliente.referencia }}</span></div>
-            <div class="detail-item"><span class="label">Nombre:</span><span class="value">{{ cliente.nombre }}</span></div>
-            <div class="detail-item"><span class="label">Teléfono:</span><span class="value">{{ cliente.telefono or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Email:</span><span class="value">{{ cliente.email or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Dirección:</span><span class="value">{{ cliente.direccion or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Comercial:</span><span class="value">{{ cliente.comercial or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Tipo Cliente:</span><span class="value">{{ cliente.tipo_cliente or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Sector:</span><span class="value">{{ cliente.sector or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Preferencias Diseño:</span><span class="value">{{ cliente.preferencias_diseno or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Método Pago:</span><span class="value">{{ cliente.metodo_pago_favorito or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Referido Por:</span><span class="value">{{ cliente.referido_por or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Frecuencia Pedido:</span><span class="value">{{ cliente.frecuencia_pedido or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Notas:</span><span class="value">{{ cliente.notas or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Observaciones:</span><span class="value">{{ cliente.observaciones_internas or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Etiquetas:</span><span class="value">{{ cliente.etiquetas or '—' }}</span></div>
-            <div class="detail-item"><span class="label">Fecha Nacimiento:</span><span class="value">{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else '—' }}</span></div>
-        </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-            <a href="{{ url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-        </div>
-    </div>
-</div>
+<div class="detalle-container">
 
-<!-- KPIs -->
-<div class="card">
-    <h4 class="serif" style="font-size:18px; margin-bottom:12px;">📊 Resumen de actividad</h4>
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-icon">📋</div>
-            <div class="stat-value">{{ total_ordenes }}</div>
-            <div class="stat-label">Total Órdenes</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value">{{ ordenes_completadas }}</div>
-            <div class="stat-label">Completadas</div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-value">{{ ordenes_pendientes }}</div>
-            <div class="stat-label">Pendientes</div>
-        </div>
-        <div class="stat-card" style="border-top: 3px solid #10b981;">
-            <div class="stat-icon">💰</div>
-            <div class="stat-value">${{ total_facturado|round(2) }}</div>
-            <div class="stat-label">Total Facturado</div>
-        </div>
-    </div>
-</div>
-
-<!-- Insights -->
-<div class="card">
-    <h4 class="serif" style="font-size:18px; margin-bottom:12px;">🔍 Insights del cliente</h4>
-    <div class="insights-grid">
-        <div class="insight-card">
-            <div class="insight-label">📅 Frecuencia de pedido</div>
-            <div class="insight-value">{{ frecuencia_pedido|capitalize }}</div>
-        </div>
-        <div class="insight-card">
-            <div class="insight-label">🛠 Servicios más solicitados</div>
-            <div class="insight-value">
-                {% if top_servicios %}
-                    {% for servicio, count in top_servicios %}
-                        <span class="insight-tag green">{{ servicio }} ({{ count }})</span>
-                    {% endfor %}
-                {% else %}
-                    <span class="text-muted">Sin datos</span>
-                {% endif %}
+    <!-- ===== CABECERA ===== -->
+    <div class="detalle-header">
+        <div class="info">
+            <div class="avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="name-group">
+                <h1>{{ cliente.nombre }}</h1>
+                <div class="sub">
+                    <span class="ref">Ref: {{ cliente.referencia }}</span>
+                    <span>·</span>
+                    <span>{{ total_ordenes }} pedidos</span>
+                    <span>·</span>
+                    <span class="metric-tooltip" title="Metros totales consumidos en todas las órdenes (suma de consumos de etiquetas y materiales en m o m²).">{{ total_metros }} m</span>
+                    <span>·</span>
+                    <span class="badge-nivel-personalizado" style="background:{{ color_nivel }}; color:{% if nivel_actual == 'black' %}#ffffff{% elif nivel_actual == 'golden' %}#ffffff{% else %}#1c1c1e{% endif %}; border-color:{{ color_nivel }};">
+                        {{ nombre_nivel }}
+                    </span>
+                </div>
             </div>
         </div>
-        <div class="insight-card">
-            <div class="insight-label">📦 Materiales/productos más usados</div>
-            <div class="insight-value">
-                {% if top_materiales %}
-                    {% for material, count in top_materiales %}
-                        <span class="insight-tag blue">{{ material }} ({{ count }})</span>
-                    {% endfor %}
-                {% else %}
-                    <span class="text-muted">Sin datos</span>
-                {% endif %}
+        <div class="actions">
+            <a href="{{ url_for('clientes.editar_cliente', cliente_id=cliente.id) }}" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{{ url_for('ordenes.list_orders') }}?search={{ cliente.nombre }}" class="btn btn-primary">
+                <i class="fas fa-clipboard-list"></i> Ver órdenes
+            </a>
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- ===== GRID PRINCIPAL ===== -->
+    <div class="detalle-grid">
+
+        <!-- Columna Izquierda: Información de contacto -->
+        <div class="detalle-card">
+            <div class="card-title"><i class="fas fa-address-card"></i> Información de contacto</div>
+            <div class="contact-grid">
+                <div class="contact-item"><span class="label">Teléfono</span><span class="value">{{ cliente.telefono or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Email</span><span class="value">{{ cliente.email or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Dirección</span><span class="value">{{ cliente.direccion or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Comercial</span><span class="value">{{ cliente.comercial or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Tipo</span><span class="value">{{ cliente.tipo_cliente or 'persona' }}</span></div>
+                <div class="contact-item"><span class="label">Sector</span><span class="value">{{ cliente.sector or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Preferencias</span><span class="value">{{ cliente.preferencias_diseno or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Método pago</span><span class="value">{{ cliente.metodo_pago_favorito or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Referido por</span><span class="value">{{ cliente.referido_por or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Frecuencia</span><span class="value">{{ cliente.frecuencia_pedido or 'eventual' }}</span></div>
+                <div class="contact-item"><span class="label">Fecha nac.</span><span class="value">{{ cliente.fecha_nacimiento.strftime('%d/%m/%Y') if cliente.fecha_nacimiento else '—' }}</span></div>
+                <div class="contact-item"><span class="label">Etiquetas</span><span class="value">{{ cliente.etiquetas or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Notas</span><span class="value">{{ cliente.notas or '—' }}</span></div>
+                <div class="contact-item"><span class="label">Observaciones</span><span class="value">{{ cliente.observaciones_internas or '—' }}</span></div>
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Resumen de actividad -->
+        <div class="detalle-card">
+            <div class="card-title"><i class="fas fa-chart-simple"></i> Resumen de actividad</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+                    <div class="stat-value">{{ total_ordenes }}</div>
+                    <div class="stat-label">Total órdenes</div>
+                </div>
+                <div class="stat-item" style="border-top: 3px solid #10b981;">
+                    <div class="stat-icon"><i class="fas fa-check-circle" style="color:#10b981;"></i></div>
+                    <div class="stat-value">{{ ordenes_completadas }}</div>
+                    <div class="stat-label">Completadas</div>
+                </div>
+                <div class="stat-item" style="border-top: 3px solid #f59e0b;">
+                    <div class="stat-icon"><i class="fas fa-clock" style="color:#f59e0b;"></i></div>
+                    <div class="stat-value">{{ ordenes_pendientes }}</div>
+                    <div class="stat-label">Pendientes</div>
+                </div>
+                <div class="stat-item" style="border-top: 3px solid #a8854f;">
+                    <div class="stat-icon"><i class="fas fa-ruler" style="color:#a8854f;"></i></div>
+                    <div class="stat-value">{{ total_metros }}</div>
+                    <div class="stat-label">Metros totales</div>
+                </div>
+            </div>
+            <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0ece8;">
+                <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                    <span style="font-size:13px; color:#8e8e93;">Último pedido: <strong>{{ ultimo_pedido.strftime('%d/%m/%Y') if ultimo_pedido else '—' }}</strong></span>
+                    <span style="font-size:13px; color:#8e8e93;">Frecuencia: <strong>{{ frecuencia_pedido|capitalize }}</strong> <span style="font-size:11px; color:#8e8e93; font-weight:400;">(calculada automáticamente)</span></span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ===== INSIGHTS ===== -->
+    <div class="detalle-card" style="margin-bottom:20px;">
+        <div class="card-title"><i class="fas fa-lightbulb"></i> Insights del cliente</div>
+        <div class="insights-grid">
+            <div class="insight-card">
+                <div class="insight-label">📅 Frecuencia de pedido (automática)</div>
+                <div class="insight-value">{{ frecuencia_pedido|capitalize }}</div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-label">🛠 Servicios más solicitados</div>
+                <div class="insight-value">
+                    {% if top_servicios %}
+                        {% for servicio, count in top_servicios %}
+                            <span class="insight-tag green">{{ servicio }} ({{ count }})</span>
+                        {% endfor %}
+                    {% else %}
+                        <span style="color:#8e8e93; font-size:13px;">Sin datos</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="insight-card">
+                <div class="insight-label">📦 Materiales/productos más usados</div>
+                <div class="insight-value">
+                    {% if top_materiales %}
+                        {% for material, count in top_materiales %}
+                            <span class="insight-tag blue">{{ material }} ({{ count }})</span>
+                        {% endfor %}
+                    {% else %}
+                        <span style="color:#8e8e93; font-size:13px;">Sin datos</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<!-- Gráfico de evolución -->
-<div class="card">
-    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📈 Evolución de pedidos (últimos 12 meses)</h4>
-    <div class="chart-container">
-        <canvas id="ordersChart"></canvas>
+    <!-- ===== GRÁFICO ===== -->
+    <div class="detalle-card" style="margin-bottom:20px;">
+        <div class="card-title"><i class="fas fa-chart-bar"></i> Evolución de pedidos (últimos 12 meses)</div>
+        <div class="chart-wrapper">
+            <canvas id="ordersChart"></canvas>
+        </div>
     </div>
-</div>
 
-<!-- Últimas órdenes -->
-<div class="card">
-    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📋 Últimas órdenes</h4>
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>N° Orden</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for o in orders_recientes %}
-                <tr>
-                    <td><a href="{{ url_for('ordenes.detalle_order', order_id=o.id) }}">{{ o.order_num or 'Sin número' }}</a></td>
-                    <td>{{ o.date.strftime('%d/%m/%Y') if o.date else '—' }}</td>
-                    <td>
-                        <span class="badge {% if o.column in ['entregados', 'listo'] %}badge-success{% elif o.column in ['pendiente', 'por-preparar'] %}badge-warning{% else %}badge-info{% endif %}">
-                            {{ o.column }}
-                        </span>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="3" class="text-muted text-center">No hay órdenes registradas.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- ===== ÚLTIMAS ÓRDENES ===== -->
+    <div class="detalle-card">
+        <div class="card-title"><i class="fas fa-history"></i> Últimas órdenes</div>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>N° Orden</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for o in orders_recientes %}
+                    <tr>
+                        <td><a href="{{ url_for('ordenes.detalle_order', order_id=o.id) }}" style="color:#1c1c1e; font-weight:600; text-decoration:none;">{{ o.order_num or 'Sin número' }}</a></td>
+                        <td>{{ o.date.strftime('%d/%m/%Y') if o.date else '—' }}</td>
+                        <td>
+                            <span class="badge-estado 
+                                {% if o.column in ['entregados', 'listo'] %}badge-success
+                                {% elif o.column in ['pendiente', 'por-preparar'] %}badge-warning
+                                {% else %}badge-info{% endif %}">
+                                {{ o.column }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=o.id) }}" class="btn btn-sm btn-outline" style="padding:2px 10px; font-size:11px;"><i class="fas fa-eye"></i></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" style="text-align:center; color:#8e8e93; padding:20px;">No hay órdenes registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
+
 </div>
 {% endblock %}
 

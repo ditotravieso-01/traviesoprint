@@ -1,0 +1,776 @@
+{% extends "base.html" %}
+
+{% block title %}Administración de Clientes · CairoStudio{% endblock %}
+
+{% block page_title %}⚙️ Administración de Clientes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-container { max-width: 100%; padding: 0 20px; }
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 28px;
+    }
+    .admin-header .sub {
+        font-size: 14px;
+        color: #8e8e93;
+        font-weight: 400;
+        margin: 0;
+    }
+
+    .admin-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 24px;
+        margin-top: 8px;
+    }
+    .admin-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(12px);
+        border-radius: 20px;
+        padding: 24px 24px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+    }
+    .admin-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+        border-color: rgba(168,133,79,0.2);
+    }
+    .admin-card.niveles { border-top: 5px solid #8b5cf6; }
+    .admin-card.estadisticas { border-top: 5px solid #3b82f6; }
+    .admin-card.visual { border-top: 5px solid #10b981; }
+    .admin-card.columnas { border-top: 5px solid #f59e0b; }
+    .admin-card.etiquetas { border-top: 5px solid #dc2626; }
+    .admin-card.dashboard { border-top: 5px solid #a8854f; }
+
+    .admin-card .card-icon { font-size: 28px; margin-bottom: 8px; color: #a8854f; opacity: 0.7; }
+    .admin-card h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        margin: 0 0 4px 0;
+        color: #1c1c1e;
+    }
+    .admin-card .card-desc {
+        font-size: 14px;
+        color: #8e8e93;
+        margin: 0 0 16px 0;
+        flex: 1;
+    }
+    .admin-card .card-stats {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+        margin-top: 4px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .admin-card .stat-item { text-align: center; min-width: 60px; }
+    .admin-card .count {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-family: 'Playfair Display', serif;
+        line-height: 1.2;
+    }
+    .admin-card .count-label {
+        font-size: 11px;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        font-weight: 600;
+    }
+    .admin-card .count.black { color: #1a1a1a; }
+    .admin-card .count.golden { color: #d4a574; }
+    .admin-card .count.standard { color: #8e8e93; }
+
+    .admin-card .card-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .admin-card .card-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+
+    /* Toggle switch */
+    .toggle-group { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+    .toggle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid #f5f2ef;
+    }
+    .toggle-item .toggle-label { font-size: 14px; color: #1c1c1e; font-weight: 500; }
+    .toggle-item .toggle-label small { display: block; font-weight: 400; color: #8e8e93; font-size: 12px; }
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #d2d2d7;
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: 0.3s;
+        border-radius: 50%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .switch input:checked + .slider { background-color: #10b981; }
+    .switch input:checked + .slider:before { transform: translateX(20px); }
+
+    /* Checkbox grid */
+    .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 6px 12px;
+        margin-top: 4px;
+    }
+    .checkbox-grid label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #1c1c1e;
+        cursor: pointer;
+    }
+    .checkbox-grid input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: #a8854f;
+    }
+
+    /* Color pickers */
+    .color-group {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .color-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+    .color-item input[type="color"] {
+        width: 32px;
+        height: 32px;
+        border: 2px solid #e0dcd8;
+        border-radius: 6px;
+        padding: 2px;
+        cursor: pointer;
+        background: white;
+    }
+    .color-item input[type="color"]:hover { border-color: #a8854f; }
+    .color-item input[type="text"] {
+        width: 80px;
+        padding: 4px 6px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: none;
+        box-shadow: none;
+    }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+
+    /* Select para tipo de gráfico */
+    .form-select {
+        padding: 4px 8px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    .form-select:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+
+    /* Toast */
+    .toast-container {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        z-index: 99999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 420px;
+        width: 100%;
+        pointer-events: none;
+    }
+    .toast {
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(12px);
+        border-radius: 16px;
+        padding: 16px 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.04);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        pointer-events: all;
+        animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        transform-origin: bottom right;
+    }
+    .toast.out { animation: toastOut 0.3s ease forwards; }
+    @keyframes toastIn {
+        from { transform: scale(0.9) translateY(20px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    @keyframes toastOut {
+        from { transform: scale(1); opacity: 1; }
+        to { transform: scale(0.9) translateY(10px); opacity: 0; }
+    }
+    .toast .toast-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .toast.success .toast-icon { background: #d1fae5; color: #065f46; }
+    .toast.error .toast-icon { background: #fde8e5; color: #991b1b; }
+    .toast.info .toast-icon { background: #e0f2fe; color: #1e3a8a; }
+    .toast .toast-content { flex: 1; }
+    .toast .toast-title { font-weight: 600; font-size: 14px; color: #1c1c1e; }
+    .toast .toast-message { font-size: 13px; color: #8e8e93; margin-top: 2px; }
+    .toast .toast-close {
+        background: none;
+        border: none;
+        font-size: 18px;
+        color: #8e8e93;
+        cursor: pointer;
+        padding: 4px;
+        line-height: 1;
+        transition: color 0.2s;
+    }
+    .toast .toast-close:hover { color: #1c1c1e; }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.2);
+        z-index: 999;
+        backdrop-filter: blur(4px);
+        justify-content: center;
+        align-items: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+        background: white;
+        border-radius: 24px;
+        padding: 28px 32px;
+        max-width: 500px;
+        width: 90%;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease;
+        font-family: 'Inter', sans-serif;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .modal .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #8e8e93; float: right; line-height: 1; }
+    .modal .modal-close:hover { color: #1c1c1e; }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; color: #1c1c1e; }
+    .modal .form-group { margin-bottom: 16px; }
+    .modal .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
+    .modal .form-group input {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 15px;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        font-family: 'Inter', sans-serif;
+    }
+    .modal .form-group input:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+    }
+    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+    .modal .btn { padding: 8px 20px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .modal .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .modal .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; }
+    .modal .btn-success { background: #10b981; color: white; }
+    .modal .btn-success:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+        .admin-grid { grid-template-columns: 1fr; }
+        .admin-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+        .checkbox-grid { grid-template-columns: 1fr 1fr; }
+        .toast-container { max-width: 90%; right: 16px; bottom: 16px; }
+        .color-group { flex-direction: column; gap: 10px; }
+        .toggle-item { flex-wrap: wrap; gap: 8px; }
+        .admin-card { padding: 18px; }
+        .admin-card .card-actions .btn { min-width: 60px; font-size: 12px; padding: 6px 12px; }
+    }
+    @media (max-width: 480px) {
+        .checkbox-grid { grid-template-columns: 1fr; }
+        .admin-header .sub { font-size: 13px; }
+        .admin-card h4 { font-size: 17px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+
+    <div class="admin-header">
+        <div><p class="sub">Configuración y estadísticas del módulo de clientes</p></div>
+        <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver a clientes</a>
+    </div>
+
+    <div class="admin-grid">
+
+        <!-- Tarjeta: Niveles -->
+        <div class="admin-card niveles">
+            <div class="card-icon"><i class="fas fa-layer-group"></i></div>
+            <h4>Niveles de clientes</h4>
+            <div class="card-desc">Configura los porcentajes para los niveles Black y Golden</div>
+            <div class="card-stats">
+                <div class="stat-item"><div class="count black">{{ top_black_pct }}%</div><div class="count-label">Black (top)</div></div>
+                <div class="stat-item"><div class="count golden">{{ top_golden_pct }}%</div><div class="count-label">Golden (top)</div></div>
+                <div class="stat-item"><div class="count standard">{{ 100 - top_golden_pct|int }}%</div><div class="count-label">Standard</div></div>
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-primary btn-sm" onclick="abrirModalNiveles()"><i class="fas fa-cog"></i> Configurar</button>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Estadísticas -->
+        <div class="admin-card estadisticas">
+            <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+            <h4>Estadísticas actuales</h4>
+            <div class="card-desc">Resumen de la clasificación de clientes</div>
+            <div class="card-stats">
+                <div class="stat-item"><div class="count black">{{ black_count }}</div><div class="count-label">Black</div></div>
+                <div class="stat-item"><div class="count golden">{{ golden_count }}</div><div class="count-label">Golden</div></div>
+                <div class="stat-item"><div class="count standard">{{ standard_count }}</div><div class="count-label">Standard</div></div>
+            </div>
+            <div class="card-stats" style="border-top: none; padding-top: 4px; margin-top: 0;">
+                <div class="stat-item"><span class="count-label">Total clientes</span><div class="count" style="font-size:20px;">{{ total_clientes }}</div></div>
+                <div class="stat-item"><span class="count-label">Total órdenes</span><div class="count" style="font-size:20px;">{{ total_ordenes }}</div></div>
+            </div>
+            <div class="card-actions">
+                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline btn-sm"><i class="fas fa-users"></i> Ver clientes</a>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Columnas visibles -->
+        <div class="admin-card columnas">
+            <div class="card-icon"><i class="fas fa-table"></i></div>
+            <h4>Columnas visibles</h4>
+            <div class="card-desc">Selecciona qué columnas mostrar en la vista de tabla</div>
+            <div class="checkbox-grid" id="columnasGrid">
+                {% for col in columnas_disponibles %}
+                <label>
+                    <input type="checkbox" value="{{ col.id }}" {% if col.id in columnas_visibles %}checked{% endif %}>
+                    {{ col.label }}
+                </label>
+                {% endfor %}
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-success btn-sm" onclick="guardarColumnas()"><i class="fas fa-save"></i> Guardar columnas</button>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Colores y nombres de niveles -->
+        <div class="admin-card etiquetas">
+            <div class="card-icon"><i class="fas fa-palette"></i></div>
+            <h4>Colores y etiquetas</h4>
+            <div class="card-desc">Personaliza colores y nombres de los niveles</div>
+            <div class="color-group">
+                <div class="color-item">
+                    <span>Black</span>
+                    <input type="color" id="colorBlack" value="{{ colores.get('black', '#1a1a1a') }}">
+                    <input type="text" id="nombreBlack" value="{{ nombres.get('black', 'Black') }}">
+                </div>
+                <div class="color-item">
+                    <span>Golden</span>
+                    <input type="color" id="colorGolden" value="{{ colores.get('golden', '#d4a574') }}">
+                    <input type="text" id="nombreGolden" value="{{ nombres.get('golden', 'Golden') }}">
+                </div>
+                <div class="color-item">
+                    <span>Standard</span>
+                    <input type="color" id="colorStandard" value="{{ colores.get('standard', '#8e8e93') }}">
+                    <input type="text" id="nombreStandard" value="{{ nombres.get('standard', 'Standard') }}">
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="btn btn-success btn-sm" onclick="guardarColoresNombres()"><i class="fas fa-save"></i> Guardar colores</button>
+            </div>
+        </div>
+
+        <!-- Tarjeta: Dashboard personalizable -->
+        <div class="admin-card dashboard">
+            <div class="card-icon"><i class="fas fa-chart-simple"></i></div>
+            <h4>Dashboard personalizable</h4>
+            <div class="card-desc">Configura qué gráficos y widgets mostrar en la página de clientes</div>
+
+            <div style="margin-top:8px;">
+                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Gráficos</h5>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <span class="toggle-label">Mostrar "Nuevos clientes por mes"</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleGraficoNuevos" {% if dashboard_config.graficos.nuevos_clientes %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <span class="toggle-label">Mostrar "Distribución de niveles"</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleGraficoNiveles" {% if dashboard_config.graficos.niveles %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
+                        <div style="flex:1; min-width:120px;">
+                            <label style="font-size:12px; color:#8e8e93; font-weight:500;">Tipo (Nuevos)</label>
+                            <select id="tipoGraficoNuevos" class="form-select" style="width:100%;">
+                                <option value="bar" {% if dashboard_config.graficos.tipo_nuevos == 'bar' %}selected{% endif %}>Barras</option>
+                                <option value="line" {% if dashboard_config.graficos.tipo_nuevos == 'line' %}selected{% endif %}>Línea</option>
+                            </select>
+                        </div>
+                        <div style="flex:1; min-width:120px;">
+                            <label style="font-size:12px; color:#8e8e93; font-weight:500;">Tipo (Niveles)</label>
+                            <select id="tipoGraficoNiveles" class="form-select" style="width:100%;">
+                                <option value="doughnut" {% if dashboard_config.graficos.tipo_niveles == 'doughnut' %}selected{% endif %}>Dona</option>
+                                <option value="pie" {% if dashboard_config.graficos.tipo_niveles == 'pie' %}selected{% endif %}>Pastel</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; border-top:1px solid #f0ece8; padding-top:12px;">
+                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Widgets</h5>
+                <div class="toggle-group">
+                    <div class="toggle-item">
+                        <span class="toggle-label">Nuevos este mes</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleWidgetNuevosMes" {% if dashboard_config.widgets.nuevos_mes %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <span class="toggle-label">Tasa de retención</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleWidgetRetencion" {% if dashboard_config.widgets.retencion %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <span class="toggle-label">Top 5 clientes</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleWidgetTopClientes" {% if dashboard_config.widgets.top_clientes %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="toggle-item">
+                        <span class="toggle-label">Clientes recientes</span>
+                        <label class="switch">
+                            <input type="checkbox" id="toggleWidgetRecientes" {% if dashboard_config.widgets.recientes %}checked{% endif %}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:16px; border-top:1px solid #f0ece8; padding-top:12px;">
+                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Estilo</h5>
+                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                    <div>
+                        <label style="font-size:12px; color:#8e8e93; font-weight:500;">Altura de gráficos (px)</label>
+                        <input type="number" id="alturaGraficos" value="{{ dashboard_config.estilo.altura_graficos }}" style="width:70px; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                    </div>
+                    <div>
+                        <label style="font-size:12px; color:#8e8e93; font-weight:500;">Color gráfico de nuevos</label>
+                        <input type="color" id="colorGraficoNuevos" value="{{ dashboard_config.colores.grafico_nuevos }}" style="width:36px; height:36px; border:2px solid #e0dcd8; border-radius:6px; padding:2px; cursor:pointer;">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-actions" style="margin-top:16px;">
+                <button class="btn btn-success btn-sm" onclick="guardarDashboardConfig()"><i class="fas fa-save"></i> Guardar dashboard</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- ===== MODAL NIVELES ===== -->
+<div class="modal-overlay" id="modalNiveles">
+    <div class="modal">
+        <button class="modal-close" onclick="cerrarModal('modalNiveles')">&times;</button>
+        <h2><i class="fas fa-sliders-h"></i> Configurar porcentajes</h2>
+        <p style="color:#8e8e93; font-size:14px; margin-bottom:16px;">
+            Porcentaje de clientes que pertenecen a cada nivel (basado en metros consumidos).
+        </p>
+        <div class="form-group">
+            <label>Black (top %)</label>
+            <input type="number" id="configTopBlack" step="0.5" min="0.5" max="50" value="{{ top_black_pct }}">
+            <small style="color:#8e8e93;">Ej: 5% = el 5% superior de clientes</small>
+        </div>
+        <div class="form-group">
+            <label>Golden (top %)</label>
+            <input type="number" id="configTopGolden" step="0.5" min="1" max="80" value="{{ top_golden_pct }}">
+            <small style="color:#8e8e93;">El rango desde el % de Black hasta este % es Golden</small>
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" onclick="cerrarModal('modalNiveles')">Cancelar</button>
+            <button class="btn btn-success" onclick="guardarNiveles()"><i class="fas fa-save"></i> Guardar</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+    // ===== TOAST =====
+    function showToast(title, message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        const icons = {
+            success: 'fa-check-circle',
+            error: 'fa-exclamation-circle',
+            info: 'fa-info-circle'
+        };
+        toast.innerHTML = `
+            <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <div class="toast-message">${message}</div>
+            </div>
+            <button class="toast-close" onclick="this.closest('.toast').remove()">&times;</button>
+        `;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.add('out');
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
+
+    // ===== MODAL =====
+    function cerrarModal(id) {
+        document.getElementById(id).classList.remove('active');
+    }
+
+    // ===== NIVELES =====
+    function abrirModalNiveles() {
+        fetch('/clientes/configuracion')
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('configTopBlack').value = data.top_black_pct;
+                document.getElementById('configTopGolden').value = data.top_golden_pct;
+                document.getElementById('modalNiveles').classList.add('active');
+            })
+            .catch(err => showToast('Error', 'No se pudo cargar la configuración', 'error'));
+    }
+
+    function guardarNiveles() {
+        const topBlack = parseFloat(document.getElementById('configTopBlack').value);
+        const topGolden = parseFloat(document.getElementById('configTopGolden').value);
+        if (isNaN(topBlack) || isNaN(topGolden) || topBlack <= 0 || topGolden <= 0 || topBlack >= topGolden) {
+            showToast('Error', 'Los valores deben ser positivos y Black < Golden', 'error');
+            return;
+        }
+        fetch('/clientes/configuracion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ top_black_pct: topBlack, top_golden_pct: topGolden })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Guardado', 'Porcentajes actualizados. Recargando...', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Error', data.error || 'Error al guardar', 'error');
+            }
+        })
+        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+    }
+
+    // ===== COLUMNAS =====
+    function guardarColumnas() {
+        const checkboxes = document.querySelectorAll('#columnasGrid input[type="checkbox"]');
+        const columnas = [];
+        checkboxes.forEach(cb => {
+            if (cb.checked) columnas.push(cb.value);
+        });
+        fetch('/clientes/configuracion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ columnas_visibles: columnas })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Columnas guardadas', 'La tabla se actualizará al recargar', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Error', data.error || 'Error al guardar columnas', 'error');
+            }
+        })
+        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+    }
+
+    // ===== COLORES Y NOMBRES =====
+    function guardarColoresNombres() {
+        const colores = {
+            black: document.getElementById('colorBlack').value,
+            golden: document.getElementById('colorGolden').value,
+            standard: document.getElementById('colorStandard').value
+        };
+        const nombres = {
+            black: document.getElementById('nombreBlack').value.trim() || 'Black',
+            golden: document.getElementById('nombreGolden').value.trim() || 'Golden',
+            standard: document.getElementById('nombreStandard').value.trim() || 'Standard'
+        };
+        fetch('/clientes/configuracion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ colores: colores, nombres: nombres })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Colores guardados', 'Los cambios se aplicarán al recargar', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Error', data.error || 'Error al guardar colores', 'error');
+            }
+        })
+        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+    }
+
+    // ===== DASHBOARD CONFIGURACIÓN =====
+    function guardarDashboardConfig() {
+        const config = {
+            graficos: {
+                nuevos_clientes: document.getElementById('toggleGraficoNuevos').checked,
+                niveles: document.getElementById('toggleGraficoNiveles').checked,
+                tipo_nuevos: document.getElementById('tipoGraficoNuevos').value,
+                tipo_niveles: document.getElementById('tipoGraficoNiveles').value
+            },
+            widgets: {
+                nuevos_mes: document.getElementById('toggleWidgetNuevosMes').checked,
+                retencion: document.getElementById('toggleWidgetRetencion').checked,
+                top_clientes: document.getElementById('toggleWidgetTopClientes').checked,
+                recientes: document.getElementById('toggleWidgetRecientes').checked
+            },
+            colores: {
+                grafico_nuevos: document.getElementById('colorGraficoNuevos').value,
+                grafico_niveles: [
+                    document.getElementById('colorBlack').value,
+                    document.getElementById('colorGolden').value,
+                    document.getElementById('colorStandard').value
+                ]
+            },
+            estilo: {
+                altura_graficos: parseInt(document.getElementById('alturaGraficos').value) || 80,
+                mostrar_leyenda_niveles: true,
+                mostrar_etiquetas: true
+            }
+        };
+
+        fetch('/clientes/configuracion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dashboard_config: config })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast('✅ Dashboard guardado', 'Los cambios se aplicarán al recargar', 'success');
+                setTimeout(() => window.location.reload(), 800);
+            } else {
+                showToast('Error', data.error || 'Error al guardar dashboard', 'error');
+            }
+        })
+        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+    }
+
+    // ===== CARGAR PREFERENCIAS =====
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar valores actuales para el dashboard (ya están en los inputs)
+    });
+
+    // Cerrar modales con escape
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
+        }
+    });
+</script>
+{% endblock %}

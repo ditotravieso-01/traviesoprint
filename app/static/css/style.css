@@ -1,13 +1,17 @@
 /* ============================================
-   CAIROSTUDIO KIT - ESTILO ARTÍSTICO (Estilo C)
+   TRAVIESOPRINT - ESTILO "BLANC" (CON VARIABLES CSS)
    ============================================ */
 
 /* 1. IMPORTAR FUENTES DE GOOGLE */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,700&display=swap');
 
-/* 2. VARIABLES GLOBALES (Paleta de colores) */
+/* 2. VARIABLES GLOBALES (se sobrescriben desde base.html) */
 :root {
-    /* Sidebar */
+    --color-primary: #1c1c1e;
+    --color-secondary: #a8854f;
+    --color-text: #1c1c1e;
+    --color-bg: #faf8f6;
+
     --sidebar-bg-start: #2c2c2c;
     --sidebar-bg-end: #1a1a1a;
     --sidebar-text: #c0c0c0;
@@ -15,23 +19,9 @@
     --sidebar-item-hover: rgba(255, 255, 255, 0.05);
     --sidebar-item-active: rgba(255, 255, 255, 0.08);
 
-    /* Logo */
-    --logo-circle-bg: #3a3a3a;
-    --logo-circle-border: #555555;
-    --logo-text-color: #efefef;
-    --logo-subtext-color: #bfbfbf;
-
-    /* Main Content */
-    --main-bg: #f4f0ed;
-    --main-card-bg: #ffffff;
-    --main-border-color: #ddd6d0;
-    --main-text-color: #2a2a2a;
-
-    /* Tipografías */
     --font-heading: 'Playfair Display', serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Sombras */
     --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
     --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
@@ -45,13 +35,13 @@
 
 body {
     font-family: var(--font-body);
-    background: var(--main-bg);
-    color: var(--main-text-color);
+    background: var(--color-bg);
+    color: var(--color-text);
     display: flex;
     min-height: 100vh;
 }
 
-/* 4. SIDEBAR */
+/* 4. SIDEBAR (se mantiene la estética oscura) */
 .sidebar {
     width: 260px;
     min-height: 100vh;
@@ -81,8 +71,8 @@ body {
     width: 52px;
     height: 52px;
     border-radius: 50%;
-    background: var(--logo-circle-bg);
-    border: 1px solid var(--logo-circle-border);
+    background: #3a3a3a;
+    border: 1px solid #555;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -94,11 +84,10 @@ body {
     width: 40px;
     height: 40px;
     object-fit: contain;
-    /* filter: brightness(0) invert(1); */
 }
 
 .logo-text {
-    color: var(--logo-text-color);
+    color: #efefef;
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 20px;
@@ -113,7 +102,7 @@ body {
     font-size: 10px;
     letter-spacing: 1.5px;
     text-transform: uppercase;
-    color: var(--logo-subtext-color);
+    color: #bfbfbf;
     margin-top: 2px;
 }
 
@@ -157,7 +146,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Footer del sidebar (opcional) */
 .sidebar-footer {
     margin-top: auto;
     padding-top: 20px;
@@ -171,7 +159,7 @@ body {
 .main-content {
     flex: 1;
     padding: 30px 40px 40px 40px;
-    background: var(--main-bg);
+    background: var(--color-bg);
     min-height: 100vh;
 }
 
@@ -182,14 +170,14 @@ body {
     align-items: center;
     margin-bottom: 30px;
     padding-bottom: 16px;
-    border-bottom: 1px solid var(--main-border-color);
+    border-bottom: 1px solid #ddd6d0;
 }
 
 .main-header h1 {
     font-family: var(--font-heading);
     font-weight: 700;
     font-size: 28px;
-    color: var(--main-text-color);
+    color: var(--color-text);
 }
 
 .user-badge {
@@ -205,7 +193,7 @@ body {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: var(--main-text-color);
+    background: var(--color-primary);
     color: white;
     display: flex;
     align-items: center;
@@ -216,7 +204,7 @@ body {
 
 /* 6. TARJETAS Y COMPONENTES */
 .content-card {
-    background: var(--main-card-bg);
+    background: #ffffff;
     padding: 30px;
     border-radius: 16px;
     box-shadow: var(--shadow-sm);
@@ -228,7 +216,7 @@ body {
     font-weight: 700;
     font-size: 22px;
     margin-bottom: 16px;
-    color: var(--main-text-color);
+    color: var(--color-text);
 }
 
 .content-card p {
@@ -236,7 +224,7 @@ body {
     line-height: 1.7;
 }
 
-/* 7. BOTONES (ejemplo) */
+/* 7. BOTONES (se usan las variables) */
 .btn {
     display: inline-block;
     padding: 8px 20px;
@@ -251,14 +239,22 @@ body {
 }
 
 .btn-primary {
-    background: var(--main-text-color);
+    background: var(--color-primary);
     color: white;
 }
-
 .btn-primary:hover {
     background: #444;
     transform: translateY(-1px);
     box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+    background: var(--color-secondary);
+    color: white;
+}
+.btn-secondary:hover {
+    filter: brightness(0.9);
+    transform: translateY(-1px);
 }
 
 .btn-outline {
@@ -266,9 +262,8 @@ body {
     border-color: #ccc;
     color: #555;
 }
-
 .btn-outline:hover {
-    border-color: #888;
+    border-color: var(--color-secondary);
     background: #f5f5f5;
 }
 
@@ -379,9 +374,10 @@ body {
     border: none;
     font-weight: 600;
     cursor: pointer;
-    background: #1a1a1a;
+}
+.modal-box .btn-primary {
+    background: var(--color-primary);
     color: white;
-    margin-right: 8px;
 }
 .modal-box .btn-secondary {
     background: transparent;
@@ -419,26 +415,4 @@ body {
     background: #dbeafe;
     color: #1e40af;
     border-left-color: #3b82f6;
-}
-
-/* ============================================================ */
-/* ESTUDIO BLANC - ESTILOS BASE */
-/* ============================================================ */
-.estudio-blanc {
-    --bg-primary: #f2f2f6;
-    --bg-card: rgba(255,255,255,0.85);
-    --text-primary: #1c1c1e;
-    --text-secondary: #8e8e93;
-    --border-light: rgba(0,0,0,0.04);
-    --accent-blue: #007aff;
-    --shadow-sm: 0 2px 12px rgba(0,0,0,0.02);
-    --shadow-md: 0 8px 30px rgba(0,0,0,0.04);
-    --radius-lg: 20px;
-    --radius-md: 14px;
-    --radius-sm: 12px;
-}
-
-/* Fuente elegante para títulos */
-.playfair {
-    font-family: 'Playfair Display', serif;
 }

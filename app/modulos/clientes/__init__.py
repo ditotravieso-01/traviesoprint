@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from app.models import Client, User, Order, ArchivoAdjunto, Producto
+from app.models import Client, User, Order, ArchivoAdjunto, Producto, Configuracion
 from app import db
 from datetime import datetime, timedelta, date
 import io
@@ -48,6 +48,67 @@ def admin_required(func):
     return wrapper
 
 # ==========================================
+# FUNCIONES DE CONFIGURACIÓN
+# ==========================================
+
+def obtener_config(clave, default=None):
+    config = Configuracion.query.filter_by(clave=clave).first()
+    if config:
+        return config.valor
+    return default
+
+def guardar_config(clave, valor, descripcion=''):
+    config = Configuracion.query.filter_by(clave=clave).first()
+    if config:
+        config.valor = str(valor)
+        config.descripcion = descripcion
+    else:
+        config = Configuracion(clave=clave, valor=str(valor), descripcion=descripcion)
+        db.session.add(config)
+    db.session.commit()
+
+def get_dashboard_config():
+    default = {
+        'graficos': {
+            'nuevos_clientes': True,
+            'niveles': True,
+            'tipo_nuevos': 'bar',
+            'tipo_niveles': 'doughnut'
+        },
+        'widgets': {
+            'nuevos_mes': True,
+            'retencion': True,
+            'top_clientes': True,
+            'recientes': True
+        },
+        'colores': {
+            'grafico_nuevos': '#a8854f',
+            'grafico_niveles': ['#1a1a1a', '#d4a574', '#8e8e93']
+        },
+        'orden': ['kpis', 'graficos', 'widgets', 'recientes', 'niveles', 'acciones'],
+        'estilo': {
+            'altura_graficos': 80,
+            'mostrar_leyenda_niveles': True,
+            'mostrar_etiquetas': True
+        }
+    }
+    try:
+        config = json.loads(obtener_config('clientes_dashboard_config', '{}'))
+        for key in default:
+            if key not in config:
+                config[key] = default[key]
+            elif isinstance(default[key], dict):
+                for subkey in default[key]:
+                    if subkey not in config[key]:
+                        config[key][subkey] = default[key][subkey]
+        return config
+    except:
+        return default
+
+def guardar_dashboard_config(config):
+    guardar_config('clientes_dashboard_config', json.dumps(config), 'Configuración del dashboard de clientes')
+
+# ==========================================
 # FUNCIONES AUXILIARES DE NIVELES
 # ==========================================
 
@@ -58,40 +119,94 @@ def calcular_nivel_cliente(cliente, top_black_ids, top_golden_ids):
         return 'golden'
     return 'standard'
 
-def get_nivel_info(nivel):
-    niveles = {
-        'black': {
-            'clase': 'nivel-black',
-            'color': '#1a1a1a',
-            'fondo': '#1a1a1a',
-            'texto': '#d4a574',
-            'borde': '#d4a574',
-            'icono': 'fa-crown',
-            'label': 'Black',
-            'badge': '🔥'
-        },
-        'golden': {
-            'clase': 'nivel-golden',
-            'color': '#d4a574',
-            'fondo': '#fef9e7',
-            'texto': '#b8860b',
-            'borde': '#d4a574',
-            'icono': 'fa-star',
-            'label': 'Golden',
-            'badge': '⭐'
-        },
-        'standard': {
-            'clase': 'nivel-standard',
-            'color': '#8e8e93',
-            'fondo': '#ffffff',
-            'texto': '#1c1c1e',
-            'borde': '#f0ece8',
-            'icono': 'fa-user',
-            'label': 'Standard',
-            'badge': '👤'
-        }
+def get_nivel_info(nivel, config_colores=None, config_nombres=None):
+    colores_default = {
+        'black': '#1a1a1a',
+        'golden': '#d4a574',
+        'standard': '#8e8e93'
     }
-    return niveles.get(nivel, niveles['standard'])
+    nombres_default = {
+        'black': 'Black',
+        'golden': 'Golden',
+        'standard': 'Standard'
+    }
+
+    if config_colores is None:
+        try:
+            config_colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+        except:
+            config_colores = {}
+    if config_nombres is None:
+        try:
+            config_nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+        except:
+            config_nombres = {}
+
+    color = config_colores.get(nivel, colores_default.get(nivel, '#8e8e93'))
+    nombre = config_nombres.get(nivel, nombres_default.get(nivel, nivel.capitalize()))
+
+    return {
+        'color': color,
+        'nombre': nombre,
+        'label': nombre,
+        'clase': f'nivel-{nivel}',
+        'badge': '🔥' if nivel == 'black' else '⭐' if nivel == 'golden' else '👤'
+    }
+
+def get_columnas_visibles():
+    try:
+        columnas = json.loads(obtener_config('clientes_columnas_visibles', '[]'))
+        if not columnas:
+            columnas = ['referencia', 'nombre', 'telefono', 'email', 'pedidos', 'metros', 'nivel', 'acciones']
+    except:
+        columnas = ['referencia', 'nombre', 'telefono', 'email', 'pedidos', 'metros', 'nivel', 'acciones']
+    return columnas
+
+def get_clasificacion_automatica():
+    val = obtener_config('clientes_clasificacion_automatica', 'true')
+    return val.lower() == 'true'
+
+# ==========================================
+# FUNCIONES AUXILIARES PARA DASHBOARD
+# ==========================================
+
+def get_clientes_nuevos_por_mes():
+    ahora = datetime.now()
+    meses = []
+    valores = []
+    for i in range(11, -1, -1):
+        mes = ahora.replace(day=1) - timedelta(days=30*i)
+        nombre_mes = mes.strftime('%b %Y')
+        meses.append(nombre_mes)
+        inicio = mes.replace(day=1).date()
+        if mes.month == 12:
+            fin = datetime(mes.year + 1, 1, 1).date()
+        else:
+            fin = datetime(mes.year, mes.month + 1, 1).date()
+        count = Client.query.filter(Client.created_at >= inicio, Client.created_at < fin).count()
+        valores.append(count)
+    return meses, valores
+
+def get_top_clientes_metros(limit=5):
+    clientes = Client.query.all()
+    for c in clientes:
+        c.total_metros = calcular_metros_cliente(c)
+    clientes.sort(key=lambda x: x.total_metros, reverse=True)
+    top = clientes[:limit]
+    return [c.nombre for c in top], [c.total_metros for c in top]
+
+def get_tasa_retencion():
+    total = Client.query.count()
+    if total == 0:
+        return 0
+    repetidos = 0
+    for c in Client.query.all():
+        if len(c.orders) > 1:
+            repetidos += 1
+    return round((repetidos / total) * 100, 1)
+
+def get_clientes_recientes(limit=5):
+    return Client.query.order_by(Client.created_at.desc()).limit(limit).all()
 
 # ==========================================
 # INSIGHTS DEL CLIENTE
@@ -152,7 +267,6 @@ def calcular_insights_cliente(cliente):
 def calcular_frecuencia(orders):
     if len(orders) < 2:
         return 'eventual'
-    # Convertir fechas a date si son datetime
     fechas = []
     for o in orders:
         if o.date:
@@ -178,7 +292,27 @@ def calcular_frecuencia(orders):
     return 'eventual'
 
 # ==========================================
-# LISTAR CLIENTES (CON PAGINACIÓN, SIN FACTURACIÓN)
+# CÁLCULO DE METROS TOTALES PARA UN CLIENTE
+# ==========================================
+
+def calcular_metros_cliente(cliente):
+    total_metros = 0.0
+    for order in cliente.orders:
+        for archivo in order.archivos:
+            if archivo.parametros_etiqueta:
+                try:
+                    params = json.loads(archivo.parametros_etiqueta)
+                    if params.get('consumo'):
+                        total_metros += params.get('consumo', 0)
+                        continue
+                except:
+                    pass
+            if archivo.unidad in ['m', 'm2', 'm²'] and archivo.cantidad:
+                total_metros += archivo.cantidad
+    return round(total_metros, 2)
+
+# ==========================================
+# LISTAR CLIENTES
 # ==========================================
 
 @clientes_bp.route('/')
@@ -186,12 +320,11 @@ def calcular_frecuencia(orders):
 @view_required
 def listar_clientes():
     search = request.args.get('search', '').strip()
-    sort = request.args.get('sort', 'nombre')
-    order = request.args.get('order', 'asc')
+    sort = request.args.get('sort', 'metros')
+    order = request.args.get('order', 'desc')
     page = request.args.get('page', 1, type=int)
     per_page = 20
 
-    # Consulta base
     query = Client.query
     if search:
         query = query.filter(
@@ -203,44 +336,57 @@ def listar_clientes():
             )
         )
 
-    # Subconsulta de IDs de clientes filtrados (para KPIs)
-    subquery = query.with_entities(Client.id).subquery()
-
-    total_clientes = query.count()
-    total_ordenes = db.session.query(func.count(Order.id)).filter(
-        Order.client_id.in_(subquery)
-    ).scalar() or 0
-
-    fecha_limite = datetime.now() - timedelta(days=30)
-    clientes_activos = db.session.query(func.count(func.distinct(Order.client_id))).filter(
-        Order.date >= fecha_limite,
-        Order.client_id.in_(subquery)
-    ).scalar() or 0
-
-    # FACTURACIÓN DESACTIVADA
-    total_facturado = 0
-    top_cliente_nombre = '—'
-    top_cliente_monto = 0
-
-    # Niveles (basados en todos los clientes filtrados, solo por número de pedidos)
     clientes_todos = query.all()
-    if len(clientes_todos) >= 5:
-        sorted_by_pedidos = sorted(clientes_todos, key=lambda c: len(c.orders) if c.orders else 0, reverse=True)
-        n = len(clientes_todos)
-        top_5 = max(1, int(n * 0.05))
-        top_20 = max(1, int(n * 0.20))
-        top_black_ids = set([c.id for c in sorted_by_pedidos[:top_5]])
-        top_golden_ids = set([c.id for c in sorted_by_pedidos[:top_20]])
+    
+    for c in clientes_todos:
+        c.total_metros = calcular_metros_cliente(c)
+        c.total_pedidos = len(c.orders) if c.orders else 0
+        insights = calcular_insights_cliente(c)
+        c.top_materiales = insights['top_materiales'][:2]
+        c.top_servicios = insights['top_servicios'][:2]
+        c.frecuencia = insights['frecuencia']
+
+    clasificacion_automatica = get_clasificacion_automatica()
+    
+    try:
+        config_colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+    except:
+        config_colores = {}
+    try:
+        config_nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+    except:
+        config_nombres = {}
+
+    if clasificacion_automatica and len(clientes_todos) >= 5:
+        try:
+            top_black_pct = float(obtener_config('clientes_top_black_pct', '5'))
+            top_golden_pct = float(obtener_config('clientes_top_golden_pct', '20'))
+        except:
+            top_black_pct = 5
+            top_golden_pct = 20
+
+        sorted_by_metros = sorted(clientes_todos, key=lambda c: c.total_metros, reverse=True)
+        n = len(sorted_by_metros)
+        top_black = max(1, int(n * top_black_pct / 100))
+        top_golden = max(1, int(n * top_golden_pct / 100))
+        top_black_ids = set([c.id for c in sorted_by_metros[:top_black]])
+        top_golden_ids = set([c.id for c in sorted_by_metros[:top_golden]])
     else:
         top_black_ids = set()
         top_golden_ids = set()
+        for c in clientes_todos:
+            c.nivel = 'standard'
+            c.nivel_info = get_nivel_info('standard', config_colores, config_nombres)
 
     nivel_map = {}
     black_count = 0
     golden_count = 0
     standard_count = 0
     for c in clientes_todos:
-        nivel = calcular_nivel_cliente(c, top_black_ids, top_golden_ids)
+        if clasificacion_automatica:
+            nivel = calcular_nivel_cliente(c, top_black_ids, top_golden_ids)
+        else:
+            nivel = 'standard'
         nivel_map[c.id] = nivel
         if nivel == 'black':
             black_count += 1
@@ -248,39 +394,71 @@ def listar_clientes():
             golden_count += 1
         else:
             standard_count += 1
+        c.nivel = nivel
+        c.nivel_info = get_nivel_info(nivel, config_colores, config_nombres)
 
-    # Orden y paginación
-    if sort == 'nombre':
-        col = Client.nombre
-    elif sort == 'referencia':
-        col = Client.referencia
+    if sort == 'referencia':
+        key_func = lambda x: x.referencia
+    elif sort == 'nombre':
+        key_func = lambda x: x.nombre
     elif sort == 'telefono':
-        col = Client.telefono
+        key_func = lambda x: x.telefono or ''
     elif sort == 'email':
-        col = Client.email
+        key_func = lambda x: x.email or ''
+    elif sort == 'pedidos':
+        key_func = lambda x: x.total_pedidos
+    elif sort == 'metros':
+        key_func = lambda x: x.total_metros
+    elif sort == 'nivel':
+        nivel_order = {'black': 3, 'golden': 2, 'standard': 1}
+        key_func = lambda x: nivel_order.get(x.nivel, 0)
     else:
-        col = Client.nombre
+        key_func = lambda x: x.total_metros
 
-    if order == 'desc':
-        query = query.order_by(col.desc())
-    else:
-        query = query.order_by(col.asc())
+    reverse = (order == 'desc')
+    clientes_todos.sort(key=key_func, reverse=reverse)
 
-    paginated = query.paginate(page=page, per_page=per_page, error_out=False)
-    clients = paginated.items
-    total_pages = paginated.pages
-    total = paginated.total
+    total = len(clientes_todos)
+    start = (page - 1) * per_page
+    end = start + per_page
+    clients = clientes_todos[start:end]
+    total_pages = (total + per_page - 1) // per_page
 
-    # Asignar datos a cada cliente paginado (sin facturación)
-    for c in clients:
-        c.nivel = nivel_map.get(c.id, 'standard')
-        c.nivel_info = get_nivel_info(c.nivel)
-        insights = calcular_insights_cliente(c)
-        c.top_materiales = insights['top_materiales'][:2]
-        c.top_servicios = insights['top_servicios'][:2]
-        c.total_pedidos = len(c.orders) if c.orders else 0
-        c.total_facturado = 0  # Desactivado
-        c.frecuencia = insights['frecuencia']
+    total_clientes = len(clientes_todos)
+    total_ordenes = sum(c.total_pedidos for c in clientes_todos)
+
+    fecha_limite = datetime.now().date() - timedelta(days=30)
+    clientes_activos = 0
+    for c in clientes_todos:
+        for o in c.orders:
+            if o.date and o.date >= fecha_limite:
+                clientes_activos += 1
+                break
+
+    top_cliente = max(clientes_todos, key=lambda x: x.total_metros) if clientes_todos else None
+    top_cliente_nombre = top_cliente.nombre if top_cliente else '—'
+    top_cliente_metros = top_cliente.total_metros if top_cliente else 0
+    top_cliente_pedidos = top_cliente.total_pedidos if top_cliente else 0
+
+    columnas_visibles = get_columnas_visibles()
+
+    meses_nuevos, valores_nuevos = get_clientes_nuevos_por_mes()
+    top_nombres, top_metros = get_top_clientes_metros(5)
+    top_clientes_data = list(zip(top_nombres, top_metros))
+    tasa_retencion = get_tasa_retencion()
+    clientes_recientes = get_clientes_recientes(5)
+
+    nivel_labels = []
+    nivel_data = []
+    nivel_colors = []
+    niveles_orden = ['black', 'golden', 'standard']
+    for nivel in niveles_orden:
+        count = sum(1 for c in clientes_todos if nivel_map.get(c.id) == nivel)
+        nivel_labels.append(config_nombres.get(nivel, nivel.capitalize()))
+        nivel_data.append(count)
+        nivel_colors.append(config_colores.get(nivel, '#8e8e93'))
+
+    dashboard_config = get_dashboard_config()
 
     context = {
         'clients': clients,
@@ -294,15 +472,194 @@ def listar_clientes():
         'total_clientes': total_clientes,
         'total_ordenes': total_ordenes,
         'clientes_activos': clientes_activos,
-        'total_facturado': total_facturado,
         'top_cliente_nombre': top_cliente_nombre,
-        'top_cliente_monto': top_cliente_monto,
+        'top_cliente_pedidos': top_cliente_pedidos,
+        'top_cliente_metros': top_cliente_metros,
         'black_count': black_count,
         'golden_count': golden_count,
         'standard_count': standard_count,
+        'columnas_visibles': columnas_visibles,
+        'clasificacion_automatica': clasificacion_automatica,
+        'config_colores': config_colores,
+        'config_nombres': config_nombres,
+        'meses_nuevos': meses_nuevos,
+        'valores_nuevos': valores_nuevos,
+        'top_nombres': top_nombres,
+        'top_metros': top_metros,
+        'top_clientes_data': top_clientes_data,
+        'tasa_retencion': tasa_retencion,
+        'clientes_recientes': clientes_recientes,
+        'nivel_labels': nivel_labels,
+        'nivel_data': nivel_data,
+        'nivel_colors': nivel_colors,
+        'dashboard_config': dashboard_config,
     }
 
     return render_template('clientes.html', **context)
+
+
+# ==========================================
+# CONFIGURACIÓN DE NIVELES (SOLO ADMIN)
+# ==========================================
+
+@clientes_bp.route('/configuracion', methods=['GET'])
+@login_required
+@admin_required
+def get_configuracion():
+    top_black = obtener_config('clientes_top_black_pct', '5')
+    top_golden = obtener_config('clientes_top_golden_pct', '20')
+    try:
+        columnas = json.loads(obtener_config('clientes_columnas_visibles', '[]'))
+    except:
+        columnas = ['referencia', 'nombre', 'telefono', 'email', 'pedidos', 'metros', 'nivel', 'acciones']
+    try:
+        colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+    except:
+        colores = {}
+    try:
+        nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+    except:
+        nombres = {}
+    clasificacion_auto = obtener_config('clientes_clasificacion_automatica', 'true') == 'true'
+    dashboard_config = get_dashboard_config()
+
+    return jsonify({
+        'top_black_pct': float(top_black),
+        'top_golden_pct': float(top_golden),
+        'columnas_visibles': columnas,
+        'colores': colores,
+        'nombres': nombres,
+        'clasificacion_automatica': clasificacion_auto,
+        'dashboard_config': dashboard_config
+    })
+
+@clientes_bp.route('/configuracion', methods=['POST'])
+@login_required
+@admin_required
+def set_configuracion():
+    data = request.get_json()
+    
+    if 'top_black_pct' in data and 'top_golden_pct' in data:
+        top_black = data.get('top_black_pct')
+        top_golden = data.get('top_golden_pct')
+        try:
+            top_black = float(top_black)
+            top_golden = float(top_golden)
+            if top_black <= 0 or top_golden <= 0 or top_black >= top_golden:
+                return jsonify({'error': 'Los valores deben ser positivos y Black < Golden'}), 400
+            guardar_config('clientes_top_black_pct', str(top_black))
+            guardar_config('clientes_top_golden_pct', str(top_golden))
+        except:
+            return jsonify({'error': 'Valores inválidos'}), 400
+
+    if 'columnas_visibles' in data:
+        columnas = data['columnas_visibles']
+        if not isinstance(columnas, list):
+            return jsonify({'error': 'columnas_visibles debe ser una lista'}), 400
+        guardar_config('clientes_columnas_visibles', json.dumps(columnas))
+
+    if 'colores' in data:
+        colores = data['colores']
+        if not isinstance(colores, dict):
+            return jsonify({'error': 'colores debe ser un diccionario'}), 400
+        guardar_config('clientes_colores_niveles', json.dumps(colores))
+
+    if 'nombres' in data:
+        nombres = data['nombres']
+        if not isinstance(nombres, dict):
+            return jsonify({'error': 'nombres debe ser un diccionario'}), 400
+        guardar_config('clientes_nombres_niveles', json.dumps(nombres))
+
+    if 'clasificacion_automatica' in data:
+        val = data['clasificacion_automatica']
+        guardar_config('clientes_clasificacion_automatica', 'true' if val else 'false')
+
+    if 'dashboard_config' in data:
+        guardar_dashboard_config(data['dashboard_config'])
+
+    return jsonify({'success': True, 'message': 'Configuración guardada'})
+
+# ==========================================
+# PANEL DE ADMINISTRACIÓN DE CLIENTES
+# ==========================================
+
+@clientes_bp.route('/admin')
+@login_required
+@admin_required
+def admin_panel():
+    top_black = obtener_config('clientes_top_black_pct', '5')
+    top_golden = obtener_config('clientes_top_golden_pct', '20')
+    
+    total_clientes = Client.query.count()
+    total_ordenes = Order.query.count()
+    
+    clientes_todos = Client.query.all()
+    for c in clientes_todos:
+        c.total_metros = calcular_metros_cliente(c)
+    
+    try:
+        colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+    except:
+        colores = {}
+    try:
+        nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+    except:
+        nombres = {}
+    try:
+        columnas = json.loads(obtener_config('clientes_columnas_visibles', '[]'))
+    except:
+        columnas = ['referencia', 'nombre', 'telefono', 'email', 'pedidos', 'metros', 'nivel', 'acciones']
+    clasificacion_auto = obtener_config('clientes_clasificacion_automatica', 'true') == 'true'
+    dashboard_config = get_dashboard_config()
+
+    if clasificacion_auto and len(clientes_todos) >= 5:
+        sorted_by_metros = sorted(clientes_todos, key=lambda c: c.total_metros, reverse=True)
+        n = len(sorted_by_metros)
+        try:
+            top_black_pct = float(top_black)
+            top_golden_pct = float(top_golden)
+        except:
+            top_black_pct = 5
+            top_golden_pct = 20
+        top_black_count = max(1, int(n * top_black_pct / 100))
+        top_golden_count = max(1, int(n * top_golden_pct / 100))
+        black_ids = set([c.id for c in sorted_by_metros[:top_black_count]])
+        golden_ids = set([c.id for c in sorted_by_metros[:top_golden_count]])
+    else:
+        black_ids = set()
+        golden_ids = set()
+    
+    black_count = sum(1 for c in clientes_todos if c.id in black_ids)
+    golden_count = sum(1 for c in clientes_todos if c.id in golden_ids)
+    standard_count = total_clientes - black_count - golden_count
+
+    columnas_disponibles = [
+        {'id': 'referencia', 'label': 'Referencia'},
+        {'id': 'nombre', 'label': 'Nombre'},
+        {'id': 'telefono', 'label': 'Teléfono'},
+        {'id': 'email', 'label': 'Email'},
+        {'id': 'pedidos', 'label': 'Pedidos'},
+        {'id': 'metros', 'label': 'Metros'},
+        {'id': 'nivel', 'label': 'Nivel'},
+        {'id': 'acciones', 'label': 'Acciones'},
+    ]
+
+    context = {
+        'top_black_pct': top_black,
+        'top_golden_pct': top_golden,
+        'total_clientes': total_clientes,
+        'total_ordenes': total_ordenes,
+        'black_count': black_count,
+        'golden_count': golden_count,
+        'standard_count': standard_count,
+        'colores': colores,
+        'nombres': nombres,
+        'columnas_visibles': columnas,
+        'columnas_disponibles': columnas_disponibles,
+        'clasificacion_automatica': clasificacion_auto,
+        'dashboard_config': dashboard_config,
+    }
+    return render_template('admin_clientes.html', **context)
 
 
 # ==========================================
@@ -338,10 +695,10 @@ def crear_cliente():
         
         if not referencia:
             referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}"
-        
-        if Client.query.filter_by(referencia=referencia).first():
-            flash(f'Ya existe un cliente con la referencia "{referencia}".', 'danger')
-            return render_template('form_cliente.html')
+        else:
+            if Client.query.filter_by(referencia=referencia).first():
+                flash(f'Ya existe un cliente con la referencia "{referencia}".', 'danger')
+                return render_template('form_cliente.html')
         
         cliente = Client(
             referencia=referencia,
@@ -373,9 +730,17 @@ def crear_cliente():
         db.session.commit()
         
         flash(f'Cliente "{nombre}" creado correctamente.', 'success')
-        return redirect(url_for('clientes.listar_clientes'))
+        return redirect(url_for('clientes.detalle_cliente', cliente_id=cliente.id))
     
-    return render_template('form_cliente.html')
+    context = {
+        'cliente': None,
+        'total_ordenes': 0,
+        'total_metros': 0,
+        'nivel_actual': 'standard',
+        'color_nivel': '#8e8e93',
+        'nombre_nivel': 'Standard',
+    }
+    return render_template('form_cliente.html', **context)
 
 
 # ==========================================
@@ -419,19 +784,67 @@ def editar_cliente(cliente_id):
             flash('El nombre es obligatorio.', 'danger')
             return render_template('form_cliente.html', cliente=cliente)
         
-        existente = Client.query.filter(
-            Client.referencia == cliente.referencia,
-            Client.id != cliente.id
-        ).first()
-        if existente:
-            flash(f'Ya existe otro cliente con la referencia "{cliente.referencia}".', 'danger')
-            return render_template('form_cliente.html', cliente=cliente)
+        if not cliente.referencia:
+            cliente.referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+        else:
+            existente = Client.query.filter(
+                Client.referencia == cliente.referencia,
+                Client.id != cliente.id
+            ).first()
+            if existente:
+                flash(f'Ya existe otro cliente con la referencia "{cliente.referencia}".', 'danger')
+                return render_template('form_cliente.html', cliente=cliente)
         
         db.session.commit()
         flash(f'Cliente "{cliente.nombre}" actualizado.', 'success')
-        return redirect(url_for('clientes.listar_clientes'))
+        return redirect(url_for('clientes.detalle_cliente', cliente_id=cliente.id))
     
-    return render_template('form_cliente.html', cliente=cliente)
+    orders = Order.query.filter_by(client_id=cliente_id).all()
+    total_ordenes = len(orders)
+    
+    total_metros = 0
+    for order in orders:
+        for archivo in order.archivos:
+            if archivo.parametros_etiqueta:
+                try:
+                    params = json.loads(archivo.parametros_etiqueta)
+                    if params.get('consumo'):
+                        total_metros += params.get('consumo', 0)
+                        continue
+                except:
+                    pass
+            if archivo.unidad in ['m', 'm2', 'm²'] and archivo.cantidad:
+                total_metros += archivo.cantidad
+    total_metros = round(total_metros, 2)
+    
+    if total_ordenes >= 50 or total_metros >= 500:
+        nivel_actual = 'black'
+    elif total_ordenes >= 20 or total_metros >= 200:
+        nivel_actual = 'golden'
+    else:
+        nivel_actual = 'standard'
+    
+    try:
+        config_colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+    except:
+        config_colores = {}
+    try:
+        config_nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+    except:
+        config_nombres = {}
+    
+    color_nivel = config_colores.get(nivel_actual, '#8e8e93')
+    nombre_nivel = config_nombres.get(nivel_actual, nivel_actual.capitalize())
+    
+    context = {
+        'cliente': cliente,
+        'total_ordenes': total_ordenes,
+        'total_metros': total_metros,
+        'nivel_actual': nivel_actual,
+        'color_nivel': color_nivel,
+        'nombre_nivel': nombre_nivel,
+    }
+    return render_template('form_cliente.html', **context)
 
 
 # ==========================================
@@ -455,7 +868,7 @@ def eliminar_cliente(cliente_id):
 
 
 # ==========================================
-# DETALLE DE CLIENTE (CORREGIDO – FECHAS)
+# DETALLE DE CLIENTE
 # ==========================================
 
 @clientes_bp.route('/detalle/<int:cliente_id>')
@@ -468,10 +881,44 @@ def detalle_cliente(cliente_id):
     orders_recientes = sorted(orders, key=lambda o: o.date if o.date else datetime.min, reverse=True)[:10]
     
     total_ordenes = len(orders)
-    total_facturado = 0  # Desactivado
+    total_facturado = 0
     ordenes_pendientes = sum(1 for o in orders if o.column in ['pendiente', 'por-preparar', 'preparados'])
     ordenes_completadas = sum(1 for o in orders if o.column in ['entregados', 'listo'])
     
+    total_metros = 0
+    for order in orders:
+        for archivo in order.archivos:
+            if archivo.parametros_etiqueta:
+                try:
+                    params = json.loads(archivo.parametros_etiqueta)
+                    if params.get('consumo'):
+                        total_metros += params.get('consumo', 0)
+                        continue
+                except:
+                    pass
+            if archivo.unidad in ['m', 'm2', 'm²'] and archivo.cantidad:
+                total_metros += archivo.cantidad
+    total_metros = round(total_metros, 2)
+
+    try:
+        config_colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
+    except:
+        config_colores = {}
+    try:
+        config_nombres = json.loads(obtener_config('clientes_nombres_niveles', '{}'))
+    except:
+        config_nombres = {}
+
+    if total_ordenes >= 50 or total_metros >= 500:
+        nivel_actual = 'black'
+    elif total_ordenes >= 20 or total_metros >= 200:
+        nivel_actual = 'golden'
+    else:
+        nivel_actual = 'standard'
+    
+    color_nivel = config_colores.get(nivel_actual, '#8e8e93')
+    nombre_nivel = config_nombres.get(nivel_actual, nivel_actual.capitalize())
+
     insights = calcular_insights_cliente(cliente)
     
     nivel_historial = []
@@ -497,9 +944,7 @@ def detalle_cliente(cliente_id):
         mes = ahora.replace(day=1) - timedelta(days=30*i)
         nombre_mes = mes.strftime('%b %Y')
         meses.append(nombre_mes)
-        # Convertir a date para comparar con o.date (que es date)
         inicio = mes.replace(day=1).date()
-        # Calcular fin como el primer día del mes siguiente
         if mes.month == 12:
             fin = datetime(mes.year + 1, 1, 1).date()
         else:
@@ -510,6 +955,7 @@ def detalle_cliente(cliente_id):
     context = {
         'cliente': cliente,
         'total_ordenes': total_ordenes,
+        'total_metros': total_metros,
         'total_facturado': total_facturado,
         'ordenes_pendientes': ordenes_pendientes,
         'ordenes_completadas': ordenes_completadas,
@@ -523,6 +969,9 @@ def detalle_cliente(cliente_id):
         'orders_recientes': orders_recientes,
         'nivel_historial': nivel_historial,
         'ultimo_pedido': orders[0].date if orders else None,
+        'nivel_actual': nivel_actual,
+        'color_nivel': color_nivel,
+        'nombre_nivel': nombre_nivel,
     }
     
     return render_template('detalle_cliente.html', **context)

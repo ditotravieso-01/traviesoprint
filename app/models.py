@@ -47,11 +47,10 @@ class Categoria(db.Model):
     nombre = db.Column(db.String(100), nullable=False, unique=True)
     descripcion = db.Column(db.String(200))
     parent_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
-    es_material_impresion = db.Column(db.Boolean, default=False)  # flag para saber si esta categoría contiene materiales de impresión
+    es_material_impresion = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
-    # Relación jerárquica
     children = db.relationship('Categoria', backref=db.backref('parent', remote_side=[id]), lazy='dynamic')
     productos = db.relationship('Producto', back_populates='categoria', lazy=True)
     grupo_atributos = db.relationship('GrupoAtributos', backref='categoria', uselist=False, lazy=True)
@@ -60,7 +59,6 @@ class Categoria(db.Model):
         return f'<Categoria {self.nombre}>'
 
     def get_full_path(self):
-        """Retorna la ruta completa de la categoría (ej. 'Materiales > Rollos > Vinilo')"""
         names = [self.nombre]
         parent = self.parent
         while parent:
@@ -69,7 +67,6 @@ class Categoria(db.Model):
         return ' > '.join(names)
 
     def get_descendant_ids(self):
-        """Retorna una lista con los IDs de todas las categorías descendientes (hijos, nietos, etc.)"""
         ids = []
         def get_children(parent):
             children = Categoria.query.filter_by(parent_id=parent.id).all()
@@ -103,11 +100,11 @@ class Atributo(db.Model):
     __tablename__ = 'atributos'
     id = db.Column(db.Integer, primary_key=True)
     grupo_id = db.Column(db.Integer, db.ForeignKey('grupo_atributos.id'), nullable=False)
-    nombre = db.Column(db.String(100), nullable=False)  # clave en JSON
-    etiqueta = db.Column(db.String(100), nullable=False)  # texto mostrado en UI
-    tipo = db.Column(db.String(20), nullable=False)  # texto, numero, fecha, seleccion, booleano
+    nombre = db.Column(db.String(100), nullable=False)
+    etiqueta = db.Column(db.String(100), nullable=False)
+    tipo = db.Column(db.String(20), nullable=False)
     requerido = db.Column(db.Boolean, default=False)
-    opciones = db.Column(db.Text, nullable=True)  # para tipo 'seleccion', opciones separadas por coma
+    opciones = db.Column(db.Text, nullable=True)
     orden = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
@@ -116,7 +113,7 @@ class Atributo(db.Model):
         return f'<Atributo {self.nombre} ({self.tipo})>'
 
 # ==========================================
-# MODELO DE ÁREA (OBSOLETO, se mantiene por compatibilidad)
+# MODELO DE ÁREA (OBSOLETO)
 # ==========================================
 class Area(db.Model):
     __tablename__ = 'areas'
@@ -149,7 +146,7 @@ class Ubicacion(db.Model):
         return f'<Ubicacion {self.nombre}>'
 
 # ==========================================
-# MODELO DE TIPO DE PRODUCTO (OBSOLETO, se mantiene por compatibilidad)
+# MODELO DE TIPO DE PRODUCTO (OBSOLETO)
 # ==========================================
 class TipoProducto(db.Model):
     __tablename__ = 'tipos_producto'
@@ -332,37 +329,53 @@ class Client(db.Model):
     created_by = db.relationship('User', foreign_keys=[created_by_id])
 
 # ==========================================
-# MODELO DE PRODUCTO (INVENTARIO) - CON UNIDADES HÍBRIDAS Y ATRIBUTOS DINÁMICOS
+# MODELO DE PROVEEDOR (NUEVO)
+# ==========================================
+class Proveedor(db.Model):
+    __tablename__ = 'proveedores'
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(200), nullable=False)
+    ruc = db.Column(db.String(50))
+    telefono = db.Column(db.String(50))
+    email = db.Column(db.String(100))
+    direccion = db.Column(db.String(300))
+    contacto = db.Column(db.String(100))
+    notas = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    movimientos = db.relationship('Movimiento', backref='proveedor', lazy=True)
+
+    def __repr__(self):
+        return f'<Proveedor {self.nombre}>'
+
+# ==========================================
+# MODELO DE PRODUCTO (INVENTARIO)
 # ==========================================
 class Producto(db.Model):
     __tablename__ = 'productos'
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(150), nullable=False, unique=True)
     descripcion = db.Column(db.Text, nullable=True)
-    tipo = db.Column(db.String(50), nullable=True)  # obsoleto, se mantiene
-    ubicacion = db.Column(db.String(50), nullable=True)  # obsoleto
-    unidad = db.Column(db.String(20), nullable=True)  # obsoleto, usar unidad_id
+    tipo = db.Column(db.String(50), nullable=True)
+    ubicacion = db.Column(db.String(50), nullable=True)
+    unidad = db.Column(db.String(20), nullable=True)
     costo = db.Column(db.Float, default=0.0)
     inversion_total = db.Column(db.Float, default=0.0)
 
-    # STOCK EN UNIDADES FÍSICAS (rollos, litros, etc.)
     stock = db.Column(db.Float, default=0.0)
-    # STOCK EN METROS (para materiales de impresión)
     stock_metros = db.Column(db.Float, default=0.0)
-
     stock_minimo = db.Column(db.Float, default=0.0)
-    stock_comprometido = db.Column(db.Float, default=0.0)  # en unidades físicas
-    stock_comprometido_metros = db.Column(db.Float, default=0.0)  # en metros
+    stock_comprometido = db.Column(db.Float, default=0.0)
+    stock_comprometido_metros = db.Column(db.Float, default=0.0)
 
     fecha_vencimiento = db.Column(db.Date, nullable=True)
     ancho_rollo = db.Column(db.Float, nullable=True)
-    largo_rollo = db.Column(db.Float, nullable=True)  # metros por rollo (factor de conversión)
+    largo_rollo = db.Column(db.Float, nullable=True)
     es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
     atributos_extra = db.Column(db.JSON, nullable=True, default={})
 
-    # Relaciones principales
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
-    # Relaciones obsoletas (se mantienen por compatibilidad, pero no se usan en UI)
     area_id = db.Column(db.Integer, db.ForeignKey('areas.id'), nullable=True)
     ubicacion_id = db.Column(db.Integer, db.ForeignKey('ubicaciones.id'), nullable=True)
     tipo_producto_id = db.Column(db.Integer, db.ForeignKey('tipos_producto.id'), nullable=True)
@@ -389,30 +402,25 @@ class Producto(db.Model):
         self.atributos_extra[key] = value
 
     def get_stock_metros_disponible(self):
-        """Retorna el stock disponible en metros (stock_metros - comprometido_metros)"""
         return (self.stock_metros or 0) - (self.stock_comprometido_metros or 0)
 
     def get_stock_metros_total(self):
-        """Retorna el stock total en metros"""
         return self.stock_metros or 0
 
     def get_stock_unidades_disponible(self):
-        """Retorna el stock disponible en unidades físicas"""
         return (self.stock or 0) - (self.stock_comprometido or 0)
 
     def get_stock_unidades_total(self):
-        """Retorna el stock total en unidades físicas"""
         return self.stock or 0
 
     def get_metros_por_unidad(self):
-        """Retorna los metros por unidad física (largo_rollo)"""
         return self.largo_rollo or 1.0
 
     def __repr__(self):
         return f'<Producto {self.nombre}>'
 
 # ==========================================
-# MODELO DE MOVIMIENTO
+# MODELO DE MOVIMIENTO (CON proveedor_id)
 # ==========================================
 class Movimiento(db.Model):
     __tablename__ = 'movimientos'
@@ -420,13 +428,14 @@ class Movimiento(db.Model):
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
     tipo = db.Column(db.String(30), nullable=False)
     cantidad = db.Column(db.Float, nullable=False)
-    cantidad_metros = db.Column(db.Float, nullable=True)  # para movimientos en metros
+    cantidad_metros = db.Column(db.Float, nullable=True)
     costo_unitario = db.Column(db.Float, nullable=True)
     costo_total = db.Column(db.Float, nullable=True)
     comentario = db.Column(db.String(200), nullable=True)
     fecha = db.Column(db.DateTime, default=datetime.utcnow)
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'), nullable=True)
 
     usuario = db.relationship('User', backref='movimientos')
     orden = db.relationship('Order', backref='movimientos')
@@ -442,8 +451,8 @@ class OrdenProducto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
     producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False)
-    cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)  # en metros
-    cantidad_real = db.Column(db.Float, nullable=True)  # en metros
+    cantidad_estimada = db.Column(db.Float, nullable=False, default=0.0)
+    cantidad_real = db.Column(db.Float, nullable=True)
     orden = db.relationship('Order', backref='productos_asignados')
     producto = db.relationship('Producto', backref='ordenes_asignadas')
 
@@ -453,7 +462,6 @@ class OrdenProducto(db.Model):
 # ==========================================
 # MODELOS DEL MÓDULO EMPLEADOS
 # ==========================================
-
 class Empleado(db.Model):
     __tablename__ = 'empleados'
     id = db.Column(db.Integer, primary_key=True)
@@ -465,7 +473,7 @@ class Empleado(db.Model):
     tarifa_normal = db.Column(db.Float, default=1.00)
     tarifa_nocturna = db.Column(db.Float, default=1.30)
     tarifa_fin_semana = db.Column(db.Float, default=1.50)
-    area = db.Column(db.String(50), nullable=True)  # <--- Campo de texto para área
+    area = db.Column(db.String(50), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -489,8 +497,8 @@ class Asistencia(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     empleado_id = db.Column(db.Integer, db.ForeignKey('empleados.id'), nullable=False)
     timestamp = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    tipo = db.Column(db.String(10), nullable=False)  # 'entrada' o 'salida'
-    comentario = db.Column(db.String(200), nullable=True)  # NUEVO: comentario opcional
+    tipo = db.Column(db.String(10), nullable=False)
+    comentario = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.now)
 
     def __repr__(self):
@@ -499,9 +507,9 @@ class Asistencia(db.Model):
 class PeriodoNomina(db.Model):
     __tablename__ = 'periodos_nomina'
     id = db.Column(db.Integer, primary_key=True)
-    fecha_inicio = db.Column(db.Date, nullable=False)  # viernes
-    fecha_fin = db.Column(db.Date, nullable=False)    # jueves
-    estado = db.Column(db.String(20), default='abierto')  # abierto, cerrado, aprobado
+    fecha_inicio = db.Column(db.Date, nullable=False)
+    fecha_fin = db.Column(db.Date, nullable=False)
+    estado = db.Column(db.String(20), default='abierto')
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -514,7 +522,7 @@ class PeriodoNomina(db.Model):
     def get_periodo_actual(cls):
         hoy = datetime.utcnow().date()
         dia = hoy.weekday()
-        if dia >= 4:  # viernes(4), sábado(5), domingo(6)
+        if dia >= 4:
             diff = dia - 4
         else:
             diff = dia + 3
@@ -539,7 +547,6 @@ class PeriodoNomina(db.Model):
             db.session.commit()
         return periodo
 
-
 class DetalleNomina(db.Model):
     __tablename__ = 'detalles_nomina'
     id = db.Column(db.Integer, primary_key=True)
@@ -555,3 +562,229 @@ class DetalleNomina(db.Model):
     def __repr__(self):
         return f'<DetalleNomina {self.empleado_id} {self.periodo_id}>'
 
+# ==========================================
+# MODELO DE CONFIGURACIÓN
+# ==========================================
+class Configuracion(db.Model):
+    __tablename__ = 'configuracion'
+    id = db.Column(db.Integer, primary_key=True)
+    clave = db.Column(db.String(100), unique=True, nullable=False)
+    valor = db.Column(db.Text, nullable=False)
+    descripcion = db.Column(db.String(255))
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<Configuracion {self.clave}={self.valor}>'
+
+    @classmethod
+    def get_config(cls, clave, default=None):
+        registro = cls.query.filter_by(clave=clave).first()
+        if registro:
+            return registro.valor
+        return default
+
+    @classmethod
+    def set_config(cls, clave, valor):
+        registro = cls.query.filter_by(clave=clave).first()
+        if registro:
+            registro.valor = valor
+        else:
+            registro = cls(clave=clave, valor=valor)
+            db.session.add(registro)
+        db.session.commit()
+
+
+# ==========================================
+# MODELO DE PERMISOS (NUEVO PARA FASE 4)
+# ==========================================
+class Permiso(db.Model):
+    __tablename__ = 'permisos'
+    id = db.Column(db.Integer, primary_key=True)
+    rol = db.Column(db.String(20), nullable=False)
+    modulo = db.Column(db.String(30), nullable=False)
+    permiso = db.Column(db.String(10), nullable=False)  # 'view' o 'edit'
+    __table_args__ = (db.UniqueConstraint('rol', 'modulo', 'permiso', name='uq_permiso'),)
+
+    def __repr__(self):
+        return f'<Permiso {self.rol} {self.modulo} {self.permiso}>'
+
+    @classmethod
+    def get_role_permissions(cls, rol):
+        """Devuelve dict {modulo: [permisos]} para un rol."""
+        permisos = cls.query.filter_by(rol=rol).all()
+        result = {}
+        for p in permisos:
+            if p.modulo not in result:
+                result[p.modulo] = []
+            result[p.modulo].append(p.permiso)
+        return result
+
+    @classmethod
+    def has_permission(cls, rol, modulo, permiso):
+        """Verifica si un rol tiene un permiso específico."""
+        if rol == 'admin':
+            return True
+        return cls.query.filter_by(rol=rol, modulo=modulo, permiso=permiso).first() is not None
+
+    @classmethod
+    def set_permission(cls, rol, modulo, permiso, enabled):
+        """Activa o desactiva un permiso."""
+        if rol == 'admin':
+            return
+        if enabled:
+            if not cls.query.filter_by(rol=rol, modulo=modulo, permiso=permiso).first():
+                db.session.add(cls(rol=rol, modulo=modulo, permiso=permiso))
+        else:
+            cls.query.filter_by(rol=rol, modulo=modulo, permiso=permiso).delete()
+        db.session.commit()
+
+    @classmethod
+    def init_default_permissions(cls):
+        """Crea los permisos por defecto para roles no-admin."""
+        defaults = {
+            'operario': {
+                'ordenes': ['view', 'edit'],
+                'workflow': ['view'],
+                'clientes': ['view'],
+                'inventario': ['view'],
+                'etiquetas': ['view'],
+                'carteles': ['view'],
+                'empleados': [],
+                'usuarios': [],
+                'configuracion': []
+            },
+            'disenador': {
+                'ordenes': ['view', 'edit'],
+                'workflow': ['view', 'edit'],
+                'clientes': ['view'],
+                'inventario': ['view'],
+                'etiquetas': ['view', 'edit'],
+                'carteles': ['view', 'edit'],
+                'empleados': [],
+                'usuarios': [],
+                'configuracion': []
+            },
+            'comercial': {
+                'ordenes': ['view', 'edit'],
+                'workflow': ['view'],
+                'clientes': ['view', 'edit'],
+                'inventario': ['view'],
+                'etiquetas': ['view'],
+                'carteles': ['view'],
+                'empleados': [],
+                'usuarios': [],
+                'configuracion': []
+            },
+            'economico': {
+                'ordenes': ['view'],
+                'workflow': ['view'],
+                'clientes': ['view'],
+                'inventario': ['view', 'edit'],
+                'etiquetas': ['view'],
+                'carteles': ['view'],
+                'empleados': ['view'],
+                'usuarios': [],
+                'configuracion': []
+            }
+        }
+        for rol, modulos in defaults.items():
+            for modulo, permisos in modulos.items():
+                for permiso in permisos:
+                    if not cls.query.filter_by(rol=rol, modulo=modulo, permiso=permiso).first():
+                        db.session.add(cls(rol=rol, modulo=modulo, permiso=permiso))
+        db.session.commit()
+
+# ==========================================
+# MODELO DE EVENTO (CALENDARIO)
+# ==========================================
+class Evento(db.Model):
+    __tablename__ = 'eventos'
+    id = db.Column(db.Integer, primary_key=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text, nullable=True)
+    fecha_inicio = db.Column(db.DateTime, nullable=False)
+    fecha_fin = db.Column(db.DateTime, nullable=True)
+    tipo = db.Column(db.String(30), nullable=False, default='personalizado')
+    color = db.Column(db.String(20), nullable=True)
+    orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+
+    orden = db.relationship('Order', backref='eventos')
+    usuario = db.relationship('User', backref='eventos_creados')
+
+    def __repr__(self):
+        return f'<Evento {self.titulo}>'
+
+    @classmethod
+    def crear_desde_orden(cls, order):
+        """Crea o actualiza un evento a partir de una orden."""
+        if not order.fecha_entregado:
+            # Si no hay fecha de entrega, eliminar evento asociado si existe
+            evento = cls.query.filter_by(orden_id=order.id, tipo='entrega').first()
+            if evento:
+                db.session.delete(evento)
+                db.session.commit()
+            return
+        
+        # Buscar evento existente
+        evento = cls.query.filter_by(orden_id=order.id, tipo='entrega').first()
+        if evento:
+            # Actualizar
+            evento.fecha_inicio = order.fecha_entregado
+            evento.fecha_fin = order.fecha_entregado + timedelta(hours=1)
+            evento.titulo = f'Entrega: {order.order_num or "Orden"} - {order.client.nombre if order.client else "Sin cliente"}'
+            evento.descripcion = order.descripcion or ''
+            evento.color = '#f59e0b'  # color para entregas
+        else:
+            # Crear nuevo
+            evento = cls(
+                titulo=f'Entrega: {order.order_num or "Orden"} - {order.client.nombre if order.client else "Sin cliente"}',
+                descripcion=order.descripcion or '',
+                fecha_inicio=order.fecha_entregado,
+                fecha_fin=order.fecha_entregado + timedelta(hours=1),
+                tipo='entrega',
+                color='#f59e0b',
+                orden_id=order.id,
+                usuario_id=order.created_by_id
+            )
+            db.session.add(evento)
+        db.session.commit()
+        return evento
+
+    @classmethod
+    def get_eventos_rango(cls, inicio, fin, usuario=None):
+        """Obtiene eventos en un rango de fechas, opcionalmente filtrados por usuario."""
+        query = cls.query.filter(
+            cls.fecha_inicio >= inicio,
+            cls.fecha_inicio <= fin
+        )
+        if usuario and usuario.role != 'admin':
+            # Si no es admin, solo ver eventos que le pertenecen o que sean públicos
+            query = query.filter(
+                (cls.usuario_id == usuario.id) | (cls.tipo == 'entrega')
+            )
+        return query.all()
+
+# ==========================================
+# FUNCIÓN DE INICIALIZACIÓN DE CONFIGURACIÓN
+# ==========================================
+def init_configuracion():
+    """Crea las claves de configuración por defecto si no existen."""
+    from app import db
+    claves_por_defecto = {
+        'empresa_nombre': 'TraviesoPrint',
+        'empresa_subtitulo': 'Gestión para talleres de impresión',
+        'logo_url': 'img/logo_default.png',
+        'login_bg_url': 'img/login_bg_default.jpg',
+        'favicon_url': 'img/favicon_default.ico',
+        'color_primario': '#1c1c1e',
+        'color_secundario': '#a8854f',
+        'instalacion_completada': 'false'
+    }
+    for clave, valor in claves_por_defecto.items():
+        if not Configuracion.query.filter_by(clave=clave).first():
+            config = Configuracion(clave=clave, valor=valor)
+            db.session.add(config)
+    db.session.commit()

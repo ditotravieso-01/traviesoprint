@@ -1,0 +1,667 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración del Workflow · CairoStudio{% endblock %}
+
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span style="font-size:28px; font-weight:700;">⚙️ Configuración del Workflow</span>
+    <span style="font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
+        Personaliza columnas, permisos y notificaciones
+    </span>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* ===== BASE ===== */
+    .admin-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .section-card {
+        background: white; border-radius: 20px; padding: 24px 28px;
+        margin-bottom: 24px; border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .section-card h3 {
+        font-family: 'Playfair Display', serif; font-size: 20px;
+        margin-bottom: 16px; border-bottom: 1px solid #f0ece8; padding-bottom: 8px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .section-card h3 .badge-role {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px; font-weight: 600; background: #f0ece8; padding: 2px 12px;
+        border-radius: 30px; color: #555;
+    }
+    .btn {
+        padding: 6px 16px; border-radius: 30px; border: none; font-weight: 600;
+        font-size: 13px; cursor: pointer; display: inline-flex; align-items: center;
+        gap: 6px; background: #1c1c1e; color: white; transition: all 0.2s;
+        font-family: 'Inter', sans-serif; text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-ghost { background: transparent; border: none; color: #8e8e93; cursor: pointer; }
+    .btn-ghost:hover { color: #1c1c1e; }
+
+    .form-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+    .form-row label { font-weight: 600; min-width: 100px; }
+    .form-row input, .form-row select { padding: 6px 10px; border: 1.5px solid #e0dcd8; border-radius: 30px; font-size: 13px; background: white; }
+
+    /* ===== TABLAS ===== */
+    .table-wrap { overflow-x: auto; }
+    .admin-table { width: 100%; border-collapse: collapse; font-size: 14px; min-width: 600px; }
+    .admin-table th { text-align: left; padding: 8px 10px; font-weight: 600; color: #555; border-bottom: 2px solid #e8e0da; font-size: 12px; }
+    .admin-table td { padding: 6px 10px; border-bottom: 1px solid #f0ece8; vertical-align: middle; }
+    .admin-table tr:hover td { background: #fafaf9; }
+    .admin-table .col-id { font-weight: 600; color: #1c1c1e; }
+    .admin-table .checkbox-cell { text-align: center; }
+    .admin-table .checkbox-cell input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1c1c1e; cursor: pointer; }
+    .admin-table .btn-cell { white-space: nowrap; }
+
+    /* ===== NOTIFICACIONES (escritorio) ===== */
+    .notif-table th:first-child { min-width: 160px; }
+    .notif-table .origen-destino { font-weight: 500; }
+
+    /* ===== NOTIFICACIONES (móvil) ===== */
+    .notif-mobile-list { display: none; flex-direction: column; gap: 12px; }
+    .notif-mobile-card {
+        background: #fafaf9; border-radius: 16px; padding: 14px 16px;
+        border: 1px solid #f0ece8;
+    }
+    .notif-mobile-card .header {
+        display: flex; justify-content: space-between; align-items: center;
+        font-weight: 600; font-size: 15px; margin-bottom: 8px;
+    }
+    .notif-mobile-card .header .delete-btn { color: #dc2626; cursor: pointer; background: none; border: none; font-size: 18px; }
+    .notif-mobile-card .chips {
+        display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+    }
+    .notif-mobile-card .chip {
+        background: #e8e0da; padding: 4px 14px; border-radius: 30px;
+        font-size: 12px; font-weight: 500; display: inline-flex; align-items: center; gap: 4px;
+        border: 1px solid transparent; transition: all 0.2s;
+    }
+    .notif-mobile-card .chip.selected { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+    .notif-mobile-card .chip .remove-chip { cursor: pointer; font-weight: 700; margin-left: 4px; }
+    .notif-mobile-card .add-role-btn {
+        background: none; border: 1px dashed #d2d2d7; border-radius: 30px;
+        padding: 4px 14px; font-size: 12px; cursor: pointer; color: #8e8e93;
+        transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .notif-mobile-card .add-role-btn:hover { border-color: #a8854f; color: #1c1c1e; }
+    .notif-mobile-card .role-selector {
+        display: none; margin-top: 6px; gap: 6px; flex-wrap: wrap;
+    }
+    .notif-mobile-card .role-selector.open { display: flex; }
+    .notif-mobile-card .role-selector .role-option {
+        background: #f0ece8; padding: 4px 14px; border-radius: 30px;
+        font-size: 12px; cursor: pointer; border: 1px solid transparent;
+        transition: all 0.2s; font-weight: 500;
+    }
+    .notif-mobile-card .role-selector .role-option:hover { background: #e0dcd8; }
+    .notif-mobile-card .role-selector .role-option.added { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+
+    /* ===== PERMISOS (móvil) ===== */
+    .permisos-mobile-list { display: none; flex-direction: column; gap: 12px; }
+    .permiso-mobile-card {
+        background: #fafaf9; border-radius: 16px; padding: 14px 16px;
+        border: 1px solid #f0ece8;
+    }
+    .permiso-mobile-card .header {
+        font-weight: 600; font-size: 15px; margin-bottom: 6px;
+    }
+    .permiso-mobile-card .columns-chips {
+        display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .permiso-mobile-card .col-chip {
+        background: #e8e0da; padding: 4px 14px; border-radius: 30px;
+        font-size: 12px; font-weight: 500; cursor: pointer; border: 1px solid transparent;
+        transition: all 0.2s;
+    }
+    .permiso-mobile-card .col-chip.selected { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+    .permiso-mobile-card .col-chip:hover { background: #d2d2d7; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+        .admin-container { padding: 0 10px; }
+        .section-card { padding: 16px; }
+        .form-row { flex-direction: column; align-items: stretch; gap: 8px; }
+        .form-row label { min-width: auto; }
+
+        /* Ocultar tablas en móvil */
+        .notif-table-wrap { display: none; }
+        .permisos-table-wrap { display: none; }
+        .notif-mobile-list { display: flex; }
+        .permisos-mobile-list { display: flex; }
+
+        /* Botones grandes */
+        .btn { padding: 10px 20px; font-size: 16px; }
+        .btn-sm { padding: 8px 16px; font-size: 14px; }
+
+        /* Columnas: lista compacta */
+        .admin-table { font-size: 13px; min-width: auto; width: 100%; }
+        .admin-table th, .admin-table td { padding: 6px 8px; }
+        .admin-table input[type="text"] { width: 100%; box-sizing: border-box; }
+        .admin-table .actions { gap: 4px; }
+        .admin-table .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+        /* Cabeceras */
+        .section-card h3 { font-size: 18px; flex-wrap: wrap; }
+        .section-card h3 .badge-role { font-size: 10px; }
+
+        /* Notificaciones móvil: chips más grandes */
+        .notif-mobile-card .chip { font-size: 14px; padding: 6px 16px; }
+        .notif-mobile-card .add-role-btn { font-size: 14px; padding: 6px 16px; }
+        .notif-mobile-card .role-selector .role-option { font-size: 14px; padding: 6px 16px; }
+
+        /* Permisos móvil */
+        .permiso-mobile-card .col-chip { font-size: 14px; padding: 6px 16px; }
+    }
+
+    @media (max-width: 480px) {
+        .section-card { padding: 12px; }
+        .admin-table { font-size: 12px; }
+        .admin-table th, .admin-table td { padding: 4px 6px; }
+        .btn { padding: 8px 16px; font-size: 15px; }
+        .form-row input, .form-row select { padding: 10px 14px; font-size: 15px; }
+    }
+
+    /* ===== TOAST ===== */
+    .toast-message {
+        position: fixed; bottom: 20px; right: 20px; background: #1c1c1e; color: white;
+        padding: 12px 24px; border-radius: 30px; font-weight: 500; z-index: 10000;
+        font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .toast-message.show { opacity: 1; }
+    .toast-message.success { background: #10b981; }
+    .toast-message.error { background: #dc2626; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+    <div id="toast" class="toast-message"></div>
+
+    <!-- ============================================================ -->
+    <!-- COLUMNAS -->
+    <!-- ============================================================ -->
+    <div class="section-card">
+        <h3><i class="fas fa-columns"></i> Columnas del Workflow</h3>
+        <div class="form-row">
+            <label>Nueva columna:</label>
+            <input type="text" id="nuevaColumnaNombre" placeholder="Nombre" style="flex:1; min-width:150px;">
+            <input type="text" id="nuevaColumnaIcono" placeholder="Icono (ej. fa-clock)" style="width:150px;">
+            <button class="btn btn-success" onclick="agregarColumna()"><i class="fas fa-plus"></i> Añadir</button>
+        </div>
+        <div class="table-wrap">
+            <table class="admin-table" id="tablaColumnas">
+                <thead><tr><th>ID</th><th>Nombre</th><th>Icono</th><th>Acciones</th></tr></thead>
+                <tbody id="cuerpoColumnas">
+                    {% for col in columnas %}
+                    <tr data-id="{{ col.id }}">
+                        <td class="col-id">{{ col.id }}</td>
+                        <td><input type="text" class="edit-nombre" value="{{ col.nombre }}" style="border:none;background:transparent;font-weight:500;width:100%;"></td>
+                        <td><input type="text" class="edit-icono" value="{{ col.icono }}" style="border:none;background:transparent;width:100%;"></td>
+                        <td class="actions">
+                            <button class="btn btn-warning btn-sm" onclick="guardarColumna(this)"><i class="fas fa-save"></i></button>
+                            <button class="btn btn-danger btn-sm" onclick="eliminarColumna(this)"><i class="fas fa-trash-alt"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- PERMISOS POR ROL -->
+    <!-- ============================================================ -->
+    <div class="section-card">
+        <h3><i class="fas fa-user-lock"></i> Permisos de movimiento por rol</h3>
+        <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
+            Marca las columnas desde las que cada rol puede mover una orden.
+        </p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn btn-sm btn-outline" onclick="toggleAllPermisos(true)">✅ Seleccionar todos</button>
+            <button class="btn btn-sm btn-outline" onclick="toggleAllPermisos(false)">❌ Deseleccionar todos</button>
+        </div>
+        <!-- Tabla (escritorio) -->
+        <div class="table-wrap permisos-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Rol</th>
+                        {% for col_id in columnas_ids %}<th>{{ col_id }}</th>{% endfor %}
+                    </tr>
+                </thead>
+                <tbody id="permisosTableBody">
+                    {% for rol in roles_list %}
+                    <tr>
+                        <td><strong>{{ rol }}</strong></td>
+                        {% for col_id in columnas_ids %}
+                        <td class="checkbox-cell">
+                            <input type="checkbox" class="perm-check" data-rol="{{ rol }}" value="{{ col_id }}"
+                                   {% if col_id in permisos.get(rol, []) %}checked{% endif %}>
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Móvil: tarjetas -->
+        <div class="permisos-mobile-list" id="permisosMobileList">
+            {% for rol in roles_list %}
+            <div class="permiso-mobile-card" data-rol="{{ rol }}">
+                <div class="header">{{ rol }}</div>
+                <div class="columns-chips">
+                    {% for col_id in columnas_ids %}
+                    <span class="col-chip {% if col_id in permisos.get(rol, []) %}selected{% endif %}" data-col="{{ col_id }}">{{ col_id }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- NOTIFICACIONES POR TRANSICIÓN (NUEVA INTERFAZ) -->
+    <!-- ============================================================ -->
+    <div class="section-card">
+        <h3><i class="fas fa-bell"></i> Notificaciones por transición</h3>
+        <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
+            Define qué roles reciben notificación al mover una orden de un origen a un destino.
+        </p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+            <button class="btn btn-sm btn-outline" onclick="seleccionarTodasNotificaciones(true)">✅ Seleccionar todos</button>
+            <button class="btn btn-sm btn-outline" onclick="seleccionarTodasNotificaciones(false)">❌ Deseleccionar todos</button>
+            <button class="btn btn-sm btn-success" onclick="agregarTransicion()"><i class="fas fa-plus"></i> Añadir transición</button>
+        </div>
+        <!-- Tabla (escritorio) -->
+        <div class="table-wrap notif-table-wrap">
+            <table class="admin-table notif-table" id="notifTable">
+                <thead>
+                    <tr>
+                        <th style="min-width:160px;">Origen → Destino</th>
+                        {% for rol in todos_roles %}
+                        <th style="text-align:center; font-size:11px;">{{ rol }}</th>
+                        {% endfor %}
+                        <th style="text-align:center;">Eliminar</th>
+                    </tr>
+                </thead>
+                <tbody id="notifTableBody">
+                    {% for notif in notificaciones|sort(attribute='origen') %}
+                    <tr data-origen="{{ notif.origen }}" data-destino="{{ notif.destino }}">
+                        <td class="origen-destino">{{ notif.origen }} → {{ notif.destino }}</td>
+                        {% for rol in todos_roles %}
+                        <td class="checkbox-cell">
+                            <input type="checkbox" class="notif-check" data-origen="{{ notif.origen }}" data-destino="{{ notif.destino }}" value="{{ rol }}"
+                                   {% if rol in notif.roles %}checked{% endif %}>
+                        </td>
+                        {% endfor %}
+                        <td class="checkbox-cell">
+                            <button class="btn btn-danger btn-sm" onclick="eliminarTransicion(this)"><i class="fas fa-times"></i></button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <!-- Móvil: tarjetas con chips -->
+        <div class="notif-mobile-list" id="notifMobileList">
+            {% for notif in notificaciones|sort(attribute='origen') %}
+            <div class="notif-mobile-card" data-origen="{{ notif.origen }}" data-destino="{{ notif.destino }}">
+                <div class="header">
+                    <span>{{ notif.origen }} → {{ notif.destino }}</span>
+                    <button class="delete-btn" onclick="eliminarTransicion(this)">&times;</button>
+                </div>
+                <div class="chips" id="chips-{{ notif.origen }}-{{ notif.destino }}">
+                    {% for rol in todos_roles %}
+                        {% if rol in notif.roles %}
+                        <span class="chip selected" data-rol="{{ rol }}">{{ rol }} <span class="remove-chip" onclick="removerRol(this)">×</span></span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                <button class="add-role-btn" onclick="toggleRoleSelector(this)">➕ Añadir rol</button>
+                <div class="role-selector">
+                    {% for rol in todos_roles %}
+                        {% if rol not in notif.roles %}
+                        <span class="role-option" onclick="agregarRolMobile(this)">{{ rol }}</span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- GUARDAR -->
+    <!-- ============================================================ -->
+    <div style="display:flex; gap:12px; margin:20px 0 40px; flex-wrap:wrap;">
+        <button class="btn" onclick="guardarConfiguracion()" style="padding:12px 32px; font-size:16px;">
+            <i class="fas fa-save"></i> Guardar configuración
+        </button>
+        <button class="btn btn-outline" onclick="window.location.href='{{ url_for('workflow.board') }}'">
+            <i class="fas fa-arrow-left"></i> Volver al Workflow
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // TOAST
+    // ============================================================
+    function mostrarToast(mensaje, tipo='') {
+        const toast = document.getElementById('toast');
+        toast.textContent = mensaje;
+        toast.className = 'toast-message ' + tipo;
+        toast.classList.add('show');
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => toast.classList.remove('show'), 4000);
+    }
+
+    // ============================================================
+    // COLUMNAS
+    // ============================================================
+    function agregarColumna() {
+        const nombre = document.getElementById('nuevaColumnaNombre').value.trim();
+        const icono = document.getElementById('nuevaColumnaIcono').value.trim() || 'fa-circle';
+        if (!nombre) { mostrarToast('El nombre es obligatorio.', 'error'); return; }
+        const id = nombre.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        if (document.querySelector(`#cuerpoColumnas tr[data-id="${id}"]`)) {
+            mostrarToast('Ya existe una columna con ese ID.', 'error');
+            return;
+        }
+        const tbody = document.getElementById('cuerpoColumnas');
+        const tr = document.createElement('tr');
+        tr.dataset.id = id;
+        tr.innerHTML = `
+            <td class="col-id">${id}</td>
+            <td><input type="text" class="edit-nombre" value="${nombre}" style="border:none;background:transparent;font-weight:500;width:100%;"></td>
+            <td><input type="text" class="edit-icono" value="${icono}" style="border:none;background:transparent;width:100%;"></td>
+            <td class="actions">
+                <button class="btn btn-warning btn-sm" onclick="guardarColumna(this)"><i class="fas fa-save"></i></button>
+                <button class="btn btn-danger btn-sm" onclick="eliminarColumna(this)"><i class="fas fa-trash-alt"></i></button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        document.getElementById('nuevaColumnaNombre').value = '';
+        document.getElementById('nuevaColumnaIcono').value = '';
+        mostrarToast('Columna añadida localmente. Guarda los cambios.', 'success');
+        actualizarUI();
+    }
+
+    function guardarColumna(btn) {
+        const tr = btn.closest('tr');
+        const id = tr.dataset.id;
+        const nombre = tr.querySelector('.edit-nombre').value.trim();
+        const icono = tr.querySelector('.edit-icono').value.trim() || 'fa-circle';
+        if (!nombre) { mostrarToast('El nombre no puede estar vacío.', 'error'); return; }
+        mostrarToast(`Columna "${nombre}" actualizada.`, 'success');
+    }
+
+    function eliminarColumna(btn) {
+        if (!confirm('¿Eliminar esta columna? También se eliminarán sus permisos y transiciones.')) return;
+        const tr = btn.closest('tr');
+        tr.remove();
+        mostrarToast('Columna eliminada.', 'success');
+        actualizarUI();
+    }
+
+    // ============================================================
+    // ACTUALIZAR UI (sincronizar selects y tablas)
+    // ============================================================
+    function actualizarUI() {
+        // Esta función se encarga de sincronizar los chips móviles y la tabla de permisos
+        // con los cambios en columnas. Como es complejo, simplemente recargamos la página
+        // después de guardar.
+        // Para cambios en vivo, podemos hacer más, pero recargar es más seguro.
+    }
+
+    // ============================================================
+    // PERMISOS (tabla y móvil)
+    // ============================================================
+    function toggleAllPermisos(checked) {
+        document.querySelectorAll('.perm-check').forEach(cb => cb.checked = checked);
+        // Móvil: actualizar chips
+        document.querySelectorAll('.permiso-mobile-card .col-chip').forEach(chip => {
+            chip.classList.toggle('selected', checked);
+        });
+    }
+
+    // Event listeners para chips de permisos (móvil)
+    document.addEventListener('click', function(e) {
+        const chip = e.target.closest('.permiso-mobile-card .col-chip');
+        if (chip) {
+            chip.classList.toggle('selected');
+            const card = chip.closest('.permiso-mobile-card');
+            const rol = card.dataset.rol;
+            const col = chip.dataset.col;
+            // Sincronizar checkbox en tabla
+            const cb = document.querySelector(`.perm-check[data-rol="${rol}"][value="${col}"]`);
+            if (cb) cb.checked = chip.classList.contains('selected');
+        }
+    });
+
+    // ============================================================
+    // NOTIFICACIONES (tabla y móvil)
+    // ============================================================
+    function seleccionarTodasNotificaciones(checked) {
+        document.querySelectorAll('.notif-check').forEach(cb => cb.checked = checked);
+        // Móvil: actualizar chips
+        document.querySelectorAll('.notif-mobile-card .chip').forEach(chip => {
+            chip.classList.toggle('selected', checked);
+        });
+    }
+
+    // Eliminar transición (ambas vistas)
+    function eliminarTransicion(btn) {
+        if (!confirm('¿Eliminar esta transición?')) return;
+        const row = btn.closest('tr');
+        if (row) {
+            row.remove();
+        } else {
+            // Móvil: eliminar tarjeta
+            const card = btn.closest('.notif-mobile-card');
+            if (card) card.remove();
+        }
+        mostrarToast('Transición eliminada. Guarda los cambios.', 'success');
+    }
+
+    // Agregar transición (desde escritorio)
+    function agregarTransicion() {
+        // Usamos un prompt simple para elegir origen y destino
+        // En una versión más elaborada usaríamos un modal
+        const origen = prompt('Origen (ID de columna):');
+        if (!origen) return;
+        const destino = prompt('Destino (ID de columna):');
+        if (!destino) return;
+        if (origen === destino) { mostrarToast('Origen y destino no pueden ser iguales.', 'error'); return; }
+        // Verificar duplicado
+        if (document.querySelector(`#notifTableBody tr[data-origen="${origen}"][data-destino="${destino}"]`)) {
+            mostrarToast('Esta transición ya existe.', 'error');
+            return;
+        }
+        // Añadir a tabla
+        const tbody = document.getElementById('notifTableBody');
+        const tr = document.createElement('tr');
+        tr.dataset.origen = origen;
+        tr.dataset.destino = destino;
+        let html = `<td class="origen-destino">${origen} → ${destino}</td>`;
+        {% for rol in todos_roles %}
+        html += `<td class="checkbox-cell"><input type="checkbox" class="notif-check" data-origen="${origen}" data-destino="${destino}" value="{{ rol }}"></td>`;
+        {% endfor %}
+        html += `<td class="checkbox-cell"><button class="btn btn-danger btn-sm" onclick="eliminarTransicion(this)"><i class="fas fa-times"></i></button></td>`;
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+
+        // Añadir a móvil
+        const mobileList = document.getElementById('notifMobileList');
+        const card = document.createElement('div');
+        card.className = 'notif-mobile-card';
+        card.dataset.origen = origen;
+        card.dataset.destino = destino;
+        card.innerHTML = `
+            <div class="header">
+                <span>${origen} → ${destino}</span>
+                <button class="delete-btn" onclick="eliminarTransicion(this)">&times;</button>
+            </div>
+            <div class="chips" id="chips-${origen}-${destino}"></div>
+            <button class="add-role-btn" onclick="toggleRoleSelector(this)">➕ Añadir rol</button>
+            <div class="role-selector">
+                {% for rol in todos_roles %}
+                <span class="role-option" onclick="agregarRolMobile(this)">{{ rol }}</span>
+                {% endfor %}
+            </div>
+        `;
+        mobileList.appendChild(card);
+        mostrarToast('Transición añadida. Guarda los cambios.', 'success');
+    }
+
+    // Funciones para móvil (chips)
+    function toggleRoleSelector(btn) {
+        const selector = btn.nextElementSibling;
+        if (selector) selector.classList.toggle('open');
+    }
+
+    function agregarRolMobile(el) {
+        const card = el.closest('.notif-mobile-card');
+        const origen = card.dataset.origen;
+        const destino = card.dataset.destino;
+        const rol = el.textContent.trim();
+        // Añadir chip
+        const chipsContainer = card.querySelector('.chips');
+        const chip = document.createElement('span');
+        chip.className = 'chip selected';
+        chip.dataset.rol = rol;
+        chip.innerHTML = `${rol} <span class="remove-chip" onclick="removerRol(this)">×</span>`;
+        chipsContainer.appendChild(chip);
+        // Ocultar selector y quitar opción de la lista
+        const selector = card.querySelector('.role-selector');
+        el.remove();
+        if (selector.children.length === 0) {
+            selector.classList.remove('open');
+        }
+        // Sincronizar checkbox en tabla
+        const cb = document.querySelector(`.notif-check[data-origen="${origen}"][data-destino="${destino}"][value="${rol}"]`);
+        if (cb) cb.checked = true;
+    }
+
+    function removerRol(el) {
+        const chip = el.closest('.chip');
+        if (!chip) return;
+        const card = chip.closest('.notif-mobile-card');
+        const origen = card.dataset.origen;
+        const destino = card.dataset.destino;
+        const rol = chip.dataset.rol;
+        // Desmarcar checkbox
+        const cb = document.querySelector(`.notif-check[data-origen="${origen}"][data-destino="${destino}"][value="${rol}"]`);
+        if (cb) cb.checked = false;
+        // Eliminar chip
+        chip.remove();
+        // Reinsertar opción en el selector
+        const selector = card.querySelector('.role-selector');
+        const option = document.createElement('span');
+        option.className = 'role-option';
+        option.textContent = rol;
+        option.onclick = function() { agregarRolMobile(this); };
+        selector.appendChild(option);
+    }
+
+    // ============================================================
+    // GUARDAR CONFIGURACIÓN
+    // ============================================================
+    function guardarConfiguracion() {
+        // 1. Columnas
+        const columnas = [];
+        document.querySelectorAll('#cuerpoColumnas tr').forEach(tr => {
+            const id = tr.dataset.id;
+            const nombre = tr.querySelector('.edit-nombre').value.trim();
+            const icono = tr.querySelector('.edit-icono').value.trim() || 'fa-circle';
+            if (nombre) columnas.push({ id, nombre, icono });
+        });
+
+        // 2. Permisos
+        const permisos = {};
+        document.querySelectorAll('.perm-check').forEach(cb => {
+            const rol = cb.dataset.rol;
+            if (!permisos[rol]) permisos[rol] = [];
+            if (cb.checked) permisos[rol].push(cb.value);
+        });
+
+        // 3. Notificaciones (desde tabla)
+        const notificaciones = [];
+        document.querySelectorAll('#notifTableBody tr').forEach(tr => {
+            const origen = tr.dataset.origen;
+            const destino = tr.dataset.destino;
+            const checks = tr.querySelectorAll('.notif-check:checked');
+            const roles = Array.from(checks).map(cb => cb.value);
+            if (origen && destino && roles.length) {
+                notificaciones.push({ origen, destino, roles });
+            }
+        });
+
+        const data = {
+            columnas: columnas,
+            permisos_mover: permisos,
+            movimiento_notificaciones: notificaciones,
+            rutas: {} // Se mantiene el default
+        };
+
+        fetch('{{ url_for("workflow.admin_guardar") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        })
+        .then(r => r.json())
+        .then(res => {
+            if (res.success) {
+                mostrarToast('✅ Configuración guardada correctamente.', 'success');
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                mostrarToast('❌ Error: ' + (res.error || 'Desconocido'), 'error');
+            }
+        })
+        .catch(err => {
+            mostrarToast('❌ Error de conexión.', 'error');
+            console.error(err);
+        });
+    }
+
+    // ============================================================
+    // SINCRONIZACIÓN INICIAL
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sincronizar chips móviles con la tabla al cargar
+        document.querySelectorAll('.notif-mobile-card').forEach(card => {
+            const origen = card.dataset.origen;
+            const destino = card.dataset.destino;
+            const chips = card.querySelectorAll('.chip');
+            chips.forEach(chip => {
+                const rol = chip.dataset.rol;
+                // Marcar checkbox correspondiente
+                const cb = document.querySelector(`.notif-check[data-origen="${origen}"][data-destino="${destino}"][value="${rol}"]`);
+                if (cb) cb.checked = chip.classList.contains('selected');
+            });
+        });
+
+        // Sincronizar chips de permisos
+        document.querySelectorAll('.permiso-mobile-card').forEach(card => {
+            const rol = card.dataset.rol;
+            card.querySelectorAll('.col-chip').forEach(chip => {
+                const col = chip.dataset.col;
+                const cb = document.querySelector(`.perm-check[data-rol="${rol}"][value="${col}"]`);
+                if (cb) cb.checked = chip.classList.contains('selected');
+            });
+        });
+    });
+</script>
+{% endblock %}

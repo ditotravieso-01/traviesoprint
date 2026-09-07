@@ -58,6 +58,7 @@
         position: relative;
         height: 250px;
         margin-top: 12px;
+        width: 100%;
     }
     .admin-actions {
         display: flex;
@@ -78,10 +79,193 @@
         letter-spacing: 0.5px;
         margin-right: 8px;
     }
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-copy { background: #8b5cf6; color: white; }
+    .btn-copy:hover { background: #7c3aed; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-admin { background: #6b7280; color: white; }
+    .btn-admin:hover { background: #4b5563; }
+    .badge {
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        display: inline-block;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ===== Tabla de movimientos (responsive) ===== */
+    .movimientos-table-wrap {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .movimientos-table-wrap table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        min-width: 0;
+    }
+    .movimientos-table-wrap th,
+    .movimientos-table-wrap td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        white-space: nowrap;
+        text-align: center;
+        vertical-align: middle;
+    }
+    .movimientos-table-wrap th {
+        font-weight: 600;
+        color: #8e8e93;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    @media (min-width: 769px) {
+        .movimientos-table-wrap td,
+        .movimientos-table-wrap th {
+            padding: 12px 16px;
+        }
+    }
+
     @media (max-width: 768px) {
-        .detail-grid { grid-template-columns: 1fr; }
-        .atributos-extra { grid-template-columns: 1fr; }
-        .chart-container { height: 200px; }
+        .movimientos-table-wrap {
+            overflow-x: visible;
+        }
+        .movimientos-table-wrap table,
+        .movimientos-table-wrap thead,
+        .movimientos-table-wrap tbody,
+        .movimientos-table-wrap tr,
+        .movimientos-table-wrap th,
+        .movimientos-table-wrap td {
+            display: block;
+        }
+        .movimientos-table-wrap thead {
+            display: none;
+        }
+        .movimientos-table-wrap tbody {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .movimientos-table-wrap tr {
+            background: white;
+            border-radius: 14px;
+            padding: 12px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            border: 1px solid #f0ece8;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .movimientos-table-wrap td {
+            border: none;
+            padding: 2px 0;
+            white-space: normal;
+            word-break: break-word;
+            text-align: left;
+            font-size: 14px;
+            width: 100%;
+        }
+        .movimientos-table-wrap td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #8e8e93;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .movimientos-table-wrap td:first-child {
+            order: 1;
+            font-weight: 500;
+            color: #555;
+        }
+        .movimientos-table-wrap td:nth-child(2) { order: 2; }
+        .movimientos-table-wrap td:nth-child(3) { order: 3; }
+        .movimientos-table-wrap td:nth-child(4) { order: 4; }
+        .movimientos-table-wrap td:nth-child(5) { order: 5; }
+        .movimientos-table-wrap td:nth-child(6) { order: 6; }
+        .movimientos-table-wrap td:nth-child(7) { order: 7; }
+        .movimientos-table-wrap td:nth-child(8) { order: 8; }
+        .movimientos-table-wrap td .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .detail-grid {
+            grid-template-columns: 1fr;
+        }
+        .atributos-extra {
+            grid-template-columns: 1fr;
+        }
+        .chart-container {
+            height: 200px;
+        }
+        .btn {
+            padding: 12px 20px;
+            font-size: 15px;
+            justify-content: center;
+            flex: 1 1 auto;
+        }
+        .btn-sm {
+            padding: 8px 14px;
+            font-size: 14px;
+        }
+        .admin-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .admin-actions .btn {
+            justify-content: center;
+        }
+        .acciones-superior {
+            flex-direction: column;
+            width: 100%;
+        }
+        .acciones-superior .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+    @media (max-width: 480px) {
+        .btn {
+            font-size: 14px;
+            padding: 10px 16px;
+        }
+        .btn-sm {
+            font-size: 13px;
+            padding: 6px 12px;
+        }
     }
 </style>
 {% endblock %}
@@ -91,15 +275,17 @@
     <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px; margin-bottom:16px;">
         <div class="detail-grid" style="flex:1;">
             <div class="detail-item"><span class="label">Categoría:</span><span class="value">{{ producto.categoria.nombre if producto.categoria else '—' }}</span></div>
-            <div class="detail-item"><span class="label">Unidad:</span><span class="value">{{ producto.unidad_rel.nombre if producto.unidad_rel else '—' }}</span></div>
+            <div class="detail-item"><span class="label">Unidad:</span><span class="value">{{ producto.unidad_rel.nombre if producto.unidad_rel else '—' }}{% if producto.unidad_rel and producto.unidad_rel.simbolo %} ({{ producto.unidad_rel.simbolo }}){% endif %}</span></div>
             <div class="detail-item"><span class="label">Costo unitario:</span><span class="value">${{ producto.costo|round(2) if producto.costo else '—' }}</span></div>
             <div class="detail-item"><span class="label">Inversión total:</span><span class="value">${{ producto.inversion_total|round(2) if producto.inversion_total else '—' }}</span></div>
             <div class="detail-item"><span class="label">Stock (unidades):</span><span class="value">{{ producto.stock|round(2) }}</span></div>
-            <div class="detail-item"><span class="label">Stock (metros):</span><span class="value">{{ producto.stock_metros|round(2) }}</span></div>
+            <div class="detail-item"><span class="label">Stock (metros lineales):</span><span class="value">{{ producto.stock_metros|round(2) }}</span></div>
+            <div class="detail-item"><span class="label">Stock (m²):</span><span class="value">{{ producto.stock_m2|round(2) if producto.stock_m2 else 0 }}</span></div>
             <div class="detail-item"><span class="label">Comprometido (unidades):</span><span class="value">{{ producto.stock_comprometido|round(2) or 0 }}</span></div>
-            <div class="detail-item"><span class="label">Comprometido (metros):</span><span class="value">{{ producto.stock_comprometido_metros|round(2) or 0 }}</span></div>
+            <div class="detail-item"><span class="label">Comprometido (metros lineales):</span><span class="value">{{ producto.stock_comprometido_metros|round(2) or 0 }}</span></div>
             <div class="detail-item"><span class="label">Disponible (unidades):</span><span class="value" style="color: {{ 'red' if producto.disponible < 0 else 'green' if producto.disponible > 0 else '#888' }};">{{ producto.disponible|round(2) }}</span></div>
-            <div class="detail-item"><span class="label">Disponible (metros):</span><span class="value" style="color: {{ 'red' if producto.disponible_metros < 0 else 'green' if producto.disponible_metros > 0 else '#888' }};">{{ producto.disponible_metros|round(2) }}</span></div>
+            <div class="detail-item"><span class="label">Disponible (metros lineales):</span><span class="value" style="color: {{ 'red' if producto.disponible_metros < 0 else 'green' if producto.disponible_metros > 0 else '#888' }};">{{ producto.disponible_metros|round(2) }}</span></div>
+            <div class="detail-item"><span class="label">Disponible (m²):</span><span class="value" style="color: {{ 'red' if producto.disponible_m2 < 0 else 'green' if producto.disponible_m2 > 0 else '#888' }};">{{ producto.disponible_m2|round(2) if producto.disponible_m2 else 0 }}</span></div>
             <div class="detail-item"><span class="label">Stock mínimo:</span><span class="value">{{ producto.stock_minimo|round(2) or 0 }}</span></div>
             <div class="detail-item"><span class="label">Ancho rollo:</span><span class="value">{{ producto.ancho_rollo|round(2) if producto.ancho_rollo else '—' }} m</span></div>
             <div class="detail-item"><span class="label">Largo rollo:</span><span class="value">{{ producto.largo_rollo|round(2) if producto.largo_rollo else '—' }} m</span></div>
@@ -109,7 +295,7 @@
             {% endif %}
             <div class="detail-item"><span class="label">Descripción:</span><span class="value">{{ producto.descripcion or '—' }}</span></div>
         </div>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;" class="acciones-superior">
             <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
             <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-edit"></i> Ajustar</button>
             <a href="{{ url_for('inventario.duplicar_producto', producto_id=producto.id) }}" class="btn btn-copy"><i class="fas fa-copy"></i> Duplicar</a>
@@ -152,14 +338,15 @@
 
 <div class="card">
     <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📜 Movimientos recientes</h4>
-    <div class="table-wrap">
+    <div class="movimientos-table-wrap">
         <table>
             <thead>
                 <tr>
                     <th>Fecha</th>
                     <th>Tipo</th>
                     <th>Cantidad (u)</th>
-                    <th>Cantidad (m)</th>
+                    <th>Cantidad (m lineales)</th>
+                    <th>Área (m²)</th>
                     <th>Costo Unit.</th>
                     <th>Costo Total</th>
                     <th>Comentario</th>
@@ -168,18 +355,23 @@
             </thead>
             <tbody>
                 {% for m in movimientos %}
+                {% set area_m2 = None %}
+                {% if m.producto and m.producto.es_material_impresion and m.producto.ancho_rollo %}
+                    {% set area_m2 = (m.cantidad_metros or 0) * m.producto.ancho_rollo %}
+                {% endif %}
                 <tr>
-                    <td>{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% else %}#fde8e5{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% else %}#dc2626{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">{{ m.tipo }}</span></td>
-                    <td>{{ m.cantidad|round(2) }}</td>
-                    <td>{{ m.cantidad_metros|round(2) if m.cantidad_metros else '—' }}</td>
-                    <td>{% if m.costo_unitario %} ${{ m.costo_unitario|round(2) }}{% else %}—{% endif %}</td>
-                    <td>{% if m.costo_total %} ${{ m.costo_total|round(2) }}{% else %}—{% endif %}</td>
-                    <td>{{ m.comentario or '-' }}</td>
-                    <td>{{ m.orden.order_num if m.orden else '-' }}</td>
+                    <td data-label="Fecha">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td data-label="Tipo"><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% else %}#fde8e5{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% else %}#dc2626{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">{{ m.tipo }}</span></td>
+                    <td data-label="Cantidad (u)">{{ m.cantidad|round(2) }}</td>
+                    <td data-label="Cantidad (m lineales)">{{ m.cantidad_metros|round(2) if m.cantidad_metros else '—' }}</td>
+                    <td data-label="Área (m²)">{% if area_m2 is not none %}{{ area_m2|round(2) }}{% else %}—{% endif %}</td>
+                    <td data-label="Costo Unit.">{% if m.costo_unitario %} ${{ m.costo_unitario|round(2) }}{% else %}—{% endif %}</td>
+                    <td data-label="Costo Total">{% if m.costo_total %} ${{ m.costo_total|round(2) }}{% else %}—{% endif %}</td>
+                    <td data-label="Comentario">{{ m.comentario or '-' }}</td>
+                    <td data-label="Orden">{{ m.orden.order_num if m.orden else '-' }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="8" class="text-muted text-center">No hay movimientos.</td></tr>
+                <tr><td colspan="9" class="text-muted text-center">No hay movimientos.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -187,6 +379,7 @@
 </div>
 
 <!-- MODALES (Compra y Ajuste) -->
+<!-- MODAL COMPRA -->
 <div class="modal-overlay" id="modalCompra">
     <div class="modal modal-compra">
         <div class="modal-header">
@@ -203,6 +396,15 @@
                 <div class="form-group">
                     <label>Costo unitario (USD)</label>
                     <input type="number" step="0.01" name="costo" value="{{ producto.costo or 0 }}" />
+                </div>
+                <div class="form-group">
+                    <label>Proveedor</label>
+                    <select name="proveedor_id">
+                        <option value="">-- Sin proveedor --</option>
+                        {% for prov in proveedores %}
+                        <option value="{{ prov.id }}">{{ prov.nombre }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="form-group">
                     <label>Comentario</label>
@@ -231,7 +433,7 @@
                     <input type="number" step="0.01" value="{{ producto.stock|round(2) }}" disabled style="background:#f0ece8;" />
                 </div>
                 <div class="form-group">
-                    <label>Stock real (cuenta física)</label>
+                    <label>Stock real (cuenta física en unidades)</label>
                     <input type="number" step="0.01" name="stock_real" required placeholder="Ingresa el stock contado" />
                 </div>
                 <div class="form-group">
@@ -326,41 +528,10 @@
         border-top:1px solid #f0ece8;
         padding-top:16px;
     }
-    .btn {
-        padding:8px 18px;
-        border-radius:30px;
-        border:none;
-        font-weight:600;
-        font-size:13px;
-        cursor:pointer;
-        transition:all 0.2s;
-        display:inline-flex;
-        align-items:center;
-        gap:6px;
-        font-family:'Inter',sans-serif;
-        text-decoration:none;
-    }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-success { background:#10b981; color:white; }
-    .btn-success:hover { background:#059669; }
-    .btn-warning { background:#f59e0b; color:white; }
-    .btn-warning:hover { background:#d97706; }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-copy { background:#8b5cf6; color:white; }
-    .btn-copy:hover { background:#7c3aed; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
-    .btn-danger { background:#dc2626; color:white; }
-    .btn-danger:hover { background:#b91c1c; }
-    .btn-admin { background:#6b7280; color:white; }
-    .btn-admin:hover { background:#4b5563; }
-    .badge {
-        font-size:12px;
-        font-weight:600;
-        padding:2px 10px;
-        border-radius:30px;
-        display:inline-block;
-        font-family:'Inter',sans-serif;
+    @media (max-width:768px) {
+        .modal-actions { flex-direction:column; }
+        .modal-actions .btn { justify-content:center; width:100%; }
+        .modal-body { padding:16px; }
     }
 </style>
 
@@ -390,7 +561,7 @@
         }];
         if (saldosMetros && saldosMetros.length > 0) {
             datasets.push({
-                label: 'Stock (metros)',
+                label: 'Stock (metros lineales)',
                 data: saldosMetros,
                 borderColor: '#3b82f6',
                 backgroundColor: '#3b82f620',

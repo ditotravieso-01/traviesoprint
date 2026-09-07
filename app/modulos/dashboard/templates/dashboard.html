@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard · CairoStudio{% endblock %}
+{% block title %}{{ empresa_nombre }} - Dashboard{% endblock %}
 
-{% block page_title %}<i class="fas fa-crown" style="color: #a8854f;"></i> Panel de Control · CairoStudio{% endblock %}
+{% block page_title %}<i class="fas fa-crown" style="color: #a8854f;"></i> {{ empresa_nombre }} - Panel de Control{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -14,18 +14,19 @@
 
     .dashboard-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
         margin-bottom: 24px;
     }
-    /* Eliminamos el h1 del contenido, pero mantenemos los estilos para otros elementos */
     .header-actions {
         display: flex;
         gap: 8px;
         flex-wrap: wrap;
         align-items: center;
+        width: 100%;
+        justify-content: flex-end;
     }
     .btn {
         background: none;
@@ -71,25 +72,29 @@
     .card-title .left { display: flex; align-items: center; gap: 8px; }
     .card-title .left i { color: #a8854f; }
 
-    /* ===== DRAG & DROP ===== */
-    .sortable-grid .sortable-ghost {
+    /* ===== DRAG & DROP (solo en modo personalización) ===== */
+    .sortable-grid.drag-enabled .sortable-ghost {
         opacity: 0.3;
         background: #ede9fe;
         border: 2px dashed #8b5cf6;
         border-radius: 16px;
     }
-    .sortable-grid .sortable-chosen {
+    .sortable-grid.drag-enabled .sortable-chosen {
         opacity: 0.8;
         transform: scale(1.02);
         box-shadow: 0 8px 30px rgba(0,0,0,0.06);
     }
-    .sortable-grid .card,
-    .sortable-grid .modulo-card {
+    .sortable-grid.drag-enabled .card,
+    .sortable-grid.drag-enabled .modulo-card {
         cursor: grab;
     }
-    .sortable-grid .card:active,
-    .sortable-grid .modulo-card:active {
+    .sortable-grid.drag-enabled .card:active,
+    .sortable-grid.drag-enabled .modulo-card:active {
         cursor: grabbing;
+    }
+    .sortable-grid .card,
+    .sortable-grid .modulo-card {
+        cursor: default;
     }
 
     /* ===== KPIs ===== */
@@ -181,17 +186,22 @@
     }
     .charts-grid .full { grid-column: 1 / -1; }
     .chart-wrapper { position: relative; height: 200px; }
+    .chart-wrapper canvas { width: 100% !important; height: 100% !important; }
 
     /* ===== PESTAÑAS ===== */
     .tabs-container { margin-bottom: 20px; }
     .tabs-nav {
         display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        flex-wrap: nowrap;
+        gap: 4px;
         margin-bottom: 16px;
         border-bottom: 2px solid #f0ece8;
         padding-bottom: 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
     }
+    .tabs-nav::-webkit-scrollbar { display: none; }
     .tab-btn {
         background: none;
         border: none;
@@ -206,6 +216,8 @@
         display: flex;
         align-items: center;
         gap: 6px;
+        white-space: nowrap;
+        flex-shrink: 0;
     }
     .tab-btn:hover { color: #1c1c1e; background: rgba(0,0,0,0.02); }
     .tab-btn.active {
@@ -223,10 +235,12 @@
     .tab-content.active { display: block; }
 
     /* ===== CALENDARIO ===== */
+    .calendario-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .calendario-mensual {
         width: 100%;
         border-collapse: collapse;
         font-size: 14px;
+        min-width: 360px;
     }
     .calendario-mensual th {
         padding: 8px 4px;
@@ -278,6 +292,12 @@
         padding: 4px 6px;
         border: 1px solid #e8e0da;
         text-align: left;
+        position: absolute;
+        z-index: 10;
+        min-width: 120px;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
     }
     .calendario-mensual td .entrega-list.show { display: block; }
     .calendario-mensual td .entrega-list .item {
@@ -288,30 +308,38 @@
     .calendario-mensual td.otro-mes .numero { color: #ccc; }
     .calendario-mensual td.hoy { background: #f0ece8; font-weight: 700; }
 
-    /* ===== COMPARATIVA ===== */
+    /* ===== COMPARATIVA (ajustada) ===== */
     .comparativa-wrapper {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
     }
-    .comparativa-wrapper .chart-container { height: 180px; }
+    .comparativa-wrapper .chart-container {
+        height: 140px;
+        position: relative;
+    }
+    .comparativa-wrapper .chart-container canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
     .comparativa-wrapper .stats {
         display: flex;
         flex-direction: column;
         justify-content: center;
-        gap: 12px;
-        padding: 0 12px;
+        gap: 8px;
+        padding: 0 8px;
+        font-size: 13px;
     }
     .comparativa-wrapper .stats .item {
         display: flex;
         justify-content: space-between;
-        font-size: 14px;
-        padding: 4px 0;
+        font-size: 13px;
+        padding: 3px 0;
         border-bottom: 1px solid #f5f2ef;
     }
-    .comparativa-wrapper .stats .item .label { color: #8e8e93; font-weight: 500; }
-    .comparativa-wrapper .stats .item .valor { font-weight: 700; color: #1c1c1e; }
-    .trend { font-weight: 600; }
+    .comparativa-wrapper .stats .item .label { color: #8e8e93; font-weight: 500; font-size: 12px; }
+    .comparativa-wrapper .stats .item .valor { font-weight: 700; color: #1c1c1e; font-size: 14px; }
+    .trend { font-weight: 600; font-size: 12px; }
     .trend.up { color: #10b981; }
     .trend.down { color: #dc2626; }
     .trend.neutral { color: #f59e0b; }
@@ -411,28 +439,75 @@
         margin-top: 8px;
         border-top: 1px solid #f0ece8;
         padding-top: 12px;
+        flex-wrap: wrap;
+    }
+    .customize-panel .drag-hint {
+        background: #fef3c7;
+        border-radius: 30px;
+        padding: 4px 16px;
+        font-size: 12px;
+        color: #78350f;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #f59e0b;
+        margin-bottom: 8px;
     }
 
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 992px) {
         .charts-grid { grid-template-columns: 1fr; }
         .modulo-grid { grid-template-columns: repeat(2, 1fr); }
         .comparativa-wrapper { grid-template-columns: 1fr; }
+        .comparativa-wrapper .stats { flex-direction: row; flex-wrap: wrap; justify-content: space-around; padding: 0; }
+        .comparativa-wrapper .stats .item { flex: 1 1 40%; border-bottom: none; }
     }
     @media (max-width: 768px) {
         .kpi-grid { grid-template-columns: 1fr 1fr; }
         .modulo-grid { grid-template-columns: 1fr; }
         .calendario-mensual td { height: 40px; font-size: 12px; }
         .calendario-mensual td .entrega-marker { width: 16px; height: 16px; line-height: 16px; font-size: 8px; }
+        .calendario-mensual td .entrega-list { min-width: 80px; font-size: 10px; }
+        .dashboard-header { justify-content: center; }
+        .header-actions { justify-content: center; }
+        .btn { font-size: 12px; padding: 4px 12px; }
+        .btn-icon { padding: 4px 10px; min-width: 32px; }
+        .card { padding: 14px 16px; }
+        .card-title { font-size: 14px; }
+        .chart-wrapper { height: 150px; }
+        .tab-btn { font-size: 12px; padding: 6px 12px; }
+        .container { padding: 12px; }
+        .customize-panel .row { flex-direction: column; gap: 12px; }
+        .customize-panel .group { flex: 1 1 100%; }
+        .customize-panel .group .tag { font-size: 12px; padding: 6px 14px; }
+        .customize-panel .actions .btn { flex: 1; justify-content: center; }
+        .comparativa-wrapper .stats .item .label { font-size: 11px; }
+        .comparativa-wrapper .stats .item .valor { font-size: 13px; }
     }
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr; }
+        .kpi-card .value { font-size: 22px; }
+        .modulo-card .stats .num { font-size: 16px; }
+        .modulo-card .modulo-header .nombre { font-size: 14px; }
+        .tab-btn { font-size: 11px; padding: 4px 10px; gap: 4px; }
+        .tab-btn i { font-size: 12px; }
+        .calendario-mensual td { height: 32px; font-size: 10px; padding: 2px; }
+        .calendario-mensual td .numero { font-size: 11px; }
+        .calendario-mensual td .entrega-marker { width: 14px; height: 14px; line-height: 14px; font-size: 7px; }
+        .chart-wrapper { height: 120px; }
+        .btn { font-size: 11px; padding: 4px 10px; }
+        .update-time { font-size: 11px; }
+        .comparativa-wrapper .chart-container { height: 100px; }
+        .comparativa-wrapper .stats .item { font-size: 11px; }
+        .comparativa-wrapper .stats .item .label { font-size: 10px; }
+        .comparativa-wrapper .stats .item .valor { font-size: 12px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <!-- HEADER (sin título duplicado) -->
+    <!-- HEADER -->
     <div class="dashboard-header">
         <div class="header-actions">
             <span class="update-time" id="updateTime">cargando...</span>
@@ -443,10 +518,11 @@
 
     <!-- ===== PANEL DE PERSONALIZACIÓN ===== -->
     <div class="customize-panel" id="customizePanel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
             <h4 class="serif" style="font-size:18px;"><i class="fas fa-palette"></i> Personalizar dashboard</h4>
             <button class="btn" onclick="resetearPreferencias()" style="font-size:12px;"><i class="fas fa-undo"></i> Restablecer</button>
         </div>
+        <div class="drag-hint" id="dragHint"><i class="fas fa-arrows-alt"></i> Arrastra los bloques para reordenarlos</div>
         <div class="row">
             <div class="group">
                 <label>KPIs visibles (elige 3-5)</label>
@@ -506,9 +582,9 @@
         <!-- RESUMEN -->
         <div class="tab-content active" id="tab-resumen">
             <div class="kpi-grid" id="kpiGrid"></div>
-            <!-- Módulos (arrastrables) -->
+            <!-- Módulos -->
             <div class="modulo-grid sortable-grid" id="moduloGrid"></div>
-            <!-- Gráficos (arrastrables) -->
+            <!-- Gráficos -->
             <div class="charts-grid sortable-grid" id="chartsGrid">
                 <div class="card" id="chart1Container">
                     <div class="card-title"><span class="left"><i class="fas fa-chart-bar"></i> Distribución por estado</span></div>
@@ -523,16 +599,23 @@
 
         <!-- CALENDARIO -->
         <div class="tab-content" id="tab-calendario">
-            <h3 class="serif" style="font-size:20px; margin-bottom:12px;"><i class="fas fa-calendar-alt"></i> Entregas - {{ now.strftime('%B %Y') }}</h3>
-            <div id="calendarioMensual"></div>
-            <div style="margin-top:12px; font-size:13px; color:#8e8e93;">
-                <i class="fas fa-circle" style="color:#a8854f;"></i> Día con entrega · Haz clic en el número para ver detalles
+            <h3 class="serif" style="font-size:20px; margin-bottom:12px;">
+                <i class="fas fa-calendar-alt"></i> Calendario de eventos
+            </h3>
+            <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                <a href="{{ url_for('calendario.index') }}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-external-link-alt"></i> Ir al calendario completo
+                </a>
+                <button class="btn btn-sm btn-secondary" onclick="window.location.href='{{ url_for('calendario.index') }}?view=day'">
+                    <i class="fas fa-calendar-day"></i> Vista día
+                </button>
             </div>
+            <div id="calendarioWidget" style="min-height:300px; max-width:100%;"></div>
         </div>
 
         <!-- COMPARATIVA -->
         <div class="tab-content" id="tab-comparativa">
-            <h3 class="serif" style="font-size:20px; margin-bottom:12px;"><i class="fas fa-chart-simple"></i> Comparativa mensual</h3>
+            <h3 class="serif" style="font-size:18px; margin-bottom:12px;"><i class="fas fa-chart-simple"></i> Comparativa mensual</h3>
             <div class="comparativa-wrapper">
                 <div class="chart-container"><canvas id="chartComparativa"></canvas></div>
                 <div class="stats" id="statsComparativa"></div>
@@ -558,7 +641,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     // ================================================================
-    //  DEPURACIÓN: verificar que el script se ejecuta
+    //  DEPURACIÓN
     // ================================================================
     console.log('✅ Dashboard script iniciado');
 
@@ -568,6 +651,8 @@
     let datos = {};
     let charts = {};
     let intervalId;
+    let sortableInstances = [];
+    let sortableEnabled = false;
 
     const userId = {{ current_user.id|tojson }};
     const storageKey = 'dashboard_prefs_' + userId;
@@ -597,50 +682,55 @@
     let preferencias = getPrefs();
 
     // ================================================================
-    //  INICIALIZAR SORTABLE (drag & drop)
+    //  SORTABLE (controlado)
     // ================================================================
     function initSortable() {
-        console.log('🔧 Inicializando Sortable...');
-
         const moduloEl = document.getElementById('moduloGrid');
-        if (moduloEl) {
-            try {
-                new Sortable(moduloEl, {
-                    animation: 200,
-                    easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    handle: '.modulo-card',
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    dragClass: 'sortable-drag',
-                    onEnd: function() {
-                        guardarOrden('moduloOrder', '#moduloGrid');
-                    }
-                });
-                console.log('✅ Sortable de módulos inicializado');
-            } catch (e) {
-                console.error('❌ Error en Sortable módulos:', e);
-            }
-        }
-
         const chartEl = document.getElementById('chartsGrid');
-        if (chartEl) {
-            try {
-                new Sortable(chartEl, {
-                    animation: 200,
-                    easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-                    handle: '.card',
-                    ghostClass: 'sortable-ghost',
-                    chosenClass: 'sortable-chosen',
-                    dragClass: 'sortable-drag',
-                    onEnd: function() {
-                        guardarOrden('chartOrder', '#chartsGrid');
-                    }
-                });
-                console.log('✅ Sortable de gráficos inicializado');
-            } catch (e) {
-                console.error('❌ Error en Sortable gráficos:', e);
-            }
+
+        if (moduloEl) {
+            const instance = new Sortable(moduloEl, {
+                animation: 200,
+                easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                handle: '.modulo-card',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                disabled: true,
+                onEnd: function() {
+                    guardarOrden('moduloOrder', '#moduloGrid');
+                }
+            });
+            sortableInstances.push(instance);
         }
+        if (chartEl) {
+            const instance = new Sortable(chartEl, {
+                animation: 200,
+                easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+                handle: '.card',
+                ghostClass: 'sortable-ghost',
+                chosenClass: 'sortable-chosen',
+                dragClass: 'sortable-drag',
+                disabled: true,
+                onEnd: function() {
+                    guardarOrden('chartOrder', '#chartsGrid');
+                }
+            });
+            sortableInstances.push(instance);
+        }
+        setSortableEnabled(false);
+        console.log('🔧 Sortable inicializado (deshabilitado)');
+    }
+
+    function setSortableEnabled(enabled) {
+        sortableEnabled = enabled;
+        sortableInstances.forEach(inst => {
+            inst.option('disabled', !enabled);
+        });
+        document.querySelectorAll('.sortable-grid').forEach(el => {
+            el.classList.toggle('drag-enabled', enabled);
+        });
+        console.log('Sortable ' + (enabled ? 'habilitado' : 'deshabilitado'));
     }
 
     function guardarOrden(key, selector) {
@@ -670,7 +760,7 @@
     }
 
     // ================================================================
-    //  CARGAR DATOS DESDE EL BACKEND
+    //  CARGAR DATOS
     // ================================================================
     async function cargarDatos() {
         try {
@@ -680,7 +770,6 @@
             console.log('✅ Datos recibidos:', datos);
             actualizarTodo();
             document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('es-ES') + ' hs';
-            // ✅ Eliminada la llamada obsoleta a window.readyToShow()
         } catch (error) {
             console.error('❌ Error cargando datos:', error);
             document.getElementById('updateTime').textContent = '⚠️ Error de conexión';
@@ -688,7 +777,7 @@
     }
 
     // ================================================================
-    //  RENDER KPIs (con personalización)
+    //  RENDER KPIs
     // ================================================================
     function renderKPIs() {
         const grid = document.getElementById('kpiGrid');
@@ -864,7 +953,7 @@
     }
 
     // ================================================================
-    //  CALENDARIO, COMPARATIVA, ACTIVIDAD, ALERTAS
+    //  CALENDARIO
     // ================================================================
     function renderCalendario() {
         const container = document.getElementById('calendarioMensual');
@@ -927,10 +1016,14 @@
         if (list) list.classList.toggle('show');
     }
 
+    // ================================================================
+    //  COMPARATIVA
+    // ================================================================
     function renderComparativa() {
         if (!datos.comparativa) return;
         const ctx = document.getElementById('chartComparativa').getContext('2d');
-        new Chart(ctx, {
+        if (window.comparativaChart) window.comparativaChart.destroy();
+        window.comparativaChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: datos.comparativa.labels,
@@ -984,6 +1077,9 @@
         console.log('✅ Comparativa renderizada');
     }
 
+    // ================================================================
+    //  ACTIVIDAD
+    // ================================================================
     function renderActividad() {
         const container = document.getElementById('actividadList');
         container.innerHTML = '';
@@ -1014,6 +1110,9 @@
         console.log('✅ Actividad renderizada');
     }
 
+    // ================================================================
+    //  ALERTAS
+    // ================================================================
     function renderAlertas() {
         const container = document.getElementById('alertasList');
         container.innerHTML = '';
@@ -1106,6 +1205,7 @@
         const panel = document.getElementById('customizePanel');
         panel.classList.toggle('open');
         if (panel.classList.contains('open')) {
+            setSortableEnabled(true);
             const prefs = getPrefs();
             document.querySelectorAll('#kpiSelector .tag').forEach(tag => {
                 const kpi = tag.dataset.kpi;
@@ -1117,6 +1217,7 @@
             document.getElementById('chart2Data').value = prefs.chart2.data;
             console.log('🔓 Panel de personalización abierto');
         } else {
+            setSortableEnabled(false);
             console.log('🔒 Panel de personalización cerrado');
         }
     }
@@ -1141,6 +1242,7 @@
         };
         localStorage.setItem(storageKey, JSON.stringify(preferencias));
         document.getElementById('customizePanel').classList.remove('open');
+        setSortableEnabled(false);
         actualizarTodo();
         console.log('✅ Personalización aplicada:', preferencias);
     }
@@ -1157,6 +1259,7 @@
             document.getElementById('chart2Type').value = DEFAULT_PREFS.chart2.type;
             document.getElementById('chart2Data').value = DEFAULT_PREFS.chart2.data;
             document.getElementById('customizePanel').classList.remove('open');
+            setSortableEnabled(false);
             window.location.reload();
         }
     }
@@ -1166,7 +1269,6 @@
     // ================================================================
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🚀 DOM listo, inicializando dashboard...');
-
         initSortable();
 
         const tabGuardada = localStorage.getItem('dashboard_tab_activo') || 'resumen';
@@ -1180,5 +1282,45 @@
     window.addEventListener('beforeunload', () => {
         if (intervalId) clearInterval(intervalId);
     });
+
+
+    // Inicializar widget de calendario en el dashboard
+    if (document.getElementById('calendarioWidget')) {
+        const widgetEl = document.getElementById('calendarioWidget');
+        const widget = new FullCalendar.Calendar(widgetEl, {
+            locale: 'es',
+            initialView: 'dayGridMonth',
+            height: 280,
+            headerToolbar: {
+                left: 'prev,next',
+                center: 'title',
+                right: ''
+            },
+            buttonText: {
+                today: 'Hoy',
+                month: 'Mes',
+                week: 'Semana',
+                day: 'Día'
+            },
+            events: {
+                url: '{{ url_for("calendario.get_eventos") }}',
+                method: 'GET',
+                failure: function() { /* silencioso */ }
+            },
+            eventClick: function(info) {
+                const url = info.event.extendedProps.url;
+                if (url) window.location.href = url;
+                else {
+                    const mensaje = `${info.event.title}\n\n${info.event.extendedProps.descripcion || ''}`;
+                    alert(mensaje);
+                }
+            },
+            dayMaxEvents: 2,
+            moreLinkText: function(count) {
+                return `+ ${count} más`;
+            }
+        });
+        widget.render();
+    }
 </script>
 {% endblock %}

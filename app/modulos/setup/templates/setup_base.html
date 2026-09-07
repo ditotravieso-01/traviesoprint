@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instalación · TraviesoPrint</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* Reset y base */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html, body {
+            height: 100%;
+            font-family: 'Inter', sans-serif;
+            background: #faf8f6;
+            color: #1c1c1e;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .setup-container {
+            width: 100%;
+            max-width: 640px;
+        }
+        .setup-card {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 24px;
+            padding: 40px 36px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            border: 1px solid rgba(0,0,0,0.04);
+        }
+        .setup-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+        .setup-header img {
+            max-height: 60px;
+            width: auto;
+            margin-bottom: 12px;
+        }
+        .setup-header h1 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 26px;
+            color: #1c1c1e;
+        }
+        .setup-header .subtitle {
+            color: #8e8e93;
+            font-size: 14px;
+            margin-top: 4px;
+        }
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 16px;
+            align-items: center;
+        }
+        .step-indicator .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #b0b0b5;
+        }
+        .step-indicator .step .num {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #f0ece8;
+            color: #8e8e93;
+            font-weight: 700;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+        .step-indicator .step.active .num {
+            background: var(--color-secondary, #a8854f);
+            color: white;
+        }
+        .step-indicator .step.active {
+            color: #1c1c1e;
+        }
+        .step-indicator .step.done .num {
+            background: #10b981;
+            color: white;
+        }
+        .step-indicator .step-line {
+            width: 24px;
+            height: 2px;
+            background: #e5e5ea;
+            align-self: center;
+        }
+        .step-indicator .step-line.done {
+            background: #10b981;
+        }
+        .form-group {
+            margin-bottom: 18px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 14px;
+            color: #1c1c1e;
+            margin-bottom: 4px;
+        }
+        .form-group .form-control {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #e5e5ea;
+            border-radius: 12px;
+            font-size: 15px;
+            background: rgba(255,255,255,0.8);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-group .form-control:focus {
+            border-color: var(--color-secondary, #a8854f);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(168, 133, 79, 0.15);
+            background: white;
+        }
+        .form-group .form-control-color {
+            padding: 0.25rem;
+            height: 44px;
+            width: 60px;
+            border-radius: 12px;
+            border: 1px solid #e5e5ea;
+            background: white;
+            cursor: pointer;
+        }
+        .form-group .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .form-group .input-group .form-control-color {
+            flex: 0 0 auto;
+        }
+        .form-group .input-group .form-control-text {
+            flex: 1;
+            min-width: 120px;
+        }
+        .form-group small {
+            color: #8e8e93;
+            font-size: 12px;
+            display: block;
+            margin-top: 4px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 24px;
+            border-radius: 30px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-primary {
+            background: var(--color-primary, #1c1c1e);
+            color: white;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+        }
+        .btn-secondary {
+            background: var(--color-secondary, #a8854f);
+            color: white;
+        }
+        .btn-secondary:hover {
+            filter: brightness(0.9);
+            transform: translateY(-2px);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #d2d2d7;
+            color: #1c1c1e;
+        }
+        .btn-outline:hover {
+            border-color: var(--color-secondary, #a8854f);
+            background: #f5f5f5;
+        }
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #059669;
+            transform: translateY(-2px);
+        }
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+        .flash-messages {
+            margin-bottom: 16px;
+        }
+        .flash-message {
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid transparent;
+            margin-bottom: 8px;
+        }
+        .flash-success { background: #d1fae5; color: #065f46; border-left-color: #10b981; }
+        .flash-danger { background: #fde8e5; color: #991b1b; border-left-color: #dc2626; }
+        .flash-warning { background: #fef3c7; color: #78350f; border-left-color: #f59e0b; }
+        .flash-info { background: #e0f2fe; color: #1e3a8a; border-left-color: #3b82f6; }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px 20px;
+            background: #f8f6f4;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid #f0ece8;
+        }
+        .summary-grid .label {
+            color: #8e8e93;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .summary-grid .value {
+            font-weight: 600;
+            color: #1c1c1e;
+            text-align: right;
+        }
+        .summary-grid .full {
+            grid-column: 1 / -1;
+            border-top: 1px solid #e5e5ea;
+            padding-top: 8px;
+            margin-top: 4px;
+        }
+        .logo-preview img, .bg-preview-small {
+            max-height: 50px;
+            width: auto;
+            border-radius: 8px;
+            border: 1px solid #e5e5ea;
+            padding: 4px;
+            background: white;
+        }
+        .bg-preview-small {
+            max-height: 40px;
+            width: 60px;
+            object-fit: cover;
+        }
+        .color-swatch {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        @media (max-width: 480px) {
+            .setup-card {
+                padding: 28px 20px;
+            }
+            .setup-header h1 {
+                font-size: 22px;
+            }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .summary-grid .value {
+                text-align: left;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            .btn-group .btn {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="setup-container">
+        <div class="setup-card">
+            <div class="setup-header">
+                <img src="{{ url_for('static', filename='img/logo_default.png') }}" alt="TraviesoPrint" style="max-height:60px;">
+                <h1>Configuración inicial</h1>
+                <p class="subtitle">Completa los siguientes pasos para configurar tu instancia de TraviesoPrint</p>
+                <div class="step-indicator">
+                    <span class="step {% if step == 1 %}active{% endif %} {% if step > 1 %}done{% endif %}">
+                        <span class="num">1</span> Empresa
+                    </span>
+                    <span class="step-line {% if step > 1 %}done{% endif %}"></span>
+                    <span class="step {% if step == 2 %}active{% endif %} {% if step > 2 %}done{% endif %}">
+                        <span class="num">2</span> Admin
+                    </span>
+                    <span class="step-line {% if step > 2 %}done{% endif %}"></span>
+                    <span class="step {% if step == 3 %}active{% endif %}">
+                        <span class="num">3</span> Resumen
+                    </span>
+                </div>
+            </div>
+
+            <!-- Flash messages -->
+            <div class="flash-messages">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                            <div class="flash-message flash-{{ category }}">
+                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+            </div>
+
+            <!-- CONTENIDO -->
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

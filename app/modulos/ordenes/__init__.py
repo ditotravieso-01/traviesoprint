@@ -28,7 +28,7 @@ COLUMNAS_NOMBRES = {
 }
 
 # ==========================================
-# DECORADORES DE PERMISOS (CORREGIDOS)
+# DECORADORES DE PERMISOS
 # ==========================================
 
 def comercial_or_admin_required(func):
@@ -37,7 +37,7 @@ def comercial_or_admin_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin']:
             flash('No tienes permiso.', 'danger')
-            return redirect(url_for('home.index'))  # CORREGIDO
+            return redirect(url_for('home.index'))
         return func(*args, **kwargs)
     return wrapper
 
@@ -47,7 +47,7 @@ def view_orders_or_admin_comercial_required(func):
     def wrapper(*args, **kwargs):
         if current_user.role not in ['comercial', 'admin', 'economico']:
             flash('No tienes permiso.', 'danger')
-            return redirect(url_for('home.index'))  # CORREGIDO
+            return redirect(url_for('home.index'))
         return func(*args, **kwargs)
     return wrapper
 
@@ -89,7 +89,7 @@ def _get_form_context(form_data=None, edit=False, order=None):
     return context
 
 # ==========================================
-# LISTAR ÓRDENES (CON FILTRO POR ESTADO Y BÚSQUEDA) - MODIFICADO CON KPIs
+# LISTAR ÓRDENES
 # ==========================================
 @ordenes_bp.route('/')
 @login_required
@@ -98,7 +98,7 @@ def list_orders():
     estado = request.args.get('estado', '').strip()
     search = request.args.get('search', '').strip()
     page = request.args.get('page', 1, type=int)
-    per_page = 20  # Órdenes por página
+    per_page = 20
 
     query = Order.query
 
@@ -114,7 +114,6 @@ def list_orders():
             )
         )
 
-    # Paginación
     paginated = query.order_by(Order.created_at.desc()).paginate(
         page=page, per_page=per_page, error_out=False
     )
@@ -122,8 +121,7 @@ def list_orders():
     total = paginated.total
     total_pages = paginated.pages
 
-    # ========== CÁLCULO DE KPIs (sobre el total sin paginar) ==========
-    all_orders = query.all()  # Para KPIs, necesitamos el total real
+    all_orders = query.all()
     total_ordenes = len(all_orders)
     pendientes = sum(1 for o in all_orders if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados'])
     completadas = sum(1 for o in all_orders if o.column in ['entregados', 'listo'])
@@ -184,26 +182,38 @@ def consumir_materiales(orden_id):
     op_items = OrdenProducto.query.filter_by(orden_id=orden_id).all()
     if not op_items:
         return True, "No hay materiales asociados a esta orden"
+
     for item in op_items:
         producto = Producto.query.get(item.producto_id)
         if not producto:
             continue
+
+        producto.stock = producto.stock or 0.0
+        producto.stock_metros = producto.stock_metros or 0.0
+        producto.stock_comprometido = producto.stock_comprometido or 0.0
+        producto.stock_comprometido_metros = producto.stock_comprometido_metros or 0.0
+
         if producto.largo_rollo and producto.largo_rollo > 0:
-            consumo_metros = item.cantidad_estimada
+            consumo_metros = item.cantidad_estimada or 0.0
+            if consumo_metros <= 0:
+                return False, f"Consumo estimado cero para {producto.nombre}"
             consumo_unidades = consumo_metros / producto.largo_rollo
             if producto.stock_metros < consumo_metros:
-                return False, f"Stock insuficiente en metros para {producto.nombre} (disponible: {producto.stock_metros}, necesario: {consumo_metros})"
+                return False, f"Stock insuficiente en metros para {producto.nombre} (disponible: {producto.stock_metros:.2f}, necesario: {consumo_metros:.2f})"
             producto.stock_metros -= consumo_metros
-            producto.stock_comprometido_metros = max(0, (producto.stock_comprometido_metros or 0) - consumo_metros)
+            producto.stock_comprometido_metros = max(0.0, producto.stock_comprometido_metros - consumo_metros)
             producto.stock -= consumo_unidades
-            producto.stock_comprometido = max(0, (producto.stock_comprometido or 0) - consumo_unidades)
+            producto.stock_comprometido = max(0.0, producto.stock_comprometido - consumo_unidades)
         else:
-            consumo_unidades = item.cantidad_estimada
+            consumo_unidades = item.cantidad_estimada or 0.0
+            if consumo_unidades <= 0:
+                return False, f"Consumo estimado cero para {producto.nombre}"
             if producto.stock < consumo_unidades:
-                return False, f"Stock insuficiente para {producto.nombre} (disponible: {producto.stock}, necesario: {consumo_unidades})"
+                return False, f"Stock insuficiente para {producto.nombre} (disponible: {producto.stock:.2f}, necesario: {consumo_unidades:.2f})"
             producto.stock -= consumo_unidades
-            producto.stock_comprometido = max(0, (producto.stock_comprometido or 0) - consumo_unidades)
-            consumo_metros = 0
+            producto.stock_comprometido = max(0.0, producto.stock_comprometido - consumo_unidades)
+            consumo_metros = 0.0
+
         movimiento = Movimiento(
             producto_id=producto.id,
             tipo='consumo',
@@ -215,11 +225,12 @@ def consumir_materiales(orden_id):
         )
         db.session.add(movimiento)
         item.cantidad_real = consumo_unidades
+
     db.session.commit()
     return True, "Materiales consumidos correctamente"
 
 # ==========================================
-# CREAR ORDEN
+# CREAR ORDEN (con enlace a detalle en notificación)
 # ==========================================
 @ordenes_bp.route('/crear', methods=['GET', 'POST'])
 @login_required
@@ -318,7 +329,7 @@ def create_order():
                     area_str_calc = ''
                 else:
                     if cantidad_original:
-                        area_calc = cantidad_original * ancho_rollo_m
+                        area_calc = cantidad_original
                         area_str_calc = str(area_calc)
                         cantidad_str_calc = ''
                     else:
@@ -342,10 +353,10 @@ def create_order():
                     return render_template('form_orden.html', **context)
                 simData = calculo['simData']
                 area_total = simData['areaTotal']
-                if unidad == 'm':
-                    consumo = cantidad_original if cantidad_original else 0
-                else:
+                if ancho_rollo_m > 0:
                     consumo = area_total / ancho_rollo_m
+                else:
+                    consumo = 0
                 consumo = round(consumo, 2)
                 if consumo <= 0:
                     flash(f'Línea {i+1}: El consumo estimado es cero.', 'danger')
@@ -354,7 +365,7 @@ def create_order():
                     return render_template('form_orden.html', **context)
                 disponible_metros = producto.get_stock_metros_disponible()
                 if consumo > disponible_metros:
-                    flash(f'Stock insuficiente para "{producto.nombre}". Disponible: {disponible_metros:.2f}m, requerido: {consumo:.2f}m', 'danger')
+                    flash(f'Stock insuficiente para "{producto.nombre}". Disponible: {disponible_metros:.2f}m lineales, requerido: {consumo:.2f}m lineales', 'danger')
                     db.session.rollback()
                     context = _get_form_context(form_data=request.form, edit=False, order=None)
                     return render_template('form_orden.html', **context)
@@ -397,7 +408,7 @@ def create_order():
                         'resto_etiquetas': resto_etiquetas,
                         'columnas': columnas,
                         'filasPorMetro': filasPorMetro,
-                        'consumo': consumo
+                        'consumo_lineal': consumo
                     })
                 )
                 db.session.add(adjunto)
@@ -418,7 +429,7 @@ def create_order():
                     tipo='reserva',
                     cantidad=unidades_a_reservar if producto.largo_rollo else consumo,
                     cantidad_metros=consumo,
-                    comentario=f'Reserva para orden {order_num or "sin número"} - línea {i+1} ({area_total:.2f} m²)',
+                    comentario=f'Reserva para orden {order_num or "sin número"} - línea {i+1} ({area_total:.2f} m², ancho {ancho_rollo_m}m → {consumo:.2f} m lineales)',
                     orden_id=order.id,
                     usuario_id=current_user.id
                 )
@@ -446,7 +457,8 @@ def create_order():
         if current_user.id not in usuarios_ids:
             usuarios_ids.append(current_user.id)
         mensaje = f'Nueva orden {order.order_num or "sin número"} creada por {current_user.username}'
-        enlace = url_for('ordenes.edit_order', order_id=order.id, _external=True)
+        # 🔥 CORRECCIÓN: enlace a detalle (no a editar)
+        enlace = url_for('ordenes.detalle_order', order_id=order.id, _external=True)
         if usuarios_ids:
             notificar_usuarios(usuarios_ids, mensaje, 'orden_creada', order.id, enlace)
         order.set_usuarios_notificados(usuarios_ids)
@@ -457,7 +469,7 @@ def create_order():
     return render_template('form_orden.html', **context)
 
 # ==========================================
-# EDITAR ORDEN
+# EDITAR ORDEN (con enlace a detalle en notificación)
 # ==========================================
 @ordenes_bp.route('/editar/<int:order_id>', methods=['GET', 'POST'])
 @login_required
@@ -489,28 +501,148 @@ def edit_order(order_id):
         if otros:
             servicios.append(f'Otros: {otros}')
         order.set_servicios(servicios)
-        # ACTUALIZAR LÍNEAS EXISTENTES
+
+        # PROCESAR LÍNEAS EXISTENTES (ACTUALIZAR / ELIMINAR)
         existing_ids = request.form.getlist('archivo_ids[]')
+        ids_a_eliminar = request.form.getlist('eliminar_archivos[]')
+
         for archivo_id in existing_ids:
             archivo = ArchivoAdjunto.query.get(int(archivo_id))
-            if archivo and archivo.orden_id == order.id:
-                nombre_visible = request.form.get(f'nombre_visible_{archivo_id}')
+            if not archivo or archivo.orden_id != order.id:
+                continue
+            if str(archivo_id) in ids_a_eliminar:
+                continue
+
+            nombre_visible = request.form.get(f'nombre_visible_{archivo_id}', '').strip()
+            material_nombre = request.form.get(f'material_{archivo_id}', '').strip()
+            cantidad_str = request.form.get(f'cantidad_{archivo_id}', '')
+            unidad = request.form.get(f'unidad_{archivo_id}', 'm')
+            producto_id_nuevo = request.form.get(f'producto_{archivo_id}', type=int)
+            producto_nuevo = Producto.query.get(producto_id_nuevo) if producto_id_nuevo else None
+            cantidad_original = None
+            if cantidad_str:
+                try:
+                    cantidad_original = float(cantidad_str)
+                except ValueError:
+                    cantidad_original = None
+
+            producto_anterior = archivo.producto
+            producto_anterior_id = archivo.producto_id
+            params = archivo.get_parametros_etiqueta()
+            is_etiqueta = params is not None
+
+            if is_etiqueta and (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad):
+                if producto_anterior and archivo.cantidad:
+                    op_anterior = OrdenProducto.query.filter_by(orden_id=order.id, producto_id=producto_anterior_id).first()
+                    if op_anterior:
+                        cantidad_a_liberar = op_anterior.cantidad_estimada
+                        producto_anterior.stock_comprometido_metros = max(0, (producto_anterior.stock_comprometido_metros or 0) - cantidad_a_liberar)
+                        if producto_anterior.largo_rollo:
+                            unidades_a_liberar = cantidad_a_liberar / producto_anterior.largo_rollo
+                            producto_anterior.stock_comprometido = max(0, (producto_anterior.stock_comprometido or 0) - unidades_a_liberar)
+                        else:
+                            producto_anterior.stock_comprometido = max(0, (producto_anterior.stock_comprometido or 0) - cantidad_a_liberar)
+                        db.session.delete(op_anterior)
+
+                if producto_nuevo:
+                    ancho_cm = params.get('ancho', 10)
+                    alto_cm = params.get('alto', 10)
+                    precio = params.get('precio', 10.0)
+                    mesa = params.get('mesa', False)
+                    girar = params.get('girar', False)
+                    auto_girar = params.get('auto_girar', False)
+                    ancho_rollo_m = producto_nuevo.ancho_rollo or 1.3
+                    tipo_rollo = '1.3m' if ancho_rollo_m >= 1.3 else '1m'
+                    from app.modulos.etiquetas import calcular_datos
+                    if unidad == 'unidades':
+                        cantidad_str_calc = str(cantidad_original) if cantidad_original else '0'
+                        area_str_calc = ''
+                    else:
+                        if cantidad_original:
+                            area_str_calc = str(cantidad_original)
+                            cantidad_str_calc = ''
+                        else:
+                            area_str_calc = ''
+                            cantidad_str_calc = ''
+                    calculo = calcular_datos(
+                        ancho_cm=ancho_cm,
+                        alto_cm=alto_cm,
+                        precio_m2=precio,
+                        mesa_activo=mesa,
+                        girar_activo=girar,
+                        auto_girar_activo=auto_girar,
+                        cantidad_str=cantidad_str_calc,
+                        area_str=area_str_calc,
+                        tipo_rollo=tipo_rollo
+                    )
+                    if calculo['error']:
+                        flash(f'Error al recalcular etiquetas: {calculo["error"]}', 'danger')
+                        db.session.rollback()
+                        context = _get_form_context(form_data=request.form, edit=True, order=order)
+                        return render_template('form_orden.html', **context)
+                    simData = calculo['simData']
+                    area_total = simData['areaTotal']
+                    consumo = area_total / ancho_rollo_m if ancho_rollo_m > 0 else 0
+                    consumo = round(consumo, 2)
+                    if consumo <= 0:
+                        flash('El consumo estimado es cero.', 'danger')
+                        db.session.rollback()
+                        context = _get_form_context(form_data=request.form, edit=True, order=order)
+                        return render_template('form_orden.html', **context)
+                    disponible_metros = producto_nuevo.get_stock_metros_disponible()
+                    if consumo > disponible_metros:
+                        flash(f'Stock insuficiente para "{producto_nuevo.nombre}". Disponible: {disponible_metros:.2f}m lineales, requerido: {consumo:.2f}m lineales', 'danger')
+                        db.session.rollback()
+                        context = _get_form_context(form_data=request.form, edit=True, order=order)
+                        return render_template('form_orden.html', **context)
+                    op_nuevo = OrdenProducto(
+                        orden_id=order.id,
+                        producto_id=producto_nuevo.id,
+                        cantidad_estimada=consumo
+                    )
+                    db.session.add(op_nuevo)
+                    producto_nuevo.stock_comprometido_metros = (producto_nuevo.stock_comprometido_metros or 0) + consumo
+                    if producto_nuevo.largo_rollo and producto_nuevo.largo_rollo > 0:
+                        unidades_a_reservar = consumo / producto_nuevo.largo_rollo
+                        producto_nuevo.stock_comprometido = (producto_nuevo.stock_comprometido or 0) + unidades_a_reservar
+                    else:
+                        producto_nuevo.stock_comprometido = (producto_nuevo.stock_comprometido or 0) + consumo
+                    mov = Movimiento(
+                        producto_id=producto_nuevo.id,
+                        tipo='reserva',
+                        cantidad=unidades_a_reservar if producto_nuevo.largo_rollo else consumo,
+                        cantidad_metros=consumo,
+                        comentario=f'Reserva para orden {order_num or "sin número"} - línea editada ({area_total:.2f} m², ancho {ancho_rollo_m}m → {consumo:.2f} m lineales)',
+                        orden_id=order.id,
+                        usuario_id=current_user.id
+                    )
+                    db.session.add(mov)
+                    archivo.producto_id = producto_nuevo.id
+                    archivo.material = producto_nuevo.nombre
+                    archivo.cantidad = cantidad_original if cantidad_original else 0
+                    archivo.unidad = unidad
+                    params_actualizado = params.copy()
+                    params_actualizado.update({
+                        'area_m2': area_total,
+                        'consumo_lineal': consumo,
+                        'costo_estimado': consumo * precio,
+                    })
+                    archivo.parametros_etiqueta = json.dumps(params_actualizado)
+                else:
+                    db.session.delete(archivo)
+                    continue
+            else:
                 if nombre_visible:
-                    archivo.nombre_visible = nombre_visible.strip()
-                material = request.form.get(f'material_{archivo_id}')
-                if material is not None:
-                    archivo.material = material.strip() if material.strip() else None
-                cantidad = request.form.get(f'cantidad_{archivo_id}')
-                if cantidad:
-                    try:
-                        archivo.cantidad = float(cantidad)
-                    except ValueError:
-                        archivo.cantidad = None
-                unidad = request.form.get(f'unidad_{archivo_id}')
+                    archivo.nombre_visible = nombre_visible
+                if material_nombre:
+                    archivo.material = material_nombre
+                if cantidad_original is not None:
+                    archivo.cantidad = cantidad_original
                 if unidad:
                     archivo.unidad = unidad
-        # ELIMINAR LÍNEAS MARCADAS
-        ids_a_eliminar = request.form.getlist('eliminar_archivos[]')
+                if producto_nuevo:
+                    archivo.producto_id = producto_nuevo.id
+
         for archivo_id in ids_a_eliminar:
             archivo = ArchivoAdjunto.query.get(int(archivo_id))
             if archivo and archivo.orden_id == order.id:
@@ -533,6 +665,7 @@ def edit_order(order_id):
                             producto.stock_comprometido_metros = max(0, (producto.stock_comprometido_metros or 0) - archivo.cantidad)
                             producto.stock_comprometido = max(0, (producto.stock_comprometido or 0) - archivo.cantidad)
                 db.session.delete(archivo)
+
         # PROCESAR NUEVAS LÍNEAS
         nombres_visibles = request.form.getlist('nombres_visibles[]')
         productos_ids = request.form.getlist('productos_ids[]')
@@ -584,8 +717,7 @@ def edit_order(order_id):
                     area_str_calc = ''
                 else:
                     if cantidad_original:
-                        area_calc = cantidad_original * ancho_rollo_m
-                        area_str_calc = str(area_calc)
+                        area_str_calc = str(cantidad_original)
                         cantidad_str_calc = ''
                     else:
                         area_str_calc = ''
@@ -608,10 +740,7 @@ def edit_order(order_id):
                     return render_template('form_orden.html', **context)
                 simData = calculo['simData']
                 area_total = simData['areaTotal']
-                if unidad == 'm':
-                    consumo = cantidad_original if cantidad_original else 0
-                else:
-                    consumo = area_total / ancho_rollo_m
+                consumo = area_total / ancho_rollo_m if ancho_rollo_m > 0 else 0
                 consumo = round(consumo, 2)
                 if consumo <= 0:
                     flash(f'Línea {i+1}: Consumo cero.', 'danger')
@@ -620,7 +749,7 @@ def edit_order(order_id):
                     return render_template('form_orden.html', **context)
                 disponible_metros = producto.get_stock_metros_disponible()
                 if consumo > disponible_metros:
-                    flash(f'Stock insuficiente para "{producto.nombre}". Disponible: {disponible_metros:.2f}m, requerido: {consumo:.2f}m', 'danger')
+                    flash(f'Stock insuficiente para "{producto.nombre}". Disponible: {disponible_metros:.2f}m lineales, requerido: {consumo:.2f}m lineales', 'danger')
                     db.session.rollback()
                     context = _get_form_context(form_data=request.form, edit=True, order=order)
                     return render_template('form_orden.html', **context)
@@ -663,7 +792,7 @@ def edit_order(order_id):
                         'resto_etiquetas': resto_etiquetas,
                         'columnas': columnas,
                         'filasPorMetro': filasPorMetro,
-                        'consumo': consumo
+                        'consumo_lineal': consumo
                     })
                 )
                 db.session.add(adjunto)
@@ -684,7 +813,7 @@ def edit_order(order_id):
                     tipo='reserva',
                     cantidad=unidades_a_reservar if producto.largo_rollo else consumo,
                     cantidad_metros=consumo,
-                    comentario=f'Reserva para orden {order_num or "sin número"} - línea {i+1} ({area_total:.2f} m²)',
+                    comentario=f'Reserva para orden {order_num or "sin número"} - línea {i+1} ({area_total:.2f} m², ancho {ancho_rollo_m}m → {consumo:.2f} m lineales)',
                     orden_id=order.id,
                     usuario_id=current_user.id
                 )
@@ -701,6 +830,7 @@ def edit_order(order_id):
                     producto_id=producto.id if producto else None
                 )
                 db.session.add(adjunto)
+
         order.add_history(f'Editada por {current_user.username}')
         # NOTIFICACIONES
         usuarios_ids = []
@@ -713,7 +843,8 @@ def edit_order(order_id):
         if current_user.id not in usuarios_ids:
             usuarios_ids.append(current_user.id)
         mensaje = f'Orden {order.order_num or "sin número"} actualizada por {current_user.username}'
-        enlace = url_for('ordenes.edit_order', order_id=order.id, _external=True)
+        # 🔥 CORRECCIÓN: enlace a detalle (no a editar)
+        enlace = url_for('ordenes.detalle_order', order_id=order.id, _external=True)
         if usuarios_ids:
             notificar_usuarios(usuarios_ids, mensaje, 'orden_editada', order.id, enlace)
         order.set_usuarios_notificados(usuarios_ids)
@@ -777,7 +908,7 @@ def eliminar_archivo(archivo_id):
     return jsonify({'success': False, 'error': 'Método obsoleto'}), 405
 
 # ==========================================
-# MARCAR ENTRADA
+# MARCAR ENTRADA (con actualización de comentarios de reserva)
 # ==========================================
 @ordenes_bp.route('/marcar-entrada/<int:order_id>', methods=['POST'])
 @login_required
@@ -802,7 +933,16 @@ def marcar_entrada(order_id):
     order.entrada_ok = True
     order.add_history(f'Entrada al sistema marcada por {current_user.username} con número {odoo_order_num}')
     db.session.commit()
-    flash(f'Orden {odoo_order_num} marcada como entrada al sistema.', 'success')
+
+    if odoo_order_num:
+        movimientos_reserva = Movimiento.query.filter_by(orden_id=order.id, tipo='reserva').all()
+        for mov in movimientos_reserva:
+            if mov.comentario and 'sin número' in mov.comentario:
+                mov.comentario = mov.comentario.replace('sin número', odoo_order_num)
+        db.session.commit()
+        flash(f'Orden {odoo_order_num} marcada como entrada al sistema. Comentarios de reserva actualizados.', 'success')
+    else:
+        flash(f'Orden marcada como entrada al sistema.', 'success')
     return redirect(url_for('ordenes.list_orders'))
 
 # ==========================================

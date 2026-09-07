@@ -14,16 +14,37 @@
 {% block extra_css %}
 <style>
     /* ===== GENERAL ===== */
-    .content-card { max-width: 100%; padding: 0 20px; }
+    .content-card {
+        max-width: 100%;
+        padding: 0 20px;
+        overflow: hidden;
+    }
 
     /* ===== TABS ===== */
     .tabs {
-        display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 2px solid #f0ece8; padding-bottom: 4px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-bottom: 16px;
+        border-bottom: 2px solid #f0ece8;
+        padding-bottom: 4px;
     }
     .tab-btn {
-        background: none; border: none; padding: 8px 20px; border-radius: 30px 30px 0 0;
-        font-weight: 600; font-size: 14px; cursor: pointer; color: #8e8e93; transition: all 0.2s;
-        font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 6px;
+        background: none;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 30px 30px 0 0;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        color: #8e8e93;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
     }
     .tab-btn:hover { color: #1c1c1e; background: rgba(0,0,0,0.02); }
     .tab-btn.active { background: #1c1c1e; color: white; }
@@ -32,29 +53,62 @@
 
     /* ===== FILTROS ===== */
     .filters-bar {
-        display: flex; flex-wrap: wrap; align-items: center; gap: 12px;
-        padding: 10px 16px; background: rgba(255,255,255,0.6); backdrop-filter: blur(10px);
-        border-radius: 14px; border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        padding: 14px 18px;
+        margin-top: 4px;
+        margin-bottom: 20px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
     }
     .filters-bar input, .filters-bar select {
-        padding: 4px 10px; border: 1.5px solid #e0dcd8; border-radius: 30px; font-size: 12px;
-        background: white; color: #1c1c1e; font-family: 'Inter', sans-serif; height: 30px; min-width: 120px;
+        padding: 4px 10px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 30px;
+        font-size: 12px;
+        background: white;
+        color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
+        height: 30px;
+        min-width: 120px;
     }
     .filters-bar input:focus, .filters-bar select:focus {
-        outline: none; border-color: #a8854f; box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
     .filters-bar .result-count { font-size: 13px; color: #8e8e93; margin-left: auto; }
     .filters-bar .filter-indicator {
-        font-size: 12px; font-weight: 600; color: #a8854f; background: rgba(168,133,79,0.1);
-        padding: 2px 12px; border-radius: 30px; display: none;
-        align-items: center; gap: 6px;
+        display: none !important;
     }
-    .filters-bar .filter-indicator.active { display: inline-flex; }
-    .filters-bar .filter-indicator .btn-close-filter {
-        background: none; border: none; color: #a8854f; cursor: pointer; font-size: 14px; padding: 0 4px;
-        transition: transform 0.2s;
+    .filters-bar .admin-btn {
+        background: #1c1c1e;
+        color: white;
+        border: none;
+        border-radius: 30px;
+        padding: 4px 14px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        height: 30px;
+        white-space: nowrap;
     }
-    .filters-bar .filter-indicator .btn-close-filter:hover { transform: rotate(90deg); }
+    .filters-bar .admin-btn:hover {
+        background: #333;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .filters-bar .admin-btn i { font-size: 13px; }
 
     /* ===== DASHBOARD ===== */
     .dashboard-grid { display: flex; flex-direction: column; gap: 16px; }
@@ -79,20 +133,31 @@
 
     /* ===== MAPA D3 ===== */
     .mapa-wrapper {
-        background: white; border-radius: 24px; padding: 16px;
-        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-        overflow: auto; width: 100%; min-height: 320px;
+        background: white;
+        border-radius: 24px;
+        padding: 4px 2px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+        width: 100%;
+        position: relative;
+        touch-action: pan-y;
+        height: auto;
+        min-height: auto;
     }
     .mapa-wrapper svg {
-        display: block; margin: 0 auto; width: 100%; height: 100%;
-        min-height: 300px;
+        display: block;
+        margin: 0 auto;
+        width: 100%;
+        height: auto;
         background: #fafaf9;
         border-radius: 8px;
+        touch-action: pan-y;
+        overflow: hidden;
     }
     .mapa-wrapper .node {
         cursor: pointer;
     }
-    /* Contenedor interno que flota */
     .mapa-wrapper .node-inner {
         animation: float 0.7s ease-in-out infinite;
         transform-origin: center center;
@@ -117,18 +182,81 @@
         stroke-width: 2.5px !important;
         filter: drop-shadow(0 0 6px rgba(168,133,79,0.2));
     }
+    .mapa-wrapper .node.leyenda-hover .node-inner rect {
+        stroke-width: 3px !important;
+        filter: drop-shadow(0 0 10px rgba(0,0,0,0.15));
+    }
     .mapa-wrapper .edgePath path {
         fill: none; stroke: #8e8e93; stroke-width: 2px;
         stroke-dasharray: 4 3; opacity: 0.6;
     }
     .mapa-wrapper .leyenda {
-        display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
-        margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0ece8;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 4px;
+        padding-top: 4px;
+        border-top: 1px solid #f0ece8;
     }
-    .leyenda-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555; }
+    .leyenda-item {
+        display: flex; align-items: center; gap: 6px; font-size: 11px; color: #555;
+        cursor: pointer; padding: 2px 8px; border-radius: 20px;
+        transition: background 0.2s;
+    }
+    .leyenda-item:hover {
+        background: rgba(0,0,0,0.04);
+    }
     .leyenda-item .color { width: 10px; height: 10px; border-radius: 50%; }
+    .leyenda-item .label { font-weight: 500; }
 
-    /* Animación de flotación suave */
+    /* Controles de zoom - ocultos temporalmente */
+    .zoom-controls {
+        display: none !important;
+    }
+
+    /* Tooltip flotante para long press */
+    .map-tooltip {
+        position: fixed;
+        background: white;
+        border-radius: 16px;
+        padding: 10px 18px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        border: 1px solid #f0ece8;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1c1c1e;
+        pointer-events: none;
+        display: none;
+        z-index: 1000;
+        font-family: 'Inter', sans-serif;
+        backdrop-filter: blur(4px);
+        background: rgba(255,255,255,0.92);
+        max-width: 220px;
+        text-align: center;
+        line-height: 1.4;
+    }
+    .map-tooltip .sub {
+        font-weight: 400;
+        font-size: 13px;
+        color: #8e8e93;
+    }
+
+    .mapa-loading {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(255,255,255,0.6); backdrop-filter: blur(2px);
+        border-radius: 24px; display: none; justify-content: center; align-items: center;
+        z-index: 10; flex-direction: column; gap: 10px;
+    }
+    .mapa-loading.active { display: flex; }
+    .mapa-loading .spinner {
+        width: 36px; height: 36px; border: 4px solid #f0ece8;
+        border-top-color: #a8854f; border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .mapa-loading span { font-size: 13px; color: #555; font-weight: 500; }
+
     @keyframes float {
         0% { transform: translateY(1px); }
         50% { transform: translateY(-6px); }
@@ -154,20 +282,39 @@
     .chart-container canvas { max-height: 140px; width: 100% !important; }
 
     /* ===== KANBAN ===== */
-    .kanban-wrapper { background: rgba(255,255,255,0.3); border-radius: 24px; padding: 20px; border: 1px solid rgba(0,0,0,0.04); }
+    .kanban-wrapper {
+        background: rgba(255,255,255,0.3);
+        border-radius: 24px;
+        padding: 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        min-height: 350px;
+    }
     .board {
-        display: flex; gap: 16px; overflow-x: auto; padding: 8px 4px 16px; min-height: 350px;
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        padding: 8px 4px 16px;
+        min-height: 350px;
+        flex-wrap: nowrap;
     }
     .columna {
-        flex: 0 0 180px; min-width: 150px;
-        background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
-        border-radius: 20px; padding: 14px 14px 10px;
-        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        flex: 0 0 180px;
+        min-width: 150px;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 14px 14px 10px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        display: flex; flex-direction: column; position: relative; overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
     }
     .columna::after {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; border-radius: 20px 20px 0 0;
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+        border-radius: 20px 20px 0 0;
     }
     .columna.pendiente::after { background: #f59e0b; }
     .columna.por-preparar::after { background: #f97316; }
@@ -180,44 +327,166 @@
 
     .columna:hover { transform: translateY(-4px); box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
     .columna .cabecera {
-        font-family: 'Playfair Display', serif; font-weight: 700; font-size: 17px;
-        display: flex; justify-content: space-between; align-items: center;
-        padding-bottom: 6px; margin-bottom: 10px; border-bottom: 1px solid rgba(0,0,0,0.04);
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 17px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 6px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
     }
     .columna .cabecera .contador {
-        background: rgba(0,0,0,0.04); padding: 0 12px; border-radius: 30px; font-size: 13px; font-weight: 600;
+        background: rgba(0,0,0,0.04);
+        padding: 0 12px;
+        border-radius: 30px;
+        font-size: 13px;
+        font-weight: 600;
     }
-    .columna .card-list { min-height: 80px; flex: 1; border-radius: 8px; padding: 2px; transition: all 0.3s; }
+    .columna .card-list {
+        min-height: 80px;
+        flex: 1;
+        border-radius: 8px;
+        padding: 2px;
+        transition: all 0.3s;
+    }
 
+    /* ===== TARJETA (CORREGIDO) ===== */
     .tarjeta {
-        background: white; border-radius: 14px; padding: 10px 12px; margin-bottom: 6px;
-        border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        cursor: grab; transition: all 0.2s;
+        background: white;
+        border-radius: 14px;
+        padding: 10px 12px;
+        margin-bottom: 6px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        cursor: grab;
+        transition: all 0.2s;
+        position: relative;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: none;
     }
-    .tarjeta:hover { transform: translateY(-2px) scale(1.01); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
-    .tarjeta .titulo { font-weight: 600; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 6px; }
-    .tarjeta .sub { font-size: 11px; color: #8e8e93; display: flex; justify-content: space-between; margin-top: 2px; align-items: center; gap: 4px; }
-    .tarjeta .sub .cliente { color: #1c1c1e; font-weight: 500; cursor: pointer; }
+    .tarjeta .tiempo-columna {
+        font-size: 10px;
+        background: rgba(0,0,0,0.04);
+        padding: 1px 6px;
+        border-radius: 30px;
+        color: #6b6b70;
+        font-weight: 500;
+        pointer-events: none;
+        display: inline-block;
+        margin-left: 6px;
+        flex-shrink: 0;
+    }
+    .tarjeta .titulo {
+        font-weight: 600;
+        font-size: 13px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 6px;
+        margin-right: 4px;
+        flex-wrap: wrap;
+    }
+    .tarjeta .sub {
+        font-size: 11px;
+        color: #8e8e93;
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2px;
+        align-items: center;
+        gap: 4px;
+    }
+    .tarjeta .sub .cliente {
+        color: #1c1c1e;
+        font-weight: 500;
+        cursor: pointer;
+    }
     .tarjeta .sub .prioridad {
-        font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 30px;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 30px;
     }
     .prioridad.urgente { color: #ff3b30; background: rgba(255,59,48,0.08); }
     .prioridad.normal { color: #34c759; background: rgba(52,199,89,0.08); }
     .prioridad.critica { color: #ff9500; background: rgba(255,149,0,0.08); }
     .tarjeta .ruta-badge {
-        font-size: 9px; font-weight: 700; text-transform: uppercase; padding: 1px 8px; border-radius: 30px;
-        background: #f0ece8; color: #555;
+        font-size: 9px;
+        font-weight: 700;
+        text-transform: uppercase;
+        padding: 1px 8px;
+        border-radius: 30px;
+        background: #f0ece8;
+        color: #555;
     }
     .ruta-badge.impresion { background: #dbeafe; color: #1e40af; }
     .ruta-badge.produccion { background: #fce7f3; color: #be185d; }
 
     .tarjeta .acciones-mini {
-        margin-top: 6px; display: flex; gap: 6px; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 4px; align-items: center;
+        margin-top: 6px;
+        display: flex;
+        gap: 6px;
+        border-top: 1px solid rgba(0,0,0,0.04);
+        padding-top: 4px;
+        align-items: center;
     }
     .tarjeta .btn-hecho {
-        background: rgba(0,0,0,0.04); border: none; border-radius: 30px; padding: 1px 10px; font-size: 10px; cursor: pointer;
+        background: rgba(0,0,0,0.04);
+        border: none;
+        border-radius: 30px;
+        padding: 1px 10px;
+        font-size: 10px;
+        cursor: pointer;
     }
     .tarjeta .btn-hecho:hover { background: rgba(0,0,0,0.08); }
+
+    /* ===== KANBAN MÓVIL ===== */
+    .kanban-mobile-selector {
+        display: none;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-bottom: 12px;
+        padding: 8px 0;
+    }
+    .kanban-mobile-selector .col-btn {
+        background: rgba(0,0,0,0.04);
+        border: none;
+        border-radius: 30px;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        color: #555;
+        cursor: pointer;
+        transition: all 0.2s;
+        -webkit-tap-highlight-color: transparent;
+        flex: 0 1 auto;
+        min-width: 60px;
+        text-align: center;
+        border: 1px solid transparent;
+    }
+    .kanban-mobile-selector .col-btn.active {
+        background: #1c1c1e;
+        color: white;
+        border-color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .kanban-mobile-selector .col-btn .badge {
+        background: rgba(255,255,255,0.2);
+        border-radius: 30px;
+        padding: 0 6px;
+        font-size: 11px;
+        margin-left: 4px;
+        color: inherit;
+    }
+    .kanban-mobile-selector .col-btn.active .badge {
+        background: rgba(255,255,255,0.25);
+    }
 
     /* ===== HISTORIAL ===== */
     .historial-wrapper { background: white; border-radius: 24px; padding: 20px; border: 1px solid #f0ece8; }
@@ -225,7 +494,10 @@
     .historial-item {
         background: #fafaf9; border-radius: 14px; padding: 12px 16px;
         border: 1px solid #f0ece8; display: flex; justify-content: space-between; align-items: center;
+        cursor: pointer;
+        transition: all 0.2s;
     }
+    .historial-item:hover { background: #f5f3f0; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
     .historial-item .info { display: flex; flex-direction: column; gap: 2px; }
     .historial-item .info .num { font-weight: 600; font-size: 14px; }
     .historial-item .info .cliente { font-size: 12px; color: #8e8e93; }
@@ -317,10 +589,12 @@
         padding: 10px 20px; border-radius: 30px; font-weight: 500; z-index: 10000;
         font-size: 14px; opacity: 0; transition: opacity 0.3s; pointer-events: none;
         font-family: 'Inter', sans-serif;
+        display: flex; align-items: center; gap: 8px;
     }
     .toast.show { opacity: 1; }
     .toast.success { background: #10b981; }
     .toast.error { background: #dc2626; }
+    .toast.info { background: #3b82f6; }
 
     /* ===== MODAL ===== */
     .modal-overlay {
@@ -344,15 +618,129 @@
     .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; }
     .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
 
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
+        .content-card { padding: 0 10px; }
+
         .kpi-chips { align-self: stretch; justify-content: center; }
-        .board { flex-direction: column; align-items: stretch; }
-        .columna { flex: 1 1 auto; min-width: unset; }
+
+        .board { display: none !important; }
+        .kanban-mobile-selector { display: flex; }
+        .kanban-mobile-columna { display: block; }
+
         .panel-lateral { width: 100%; max-width: 100%; right: -100%; top: 0; height: 100%; border-radius: 0; padding: 16px; }
         .panel-lateral.open { right: 0; }
         .panel-lateral .panel-actions .btn { font-size: 12px; padding: 6px 12px; }
+
         .chart-container canvas { max-height: 120px; }
-        .mapa-wrapper { padding: 10px; min-height: 180px; }
+
+        .mapa-wrapper {
+            padding: 2px 1px;
+            height: 70vh;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+        .mapa-wrapper svg {
+            width: 100% !important;
+            height: 100% !important;
+            display: block;
+        }
+
+        .tabs {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background: white;
+            padding: 4px 10px;
+            margin-bottom: 8px;
+            border-radius: 0;
+            border-bottom: 1px solid #f0ece8;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            justify-content: flex-start;
+            gap: 2px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-btn {
+            border-radius: 30px;
+            padding: 6px 12px;
+            font-size: 12px;
+            flex: 0 0 auto;
+            background: transparent;
+            border: 1px solid transparent;
+            white-space: nowrap;
+            min-height: 34px;
+        }
+        .tab-btn.active {
+            background: #1c1c1e;
+            color: white;
+            border-color: #1c1c1e;
+        }
+
+        .filters-bar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+            padding: 16px;
+            margin-top: 6px;
+            margin-bottom: 16px;
+        }
+        .filters-bar input,
+        .filters-bar select {
+            min-width: 100% !important;
+            width: 100% !important;
+            padding: 10px 14px;
+            font-size: 15px;
+            height: 42px;
+            box-sizing: border-box;
+        }
+        .filters-bar .result-count {
+            margin-left: 0;
+            text-align: center;
+            padding: 4px 0;
+            font-size: 14px;
+        }
+        .filters-bar .filter-indicator {
+            display: none !important;
+        }
+        .filters-bar .admin-btn {
+            justify-content: center;
+            height: 42px;
+            font-size: 14px;
+            padding: 6px 16px;
+            width: 100%;
+        }
+
+        .historial-list { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 480px) {
+        .tab-btn { font-size: 11px; padding: 4px 10px; min-height: 30px; }
+        .kpi-chip { font-size: 11px; padding: 2px 8px; }
+        .kpi-chip .num { font-size: 12px; }
+        .filters-bar input,
+        .filters-bar select {
+            font-size: 16px;
+            height: 46px;
+            padding: 12px 16px;
+        }
+        .filters-bar .filter-indicator .btn-close-filter { font-size: 18px; }
+
+        .kanban-mobile-selector .col-btn {
+            font-size: 12px;
+            padding: 6px 10px;
+            min-width: 50px;
+        }
+        .tarjeta {
+            padding: 8px 10px;
+            padding-right: 44px;
+        }
+        .tarjeta .tiempo-columna {
+            font-size: 9px;
+            top: 4px;
+            right: 6px;
+        }
     }
 </style>
 {% endblock %}
@@ -379,10 +767,16 @@
             <i class="fas fa-filter"></i> Filtro: <span id="filterColumna"></span>
             <button class="btn-close-filter" onclick="limpiarFiltroColumna()">&times;</button>
         </span>
+        <!-- ===== BOTÓN ADMIN ===== -->
+        {% if current_user.role == 'admin' %}
+            <a href="{{ url_for('workflow.admin_panel') }}" class="admin-btn">
+                <i class="fas fa-cog"></i> Administrar
+            </a>
+        {% endif %}
     </div>
 
-    <!-- PESTAÑAS -->
-    <div class="tabs">
+    <!-- PESTAÑAS PRINCIPALES -->
+    <div class="tabs" id="tabContainer">
         <button class="tab-btn active" data-tab="dashboard"><i class="fas fa-sitemap"></i> Dashboard</button>
         <button class="tab-btn" data-tab="tareas"><i class="fas fa-tasks"></i> Tareas</button>
         <button class="tab-btn" data-tab="entregados"><i class="fas fa-history"></i> Entregados</button>
@@ -406,10 +800,20 @@
 
             <!-- MAPA -->
             <div class="mapa-wrapper" id="mapaWrapper">
-                <svg id="mapaSvg" width="100%" height="400"></svg>
+                <div class="mapa-loading" id="mapaLoading">
+                    <div class="spinner"></div>
+                    <span>Cargando mapa...</span>
+                </div>
+                <svg id="mapaSvg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"></svg>
+                <!-- Controles de zoom (ocultos) -->
+                <div class="zoom-controls" id="zoomControls">
+                    <button class="zoom-btn" id="zoomInBtn" aria-label="Acercar">+</button>
+                    <button class="zoom-btn" id="zoomOutBtn" aria-label="Alejar">−</button>
+                    <button class="zoom-btn" id="zoomResetBtn" aria-label="Restablecer zoom">⟲</button>
+                </div>
                 <div class="leyenda" id="leyendaMapa"></div>
-                <div style="text-align:center; margin-top:8px; font-size:11px; color:#8e8e93;">
-                    <i class="fas fa-mouse-pointer"></i> Haz clic en un nodo para filtrar las tareas
+                <div style="text-align:center; margin-top:2px; font-size:11px; color:#8e8e93;">
+                    <i class="fas fa-mouse-pointer"></i> Toca un nodo para ver las tareas de esa columna
                 </div>
             </div>
 
@@ -431,7 +835,9 @@
     <!-- ===== TAB TAREAS ===== -->
     <div class="tab-content" id="tab-tareas">
         <div class="kanban-wrapper">
+            <div class="kanban-mobile-selector" id="kanbanMobileSelector"></div>
             <div class="board" id="board"></div>
+            <div id="kanbanMobileColumna" class="kanban-mobile-columna" style="display:none;"></div>
         </div>
     </div>
 
@@ -474,6 +880,9 @@
 
 <!-- ===== TOAST ===== -->
 <div class="toast" id="toast"></div>
+
+<!-- Tooltip flotante para long press -->
+<div class="map-tooltip" id="mapTooltip"></div>
 {% endblock %}
 
 {% block extra_js %}
@@ -482,6 +891,12 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+    // ============================================================
+    // CONFIGURACIÓN
+    // ============================================================
+    const POLLING_INTERVAL = 10000;
+    const ZOOM_STORAGE_KEY = 'workflow_mapa_zoom';
+
     // ============================================================
     // DATOS DESDE EL BACKEND
     // ============================================================
@@ -535,6 +950,15 @@
     let chartInstance = null;
     let pollingInterval = null;
     let isRendering = false;
+    let columnasPermitidasIds = columnasPermitidas;
+
+    // Estado del mapa y zoom (sin gestos, solo botones)
+    let currentRankdir = 'LR';
+    let zoomState = { k: 1, x: 0, y: 0 };
+    let zoomGroupSelection = null;
+    let svgSelection = null;
+    let mapWidth = 0, mapHeight = 0;
+    let zoomControlsInitialized = false;
 
     // ============================================================
     // UTILIDADES
@@ -617,11 +1041,15 @@
 
     function mostrarToast(mensaje, tipo = '') {
         const toast = document.getElementById('toast');
-        toast.textContent = mensaje;
+        let icono = '';
+        if (tipo === 'success') icono = '✅ ';
+        else if (tipo === 'error') icono = '❌ ';
+        else if (tipo === 'info') icono = 'ℹ️ ';
+        toast.innerHTML = icono + mensaje;
         toast.className = 'toast ' + tipo;
         toast.classList.add('show');
         clearTimeout(toast._timeout);
-        toast._timeout = setTimeout(() => toast.classList.remove('show'), 3000);
+        toast._timeout = setTimeout(() => toast.classList.remove('show'), 6000); // 6 segundos
     }
 
     // ============================================================
@@ -686,7 +1114,6 @@
             .then(data => {
                 if (data.success) {
                     mostrarToast('Orden eliminada', 'success');
-                    // Recargar datos completos
                     location.reload();
                 } else {
                     mostrarToast('Error: ' + (data.error || 'No autorizado'), 'error');
@@ -696,7 +1123,7 @@
     };
 
     // ============================================================
-    // MOVER ORDEN (solo hacia adelante + actualización forzada)
+    // MOVER ORDEN (CORREGIDO - manejo de errores mejorado)
     // ============================================================
     function moverOrden(id, nuevaColumna) {
         const orden = obtenerOrden(id);
@@ -710,32 +1137,37 @@
             return;
         }
 
+        // Deshabilitar botones para evitar múltiples envíos
+        const btn = document.querySelector(`.btn-hecho[data-id="${id}"]`);
+        if (btn) { btn.disabled = true; btn.textContent = '⏳ Moviendo...'; }
+
         fetch('/workflow/mover/' + id, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ columna: nuevaColumna })
         })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    if (response.status === 400 && data.error) {
-                        mostrarError(data.error);
-                    } else if (response.status === 403) {
-                        alert('No tienes permiso o la orden ha cambiado de columna. Recargando...');
-                        location.reload();
-                    } else {
-                        throw new Error('Error en la petición');
-                    }
-                    return;
-                });
+        .then(async response => {
+            // Leer el texto de la respuesta para manejar errores no JSON
+            const text = await response.text();
+            let data;
+            try {
+                data = JSON.parse(text);
+            } catch (e) {
+                // Si no es JSON, mostrar error genérico
+                throw new Error('El servidor devolvió una respuesta inválida. Contacta al administrador.');
             }
-            return response.json();
+
+            if (!response.ok) {
+                // Error controlado por el backend (400, 403, etc.)
+                throw new Error(data.error || 'Error desconocido');
+            }
+
+            return data;
         })
         .then(data => {
             if (data && data.success) {
                 mostrarToast('✅ ' + (data.mensaje || 'Movida'), 'success');
 
-                // Actualizar caché local
                 const ordenLocal = ordenesCache.find(o => o.id === id);
                 if (ordenLocal) {
                     ordenLocal.column = nuevaColumna;
@@ -750,90 +1182,175 @@
                         fecha: new Date().toISOString(),
                         mensaje: `Movida a ${nuevaColumna}`
                     });
+                    // Forzar actualización de la cache
+                    ordenesCache = ordenesCache.map(o => o.id === id ? ordenLocal : o);
                 }
 
-                // Re-renderizar Kanban e historial (rápido)
                 renderizarKanban();
                 renderizarHistorial();
 
-                // FORZAR ACTUALIZACIÓN DEL MAPA DESPUÉS DE UN BREVE RETRASO
-                // para asegurar que el servidor ya tenga los datos actualizados
                 setTimeout(() => {
-                    console.log('🔄 Forzando actualización del mapa después de mover...');
                     actualizarDashboardCompleto();
                 }, 300);
 
-            } else if (data && data.error) {
-                mostrarError(data.error);
+            } else {
+                mostrarToast('⚠️ ' + (data.mensaje || 'Error inesperado'), 'error');
             }
         })
         .catch(err => {
-            console.error('Error al mover:', err);
-            alert('Error de conexión. Recargando...');
-            location.reload();
+            console.error('❌ Error al mover orden:', err);
+            // Mostrar mensaje de error claro
+            mostrarToast('❌ ' + (err.message || 'Error de conexión'), 'error');
+        })
+        .finally(() => {
+            // Rehabilitar botón
+            if (btn) { btn.disabled = false; btn.textContent = 'Hecho →'; }
         });
     }
 
     // ============================================================
-    // ACTUALIZAR DASHBOARD COMPLETO (mapa, KPIs, gráfico)
+    // DETERMINAR ORIENTACIÓN Y TAMAÑOS DE NODO (compacto)
     // ============================================================
-    function actualizarDashboardCompleto() {
-        if (isRendering) return;
-        isRendering = true;
+    function getMapConfig() {
+        const isMobile = window.innerWidth < 768;
+        const isPortrait = window.innerHeight > window.innerWidth;
+        let rankdir = 'LR';
+        let nodeWidth = 60;
+        let nodeHeight = 45;
+        let margin = 15;
+        let nodesep = 35;
+        let ranksep = 45;
 
-        console.log('🔄 Obteniendo datos de /workflow/dashboard-data...');
-        fetch('/workflow/dashboard-data')
-            .then(r => {
-                if (!r.ok) throw new Error('Error en la respuesta');
-                return r.json();
-            })
-            .then(data => {
-                console.log('📊 Datos del dashboard:', data);
-                // 1. Actualizar KPIs
-                document.getElementById('kpiTotalActivas').textContent = data.total_activas;
-                document.getElementById('kpiPendientes').textContent = data.pendientes;
-                document.getElementById('kpiEnProceso').textContent = data.en_proceso;
-                document.getElementById('kpiListas').textContent = data.listas;
-                document.getElementById('kpiEntregadas').textContent = data.total_entregadas;
-                document.getElementById('totalActivasBadge').textContent = data.total_activas;
-                document.getElementById('totalEntregadasBadge').textContent = data.total_entregadas;
+        if (isMobile) {
+            if (isPortrait) {
+                rankdir = 'TB';
+                nodeWidth = 75;
+                nodeHeight = 60;
+                margin = 12;
+                nodesep = 40;
+                ranksep = 45;
+            } else {
+                rankdir = 'LR';
+                nodeWidth = 70;
+                nodeHeight = 55;
+                margin = 12;
+                nodesep = 35;
+                ranksep = 45;
+            }
+        } else {
+            rankdir = 'LR';
+            nodeWidth = 60;
+            nodeHeight = 45;
+            margin = 15;
+            nodesep = 35;
+            ranksep = 45;
+        }
 
-                // 2. Actualizar mapa con los conteos del servidor
-                if (data.column_counts) {
-                    console.log('🗺️ Renderizando mapa con column_counts:', data.column_counts);
-                    renderizarMapa(data.column_counts);
-                } else {
-                    console.warn('⚠️ No hay column_counts en la respuesta');
-                }
-
-                // 3. Actualizar gráfico
-                if (chartInstance) {
-                    chartInstance.data.datasets[0].data = data.chart_data;
-                    chartInstance.update();
-                }
-
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-                document.getElementById('pollingIcon').className = 'fas fa-check-circle';
-            })
-            .catch(err => {
-                console.error('❌ Error en actualizarDashboardCompleto:', err);
-                document.getElementById('pollingIcon').className = 'fas fa-exclamation-triangle';
-                document.getElementById('lastUpdate').textContent = 'error';
-            })
-            .finally(() => {
-                setTimeout(() => { isRendering = false; }, 300);
-            });
+        return { rankdir, nodeWidth, nodeHeight, margin, nodesep, ranksep, isMobile, isPortrait };
     }
 
     // ============================================================
-    // RENDERIZAR MAPA (con flotación y pausa en hover)
+    // ZOOM CON BOTONES (sin gestos) - pero ocultos, no se usan
+    // ============================================================
+    function aplicarZoom() {
+        if (!zoomGroupSelection) return;
+        const { k, x, y } = zoomState;
+        zoomGroupSelection.attr('transform', `translate(${x}, ${y}) scale(${k})`);
+        try {
+            const data = { rankdir: currentRankdir, k, x, y };
+            localStorage.setItem(ZOOM_STORAGE_KEY + '_' + currentRankdir, JSON.stringify(data));
+        } catch (e) {}
+    }
+
+    function zoomIn() {
+        zoomState.k = Math.min(3, zoomState.k + 0.2);
+        const cx = mapWidth / 2;
+        const cy = mapHeight / 2;
+        zoomState.x = (1 - zoomState.k) * cx;
+        zoomState.y = (1 - zoomState.k) * cy;
+        aplicarZoom();
+    }
+
+    function zoomOut() {
+        zoomState.k = Math.max(0.5, zoomState.k - 0.2);
+        const cx = mapWidth / 2;
+        const cy = mapHeight / 2;
+        zoomState.x = (1 - zoomState.k) * cx;
+        zoomState.y = (1 - zoomState.k) * cy;
+        aplicarZoom();
+    }
+
+    function zoomReset() {
+        zoomState.k = 1;
+        zoomState.x = 0;
+        zoomState.y = 0;
+        aplicarZoom();
+        localStorage.removeItem(ZOOM_STORAGE_KEY + '_' + currentRankdir);
+    }
+
+    function restaurarZoom() {
+        try {
+            const stored = localStorage.getItem(ZOOM_STORAGE_KEY + '_' + currentRankdir);
+            if (stored) {
+                const data = JSON.parse(stored);
+                if (data.rankdir === currentRankdir) {
+                    zoomState.k = data.k || 1;
+                    zoomState.x = data.x || 0;
+                    zoomState.y = data.y || 0;
+                    zoomState.k = Math.min(3, Math.max(0.5, zoomState.k));
+                    aplicarZoom();
+                    return true;
+                }
+            }
+        } catch (e) {}
+        return false;
+    }
+
+    // ============================================================
+    // CAMBIAR A PESTAÑA TAREAS Y FILTRAR
+    // ============================================================
+    function irATareasConFiltro(columnaId) {
+        console.log('🔍 irATareasConFiltro llamado con columnaId:', columnaId);
+        if (columnaFiltroActiva === columnaId) {
+            columnaFiltroActiva = null;
+            console.log('🔓 Filtro desactivado');
+        } else {
+            columnaFiltroActiva = columnaId;
+            console.log('🔒 Filtro activado para columna:', columnaId);
+        }
+
+        const isMobile = window.innerWidth < 768;
+        if (isMobile && columnaFiltroActiva) {
+            localStorage.setItem('workflow_columna_activa_mobile', columnaFiltroActiva);
+            console.log('📱 Columna activa móvil actualizada a:', columnaFiltroActiva);
+        }
+
+        const tabBtn = document.querySelector('.tab-btn[data-tab="tareas"]');
+        const isActive = tabBtn && tabBtn.classList.contains('active');
+        if (!isActive) {
+            if (tabBtn) tabBtn.click();
+        } else {
+            renderizarKanban();
+        }
+
+        if (svgSelection) {
+            svgSelection.selectAll('.node').classed('filtro-activo', function() {
+                return d3.select(this).attr('data-id') === columnaFiltroActiva;
+            });
+        }
+
+        const indicator = document.getElementById('filterIndicator');
+        if (indicator) indicator.classList.remove('active');
+    }
+
+    // ============================================================
+    // RENDERIZAR MAPA
     // ============================================================
     function renderizarMapa(columnCounts) {
         const svg = d3.select('#mapaSvg');
         svg.selectAll('*').remove();
 
         if (!columnCounts) {
-            console.warn('⚠️ renderizarMapa sin conteos, abortando');
             svg.append('text')
                 .attr('x', '50%')
                 .attr('y', '50%')
@@ -845,19 +1362,20 @@
             return;
         }
 
-        console.log('📊 Conteos para mapa:', columnCounts);
+        const config = getMapConfig();
+        const { rankdir, nodeWidth, nodeHeight, margin, nodesep, ranksep, isMobile, isPortrait } = config;
+        currentRankdir = rankdir;
 
         const nodes = columnasInfo.map(c => ({
             id: c.id,
-            label: `${c.icono} (${columnCounts[c.id] || 0})`,
-            width: 80,
-            height: 60,
+            label: c.nombre + '\n(' + (columnCounts[c.id] || 0) + ')',
+            width: nodeWidth,
+            height: nodeHeight,
             color: COLORES[c.id] || '#a8854f',
             icono: c.icono,
             unicode: ICON_UNICODE[c.icono] || '?'
         }));
 
-        // Aristas
         const edgeSet = new Set();
         Object.values(RUTAS).forEach(r => {
             for (let i = 0; i < r.length - 1; i++) {
@@ -875,7 +1393,7 @@
         });
 
         const g = new dagre.graphlib.Graph();
-        g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 80, marginx: 20, marginy: 20 });
+        g.setGraph({ rankdir: rankdir, nodesep: nodesep, ranksep: ranksep, marginx: margin, marginy: margin });
         g.setDefaultEdgeLabel(() => ({}));
 
         nodes.forEach(n => {
@@ -889,25 +1407,27 @@
 
         const graphWidth = g.graph().width || 800;
         const graphHeight = g.graph().height || 400;
-        console.log(`📐 Dimensiones del grafo: ${graphWidth}x${graphHeight}`);
-
-        const margin = 40;
         const width = graphWidth + margin * 2;
         const height = graphHeight + margin * 2;
+        mapWidth = width;
+        mapHeight = height;
 
         svg.attr('viewBox', `0 0 ${width} ${height}`)
             .attr('width', '100%')
-            .attr('height', height);
+            .attr('height', '100%')
+            .style('overflow', 'hidden')
+            .attr('preserveAspectRatio', 'xMidYMid meet');
 
-        // Fondo del SVG
         svg.append('rect')
             .attr('width', width)
             .attr('height', height)
             .attr('fill', '#fafaf9')
             .attr('rx', 8);
 
-        // Aristas
-        const edgeGroup = svg.append('g').attr('class', 'edges');
+        const zoomGroup = svg.append('g').attr('class', 'zoom-group');
+        zoomGroupSelection = zoomGroup;
+
+        const edgeGroup = zoomGroup.append('g').attr('class', 'edges');
         g.edges().forEach(e => {
             const edge = g.edge(e);
             const points = edge.points;
@@ -927,8 +1447,7 @@
             }
         });
 
-        // Nodos con grupo interior para flotación
-        const nodeGroup = svg.append('g').attr('class', 'nodes');
+        const nodeGroup = zoomGroup.append('g').attr('class', 'nodes');
         g.nodes().forEach(id => {
             const node = g.node(id);
             if (!node) return;
@@ -936,54 +1455,52 @@
             const unicode = nodes.find(n => n.id === id)?.unicode || '?';
             const count = columnCounts[id] || 0;
 
-            // Grupo exterior (posición fija)
             const group = nodeGroup.append('g')
                 .attr('transform', `translate(${node.x + margin}, ${node.y + margin})`)
                 .attr('class', 'node')
                 .attr('data-id', id)
                 .style('cursor', 'pointer');
 
-            // Grupo interior (flota)
             const innerGroup = group.append('g')
                 .attr('class', 'node-inner');
 
-            // Rectángulo (píldora)
             innerGroup.append('rect')
                 .attr('x', -node.width / 2)
                 .attr('y', -node.height / 2)
                 .attr('width', node.width)
                 .attr('height', node.height)
-                .attr('rx', 28)
-                .attr('ry', 28)
+                .attr('rx', 18)
+                .attr('ry', 18)
                 .style('fill', color + '30')
                 .style('stroke', color)
                 .style('stroke-width', '2px');
 
-            // Icono (usando unicode)
+            const iconSize = isMobile ? '18px' : '14px';
+            const countSize = isMobile ? '14px' : '11px';
+            const countY = isMobile ? 14 : 10;
+
             innerGroup.append('text')
                 .attr('x', 0)
-                .attr('y', -4)
+                .attr('y', -2)
                 .attr('text-anchor', 'middle')
                 .style('font-family', '"Font Awesome 6 Free", "Font Awesome 6 Pro", sans-serif')
                 .style('font-weight', '900')
-                .style('font-size', '20px')
+                .style('font-size', iconSize)
                 .style('fill', color)
                 .style('pointer-events', 'none')
                 .text(unicode);
 
-            // Número
             innerGroup.append('text')
                 .attr('x', 0)
-                .attr('y', 18)
+                .attr('y', countY)
                 .attr('text-anchor', 'middle')
                 .style('font-family', 'Inter, sans-serif')
-                .style('font-weight', '600')
-                .style('font-size', '12px')
+                .style('font-weight', '700')
+                .style('font-size', countSize)
                 .style('fill', '#1c1c1e')
                 .style('pointer-events', 'none')
                 .text(count);
 
-            // Eventos para pausar/reanudar la animación
             group.on('mouseenter', function() {
                 d3.select(this).select('.node-inner').classed('paused', true);
             });
@@ -991,46 +1508,199 @@
                 d3.select(this).select('.node-inner').classed('paused', false);
             });
 
-            // Evento click (mantiene el filtro)
-            group.on('click', function() {
-                const id = d3.select(this).attr('data-id');
-                if (columnaFiltroActiva === id) {
-                    columnaFiltroActiva = null;
-                    document.getElementById('filterIndicator').classList.remove('active');
-                    document.getElementById('filterColumna').textContent = '';
-                    mostrarToast('Filtro de columna eliminado', 'success');
-                } else {
-                    columnaFiltroActiva = id;
-                    const colNombre = columnasInfo.find(c => c.id === id)?.nombre || id;
-                    document.getElementById('filterColumna').textContent = colNombre;
-                    document.getElementById('filterIndicator').classList.add('active');
-                    mostrarToast(`🔍 Filtrado: ${colNombre}`, 'success');
+            group.on('click', function(event) {
+                if (window._longPressDetected) {
+                    window._longPressDetected = false;
+                    return;
                 }
-                renderizarKanban();
+                const id = d3.select(this).attr('data-id');
+                irATareasConFiltro(id);
+            });
+
+            let longPressTimer = null;
+            let isLongPress = false;
+
+            group.on('touchstart', function(event) {
+                const touch = event.touches[0];
+                if (!touch) return;
+                const target = this;
+                isLongPress = false;
+                window._longPressDetected = false;
+                longPressTimer = setTimeout(() => {
+                    isLongPress = true;
+                    window._longPressDetected = true;
+                    const id = d3.select(target).attr('data-id');
+                    const col = columnasInfo.find(c => c.id === id);
+                    if (col) {
+                        const count = columnCounts[id] || 0;
+                        const tooltip = document.getElementById('mapTooltip');
+                        tooltip.innerHTML = `<strong>${col.nombre}</strong><br><span class="sub">${count} órdenes</span>`;
+                        tooltip.style.display = 'block';
+                        let left = touch.clientX - tooltip.offsetWidth / 2;
+                        let top = touch.clientY - tooltip.offsetHeight - 20;
+                        if (left < 10) left = 10;
+                        if (left + tooltip.offsetWidth > window.innerWidth - 10) left = window.innerWidth - tooltip.offsetWidth - 10;
+                        if (top < 10) top = touch.clientY + 20;
+                        tooltip.style.left = left + 'px';
+                        tooltip.style.top = top + 'px';
+                    }
+                }, 500);
+            });
+
+            group.on('touchmove', function() {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                document.getElementById('mapTooltip').style.display = 'none';
+            });
+
+            group.on('touchend', function(event) {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+                document.getElementById('mapTooltip').style.display = 'none';
+                if (isLongPress) {
+                    event.preventDefault();
+                    isLongPress = false;
+                    window._longPressDetected = false;
+                }
             });
 
             if (columnaFiltroActiva === id) {
                 group.classed('filtro-activo', true);
-            } else {
-                group.classed('filtro-activo', false);
             }
         });
 
-        // Leyenda
-        const leyenda = document.getElementById('leyendaMapa');
-        if (leyenda) {
-            leyenda.innerHTML = columnasInfo.map(c =>
-                `<span class="leyenda-item"><span class="color" style="background:${COLORES[c.id] || '#a8854f'}"></span> ${c.nombre}</span>`
-            ).join('');
+        const leyendaDiv = document.getElementById('leyendaMapa');
+        leyendaDiv.innerHTML = '';
+        const leyendaSel = d3.select(leyendaDiv);
+
+        columnasInfo.forEach(c => {
+            const color = COLORES[c.id] || '#a8854f';
+            const count = columnCounts[c.id] || 0;
+            const item = leyendaSel.append('div')
+                .attr('class', 'leyenda-item')
+                .attr('data-id', c.id)
+                .style('display', 'inline-flex')
+                .style('align-items', 'center')
+                .style('gap', '6px')
+                .style('margin-right', '10px')
+                .style('cursor', 'pointer');
+
+            item.append('span')
+                .attr('class', 'color')
+                .style('width', '10px')
+                .style('height', '10px')
+                .style('border-radius', '50%')
+                .style('background', color);
+
+            item.append('span')
+                .attr('class', 'label')
+                .text(c.nombre + ' (' + count + ')');
+
+            item.on('mouseenter', function() {
+                const id = d3.select(this).attr('data-id');
+                svg.selectAll('.node')
+                    .filter(function() { return d3.select(this).attr('data-id') === id; })
+                    .classed('leyenda-hover', true);
+            });
+            item.on('mouseleave', function() {
+                svg.selectAll('.node').classed('leyenda-hover', false);
+            });
+
+            item.on('click', function() {
+                const id = d3.select(this).attr('data-id');
+                irATareasConFiltro(id);
+            });
+        });
+
+        const restored = restaurarZoom();
+        if (!restored) {
+            zoomState.k = 1;
+            zoomState.x = 0;
+            zoomState.y = 0;
+            aplicarZoom();
         }
+
+        if (!zoomControlsInitialized) {
+            document.getElementById('zoomInBtn').onclick = zoomIn;
+            document.getElementById('zoomOutBtn').onclick = zoomOut;
+            document.getElementById('zoomResetBtn').onclick = zoomReset;
+            zoomControlsInitialized = true;
+        }
+
+        svg.on('mousedown', function() {
+            document.getElementById('mapTooltip').style.display = 'none';
+        });
+        svg.on('touchstart', function() {
+            document.getElementById('mapTooltip').style.display = 'none';
+        });
+
+        svgSelection = svg;
     }
 
     // ============================================================
-    // RENDERIZAR KANBAN (usa ordenesCache)
+    // ACTUALIZAR DASHBOARD
+    // ============================================================
+    function actualizarDashboardCompleto() {
+        if (isRendering) return;
+        isRendering = true;
+
+        document.getElementById('mapaLoading').classList.add('active');
+
+        fetch('/workflow/dashboard-data')
+            .then(r => {
+                if (!r.ok) throw new Error('Error en la respuesta');
+                return r.json();
+            })
+            .then(data => {
+                document.getElementById('kpiTotalActivas').textContent = data.total_activas;
+                document.getElementById('kpiPendientes').textContent = data.pendientes;
+                document.getElementById('kpiEnProceso').textContent = data.en_proceso;
+                document.getElementById('kpiListas').textContent = data.listas;
+                document.getElementById('kpiEntregadas').textContent = data.total_entregadas;
+                document.getElementById('totalActivasBadge').textContent = data.total_activas;
+                document.getElementById('totalEntregadasBadge').textContent = data.total_entregadas;
+
+                if (data.column_counts) {
+                    renderizarMapa(data.column_counts);
+                }
+
+                if (chartInstance) {
+                    chartInstance.data.datasets[0].data = data.chart_data;
+                    chartInstance.update();
+                }
+
+                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                document.getElementById('pollingIcon').className = 'fas fa-check-circle';
+            })
+            .catch(err => {
+                console.error('❌ Error en actualizarDashboardCompleto:', err);
+                document.getElementById('pollingIcon').className = 'fas fa-exclamation-triangle';
+                document.getElementById('lastUpdate').textContent = 'error';
+            })
+            .finally(() => {
+                document.getElementById('mapaLoading').classList.remove('active');
+                setTimeout(() => { isRendering = false; }, 300);
+            });
+    }
+
+    // ============================================================
+    // RENDERIZAR KANBAN
     // ============================================================
     function renderizarKanban() {
+        console.log('🔄 renderizarKanban, columnaFiltroActiva:', columnaFiltroActiva);
         const board = document.getElementById('board');
+        const mobileContainer = document.getElementById('kanbanMobileColumna');
+        const mobileSelector = document.getElementById('kanbanMobileSelector');
+        const isMobile = window.innerWidth < 768;
+
         board.innerHTML = '';
+        mobileContainer.innerHTML = '';
+        mobileContainer.style.display = isMobile ? 'block' : 'none';
+        mobileSelector.innerHTML = '';
 
         const filtros = obtenerFiltros();
         let filtradas = ordenesCache.filter(o => o.column !== 'entregados');
@@ -1050,6 +1720,7 @@
         }
         if (columnaFiltroActiva) {
             filtradas = filtradas.filter(o => o.column === columnaFiltroActiva);
+            console.log(`🔍 Aplicado filtro por columna ${columnaFiltroActiva}, quedan ${filtradas.length} órdenes`);
         }
 
         const entregadas = ordenesCache.filter(o => o.column === 'entregados');
@@ -1062,6 +1733,94 @@
             if (agrupadas[col]) agrupadas[col].push(o);
             else agrupadas['pendiente'].push(o);
         });
+
+        if (isMobile) {
+            const columnasAcceso = columnasPermitidasIds.length > 0 ? columnasPermitidasIds : columnasInfo.map(c => c.id);
+            const columnasVisibles = columnasInfo.filter(c => columnasAcceso.includes(c.id) && c.id !== 'entregados');
+
+            if (columnasVisibles.length === 0) {
+                mobileContainer.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px;">No tienes columnas disponibles.</p>';
+                return;
+            }
+
+            let columnaActiva;
+            if (columnaFiltroActiva && columnasVisibles.some(c => c.id === columnaFiltroActiva)) {
+                columnaActiva = columnaFiltroActiva;
+                localStorage.setItem('workflow_columna_activa_mobile', columnaActiva);
+            } else {
+                columnaActiva = localStorage.getItem('workflow_columna_activa_mobile') || columnasVisibles[0].id;
+                if (!columnasVisibles.some(c => c.id === columnaActiva)) {
+                    columnaActiva = columnasVisibles[0].id;
+                }
+            }
+
+            columnasVisibles.forEach(colInfo => {
+                const btn = document.createElement('button');
+                btn.className = 'col-btn' + (colInfo.id === columnaActiva ? ' active' : '');
+                btn.dataset.columna = colInfo.id;
+                const count = agrupadas[colInfo.id] ? agrupadas[colInfo.id].length : 0;
+                btn.innerHTML = `<i class="fas ${colInfo.icono}"></i> ${colInfo.nombre} <span class="badge">${count}</span>`;
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const nueva = this.dataset.columna;
+                    if (nueva !== columnaActiva) {
+                        columnaActiva = nueva;
+                        localStorage.setItem('workflow_columna_activa_mobile', nueva);
+                        if (columnaFiltroActiva) {
+                            columnaFiltroActiva = null;
+                            if (svgSelection) {
+                                svgSelection.selectAll('.node').classed('filtro-activo', false);
+                            }
+                        }
+                        renderizarKanban();
+                    }
+                });
+                mobileSelector.appendChild(btn);
+            });
+
+            const colInfo = columnasVisibles.find(c => c.id === columnaActiva);
+            if (colInfo) {
+                const div = document.createElement('div');
+                div.className = `columna ${colInfo.id}`;
+                div.dataset.columna = colInfo.id;
+                const items = agrupadas[colInfo.id] || [];
+                const ordenPrioridad = { 'critica': 0, 'urgente': 1, 'normal': 2 };
+                items.sort((a, b) => (ordenPrioridad[a.priority] ?? 3) - (ordenPrioridad[b.priority] ?? 3));
+
+                div.innerHTML = `
+                    <div class="cabecera">
+                        <span><i class="fas ${colInfo.icono}" style="margin-right: 6px;"></i> ${colInfo.nombre}</span>
+                        <span class="contador">${items.length}</span>
+                    </div>
+                    <div class="card-list" data-columna="${colInfo.id}"></div>
+                `;
+                const list = div.querySelector('.card-list');
+                items.forEach(orden => {
+                    const card = crearTarjeta(orden);
+                    list.appendChild(card);
+                });
+
+                mobileContainer.appendChild(div);
+
+                new Sortable(list, {
+                    group: 'kanban',
+                    animation: 150,
+                    easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                    delay: 300,
+                    delayOnTouchOnly: true,
+                    touchStartThreshold: 3,
+                    onEnd: function(evt) {
+                        const item = evt.item;
+                        const ordenId = parseInt(item.dataset.id);
+                        const nuevaColumna = evt.to.closest('.columna').dataset.columna;
+                        if (ordenId && nuevaColumna) {
+                            moverOrden(ordenId, nuevaColumna);
+                        }
+                    }
+                });
+            }
+            return;
+        }
 
         columnasInfo.filter(c => c.id !== 'entregados').forEach(colInfo => {
             const div = document.createElement('div');
@@ -1080,51 +1839,8 @@
             `;
             const list = div.querySelector('.card-list');
             items.forEach(orden => {
-                const card = document.createElement('div');
-                card.className = 'tarjeta';
-                card.dataset.id = orden.id;
-                card.addEventListener('click', function(e) {
-                    if (e.target.closest('button')) return;
-                    abrirPanel(orden.id);
-                });
-
-                const prioridadClass = orden.priority || 'normal';
-                const cliente = orden.client ? orden.client.nombre : 'Sin cliente';
-                const clienteId = orden.client ? orden.client.id : null;
-                const ruta = orden.ruta || 'impresion';
-                const tiempo = tiempoEnColumna(orden, orden.column);
-                const sig = obtenerSiguienteColumna(orden);
-
-                card.innerHTML = `
-                    <div class="titulo">
-                        <span class="order-num">${orden.order_num}</span>
-                        <span class="ruta-badge ${ruta}">${ruta}</span>
-                    </div>
-                    <div class="sub">
-                        <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
-                        <span class="prioridad ${prioridadClass}">${orden.priority}</span>
-                    </div>
-                    <div class="sub" style="margin-top:2px;">
-                        <span><i class="far fa-clock"></i> ${tiempo}</span>
-                    </div>
-                    <div class="acciones-mini">
-                        ${sig ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
-                    </div>
-                `;
+                const card = crearTarjeta(orden);
                 list.appendChild(card);
-
-                card.querySelector('.btn-hecho')?.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const id = parseInt(this.dataset.id);
-                    const ord = obtenerOrden(id);
-                    if (!ord) return;
-                    const sig2 = obtenerSiguienteColumna(ord);
-                    if (sig2) {
-                        moverOrden(id, sig2);
-                    } else {
-                        mostrarToast('Ya está en la última columna', 'error');
-                    }
-                });
             });
 
             board.appendChild(div);
@@ -1132,6 +1848,9 @@
                 group: 'kanban',
                 animation: 150,
                 easing: 'cubic-bezier(0.4, 0, 0.2, 1)',
+                delay: 300,
+                delayOnTouchOnly: true,
+                touchStartThreshold: 3,
                 onEnd: function(evt) {
                     const item = evt.item;
                     const ordenId = parseInt(item.dataset.id);
@@ -1142,6 +1861,55 @@
                 }
             });
         });
+    }
+
+    // ============================================================
+    // CREAR TARJETA
+    // ============================================================
+    function crearTarjeta(orden) {
+        const card = document.createElement('div');
+        card.className = 'tarjeta';
+        card.dataset.id = orden.id;
+        card.addEventListener('click', function(e) {
+            if (e.target.closest('button')) return;
+            abrirPanel(orden.id);
+        });
+
+        const prioridadClass = orden.priority || 'normal';
+        const cliente = orden.client ? orden.client.nombre : 'Sin cliente';
+        const clienteId = orden.client ? orden.client.id : null;
+        const ruta = orden.ruta || 'impresion';
+        const tiempo = tiempoEnColumna(orden, orden.column);
+        const sig = obtenerSiguienteColumna(orden);
+
+        card.innerHTML = `
+            <div class="titulo">
+                <span class="order-num">${orden.order_num} <span class="tiempo-columna"><i class="fa-regular fa-clock"></i> ${tiempo}</span></span>
+                <span class="ruta-badge ${ruta}">${ruta}</span>
+            </div>
+            <div class="sub">
+                <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
+                <span class="prioridad ${prioridadClass}">${orden.priority}</span>
+            </div>
+            <div class="acciones-mini">
+                ${sig ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
+            </div>
+        `;
+
+        card.querySelector('.btn-hecho')?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const id = parseInt(this.dataset.id);
+            const ord = obtenerOrden(id);
+            if (!ord) return;
+            const sig2 = obtenerSiguienteColumna(ord);
+            if (sig2) {
+                moverOrden(id, sig2);
+            } else {
+                mostrarToast('Ya está en la última columna', 'error');
+            }
+        });
+
+        return card;
     }
 
     // ============================================================
@@ -1157,7 +1925,7 @@
         }
         entregadas.sort((a, b) => new Date(b.fecha_entregado) - new Date(a.fecha_entregado));
         container.innerHTML = entregadas.map(o =>
-            `<div class="historial-item">
+            `<div class="historial-item" data-id="${o.id}">
                 <div class="info">
                     <span class="num">${o.order_num}</span>
                     <span class="cliente">${o.client ? o.client.nombre : '—'} · ${o.ruta || 'impresion'}</span>
@@ -1165,6 +1933,13 @@
                 <span class="fecha">${o.fecha_entregado ? new Date(o.fecha_entregado).toLocaleDateString() : '—'}</span>
             </div>`
         ).join('');
+
+        container.querySelectorAll('.historial-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                if (id) abrirPanel(id);
+            });
+        });
     }
 
     // ============================================================
@@ -1188,6 +1963,7 @@
         };
         const colorArray = labels.map(l => colorMap[l] || '#a8854f');
 
+        const showLegend = (tipo === 'doughnut');
         let config = {
             type: tipo || 'bar',
             data: {
@@ -1204,7 +1980,13 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: true,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: {
+                        display: showLegend,
+                        position: 'bottom',
+                        labels: { boxWidth: 12, font: { size: 10 } }
+                    }
+                },
                 scales: {}
             }
         };
@@ -1345,14 +2127,17 @@
     };
 
     // ============================================================
-    // LIMPIAR FILTRO DE COLUMNA
+    // LIMPIAR FILTRO
     // ============================================================
     window.limpiarFiltroColumna = function() {
         columnaFiltroActiva = null;
         document.getElementById('filterIndicator').classList.remove('active');
         document.getElementById('filterColumna').textContent = '';
         renderizarKanban();
-        mostrarToast('Filtro de columna eliminado', 'success');
+        if (svgSelection) {
+            svgSelection.selectAll('.node').classed('filtro-activo', false);
+        }
+        mostrarToast('Filtro de columna eliminado', 'info');
     };
 
     // ============================================================
@@ -1367,28 +2152,24 @@
     }
 
     // ============================================================
-    // PESTAÑAS
+    // PERSISTENCIA DE PESTAÑA
     // ============================================================
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.getElementById('tab-' + this.dataset.tab).classList.add('active');
+    function guardarPestanaActiva(tabId) {
+        localStorage.setItem('workflow_tab_activa', tabId);
+    }
 
-            if (this.dataset.tab === 'dashboard') {
-                setTimeout(() => {
-                    actualizarDashboardCompleto();
-                }, 50);
-            }
-        });
-    });
+    function restaurarPestana() {
+        const tabId = localStorage.getItem('workflow_tab_activa');
+        if (tabId) {
+            const btn = document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+            if (btn) btn.click();
+        }
+    }
 
     // ============================================================
     // INICIALIZACIÓN
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
-        // 1. Poblar ordenesCache desde los datos iniciales
         const todas = [];
         columnasInfo.forEach(col => {
             const items = columnasAgrupadas[col.id] || [];
@@ -1397,10 +2178,8 @@
         ordenesCache = todas;
         console.log('📦 ordenesCache inicializada con', ordenesCache.length, 'órdenes');
 
-        // 2. Inicializar gráfico
         const tipoInicial = document.getElementById('chartTypeSelector').value;
         renderizarGrafico(chartLabelsIniciales, chartDataIniciales, tipoInicial);
-
         document.getElementById('chartTypeSelector').addEventListener('change', function() {
             const nuevoTipo = this.value;
             const labels = chartInstance ? chartInstance.data.labels : chartLabelsIniciales;
@@ -1408,14 +2187,10 @@
             renderizarGrafico(labels, data, nuevoTipo);
         });
 
-        // 3. Cargar datos iniciales completos (mapa, KPIs, gráfico)
         actualizarDashboardCompleto();
-
-        // 4. Renderizar Kanban e historial
         renderizarKanban();
         renderizarHistorial();
 
-        // 5. Filtros con debounce
         const debounce = (fn, delay) => { let timer; return (...args) => { clearTimeout(timer); timer = setTimeout(() => fn(...args), delay); }; };
         const applyFilters = debounce(() => {
             renderizarKanban();
@@ -1426,10 +2201,9 @@
         document.getElementById('priorityFilter').addEventListener('change', applyFilters);
         document.getElementById('rutaFilter').addEventListener('change', applyFilters);
 
-        // 6. Polling cada 5 segundos para mantener el dashboard actualizado
         pollingInterval = setInterval(() => {
             actualizarDashboardCompleto();
-        }, 5000);
+        }, POLLING_INTERVAL);
 
         window.addEventListener('beforeunload', function() {
             if (pollingInterval) clearInterval(pollingInterval);
@@ -1439,7 +2213,51 @@
             if (e.key === 'Escape') cerrarPanel();
         });
 
-        console.log('🚀 Workflow D3 con flotación suave y actualización forzada.');
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(btn => {
+            const handler = function(e) {
+                e.preventDefault();
+                const tabId = this.dataset.tab;
+                tabs.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const target = document.getElementById('tab-' + tabId);
+                if (target) target.classList.add('active');
+                guardarPestanaActiva(tabId);
+                if (tabId === 'dashboard') {
+                    actualizarDashboardCompleto();
+                } else if (tabId === 'tareas') {
+                    renderizarKanban();
+                } else if (tabId === 'entregados') {
+                    renderizarHistorial();
+                }
+            };
+            btn.addEventListener('click', handler);
+            btn.addEventListener('touchstart', handler, { passive: false });
+        });
+
+        restaurarPestana();
+
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                renderizarKanban();
+                actualizarDashboardCompleto();
+            }, 500);
+        });
+
+        if (window.matchMedia) {
+            const mediaQuery = window.matchMedia('(orientation: portrait)');
+            mediaQuery.addEventListener('change', function() {
+                setTimeout(() => {
+                    renderizarKanban();
+                    actualizarDashboardCompleto();
+                }, 300);
+            });
+        }
+
+        console.log('🚀 Workflow con pestañas sticky, filtro por nodo corregido y selector móvil sincronizado');
     });
 </script>
 {% endblock %}

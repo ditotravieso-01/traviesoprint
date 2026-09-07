@@ -1,0 +1,46 @@
+{% extends "setup_base.html" %}
+
+{% block content %}
+<form method="POST">
+    <h2 style="font-family:'Playfair Display',serif; font-size:20px; margin-bottom:16px;">
+        <i class="fas fa-user-shield" style="color:var(--color-secondary,#a8854f);"></i> Usuario administrador
+    </h2>
+    <p style="color:#8e8e93; font-size:14px; margin-bottom:20px;">
+        Crea la cuenta de administrador para acceder al sistema.
+    </p>
+
+    <div class="form-group">
+        <label for="username">Nombre de usuario *</label>
+        <input type="text" class="form-control" id="username" name="username"
+               value="{{ username or '' }}" required minlength="3">
+        <small>Mínimo 3 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+        <label for="email">Email</label>
+        <input type="email" class="form-control" id="email" name="email"
+               value="{{ email or '' }}">
+        <small>Opcional, pero recomendado para recuperación de contraseña.</small>
+    </div>
+
+    <div class="form-group">
+        <label for="password">Contraseña *</label>
+        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+        <small>Mínimo 6 caracteres.</small>
+    </div>
+
+    <div class="form-group">
+        <label for="confirm_password">Confirmar contraseña *</label>
+        <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+    </div>
+
+    <div class="btn-group">
+        <a href="{{ url_for('setup.paso1') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Atrás
+        </a>
+        <button type="submit" class="btn btn-primary" style="flex:1;">
+            Siguiente <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</form>
+{% endblock %}

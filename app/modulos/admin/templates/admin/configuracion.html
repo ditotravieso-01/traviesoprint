@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block page_title %}Configuración de {{ empresa_nombre }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos específicos para la página de configuración (Blanc) */
+    .config-card {
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(0,0,0,0.04);
+        border-radius: 20px;
+        padding: 28px 30px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.04);
+        transition: box-shadow 0.3s ease;
+        margin-bottom: 24px;
+    }
+    .config-card:hover {
+        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
+    }
+    .config-card h2 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        font-size: 26px;
+        color: var(--color-text, #1c1c1e);
+        margin-bottom: 8px;
+    }
+    .config-card .subtitle {
+        color: #8e8e93;
+        font-size: 14px;
+        margin-bottom: 24px;
+    }
+    .form-group {
+        margin-bottom: 20px;
+    }
+    .form-group label {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--color-text, #1c1c1e);
+        display: block;
+        margin-bottom: 6px;
+    }
+    .form-group .form-control {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1px solid #e5e5ea;
+        border-radius: 12px;
+        font-size: 15px;
+        background: #fafafa;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-group .form-control:focus {
+        border-color: var(--color-secondary, #a8854f);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(168, 133, 79, 0.15);
+        background: white;
+    }
+    .form-group .form-control-color {
+        padding: 0.25rem;
+        height: 44px;
+        width: 60px;
+        border-radius: 12px;
+        border: 1px solid #e5e5ea;
+        background: white;
+        cursor: pointer;
+    }
+    .form-group .input-group {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .form-group .input-group .form-control-color {
+        flex: 0 0 auto;
+    }
+    .form-group .input-group .form-control-text {
+        flex: 1;
+        min-width: 120px;
+    }
+    .form-group small {
+        color: #8e8e93;
+        font-size: 12px;
+        display: block;
+        margin-top: 4px;
+    }
+    .preview-block {
+        background: #f8f6f4;
+        border-radius: 16px;
+        padding: 20px 24px;
+        border: 1px dashed #d2d2d7;
+    }
+    .preview-block .preview-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #555;
+        margin-bottom: 12px;
+    }
+    .preview-block .preview-row {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .logo-preview img, .favicon-preview img {
+        max-height: 60px;
+        width: auto;
+        border-radius: 8px;
+        border: 1px solid #e5e5ea;
+        padding: 4px;
+        background: white;
+    }
+    .favicon-preview img {
+        max-height: 40px;
+        max-width: 40px;
+        border-radius: 4px;
+    }
+    .bg-preview {
+        width: 100%;
+        max-width: 300px;
+        height: 120px;
+        border-radius: 12px;
+        background-size: cover;
+        background-position: center;
+        border: 1px solid #e5e5ea;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        font-size: 14px;
+        background-color: #2c2c2c;
+    }
+    .btn-group-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+    }
+    .btn {
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .btn-primary {
+        background: var(--color-primary, #1c1c1e);
+        color: white;
+    }
+    .btn-primary:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    }
+    .btn-secondary {
+        background: var(--color-secondary, #a8854f);
+        color: white;
+    }
+    .btn-secondary:hover {
+        filter: brightness(0.9);
+        transform: translateY(-2px);
+    }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: var(--color-text, #1c1c1e);
+    }
+    .btn-outline:hover {
+        border-color: var(--color-secondary, #a8854f);
+        background: #f5f5f5;
+    }
+
+    @media (max-width: 768px) {
+        .config-card {
+            padding: 20px 16px;
+        }
+        .config-card h2 {
+            font-size: 22px;
+        }
+        .form-group .input-group {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .form-group .input-group .form-control-color {
+            width: 100%;
+            height: 48px;
+        }
+        .form-group .input-group .form-control-text {
+            width: 100%;
+        }
+        .preview-block .preview-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .bg-preview {
+            max-width: 100%;
+            height: 100px;
+        }
+        .btn-group-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .btn-group-actions .btn {
+            justify-content: center;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .config-card {
+            padding: 16px 12px;
+        }
+        .config-card h2 {
+            font-size: 20px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="config-card">
+    <p class="subtitle">Personaliza la apariencia y datos de tu instancia de TraviesoPrint.</p>
+
+    <form method="POST" enctype="multipart/form-data">
+
+        <!-- Nombre de la empresa -->
+        <div class="form-group">
+            <label for="empresa_nombre">Nombre de la empresa</label>
+            <input type="text" class="form-control" id="empresa_nombre" name="empresa_nombre"
+                   value="{{ empresa_nombre }}" required>
+            <small>Este nombre aparecerá en el título de la página y en el encabezado.</small>
+        </div>
+
+        <!-- Subtítulo -->
+        <div class="form-group">
+            <label for="empresa_subtitulo">Subtítulo de la empresa</label>
+            <input type="text" class="form-control" id="empresa_subtitulo" name="empresa_subtitulo"
+                   value="{{ empresa_subtitulo }}" required>
+            <small>Texto que aparece debajo del nombre en la pantalla de inicio de sesión.</small>
+        </div>
+
+        <!-- Logo -->
+        <div class="form-group">
+            <label>Logo actual</label>
+            <div class="logo-preview mb-2">
+                <img src="{{ url_for('static', filename=logo_url) }}" alt="Logo"
+                     onerror="this.src='{{ url_for('static', filename='img/logo_default.png') }}'">
+            </div>
+            <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+            <small>Sube una imagen (PNG, JPG) que se usará como logo. Se mostrará en el sidebar y en el overlay de carga.</small>
+        </div>
+
+        <!-- Favicon -->
+        <div class="form-group">
+            <label>Favicon (icono de la pestaña del navegador)</label>
+            <div class="favicon-preview mb-2">
+                <img src="{{ url_for('static', filename=favicon_url) }}" alt="Favicon"
+                     onerror="this.src='{{ url_for('static', filename='img/favicon_default.ico') }}'"
+                     style="max-height:40px; max-width:40px; border-radius:4px; border:1px solid #e5e5ea; padding:2px; background:white;">
+            </div>
+            <input type="file" class="form-control" id="favicon" name="favicon" accept=".ico,.png,.jpg,.jpeg">
+            <small>Sube un icono (ICO, PNG, JPG) que se mostrará en la pestaña del navegador. Recomendado: 32x32 o 64x64 píxeles.</small>
+        </div>
+
+        <!-- Fondo de login -->
+        <div class="form-group">
+            <label>Fondo de la pantalla de login</label>
+            <div class="mb-2">
+                <div class="bg-preview" style="background-image: url('{{ url_for('static', filename=login_bg_url) }}');">
+                    <span>Vista previa</span>
+                </div>
+            </div>
+            <input type="file" class="form-control" id="login_bg" name="login_bg" accept="image/*">
+            <small>Sube una imagen (JPG, PNG) que se usará como fondo en la página de inicio de sesión.</small>
+        </div>
+
+        <!-- Colores -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="color_primario">Color primario</label>
+                    <div class="input-group">
+                        <input type="color" class="form-control-color" id="color_primario"
+                               name="color_primario" value="{{ color_primario }}">
+                        <input type="text" class="form-control form-control-text" id="color_primario_text"
+                               value="{{ color_primario }}" oninput="document.getElementById('color_primario').value=this.value">
+                    </div>
+                    <small>Usado en botones principales, enlaces y acentos.</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label for="color_secundario">Color secundario</label>
+                    <div class="input-group">
+                        <input type="color" class="form-control-color" id="color_secundario"
+                               name="color_secundario" value="{{ color_secundario }}">
+                        <input type="text" class="form-control form-control-text" id="color_secundario_text"
+                               value="{{ color_secundario }}" oninput="document.getElementById('color_secundario').value=this.value">
+                    </div>
+                    <small>Usado en detalles, bordes y elementos decorativos.</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-group-actions">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Guardar configuración
+            </button>
+            <a href="{{ url_for('home.index') }}" class="btn btn-outline">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Vista previa en tiempo real -->
+<div class="config-card">
+    <h4>👁️ Vista previa de colores</h4>
+    <div class="preview-block">
+        <div class="preview-label">Botones y acentos</div>
+        <div class="preview-row">
+            <button class="btn btn-primary" style="background: var(--color-primary, #1c1c1e); border-color: var(--color-primary, #1c1c1e);">
+                Primario
+            </button>
+            <button class="btn btn-secondary" style="background: var(--color-secondary, #a8854f); border-color: var(--color-secondary, #a8854f);">
+                Secundario
+            </button>
+            <span class="badge" style="background: var(--color-secondary, #a8854f); color: white; padding: 4px 12px; border-radius: 30px;">
+                Badge
+            </span>
+            <a href="#" style="color: var(--color-primary, #1c1c1e); font-weight: 500;">Enlace de ejemplo</a>
+        </div>
+    </div>
+    <p class="text-muted mt-2" style="font-size: 13px;">Los cambios se aplicarán en toda la aplicación al guardar.</p>
+</div>
+
+<script>
+    // Sincronizar inputs de color con los de texto
+    document.getElementById('color_primario').addEventListener('input', function() {
+        document.getElementById('color_primario_text').value = this.value;
+    });
+    document.getElementById('color_secundario').addEventListener('input', function() {
+        document.getElementById('color_secundario_text').value = this.value;
+    });
+    document.getElementById('color_primario_text').addEventListener('input', function() {
+        document.getElementById('color_primario').value = this.value;
+    });
+    document.getElementById('color_secundario_text').addEventListener('input', function() {
+        document.getElementById('color_secundario').value = this.value;
+    });
+</script>
+{% endblock %}
