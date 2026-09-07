@@ -6,3 +6,4 @@ venv/
 __pycache__/
 instance/
 *.db
+app/traviesoprint.db
