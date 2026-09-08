@@ -21,22 +21,40 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
+    # ===== INTEGRAR FLASK-MIGRATE =====
+    from flask_migrate import Migrate
+    migrate = Migrate(app, db)
+
     # Importar modelos
     from . import models
 
-    with app.app_context():
-        db.create_all()
+    @app.cli.command('init-db')
+    def init_db():
+        """Crea las tablas y datos iniciales."""
+        with app.app_context():
+            db.create_all()
+            from .models import init_configuracion, Configuracion, Permiso
+            if not Configuracion.query.first():
+                init_configuracion()
+                print('Configuración inicial creada.')
+            if not Permiso.query.first():
+                Permiso.init_default_permissions()
+                print('Permisos por defecto creados.')
+            print('Base de datos inicializada correctamente.')
+
+#    with app.app_context():
+#        db.create_all()
         # Inicializar configuración si está vacía
-        from .models import init_configuracion, Configuracion
-        if not Configuracion.query.first():
-            init_configuracion()
-            print('✅ Configuración inicial creada.')
+#        from .models import init_configuracion, Configuracion
+#        if not Configuracion.query.first():
+#            init_configuracion()
+#            print('Configuración inicial creada.')
 
         # Inicializar permisos por defecto si no existen
-        from .models import Permiso
-        if not Permiso.query.first():
-            Permiso.init_default_permissions()
-            print('✅ Permisos por defecto creados.')
+#        from .models import Permiso
+#        if not Permiso.query.first():
+            #Permiso.init_default_permissions()
+#            print('Permisos por defecto creados.')
 
         # Crear usuario admin solo si ya está instalado
         instalado = Configuracion.get_config('instalacion_completada', 'false') == 'true'
@@ -45,7 +63,7 @@ def create_app():
             admin = models.User.query.filter_by(username='admin').first()
             if not admin:
                 AuthService.create_local_admin('admin', 'admin')
-                print('✅ Usuario admin creado por defecto (admin/admin)')
+                print('Usuario admin creado por defecto (admin/admin)')
 
     # Registrar blueprints
     from app.modulos.dashboard import dashboard_bp
