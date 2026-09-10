@@ -247,19 +247,26 @@
             <!-- ATRIBUTOS DINÁMICOS -->
             <div id="atributos_dinamicos" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0ece8;"></div>
 
-            <!-- CAMPOS DE ROLLO -->
+            <!-- CAMPOS DE ROLLO (con ancho útil y merma) -->
             <div class="campos-rollo" id="campos_rollo">
                 <h5>📐 Datos del rollo</h5>
                 <div class="form-grid-2">
                     <div class="form-group">
-                        <label>Ancho de rollo (m)</label>
-                        <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.30">
-                        <small>Ancho del rollo en metros (solo informativo).</small>
+                        <label>Ancho real (m)</label>
+                        <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.37">
+                        <small>Ancho físico del rollo (solo informativo).</small>
                     </div>
+                </div>
+                <div class="form-grid-2">
                     <div class="form-group">
                         <label>Largo de rollo (m) *</label>
                         <input type="number" step="0.01" min="0" name="largo_rollo" id="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50" required>
                         <small>Se usa para calcular el stock en metros y el consumo en órdenes.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Merma estimada (%)</label>
+                        <input type="number" step="0.1" min="0" max="100" name="merma_porcentaje" id="merma_porcentaje" value="{{ producto.merma_porcentaje if producto else 0 }}" placeholder="Ej. 5">
+                        <small>Porcentaje de material extra a reservar (sobre el consumo base).</small>
                     </div>
                 </div>
                 <div class="form-group">

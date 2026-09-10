@@ -729,6 +729,8 @@ def crear_producto():
         tipo_producto_id = request.form.get('tipo_producto_id', type=int)
         unidad_id = request.form.get('unidad_id', type=int)
         ancho_rollo = request.form.get('ancho_rollo', type=float)
+        ancho_util = request.form.get('ancho_util', type=float)
+        merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         largo_rollo = request.form.get('largo_rollo', type=float)
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
@@ -777,6 +779,8 @@ def crear_producto():
             tipo_producto_id=tipo_producto_id if tipo_producto_id else None,
             unidad_id=unidad_id if unidad_id else None,
             ancho_rollo=ancho_rollo,
+            ancho_util=ancho_util,
+            merma_porcentaje=merma_porcentaje,
             largo_rollo=largo_rollo,
             inversion_total=0.0,
             es_material_impresion=es_material_impresion,
@@ -789,7 +793,7 @@ def crear_producto():
                 pass
 
         db.session.add(producto)
-        db.session.commit()
+        db.session.commit()  # Para obtener el id
 
         if stock > 0:
             movimiento = Movimiento(
@@ -839,6 +843,8 @@ def editar_producto(producto_id):
         producto.unidad_id = request.form.get('unidad_id', type=int) or None
         producto.ancho_rollo = request.form.get('ancho_rollo', type=float)
         producto.largo_rollo = request.form.get('largo_rollo', type=float)
+        producto.ancho_util = request.form.get('ancho_util', type=float)
+        producto.merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         producto.es_material_impresion = request.form.get('es_material_impresion') == 'on'
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         stock_metros = request.form.get('stock_metros', type=float)
@@ -1055,6 +1061,7 @@ def ajustar():
     producto_id = request.form.get('producto_id', type=int)
     stock_real = request.form.get('stock_real', type=float)
     comentario = request.form.get('comentario', '').strip()
+    tipo_ajuste = request.form.get('tipo_ajuste', 'conteo')  # por defecto 'conteo'
     if not producto_id or stock_real is None or stock_real < 0:
         flash('Datos inválidos.', 'danger')
         return redirect(url_for('inventario.index'))
@@ -1078,8 +1085,9 @@ def ajustar():
         tipo=tipo,
         cantidad=cantidad,
         cantidad_metros=cantidad * (producto.largo_rollo or 1),
-        comentario=comentario or f'Ajuste por conteo físico ({diferencia > 0 and "merma" or "sobrante"})',
-        usuario_id=current_user.id
+        comentario=comentario or f'Ajuste ({tipo_ajuste}) por conteo físico',
+        usuario_id=current_user.id,
+        tipo_ajuste=tipo_ajuste
     )
     db.session.add(movimiento)
     db.session.commit()
@@ -1124,7 +1132,16 @@ def merma():
             fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
             fecha_fin = hoy
 
-    movimientos = Movimiento.query.filter(Movimiento.fecha >= fecha_inicio, Movimiento.fecha <= fecha_fin).all()
+    movimientos = Movimiento.query.filter(
+        Movimiento.fecha >= fecha_inicio, 
+        Movimiento.fecha <= fecha_fin,
+        # Excluir movimientos de ajuste que sean 'correccion'
+        # Nota: Para compatibilidad con datos viejos (donde tipo_ajuste es NULL), los tratamos como 'conteo'
+        db.or_(
+            Movimiento.tipo_ajuste != 'correccion',
+            Movimiento.tipo_ajuste.is_(None)
+        )
+    ).all()
 
     if agrupar_por == 'categoria':
         datos = {}

@@ -341,10 +341,6 @@
 
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
         <div>
-            <h3 style="font-family:'Playfair Display', serif; font-size:24px; margin:0; color:#1c1c1e;">🧮 Calculadora de Carteles / Lona</h3>
-            <p style="color:#8e8e93; margin:2px 0 0 0; font-size:14px;">Distribución automática en rollo</p>
-        </div>
-        <div>
             <button class="btn btn-outline" onclick="toggleHistory()"><i class="fas fa-history"></i> Historial <span class="badge" id="historyCount">0</span></button>
             <button class="btn btn-outline" onclick="toggleFavoritos()"><i class="fas fa-star"></i> Favoritos</button>
         </div>
@@ -371,7 +367,7 @@
         <div class="calc-form">
             <form id="calcForm" onsubmit="return false;">
                 <div class="form-section">
-                    <h4>📐 Dimensiones</h4>
+                    <h4>Dimensiones</h4>
                     <div class="form-grid-2">
                         <div class="form-group">
                             <label for="ancho">Ancho (cm)</label>
@@ -429,7 +425,7 @@
         <!-- RESULTADOS Y SIMULACIÓN -->
         <div class="calc-result">
             <div class="form-section">
-                <h4>📊 Resultado</h4>
+                <h4>Resultado</h4>
                 <div id="resultDisplay" class="result-box">
                     {% if resultado %}
                         {{ resultado|safe }}
@@ -444,14 +440,10 @@
             </div>
 
             <div class="form-section">
-                <h4>🖨️ Simulación en el rollo</h4>
+                <h4>Simulación en el rollo</h4>
                 <div class="canvas-wrapper">
                     <canvas id="simCanvas" width="600" height="300"></canvas>
                 </div>
-                <p style="font-size:12px; color:#8e8e93; text-align:center; margin-top:6px;">
-                    Distribución: {{ simData.cols }} columna(s) × {{ simData.filas }} fila(s)
-                    {% if 'girada' in simData.orientacion %} (giradas){% endif %}
-                </p>
             </div>
         </div>
     </div>
@@ -626,7 +618,7 @@
         document.getElementById('fileName').textContent = file.name;
         // Simulación de extracción de medidas (solo para demo)
         // En una implementación real, se extraerían las dimensiones de la imagen/PDF
-        alert('📐 Las medidas se extraerán automáticamente en la versión completa.\nPor ahora, ajusta los valores manualmente.');
+        alert('Las medidas se extraerán automáticamente en la versión completa.\nPor ahora, ajusta los valores manualmente.');
     }
 
     // ==========================================

@@ -429,16 +429,9 @@
 {% block content %}
 <div class="card" style="padding: 28px 32px;">
 
-    <div style="font-family: 'Playfair Display', serif; font-weight: 700; font-size: 26px; color: #1c1c1e; margin-bottom: 4px;">
-        📐 Calculadora de Etiquetas
-        <small style="display: block; font-family: 'Inter', sans-serif; font-weight: 400; font-size: 14px; color: #8e8e93; margin-top: 2px; border-bottom: 1px solid #f0ece8; padding-bottom: 14px;">
-            Rollo de 1.3 m · Marca de corte 20 mm
-        </small>
-    </div>
-
     <!-- BARRA DE HERRAMIENTAS -->
     <div class="toolbar">
-        <button onclick="openFavoriteModal()">⭐ Guardar favorito</button>
+        <button onclick="openFavoriteModal()">Guardar favorito</button>
         <div class="favorites-dropdown">
             <span style="font-size:13px; color:#8e8e93; font-weight:500;">Favoritos:</span>
             <select id="favoritesSelect" onchange="loadFavorite(this.value)">
@@ -446,10 +439,10 @@
             </select>
         </div>
         <span class="separator"></span>
-        <button onclick="toggleHistory()">📋 Historial <span class="badge" id="historyCount">0</span></button>
+        <button onclick="toggleHistory()">Historial <span class="badge" id="historyCount">0</span></button>
         <span class="separator"></span>
         <div class="file-upload-area">
-            <button onclick="document.getElementById('pdfUpload').click()" style="background:#f0ece8; border:none; border-radius:30px; padding:6px 16px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; display:inline-flex; align-items:center; gap:6px;">📄 Subir PDF (auto-medidas)</button>
+            <button onclick="document.getElementById('pdfUpload').click()" style="background:#f0ece8; border:none; border-radius:30px; padding:6px 16px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; display:inline-flex; align-items:center; gap:6px;">Subir PDF (auto-medidas)</button>
             <input type="file" id="pdfUpload" accept=".pdf" onchange="handlePdfUpload(event)">
             <span class="file-name" id="fileName">Ningún archivo</span>
         </div>
@@ -488,8 +481,8 @@
             <!-- SIMULACIÓN -->
             <div style="margin-top:24px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-                    <h3 style="font-family:'Playfair Display', serif; font-size:20px; color:#1c1c1e; margin:0;">🖨️ Simulación</h3>
-                    <span class="badge" style="background:#f0ece8; color:#555; font-weight:500;">Área: 1.3 m x 0.769 m</span>
+                    <h4 style="font-family:'Playfair Display', serif; font-size:20px; color:#1c1c1e; margin:0;">Simulación</h4>
+                    <span class="badge" style="background:#f0ece8; color:#555; font-weight:500;">Área del paño: 1 m²</span>
                 </div>
                 <div class="canvas-wrapper">
                     <canvas id="simCanvas" width="800" height="500"></canvas>
@@ -512,11 +505,12 @@
         <div class="col-right-calc">
             <form id="calcForm" onsubmit="return false;">
                 <div class="form-group">
-                    <label for="tipo_rollo">Tipo de rollo</label>
-                    <select id="tipo_rollo" name="tipo_rollo" onchange="calcularEnVivo()">
-                        <option value="1.3m" {% if tipo_rollo=='1.3m' %}selected{% endif %}>1.3 m de ancho</option>
-                        <option value="1m" {% if tipo_rollo=='1m' %}selected{% endif %}>1 m de ancho (1 m²)</option>
-                    </select>
+                    <label for="ancho_rollo">Ancho del rollo (m)</label>
+                    <input type="number" step="0.01" min="0.1" id="ancho_rollo" name="ancho_rollo"
+                           value="{{ ancho_rollo_m|default(1.3) }}"
+                           placeholder="ej. 1.3"
+                           oninput="calcularEnVivo()">
+                    <small>El alto del paño se calcula como 1 m² ÷ ancho del rollo.</small>
                 </div>
                 <div class="form-group">
                     <label for="ancho">Ancho (cm)</label>
@@ -543,7 +537,7 @@
                 <div class="checkbox-group">
                     <label><input type="checkbox" name="mesa" id="mesa" value="1" {{ mesa_checked }} onchange="calcularEnVivo()"> Margen de mesa (2 mm)</label>
                     <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (manual)</label>
-                    <label><input type="checkbox" name="auto_girar" id="auto_girar" value="1" {{ auto_girar_checked }} onchange="calcularEnVivo()"> 🧠 Modo Inteligente</label>
+                    <label><input type="checkbox" name="auto_girar" id="auto_girar" value="1" {{ auto_girar_checked }} onchange="calcularEnVivo()">Modo Inteligencia Artificial</label>
                 </div>
                 <div class="btn-group">
                     <button type="button" class="btn btn-primary" onclick="calcularEnVivo()">Calcular</button>
@@ -559,7 +553,7 @@ PANEL DE HISTORIAL
 ============================================ -->
 <div class="history-panel" id="historyPanel">
     <h3>
-        📋 Historial
+        Historial
         <button class="close-btn" onclick="toggleHistory()">✕</button>
     </h3>
     <div id="historyList">
@@ -574,7 +568,7 @@ PANEL DE HISTORIAL
 <div class="modal-overlay" id="favoriteModal">
     <div class="modal-box">
         <button class="close-modal" onclick="closeFavoriteModal()">✕</button>
-        <h3>⭐ Guardar como favorito</h3>
+        <h3>Guardar como favorito</h3>
         <p style="color:#8e8e93; font-size:14px;">Pon un nombre para esta configuración:</p>
         <input type="text" id="favoriteName" placeholder="Ej. Cliente X - 10x15 cm">
         <button class="btn btn-primary" style="width:100%;" onclick="saveFavorite()">Guardar</button>
@@ -585,7 +579,7 @@ PANEL DE HISTORIAL
 <div class="modal-overlay" id="cellModal">
     <div class="modal-box">
         <button class="close-modal" onclick="closeCellModal()">✕</button>
-        <h3>📐 Detalle de celda</h3>
+        <h3>Detalle de celda</h3>
         <div id="cellDetailContent">
             <div class="detail-row"><span>Fila:</span> <span id="cellRow">-</span></div>
             <div class="detail-row"><span>Columna:</span> <span id="cellCol">-</span></div>
@@ -634,7 +628,7 @@ PANEL DE HISTORIAL
             precio: document.getElementById('precio').value || '10',
             cantidad: document.getElementById('cantidad').value || '',
             area: document.getElementById('area').value || '',
-            tipo_rollo: document.getElementById('tipo_rollo').value,
+            ancho_rollo: document.getElementById('ancho_rollo').value || '1.3',
             mesa: document.getElementById('mesa').checked,
             girar: document.getElementById('girar').checked,
             auto_girar: document.getElementById('auto_girar').checked
@@ -647,7 +641,7 @@ PANEL DE HISTORIAL
         document.getElementById('precio').value = config.precio || '10';
         document.getElementById('cantidad').value = config.cantidad || '';
         document.getElementById('area').value = config.area || '';
-        document.getElementById('tipo_rollo').value = config.tipo_rollo || '1.3m';
+        document.getElementById('ancho_rollo').value = config.ancho_rollo || '1.3';
         document.getElementById('mesa').checked = config.mesa !== undefined ? config.mesa : true;
         document.getElementById('girar').checked = config.girar || false;
         document.getElementById('auto_girar').checked = config.auto_girar || false;
@@ -670,7 +664,7 @@ PANEL DE HISTORIAL
             simData = {
                 columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
                 areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
-                orientacion: 'normal', mesa: false
+                orientacion: 'normal', mesa: false, anchoRolloM: 1.3
             };
             drawSimulation();
             return;
@@ -690,7 +684,7 @@ PANEL DE HISTORIAL
                 simData = {
                     columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
                     areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
-                    orientacion: 'normal', mesa: false
+                    orientacion: 'normal', mesa: false, anchoRolloM: 1.3
                 };
                 drawSimulation();
             } else {
@@ -893,6 +887,7 @@ PANEL DE HISTORIAL
         const filasPorMetro = data.filasPorMetro || 0;
         const anchoEfCm = data.anchoCm || 0;
         const altoEfCm = data.altoCm || 0;
+        const anchoRolloM = data.anchoRolloM || 1.3;
 
         if (cols === 0 || filasPorMetro === 0 || filasUsadas === 0 || anchoEfCm === 0 || altoEfCm === 0) {
             ctx.fillStyle = '#8e8e93';
@@ -902,7 +897,9 @@ PANEL DE HISTORIAL
             return;
         }
 
-        const papelAncho = 1300, papelAlto = 769.230769;
+        // El paño: ancho_mm = anchoRolloM * 1000, largo_mm = 1000 / anchoRolloM
+        const papelAncho = anchoRolloM * 1000;
+        const papelAlto = 1000 / anchoRolloM;
         const margin = 20;
         const areaWidth = w - 2 * margin;
         const areaHeight = h - 2 * margin;
@@ -960,7 +957,7 @@ PANEL DE HISTORIAL
         const areaPorcentaje = (areaTotal / 1.0 * 100).toFixed(1);
         ctx.fillStyle = '#1c1c1e';
         ctx.font = '12px Inter, sans-serif';
-        ctx.fillText(`Área ocupada: ${areaTotal.toFixed(4)} m² (${areaPorcentaje}%)`, 10, h - 10);
+        ctx.fillText(`Área ocupada: ${areaTotal.toFixed(2)} m² (${areaPorcentaje}%)`, 10, h - 10);
         ctx.fillText(`Filas usadas: ${filasAImprimir} de ${totalFilasMax}`, 10, h - 25);
 
         ctx.restore();
@@ -1078,10 +1075,10 @@ PANEL DE HISTORIAL
         document.getElementById('precio').value = '10.00';
         document.getElementById('cantidad').value = '';
         document.getElementById('area').value = '';
+        document.getElementById('ancho_rollo').value = '1.3';
         document.getElementById('mesa').checked = true;
         document.getElementById('girar').checked = false;
         document.getElementById('auto_girar').checked = false;
-        document.getElementById('tipo_rollo').value = '1.3m';
         resetZoom();
         clearPdf();
         document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce los datos y ajusta los parámetros.</p>';
@@ -1090,7 +1087,7 @@ PANEL DE HISTORIAL
         simData = {
             columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
             areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
-            orientacion: 'normal', mesa: false
+            orientacion: 'normal', mesa: false, anchoRolloM: 1.3
         };
         drawSimulation();
     }

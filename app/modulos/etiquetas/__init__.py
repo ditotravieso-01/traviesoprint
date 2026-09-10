@@ -11,36 +11,33 @@ from app.services.calculadora_etiquetas import (
 # ==========================================
 # CONSTANTES
 # ==========================================
-ROLLOS = {
-    '1.3m': {
-        'ancho_mm': 1300.0,
-        'largo_1m2_mm': 769.230769,
-        'nombre': 'Rollo 1.3 m'
-    },
-    '1m': {
-        'ancho_mm': 1000.0,
-        'largo_1m2_mm': 1000.0,
-        'nombre': 'Rollo 1 m'
-    }
-}
+ANCHO_ROLLO_DEFECTO_M = 1.3
 PRECIO_POR_DEFECTO = 10.0
 
-# ==========================================
-# BLUEPRINT
-# ==========================================
 etiquetas_bp = Blueprint('etiquetas', __name__, url_prefix='/etiquetas', template_folder='templates')
 
+
 # ==========================================
-# FUNCIÓN AUXILIAR DE CÁLCULO (adaptada para usar el servicio)
+# FUNCIÓN AUXILIAR DE CÁLCULO
 # ==========================================
 def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto_girar_activo,
-                   cantidad_str, area_str, tipo_rollo):
+                   cantidad_str, area_str, ancho_rollo_m=ANCHO_ROLLO_DEFECTO_M):
     """
-    Retorna un diccionario con todos los datos calculados y la simulación.
+    Calcula todos los datos de impresión de etiquetas.
+    - ancho_rollo_m: ancho del rollo en metros (por defecto 1.3).
+      El largo del paño de 1 m² se calcula como 1 / ancho_rollo_m.
     """
-    rollo = ROLLOS.get(tipo_rollo, ROLLOS['1.3m'])
-    ANCHO_PAPEL_MM = rollo['ancho_mm']
-    LARGO_1M2_MM = rollo['largo_1m2_mm']
+    # Normalizar ancho del rollo
+    try:
+        ancho_rollo_m = float(ancho_rollo_m) if ancho_rollo_m else ANCHO_ROLLO_DEFECTO_M
+    except (TypeError, ValueError):
+        ancho_rollo_m = ANCHO_ROLLO_DEFECTO_M
+    if ancho_rollo_m <= 0:
+        ancho_rollo_m = ANCHO_ROLLO_DEFECTO_M
+
+    # Área del paño = ancho_rollo_m × largo_paño_m = 1 m²  →  largo_paño_m = 1 / ancho_rollo_m
+    ANCHO_PAPEL_MM = ancho_rollo_m * 1000.0
+    LARGO_1M2_MM = 1000.0 / ancho_rollo_m
 
     resultado = ""
     detalles = ""
@@ -55,7 +52,8 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
         'anchoCm': 0.0,
         'altoCm': 0.0,
         'orientacion': 'normal',
-        'mesa': mesa_activo
+        'mesa': mesa_activo,
+        'anchoRolloM': ancho_rollo_m
     }
 
     try:
@@ -74,8 +72,7 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
         orientacion_texto = "normal"
         mensaje_orientacion = ""
 
-        # Usar lógica de orientación (auto_girar, girar manual, etc.)
-        # (código existente, ligeramente adaptado para usar las constantes del servicio)
+        # ---- Lógica de orientación ----
         if auto_girar_activo:
             # Normal
             ancho_eff_norm = ancho_mm + (MARGEN_MESA_MM if mesa_activo else 0)
@@ -108,7 +105,7 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
                 filas_por_metro = fil_m2_norm
                 etiquetas_por_m2 = etiq_norm
 
-            mensaje_orientacion = f"🤖 Optimización IA: mejor orientación **{mejor}** ({etiquetas_por_m2} etiquetas/m²)"
+            mensaje_orientacion = f"Optimización IA: mejor orientación **{mejor}** ({etiquetas_por_m2} etiquetas/m²)"
         else:
             if girar_activo:
                 ancho_mm, alto_mm = alto_mm, ancho_mm
@@ -136,15 +133,16 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
 
             if resto == 0:
                 area_total = metros_completos * 1.0
-                precio_total = area_total * precio_m2
+                #Redondear a 2 decimales ANTES de multiplicar por precio
+                precio_total = round(area_total, 2) * precio_m2
                 filas_usadas = metros_completos * filas_por_metro
                 celdas_totales = columnas * filas_usadas
                 es_completo = True
                 resultado = f"""
-                <strong>📊 Capacidad por m²:</strong> {etiquetas_por_m2} etiquetas<br>
+                <strong>Capacidad por m²:</strong> {etiquetas_por_m2} etiquetas<br>
                 {mensaje_orientacion}<br>
-                ✅ {metros_completos} metros completos exactos<br>
-                • Área total: {area_total:.4f} m²<br>
+                {metros_completos} metros completos exactos<br>
+                • Área total: {area_total:.2f} m²<br>
                 • Precio: <strong>${precio_total:.2f} USD</strong>
                 """
                 detalles = f"""
@@ -162,16 +160,17 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
                 etiquetas_extra = filas_extra * columnas
                 area_parcial = (ANCHO_PAPEL_MM / 1000.0) * (filas_extra * alto_efectivo / 1000.0)
                 area_total = metros_completos * 1.0 + area_parcial
-                precio_total = area_total * precio_m2
+                #Redondear a 2 decimales ANTES de multiplicar por precio
+                precio_total = round(area_total, 2) * precio_m2
                 filas_usadas = (metros_completos * filas_por_metro) + filas_extra
                 celdas_totales = columnas * filas_usadas
                 es_completo = False
                 resultado = f"""
-                <strong>📊 Capacidad por m²:</strong> {etiquetas_por_m2} etiquetas<br>
+                <strong>Capacidad por m²:</strong> {etiquetas_por_m2} etiquetas<br>
                 {mensaje_orientacion}<br>
-                ✅ {metros_completos} metros completos + {etiquetas_extra} etiquetas adicionales<br>
+                {metros_completos} metros completos + {etiquetas_extra} etiquetas adicionales<br>
                 • Las {etiquetas_extra} etiquetas ocupan {filas_extra} fila(s) extra<br>
-                • Área total: {area_total:.4f} m²<br>
+                • Área total: {area_total:.2f} m²<br>
                 • Precio: <strong>${precio_total:.2f} USD</strong>
                 """
                 detalles = f"""
@@ -185,29 +184,26 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
                 • Etiquetas extra: {etiquetas_extra}<br>
                 • Filas extra: {filas_extra}
                 """
-
         else:
-            # --- MODO ÁREA (modificado para paños completos) ---
+            # ---- MODO ÁREA ----
             area_total_ingresada = float(area_str)
-            metros_completos = int(area_total_ingresada)  # Parte entera
+            metros_completos = int(area_total_ingresada)
             area_resto = area_total_ingresada - metros_completos
 
-            # Filas de los metros completos
             filas = metros_completos * filas_por_metro
 
-            # Filas del área fraccionaria (si existe)
             if area_resto > 0:
                 largo_resto_mm = (area_resto / (ANCHO_PAPEL_MM / 1000.0)) * 1000.0
                 filas_resto = int(largo_resto_mm // alto_efectivo)
                 filas += filas_resto
 
             cantidad_etiq = filas * columnas
-            # El área total real (para mostrar en resultado y precio) sigue siendo el área ingresada
             area_total = area_total_ingresada
-            precio_total = area_total * precio_m2
+            #Redondear a 2 decimales ANTES de multiplicar por precio
+            precio_total = round(area_total, 2) * precio_m2
             filas_usadas = filas
             celdas_totales = columnas * filas_usadas
-            es_completo = False  # Porque puede haber fracción
+            es_completo = False
 
             resultado = f"""
             <strong>📊 Distribución en {area_total:.2f} m²:</strong><br>
@@ -226,20 +222,20 @@ def calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo, auto
             • Margen de mesa: {'Sí (2mm)' if mesa_activo else 'No'}<br>
             • Orientación: {orientacion_texto}
             """
-            area = area_str
-            cantidad = ""  # Limpiamos el campo cantidad
 
+        # Redondeo a 2 decimales en simData
         simData = {
             'columnas': columnas,
             'filasPorMetro': filas_por_metro,
             'filasUsadas': filas_usadas,
             'celdasTotales': celdas_totales,
-            'areaTotal': area_total,
+            'areaTotal': round(area_total, 2),
             'esCompleto': es_completo,
-            'anchoCm': ancho_efectivo / 10.0,
-            'altoCm': alto_efectivo / 10.0,
+            'anchoCm': round(ancho_efectivo / 10.0, 2),
+            'altoCm': round(alto_efectivo / 10.0, 2),
             'orientacion': orientacion_texto,
-            'mesa': mesa_activo
+            'mesa': mesa_activo,
+            'anchoRolloM': ancho_rollo_m
         }
 
     except Exception as e:
@@ -267,22 +263,15 @@ def index():
     mesa_checked = 'checked'
     girar_checked = ''
     auto_girar_checked = ''
-    tipo_rollo = '1.3m'
+    ancho_rollo_m = ANCHO_ROLLO_DEFECTO_M
 
     resultado = ''
     detalles = ''
     error = ''
     simData = {
-        'columnas': 0,
-        'filasPorMetro': 0,
-        'filasUsadas': 0,
-        'celdasTotales': 0,
-        'areaTotal': 0.0,
-        'esCompleto': False,
-        'anchoCm': 0.0,
-        'altoCm': 0.0,
-        'orientacion': 'normal',
-        'mesa': False
+        'columnas': 0, 'filasPorMetro': 0, 'filasUsadas': 0, 'celdasTotales': 0,
+        'areaTotal': 0.0, 'esCompleto': False, 'anchoCm': 0.0, 'altoCm': 0.0,
+        'orientacion': 'normal', 'mesa': False, 'anchoRolloM': ANCHO_ROLLO_DEFECTO_M
     }
 
     if request.method == 'POST':
@@ -294,10 +283,13 @@ def index():
         auto_girar_activo = request.form.get('auto_girar') == '1'
         cantidad_str = request.form.get('cantidad', '').strip()
         area_str = request.form.get('area', '').strip()
-        tipo_rollo = request.form.get('tipo_rollo', '1.3m')
+        try:
+            ancho_rollo_m = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFECTO_M))
+        except (TypeError, ValueError):
+            ancho_rollo_m = ANCHO_ROLLO_DEFECTO_M
 
         data = calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo,
-                              auto_girar_activo, cantidad_str, area_str, tipo_rollo)
+                              auto_girar_activo, cantidad_str, area_str, ancho_rollo_m)
 
         resultado = data['resultado']
         detalles = data['detalles']
@@ -325,9 +317,8 @@ def index():
                            mesa_checked=mesa_checked,
                            girar_checked=girar_checked,
                            auto_girar_checked=auto_girar_checked,
-                           tipo_rollo=tipo_rollo,
-                           simData=simData,
-                           rollos=ROLLOS)
+                           ancho_rollo_m=ancho_rollo_m,
+                           simData=simData)
 
 
 # ==========================================
@@ -345,10 +336,26 @@ def calcular_ajax():
         auto_girar_activo = request.form.get('auto_girar') == '1'
         cantidad_str = request.form.get('cantidad', '').strip()
         area_str = request.form.get('area', '').strip()
-        tipo_rollo = request.form.get('tipo_rollo', '1.3m')
+
+        # Aceptar ancho_rollo (nuevo) o tipo_rollo (compatibilidad)
+        ancho_rollo_m = None
+        ancho_rollo_form = request.form.get('ancho_rollo')
+        if ancho_rollo_form:
+            try:
+                ancho_rollo_m = float(ancho_rollo_form)
+            except (TypeError, ValueError):
+                ancho_rollo_m = None
+        if ancho_rollo_m is None:
+            tipo_rollo = request.form.get('tipo_rollo', '').strip()
+            if tipo_rollo == '1.3m':
+                ancho_rollo_m = 1.3
+            elif tipo_rollo == '1m':
+                ancho_rollo_m = 1.0
+            else:
+                ancho_rollo_m = ANCHO_ROLLO_DEFECTO_M
 
         data = calcular_datos(ancho_cm, alto_cm, precio_m2, mesa_activo, girar_activo,
-                              auto_girar_activo, cantidad_str, area_str, tipo_rollo)
+                              auto_girar_activo, cantidad_str, area_str, ancho_rollo_m)
         return jsonify({
             'resultado': data['resultado'],
             'detalles': data['detalles'],

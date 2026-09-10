@@ -371,6 +371,7 @@ class Producto(db.Model):
 
     fecha_vencimiento = db.Column(db.Date, nullable=True)
     ancho_rollo = db.Column(db.Float, nullable=True)
+    merma_porcentaje = db.Column(db.Float, default=0.0)
     largo_rollo = db.Column(db.Float, nullable=True)
     es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
     atributos_extra = db.Column(db.JSON, nullable=True, default={})
@@ -436,6 +437,7 @@ class Movimiento(db.Model):
     usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     orden_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=True)
     proveedor_id = db.Column(db.Integer, db.ForeignKey('proveedores.id'), nullable=True)
+    tipo_ajuste = db.Column(db.String(20), nullable=True)  # 'conteo' o 'correccion'
 
     usuario = db.relationship('User', backref='movimientos')
     orden = db.relationship('Order', backref='movimientos')

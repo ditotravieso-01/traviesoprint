@@ -2,7 +2,7 @@
 
 {% block title %}{{ 'Editar' if edit else 'Nueva' }} Orden de Trabajo · CairoStudio{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if edit else '📄 Nueva' }} Orden de Trabajo{% endblock %}
+{% block page_title %}{{ 'Editar' if edit else '📄 Nueva' }} Orden de Trabajo{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -65,6 +65,7 @@
     .calc-result-linea .label { font-size: 0.6rem; color: #6b6b7a; text-transform: uppercase; letter-spacing: 0.3px; }
     .calc-result-linea .value { font-weight: 600; font-size: 0.9rem; color: #1e1e2a; }
     .calc-result-linea .value.unidad { color: #2b7a4b; }
+    .input-error { border-color: #dc2626 !important; background: #fde8e5 !important; }
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; }
         .btn-group { flex-direction: column; align-items: stretch; }
@@ -81,24 +82,22 @@
 <div class="form-container">
     <form method="POST" action="{{ url_for('ordenes.create_order') if not edit else url_for('ordenes.edit_order', order_id=order.id) }}" enctype="multipart/form-data" id="orderForm">
 
-        <!-- ==========================================
-        SECCIÓN 1: DATOS GENERALES
-        ========================================== -->
+        <!-- SECCIÓN 1: DATOS GENERALES -->
         <div class="form-section">
-            <h4>📋 Datos Generales</h4>
+            <h4>Datos Generales</h4>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="order_num">N° de Orden (opcional)</label>
+                    <label for="order_num">Orden</label>
                     <input type="text" id="order_num" name="order_num" value="{{ form_data.order_num if form_data else '' }}" placeholder="Opcional, se asigna al entrar al sistema">
                 </div>
                 <div class="form-group">
-                    <label for="date">Fecha de emisión *</label>
+                    <label for="date">Fecha de emisión</label>
                     <input type="date" id="date" name="date" value="{{ form_data.date if form_data else '' }}" required>
                 </div>
             </div>
             <div class="form-grid-2">
                 <div class="form-group">
-                    <label for="client_name">Cliente *</label>
+                    <label for="client_name">Cliente</label>
                     <div class="client-select-wrapper">
                         <input type="hidden" id="client_id" name="client_id" value="{{ form_data.client_id if form_data else '' }}">
                         <input type="text" id="client_name" name="client_name" value="{{ form_data.client_nombre if form_data else '' }}" placeholder="Buscar o escribir nombre..." required autocomplete="off" list="clientesList">
@@ -121,11 +120,9 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 2: NOTIFICACIONES
-        ========================================== -->
+        <!-- SECCIÓN 2: NOTIFICACIONES -->
         <div class="form-section">
-            <h4>🔔 Notificaciones</h4>
+            <h4>Notificaciones</h4>
             <div class="form-group">
                 <label for="usuarios_notificar">Notificar a estos usuarios</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 6px; flex-wrap: wrap;">
@@ -147,11 +144,9 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 3: TIPO Y PRIORIDAD
-        ========================================== -->
+        <!-- SECCIÓN 3: TIPO Y PRIORIDAD -->
         <div class="form-section">
-            <h4>🎯 Tipo y Prioridad</h4>
+            <h4>Tipo y Prioridad</h4>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Tipo de proyecto</label>
@@ -173,11 +168,9 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 4: SERVICIOS
-        ========================================== -->
+        <!-- SECCIÓN 4: SERVICIOS -->
         <div class="form-section">
-            <h4>🛠 Servicios</h4>
+            <h4>Servicios</h4>
             <div class="form-group">
                 <div class="checkbox-grid">
                     {% for serv in servicios_disponibles %}
@@ -197,11 +190,9 @@
             </div>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 5: ARCHIVOS Y LÍNEAS DE TRABAJO
-        ========================================== -->
+        <!-- SECCIÓN 5: ARCHIVOS Y LÍNEAS DE TRABAJO -->
         <div class="form-section">
-            <h4>📎 Archivos y Líneas de trabajo</h4>
+            <h4>Archivos y Líneas de trabajo</h4>
             <p style="color:#666; font-size:14px;">Añade ítems y selecciona un producto del inventario (stock > 0).</p>
 
             <button type="button" class="btn btn-primary" onclick="agregarLinea()" style="margin-bottom:12px;">
@@ -211,16 +202,15 @@
             <table class="lineas-table" id="tablaLineas">
                 <thead>
                     <tr>
-                        <th style="width:18%;">Nombre visible *</th>
-                        <th style="width:18%;">Material (Producto) *</th>
-                        <th style="width:12%;">Cantidad *</th>
+                        <th style="width:18%;">Nombre visible</th>
+                        <th style="width:18%;">Material (Producto)</th>
+                        <th style="width:12%;">Cantidad</th>
                         <th style="width:12%;">Unidad</th>
                         <th style="width:18%;">Proyecto/Producto</th>
                         <th style="width:12%;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody id="cuerpoLineas">
-                    <!-- Líneas existentes (en edición) -->
                     {% if edit and order.archivos %}
                         {% for archivo in order.archivos %}
                         {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
@@ -235,7 +225,9 @@
                                 <select name="producto_{{ archivo.id }}" class="producto-select-edit" required data-archivo-id="{{ archivo.id }}">
                                     <option value="">-- Seleccionar --</option>
                                     {% for p in productos %}
-                                    <option value="{{ p.id }}" {% if archivo.producto_id == p.id %}selected{% endif %} data-ancho="{{ p.ancho_rollo or '' }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
+                                    <option value="{{ p.id }}" {% if archivo.producto_id == p.id %}selected{% endif %}
+                                            data-ancho="{{ p.ancho_rollo or '' }}"
+                                            data-merma="{{ p.merma_porcentaje or '' }}">{{ p.nombre }} (stock: {{ p.stock }})</option>
                                     {% endfor %}
                                 </select>
                             </td>
@@ -251,7 +243,7 @@
                             <td>
                                 {% if is_etiqueta %}
                                     <span class="badge" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
-                                    <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}">📐 Ocultar</button>
+                                    <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
                                 {% else %}
                                     <span style="color:#999;">Otros</span>
                                 {% endif %}
@@ -260,7 +252,6 @@
                                 <button type="button" class="btn-eliminar" onclick="marcarEliminarLinea({{ archivo.id }})"><i class="fas fa-trash-alt"></i></button>
                             </td>
                         </tr>
-                        <!-- Si la línea tiene parámetros de etiquetas, mostrarlos (editables) -->
                         {% if is_etiqueta %}
                             <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                                 <td colspan="6">
@@ -276,24 +267,28 @@
                                             </div>
                                         </div>
                                         <div class="form-group">
-                                            <label>Ancho de rollo (m)</label>
-                                            <input type="number" step="0.01" min="0.01" class="ancho_rollo_edit" name="ancho_rollo_edit[]" value="{{ params.ancho_rollo or '' }}" placeholder="Automático del producto" disabled>
+                                            <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(debe ser ≤ ancho real del rollo)</span></label>
+                                            <input type="number" step="0.01" min="0.01" class="ancho_util_override_edit"
+                                                   name="ancho_util_override_edit[]"
+                                                   value="{{ params.ancho_util_usado or '' }}"
+                                                   placeholder="Ej. 1.30"
+                                                   data-ancho-rollo="{{ archivo.producto.ancho_rollo if archivo.producto else '' }}"
+                                                   oninput="validarAnchoUtilEdit(this)">
                                         </div>
                                         <div class="form-group">
-                                            <label>Precio (USD)</label>
+                                            <label>Precio (USD/m²)</label>
                                             <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                         </div>
                                         <div class="checkbox-grid">
                                             <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
                                             <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
-                                            <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> 🧠 Modo Inteligente</label>
+                                            <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
                                         </div>
                                         <div class="calc-result-linea">
-                                            <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display_edit">{% if params and params.etiquetas_por_m2 %}{{ params.etiquetas_por_m2 }}{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display_edit">{% if params.metros_completos is not none %}{{ params.metros_completos }}{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display_edit">{% if params.resto_etiquetas is not none %}{{ params.resto_etiquetas }}{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Consumo ({{ 'm' if archivo.unidad == 'm' else 'm²' }})</span><span class="value consumo_m_display_edit">{% if params and params.consumo %}{{ params.consumo|round(2) }}{% else %}—{% endif %}</span></div>
-                                            <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display_edit">{% if params and params.costo_estimado %}${{ params.costo_estimado|round(2) }}{% else %}—{% endif %}</span></div>
+                                            <div class="item"><span class="label">Etiquetas / m²</span><span class="value etiquetas_por_m2_display_edit">—</span></div>
+                                            <div class="item"><span class="label">Área total (m²)</span><span class="value area_total_display_edit">—</span></div>
+                                            <div class="item"><span class="label">Consumo lineal (m)</span><span class="value consumo_lineal_display_edit">—</span></div>
+                                            <div class="item"><span class="label">Costo estimado</span><span class="value costo_estimado_display_edit">—</span></div>
                                         </div>
                                         <div style="margin-top:4px;">
                                             <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
@@ -308,20 +303,15 @@
             </table>
         </div>
 
-        <!-- ==========================================
-        SECCIÓN 6: TENER EN CUENTA
-        ========================================== -->
+        <!-- SECCIÓN 6: TENER EN CUENTA -->
         <div class="form-section">
-            <h4>📝 Tener en cuenta</h4>
+            <h4>Tener en cuenta</h4>
             <div class="form-group">
                 <label for="descripcion">Observaciones, instrucciones especiales, etc.</label>
                 <textarea id="descripcion" name="descripcion" rows="4" placeholder="Ej. Revisar color, acabado mate, etc.">{{ form_data.descripcion if form_data else '' }}</textarea>
             </div>
         </div>
 
-        <!-- ==========================================
-        BOTONES DE ACCIÓN
-        ========================================== -->
         <div class="btn-group">
             <div class="left-buttons">
                 <button type="submit" class="btn btn-primary">
@@ -376,6 +366,56 @@
 </div>
 
 <script>
+// =============================================
+// HELPERS
+// =============================================
+function formatAnchoForTipoRollo(ancho) {
+    if (ancho === null || ancho === undefined || isNaN(ancho)) return '1.3m';
+    if (ancho == Math.floor(ancho)) {
+        return ancho.toFixed(0) + 'm';
+    }
+    let str = ancho.toFixed(2);
+    str = str.replace(/0+$/, '').replace(/\.$/, '');
+    return str + 'm';
+}
+
+// =============================================
+// VALIDACIÓN DE ANCHO ÚTIL ≤ ANCHO REAL
+// =============================================
+function validarAnchoUtil(input) {
+    const valor = parseFloat(input.value);
+    const row = input.closest('tr');
+    const mainRow = row ? (row.previousElementSibling || document.querySelector(`tr.linea-fila[data-params-id="${row.dataset.paramsId}"]`)) : null;
+    if (!mainRow) return true;
+    const select = mainRow.querySelector('.producto-select-edit') || mainRow.querySelector('.producto-select');
+    if (!select) return true;
+    const opt = select.options[select.selectedIndex];
+    const anchoReal = parseFloat(opt.getAttribute('data-ancho')) || 0;
+    if (valor && anchoReal && valor > anchoReal + 0.001) {
+        input.classList.add('input-error');
+        input.title = `No puede superar el ancho real del rollo (${anchoReal} m)`;
+        return false;
+    } else {
+        input.classList.remove('input-error');
+        input.title = '';
+        return true;
+    }
+}
+
+function validarAnchoUtilEdit(input) {
+    const valor = parseFloat(input.value);
+    const anchoReal = parseFloat(input.getAttribute('data-ancho-rollo')) || 0;
+    if (valor && anchoReal && valor > anchoReal + 0.001) {
+        input.classList.add('input-error');
+        input.title = `No puede superar el ancho real del rollo (${anchoReal} m)`;
+        return false;
+    } else {
+        input.classList.remove('input-error');
+        input.title = '';
+        return true;
+    }
+}
+
 // =============================================
 // SELECCIÓN DE CLIENTE
 // =============================================
@@ -470,7 +510,7 @@ window.onclick = function(event) {
 }
 
 // =============================================
-// FUNCIONES PARA LÍNEAS DINÁMICAS (NUEVAS)
+// FUNCIONES PARA LÍNEAS DINÁMICAS
 // =============================================
 let nuevaLineaCounter = 0;
 const productosData = {{ productos|tojson }};
@@ -487,7 +527,7 @@ function agregarLinea() {
 
     let prodOptions = '<option value="">-- Seleccionar --</option>';
     for (let p of productosData) {
-        prodOptions += `<option value="${p.id}" data-ancho="${p.ancho_rollo || ''}">${p.nombre} (stock: ${p.stock})</option>`;
+        prodOptions += `<option value="${p.id}" data-ancho="${p.ancho_rollo || ''}" data-merma="${p.merma_porcentaje || ''}">${p.nombre} (stock: ${p.stock})</option>`;
     }
 
     row.innerHTML = `
@@ -514,7 +554,7 @@ function agregarLinea() {
                 <option value="etiquetas">Etiquetas</option>
                 <option value="cartel">Cartel</option>
             </select>
-            <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="${paramsId}" style="display:none; margin-left:4px;">📐</button>
+            <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="${paramsId}" style="display:none; margin-left:4px;"></button>
         </td>
         <td>
             <button type="button" class="btn-eliminar" onclick="eliminarLinea(this)"><i class="fas fa-trash-alt"></i></button>
@@ -542,24 +582,27 @@ function agregarLinea() {
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Ancho de rollo (m)</label>
-                    <input type="number" step="0.01" min="0.01" class="ancho_rollo_display" value="" placeholder="Automático del producto" disabled>
+                    <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(debe ser ≤ ancho real del rollo)</span></label>
+                    <input type="number" step="0.01" min="0.01" class="ancho_util_override"
+                           name="ancho_util_override[]"
+                           value=""
+                           placeholder="Ej. 1.30"
+                           oninput="validarAnchoUtil(this)">
                 </div>
                 <div class="form-group">
-                    <label>Precio (USD)</label>
+                    <label>Precio (USD/m²)</label>
                     <input type="number" step="0.01" min="0" class="precio_etiqueta" name="precio_etiqueta[]" value="10">
                 </div>
                 <div class="checkbox-grid">
                     <label><input type="checkbox" class="mesa_etiqueta" name="mesa_etiqueta[]" value="1" checked> Margen de mesa (2 mm)</label>
                     <label><input type="checkbox" class="girar_etiqueta" name="girar_etiqueta[]" value="1"> Girar 90° (manual)</label>
-                    <label><input type="checkbox" class="auto_girar_etiqueta" name="auto_girar_etiqueta[]" value="1"> 🧠 Modo Inteligente</label>
+                    <label><input type="checkbox" class="auto_girar_etiqueta" name="auto_girar_etiqueta[]" value="1">Modo Inteligencia Artificial</label>
                 </div>
                 <div class="calc-result-linea">
-                    <div class="item"><span class="label">Etiquetas por m²</span><span class="value etiquetas_por_m2_display">—</span></div>
-                    <div class="item"><span class="label">Metros completos</span><span class="value metros_completos_display">—</span></div>
-                    <div class="item"><span class="label">Resto (etiquetas)</span><span class="value resto_etiquetas_display">—</span></div>
-                    <div class="item"><span class="label">Consumo ({{ 'm' if 'unidad_select' else 'm²' }})</span><span class="value consumo_m_display">—</span></div>
-                    <div class="item"><span class="label">Costo estimado</span><span class="value unidad costo_estimado_display">—</span></div>
+                    <div class="item"><span class="label">Etiquetas / m²</span><span class="value etiquetas_por_m2_display">—</span></div>
+                    <div class="item"><span class="label">Área total (m²)</span><span class="value area_total_display">—</span></div>
+                    <div class="item"><span class="label">Consumo lineal (m)</span><span class="value consumo_lineal_display">—</span></div>
+                    <div class="item"><span class="label">Costo estimado</span><span class="value costo_estimado_display">—</span></div>
                 </div>
                 <div style="margin-top:4px;">
                     <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="${paramsId}">Ocultar</button>
@@ -583,7 +626,7 @@ function agregarLinea() {
     const anchoInput = paramsDiv.querySelector('.ancho_etiqueta');
     const altoInput = paramsDiv.querySelector('.alto_etiqueta');
     const precioInput = paramsDiv.querySelector('.precio_etiqueta');
-    const anchoRolloDisplay = paramsDiv.querySelector('.ancho_rollo_display');
+    const anchoUtilOverride = paramsDiv.querySelector('.ancho_util_override');
     const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta');
     const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
     const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
@@ -593,8 +636,7 @@ function agregarLinea() {
         paramsDiv.classList.add('visible');
         paramsDiv.style.display = 'block';
         toggleBtn.style.display = 'inline-block';
-        toggleBtn.textContent = '📐 Ocultar';
-        actualizarAnchoRollo(paramsRow);
+        toggleBtn.textContent = 'Ocultar';
         setTimeout(() => triggerCalculo(), 100);
     }
 
@@ -602,7 +644,7 @@ function agregarLinea() {
         paramsRow.style.display = 'none';
         paramsDiv.classList.remove('visible');
         paramsDiv.style.display = 'none';
-        toggleBtn.textContent = '📐';
+        toggleBtn.textContent = 'Ver';
         limpiarResultados(paramsRow);
     }
 
@@ -636,17 +678,13 @@ function agregarLinea() {
 
     cantidadInput.addEventListener('input', triggerCalculo);
     cantidadInput.addEventListener('change', triggerCalculo);
-    unidadSelect.addEventListener('change', function() {
-        const unidad = this.value;
-        const consumoLabel = paramsDiv.querySelector('.consumo_m_display').closest('.item').querySelector('.label');
-        if (consumoLabel) {
-            consumoLabel.textContent = 'Consumo (' + (unidad === 'm' ? 'm' : 'm²') + ')';
-        }
-        actualizarAnchoRollo(paramsRow);
-        triggerCalculo();
-    });
+    unidadSelect.addEventListener('change', triggerCalculo);
     productoSelect.addEventListener('change', function() {
-        actualizarAnchoRollo(paramsRow);
+        // Limpiar el override anterior y validar
+        if (anchoUtilOverride) {
+            anchoUtilOverride.value = '';
+            anchoUtilOverride.classList.remove('input-error');
+        }
         triggerCalculo();
     });
     anchoInput.addEventListener('input', triggerCalculo);
@@ -658,16 +696,14 @@ function agregarLinea() {
     mesaCheck.addEventListener('change', triggerCalculo);
     girarCheck.addEventListener('change', triggerCalculo);
     autoGirarCheck.addEventListener('change', triggerCalculo);
-
-    function actualizarAnchoRollo(paramsRow) {
-        const productoSelect = paramsRow.closest('tr').previousElementSibling.querySelector('.producto-select');
-        const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_display');
-        if (productoSelect && anchoRolloDisplay) {
-            const selected = productoSelect.options[productoSelect.selectedIndex];
-            const ancho = selected.getAttribute('data-ancho') || '1.3';
-            anchoRolloDisplay.value = ancho;
-        }
-    }
+    anchoUtilOverride.addEventListener('input', function() {
+        validarAnchoUtil(this);
+        triggerCalculo();
+    });
+    anchoUtilOverride.addEventListener('change', function() {
+        validarAnchoUtil(this);
+        triggerCalculo();
+    });
 }
 
 // =============================================
@@ -684,7 +720,7 @@ function eliminarLinea(btn) {
 }
 
 // =============================================
-// MARCAR LÍNEA EXISTENTE PARA ELIMINAR (edición)
+// MARCAR LÍNEA EXISTENTE PARA ELIMINAR
 // =============================================
 function marcarEliminarLinea(archivoId) {
     if (!confirm('¿Eliminar esta línea permanentemente?')) return;
@@ -707,7 +743,7 @@ function marcarEliminarLinea(archivoId) {
 }
 
 // =============================================
-// DELEGACIÓN DE EVENTOS PARA TOGGLE Y OCULTAR (edición)
+// DELEGACIÓN DE EVENTOS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
@@ -726,25 +762,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         paramsDiv.classList.remove('visible');
                         paramsDiv.style.display = 'none';
                     }
-                    toggleBtn.textContent = '📐 Ver';
+                    toggleBtn.textContent = 'Ver';
                 } else {
                     paramsRow.style.display = 'table-row';
                     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
                     if (paramsDiv) {
                         paramsDiv.classList.add('visible');
                         paramsDiv.style.display = 'block';
-                        const productoSelect = mainRow.querySelector('.producto-select-edit') || mainRow.querySelector('.producto-select');
-                        if (productoSelect) {
-                            const anchoRolloDisplay = paramsRow.querySelector('.ancho_rollo_edit') || paramsRow.querySelector('.ancho_rollo_display');
-                            if (anchoRolloDisplay) {
-                                const selected = productoSelect.options[productoSelect.selectedIndex];
-                                const ancho = selected.getAttribute('data-ancho') || '1.3';
-                                anchoRolloDisplay.value = ancho;
-                            }
-                        }
                         setTimeout(() => calcularLinea(paramsRow), 100);
                     }
-                    toggleBtn.textContent = '📐 Ocultar';
+                    toggleBtn.textContent = 'Ocultar';
                 }
             }
         }
@@ -766,20 +793,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
                 if (mainRow) {
                     const toggleBtn = mainRow.querySelector('.toggle-etiquetas');
-                    if (toggleBtn) toggleBtn.textContent = '📐 Ver';
+                    if (toggleBtn) toggleBtn.textContent = 'Ver';
                 }
             }
         }
     });
 
-    // Inicialización: fecha actual
     const dateInput = document.getElementById('date');
     if (dateInput && !dateInput.value) {
         const today = new Date().toISOString().split('T')[0];
         dateInput.value = today;
     }
 
-    // Mostrar/ocultar "Otros" en servicios
     const checkOtros = document.getElementById('serv_otros_check');
     const inputOtros = document.getElementById('servicios_otros');
     if (checkOtros && inputOtros) {
@@ -790,7 +815,6 @@ document.addEventListener('DOMContentLoaded', function() {
         toggleOtros();
     }
 
-    // Búsqueda de usuarios
     const buscarInput = document.getElementById('buscarUsuario');
     const selectUsuarios = document.getElementById('usuarios_notificar');
     if (buscarInput && selectUsuarios) {
@@ -805,7 +829,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ============================================================
-    // ASIGNAR EVENTOS DE CÁLCULO DINÁMICO A LÍNEAS EXISTENTES (edición)
+    // ASIGNAR EVENTOS A LÍNEAS EXISTENTES (edición)
     // ============================================================
     document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(paramsRow) {
         const paramsDiv = paramsRow.querySelector('.etiquetas-params');
@@ -817,6 +841,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta_edit');
         const girarCheck = paramsDiv.querySelector('.girar_etiqueta_edit');
         const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta_edit');
+        const anchoUtilOverride = paramsDiv.querySelector('.ancho_util_override_edit');
 
         const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
         if (!archivoId) return;
@@ -828,14 +853,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const unidadSelect = mainRow.querySelector('.unidad-edit');
 
         function triggerCalculoEdit() {
-            if (productoSelect) {
-                const anchoRolloDisplay = paramsDiv.querySelector('.ancho_rollo_edit');
-                if (anchoRolloDisplay) {
-                    const selected = productoSelect.options[productoSelect.selectedIndex];
-                    const ancho = selected.getAttribute('data-ancho') || '1.3';
-                    anchoRolloDisplay.value = ancho;
-                }
-            }
             calcularLinea(paramsRow);
         }
 
@@ -848,39 +865,47 @@ document.addEventListener('DOMContentLoaded', function() {
         if (productoSelect) { productoSelect.addEventListener('change', triggerCalculoEdit); }
         if (cantidadInput) { cantidadInput.addEventListener('input', triggerCalculoEdit); cantidadInput.addEventListener('change', triggerCalculoEdit); }
         if (unidadSelect) { unidadSelect.addEventListener('change', triggerCalculoEdit); }
+        if (anchoUtilOverride) {
+            anchoUtilOverride.addEventListener('input', function() {
+                validarAnchoUtilEdit(this);
+                triggerCalculoEdit();
+            });
+            anchoUtilOverride.addEventListener('change', function() {
+                validarAnchoUtilEdit(this);
+                triggerCalculoEdit();
+            });
+        }
 
         if (paramsRow.style.display !== 'none') {
             setTimeout(triggerCalculoEdit, 200);
         }
     });
 
-    console.log('DOM cargado - eventos delegados y de edición configurados');
+    console.log('DOM cargado');
 });
 
 // =============================================
-// FUNCIONES AUXILIARES PARA RESULTADOS
+// LIMPIAR RESULTADOS
 // =============================================
 function limpiarResultados(paramsRow) {
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
     if (paramsDiv) {
         paramsDiv.querySelector('.etiquetas_por_m2_display').textContent = '—';
-        paramsDiv.querySelector('.metros_completos_display').textContent = '—';
-        paramsDiv.querySelector('.resto_etiquetas_display').textContent = '—';
-        paramsDiv.querySelector('.consumo_m_display').textContent = '—';
+        paramsDiv.querySelector('.area_total_display').textContent = '—';
+        paramsDiv.querySelector('.consumo_lineal_display').textContent = '—';
         paramsDiv.querySelector('.costo_estimado_display').textContent = '—';
         const editDisplay = paramsDiv.querySelector('.etiquetas_por_m2_display_edit');
         if (editDisplay) {
             editDisplay.textContent = '—';
-            paramsDiv.querySelector('.metros_completos_display_edit').textContent = '—';
-            paramsDiv.querySelector('.resto_etiquetas_display_edit').textContent = '—';
-            paramsDiv.querySelector('.consumo_m_display_edit').textContent = '—';
+            paramsDiv.querySelector('.area_total_display_edit').textContent = '—';
+            paramsDiv.querySelector('.consumo_lineal_display_edit').textContent = '—';
             paramsDiv.querySelector('.costo_estimado_display_edit').textContent = '—';
         }
     }
 }
 
 // =============================================
-// CÁLCULO AUTOMÁTICO DE ETIQUETAS (CORREGIDO - REDONDEO)
+// CÁLCULO AUTOMÁTICO DE ETIQUETAS
 // =============================================
 function calcularLinea(paramsRow) {
     if (!paramsRow) return;
@@ -896,13 +921,12 @@ function calcularLinea(paramsRow) {
     const mesa = paramsDiv.querySelector(`.mesa_etiqueta${prefix}`).checked ? '1' : '0';
     const girar = paramsDiv.querySelector(`.girar_etiqueta${prefix}`).checked ? '1' : '0';
     const auto_girar = paramsDiv.querySelector(`.auto_girar_etiqueta${prefix}`).checked ? '1' : '0';
+    const anchoUtilOverrideInput = paramsDiv.querySelector(`.ancho_util_override${prefix}`);
+    const anchoUtilOverride = anchoUtilOverrideInput ? anchoUtilOverrideInput.value : '';
 
     const paramsId = paramsRow.dataset.paramsId;
     const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
-    if (!mainRow) {
-        console.error('No se encontró la línea principal para paramsId:', paramsId);
-        return;
-    }
+    if (!mainRow) return;
 
     let cantidadInput, unidadSelect, productoSelect;
     if (isEdit) {
@@ -916,17 +940,29 @@ function calcularLinea(paramsRow) {
         productoSelect = mainRow.querySelector('select[name="productos_ids[]"]');
     }
 
-    if (!cantidadInput || !unidadSelect || !productoSelect) {
-        console.error('Faltan campos en la línea principal');
-        return;
-    }
+    if (!cantidadInput || !unidadSelect || !productoSelect) return;
 
     const cantidad = cantidadInput.value;
     const unidad = unidadSelect.value;
     const selectedOption = productoSelect.options[productoSelect.selectedIndex];
-    const anchoRollo = selectedOption.getAttribute('data-ancho') || '1.3';
-    let tipo_rollo = '1.3m';
-    if (parseFloat(anchoRollo) <= 1.0) tipo_rollo = '1m';
+    const anchoRollo = parseFloat(selectedOption.getAttribute('data-ancho')) || 1.3;
+
+    // Determinar ancho útil efectivo
+    let anchoUtilEfectivo;
+    if (anchoUtilOverride && anchoUtilOverride.trim() !== '') {
+        anchoUtilEfectivo = parseFloat(anchoUtilOverride);
+    } else {
+        anchoUtilEfectivo = anchoRollo;
+    }
+
+    // Validar
+    if (anchoUtilEfectivo > anchoRollo + 0.001) {
+        paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = '⚠️';
+        paramsDiv.querySelector(`.area_total_display${prefix}`).textContent = 'Ancho útil > real';
+        paramsDiv.querySelector(`.consumo_lineal_display${prefix}`).textContent = '—';
+        paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
+        return;
+    }
 
     if (!ancho || !alto || !cantidad) {
         limpiarResultados(paramsRow);
@@ -936,17 +972,17 @@ function calcularLinea(paramsRow) {
     const formData = new FormData();
     formData.append('ancho', ancho);
     formData.append('alto', alto);
-    formData.append('tipo_rollo', tipo_rollo);
     formData.append('precio', precio);
     formData.append('mesa', mesa);
     formData.append('girar', girar);
     formData.append('auto_girar', auto_girar);
+    formData.append('ancho_rollo', anchoUtilEfectivo);
 
     if (unidad === 'unidades') {
         formData.append('cantidad', cantidad);
         formData.append('area', '');
     } else {
-        const area = parseFloat(cantidad) * parseFloat(anchoRollo);
+        const area = parseFloat(cantidad) * anchoUtilEfectivo;
         formData.append('area', area.toFixed(4));
         formData.append('cantidad', '');
     }
@@ -959,9 +995,8 @@ function calcularLinea(paramsRow) {
     .then(data => {
         if (data.error) {
             paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
-            paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
-            paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
-            paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = data.error;
+            paramsDiv.querySelector(`.area_total_display${prefix}`).textContent = 'Error';
+            paramsDiv.querySelector(`.consumo_lineal_display${prefix}`).textContent = 'Error';
             paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
             return;
         }
@@ -972,56 +1007,34 @@ function calcularLinea(paramsRow) {
         const etiquetasPorM2 = columnas * filasPorMetro;
         const precioUnitario = parseFloat(precio) || 10;
 
-        // ============================================================
-        // REDONDEO DE ÁREA A 2 DECIMALES PARA CÁLCULO DEL COSTO
-        // ============================================================
-        const areaRedondeada = Math.round(areaTotal * 100) / 100;
-        let consumo, costoEstimado;
-        if (unidad === 'm') {
-            consumo = parseFloat(cantidad) || 0;
-            costoEstimado = consumo * precioUnitario;
-        } else {
-            consumo = areaTotal;
-            costoEstimado = areaRedondeada * precioUnitario;  // <-- CORRECCIÓN
+        // Consumo lineal = área / ancho útil efectivo
+        let consumoLineal = 0;
+        if (anchoUtilEfectivo > 0) {
+            consumoLineal = areaTotal / anchoUtilEfectivo;
         }
+        consumoLineal = Math.round(consumoLineal * 100) / 100;
 
-        let metrosCompletos = null;
-        let restoEtiquetas = null;
-        if (unidad === 'unidades' && etiquetasPorM2 > 0 && columnas > 0) {
-            const cantidadOriginal = parseFloat(cantidad);
-            metrosCompletos = Math.floor(cantidadOriginal / etiquetasPorM2);
-            const resto = cantidadOriginal % etiquetasPorM2;
-            if (resto > 0) {
-                const filasExtra = Math.ceil(resto / columnas);
-                restoEtiquetas = filasExtra * columnas;
-            } else {
-                restoEtiquetas = 0;
-            }
-        }
+        // Costo estimado = área (ya redondeada a 2 decimales) × precio
+        const areaRedondeada = Math.round(areaTotal * 100) / 100;
+        let costoEstimado = areaRedondeada * precioUnitario;
+        costoEstimado = Math.round(costoEstimado * 100) / 100;
+
+        // Mostrar resultados
+        paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = etiquetasPorM2 || '—';
+        paramsDiv.querySelector(`.area_total_display${prefix}`).textContent = areaTotal ? areaTotal.toFixed(2) : '—';
+        paramsDiv.querySelector(`.consumo_lineal_display${prefix}`).textContent = consumoLineal ? consumoLineal.toFixed(2) : '—';
+        paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = costoEstimado ? '$' + costoEstimado.toFixed(2) : '—';
 
         const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
         if (nombreInput && !nombreInput.value.trim()) {
             nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
-
-        // Actualizar etiqueta de consumo
-        const consumoLabel = paramsDiv.querySelector(`.consumo_m_display${prefix}`).closest('.item').querySelector('.label');
-        if (consumoLabel) {
-            consumoLabel.textContent = 'Consumo (' + (unidad === 'm' ? 'm' : 'm²') + ')';
-        }
-
-        paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = etiquetasPorM2 || '—';
-        paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = (metrosCompletos !== null) ? metrosCompletos : '—';
-        paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = (restoEtiquetas !== null) ? restoEtiquetas : '—';
-        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = consumo ? consumo.toFixed(2) : '—';
-        paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = costoEstimado ? '$' + costoEstimado.toFixed(2) : '—';
     })
     .catch(error => {
         console.error('Error al calcular:', error);
         paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`).textContent = 'Error';
-        paramsDiv.querySelector(`.metros_completos_display${prefix}`).textContent = 'Error';
-        paramsDiv.querySelector(`.resto_etiquetas_display${prefix}`).textContent = '—';
-        paramsDiv.querySelector(`.consumo_m_display${prefix}`).textContent = 'Error de conexión';
+        paramsDiv.querySelector(`.area_total_display${prefix}`).textContent = 'Error';
+        paramsDiv.querySelector(`.consumo_lineal_display${prefix}`).textContent = 'Error';
         paramsDiv.querySelector(`.costo_estimado_display${prefix}`).textContent = '—';
     });
 }

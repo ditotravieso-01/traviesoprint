@@ -437,6 +437,13 @@
                     <input type="number" step="0.01" name="stock_real" required placeholder="Ingresa el stock contado" />
                 </div>
                 <div class="form-group">
+                    <label>Tipo de ajuste</label>
+                    <select name="tipo_ajuste" id="tipo_ajuste" required>
+                        <option value="conteo">📏 Conteo físico (afecta merma)</option>
+                        <option value="correccion">✏️ Corrección de error (no afecta merma)</option>
+                    </select>
+                </div>
+                <div class="form-group">
                     <label>Comentario</label>
                     <input type="text" name="comentario" placeholder="Ej. Conteo mensual" />
                 </div>

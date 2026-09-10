@@ -2,7 +2,7 @@
 
 {% block title %}Orden de Trabajo {{ order.order_num }} · CairoStudio{% endblock %}
 
-{% block page_title %}📄 Orden de Trabajo {{ order.order_num }}{% endblock %}
+{% block page_title %}Orden de Trabajo {{ order.order_num }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -424,7 +424,7 @@
     <div class="card">
         <div class="header-order">
             <div>
-                <div class="title">📄 Orden de Trabajo {{ order.order_num or 'Sin número' }}</div>
+                <div class="title">Orden de Trabajo {{ order.order_num or 'Sin número' }}</div>
                 <div class="sub">
                     Creada el {{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}
                     · Cliente: {{ order.client.nombre if order.client else 'Sin cliente' }}
@@ -448,13 +448,13 @@
 
     <!-- ===== DATOS GENERALES – Resumen + colapsable ===== -->
     <div class="card">
-        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📋 Datos Generales</h4>
+        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Datos Generales</h4>
         <div class="resumen-badges">
             <span class="badge-dato"><i class="fas fa-hashtag"></i> N°: <span class="valor">{{ order.order_num or 'Sin número' }}</span></span>
             <span class="badge-dato"><i class="fas fa-calendar-alt"></i> <span class="valor">{{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}</span></span>
             <span class="badge-dato"><i class="fas fa-user"></i> <span class="valor">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></span>
             <span class="badge-dato"><i class="fas fa-flag"></i> Prioridad: <span class="valor">{{ order.priority or 'normal' }}</span></span>
-            <span class="badge-dato"><i class="fas fa-check-circle"></i> Entrada: <span class="valor">{% if order.entrada_ok %}✅ OK{% else %}⏳ Pendiente{% endif %}</span></span>
+            <span class="badge-dato"><i class="fas fa-check-circle"></i> Entrada: <span class="valor">{% if order.entrada_ok %}OK{% else %}Pendiente{% endif %}</span></span>
         </div>
         <div class="detalle-colapsable">
             <button class="btn-toggle-detalle" id="toggleDetalleB"><i class="fas fa-chevron-down"></i> Ver más detalles</button>
@@ -471,7 +471,7 @@
 
     <!-- ===== SERVICIOS – Iconos ===== -->
     <div class="card">
-        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">🛠 Servicios</h4>
+        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Servicios</h4>
         <div class="servicios-iconos">
             {% set servicios = order.get_servicios() %}
             {% if servicios %}
@@ -504,7 +504,7 @@
 
     <!-- ===== TENER EN CUENTA ===== -->
     <div class="card">
-        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📝 Tener en cuenta</h4>
+        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Tener en cuenta</h4>
         <div class="nota-fondo">
             <i class="fas fa-pen"></i>
             <span>{{ order.descripcion or 'Sin descripción' }}</span>
@@ -513,7 +513,7 @@
 
     <!-- ===== LÍNEAS DE TRABAJO – Tarjetas (sin progreso) ===== -->
     <div class="card">
-        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📎 Líneas de trabajo</h4>
+        <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Líneas de trabajo</h4>
         {% if order.archivos %}
         <div class="grid-lineas" id="gridLineas">
             {% for archivo in order.archivos %}
@@ -601,7 +601,7 @@
                     {% if order.column != 'entregados' and current_user.role in ['operario', 'admin', 'odalys'] %}
                         <button class="btn-accion primary" onclick="marcarListo({{ archivo.id }})"><i class="fas fa-check"></i> Marcar listo</button>
                     {% endif %}
-                    <button class="btn-accion btn-ver-mas" data-target="extra-{{ archivo.id }}">📐 Ver más</button>
+                    <button class="btn-accion btn-ver-mas" data-target="extra-{{ archivo.id }}">Ver más</button>
                 </div>
                 <div class="panel-extra" id="extra-{{ archivo.id }}">
                     {% if is_etiqueta %}
@@ -662,14 +662,14 @@
         const isOpen = localStorage.getItem('panel_extra_' + targetId) === 'true';
         if (isOpen) {
             panel.classList.add('visible');
-            btn.textContent = '📐 Ocultar';
+            btn.textContent = 'Ocultar';
         }
 
         btn.addEventListener('click', function(e) {
             e.stopPropagation();
             panel.classList.toggle('visible');
             const ahoraVisible = panel.classList.contains('visible');
-            this.textContent = ahoraVisible ? '📐 Ocultar' : '📐 Ver más';
+            this.textContent = ahoraVisible ? 'Ocultar' : 'Ver más';
             localStorage.setItem('panel_extra_' + targetId, ahoraVisible);
         });
     });
