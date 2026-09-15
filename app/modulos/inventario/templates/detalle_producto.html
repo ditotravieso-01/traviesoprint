@@ -144,7 +144,7 @@
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap; width:100%;" class="acciones-superior">
             <button class="btn btn-success" onclick="abrirModalCompra()"><i class="fas fa-plus"></i> Comprar</button>
-            <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-edit"></i> Ajustar</button>
+            <button class="btn btn-warning" onclick="abrirModalAjuste()"><i class="fas fa-pen-to-square"></i> Corregir stock</button>
             <a href="{{ url_for('inventario.duplicar_producto', producto_id=producto.id) }}" class="btn btn-copy"><i class="fas fa-copy"></i> Duplicar</a>
             <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
         </div>
@@ -243,7 +243,7 @@
                 {% endif %}
                 <tr>
                     <td data-label="Fecha">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td data-label="Tipo"><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% else %}#fde8e5{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% else %}#dc2626{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">{{ m.tipo }}</span></td>
+                    <td data-label="Tipo"><span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'merma' %}#fde8e5{% elif m.tipo == 'sobrante' %}#e0f2fe{% elif m.tipo == 'correccion_baja' %}#fef3c7{% elif m.tipo == 'correccion_alta' %}#e0e7ff{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'merma' %}#dc2626{% elif m.tipo == 'sobrante' %}#0ea5e9{% elif m.tipo == 'correccion_baja' %}#92400e{% elif m.tipo == 'correccion_alta' %}#3730a3{% else %}#555{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">{{ m.tipo.replace('_', ' ').title() }}</span></td>
                     <td data-label="Cantidad (u)">{{ m.cantidad|round(2) }}</td>
                     <td data-label="Cantidad (m lineales)">{{ m.cantidad_metros|round(2) if m.cantidad_metros else '—' }}</td>
                     <td data-label="Área (m²)">{% if area_m2 is not none %}{{ area_m2|round(2) }}{% else %}—{% endif %}</td>
@@ -303,34 +303,38 @@
 <div class="modal-overlay" id="modalAjuste">
     <div class="modal modal-ajuste">
         <div class="modal-header">
-            <span class="modal-title"><i class="fas fa-balance-scale"></i> Ajustar stock</span>
+            <span class="modal-title"><i class="fas fa-pen-to-square"></i> Corregir stock</span>
             <button class="modal-close" onclick="cerrarModal('modalAjuste')">&times;</button>
         </div>
         <div class="modal-body">
+            <div class="modal-info-box">
+                <i class="fas fa-info-circle"></i>
+                <div>
+                    <strong>Este formulario es solo para corregir errores de captura.</strong><br>
+                    No afecta el cálculo de merma real. Si hiciste un <strong>conteo físico</strong>,
+                    regístralo en
+                    <a href="{{ url_for('inventario.nuevo_conteo') }}">Conteos semanales →</a>
+                </div>
+            </div>
             <form method="POST" action="{{ url_for('inventario.ajustar') }}">
                 <input type="hidden" name="producto_id" value="{{ producto.id }}" />
+                <input type="hidden" name="tipo_ajuste" value="correccion" />
+
                 <div class="form-group">
                     <label>Stock actual en sistema (unidades)</label>
                     <input type="number" step="0.01" value="{{ producto.stock|round(2) }}" disabled style="background:#f0ece8;" />
                 </div>
                 <div class="form-group">
-                    <label>Stock real (cuenta física en unidades)</label>
-                    <input type="number" step="0.01" name="stock_real" required placeholder="Ingresa el stock contado" />
+                    <label>Stock correcto (unidades) *</label>
+                    <input type="number" step="0.01" name="stock_real" required placeholder="Ingresa el stock correcto" />
                 </div>
                 <div class="form-group">
-                    <label>Tipo de ajuste</label>
-                    <select name="tipo_ajuste" id="tipo_ajuste" required>
-                        <option value="conteo">📏 Conteo físico (afecta merma real)</option>
-                        <option value="correccion">✏️ Corrección de error (no afecta merma real)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Comentario</label>
-                    <input type="text" name="comentario" placeholder="Ej. Conteo mensual" />
+                    <label>Motivo de la corrección</label>
+                    <input type="text" name="comentario" placeholder="Ej. Se cargó mal la cantidad al comprar" />
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="cerrarModal('modalAjuste')">Cancelar</button>
-                    <button type="submit" class="btn btn-warning"><i class="fas fa-edit"></i> Registrar ajuste</button>
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-check"></i> Guardar corrección</button>
                 </div>
             </form>
         </div>
@@ -358,6 +362,33 @@
         .modal-actions { flex-direction:column; }
         .modal-actions .btn { justify-content:center; width:100%; }
         .modal-body { padding:16px; }
+    }
+    .modal-info-box {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        background: #e0f2fe;
+        border-left: 4px solid #0ea5e9;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        color: #0c4a6e;
+        margin-bottom: 18px;
+        line-height: 1.4;
+    }
+    .modal-info-box i {
+        color: #0ea5e9;
+        font-size: 16px;
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+    .modal-info-box a {
+        color: #0c4a6e;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+    .modal-info-box a:hover {
+        color: #0ea5e9;
     }
 </style>
 
