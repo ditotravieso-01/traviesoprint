@@ -372,6 +372,7 @@ class Producto(db.Model):
     fecha_vencimiento = db.Column(db.Date, nullable=True)
     ancho_rollo = db.Column(db.Float, nullable=True)
     merma_porcentaje = db.Column(db.Float, default=0.0)
+    gap_panno_cm = db.Column(db.Float, default=6.5)  # cm entre paño y paño
     largo_rollo = db.Column(db.Float, nullable=True)
     es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
     atributos_extra = db.Column(db.JSON, nullable=True, default={})
@@ -790,3 +791,54 @@ def init_configuracion():
             config = Configuracion(clave=clave, valor=valor)
             db.session.add(config)
     db.session.commit()
+
+
+class ConteoSemanal(db.Model):
+    """
+    Conteo semanal del económico.
+    Registra el stock físico contado y calcula la merma imprevista
+    (diferencia entre lo que el sistema dice y lo que se contó),
+    descontando la merma operativa teórica de la semana.
+    """
+    __tablename__ = 'conteos_semanales'
+
+    id = db.Column(db.Integer, primary_key=True)
+    producto_id = db.Column(db.Integer, db.ForeignKey('productos.id'), nullable=False, index=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    fecha = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    semana = db.Column(db.String(10), nullable=False, index=True)  # "2026-W37"
+
+    # Snapshot del sistema al momento del conteo
+    stock_sistema_unidades = db.Column(db.Float, default=0.0)
+    stock_sistema_metros = db.Column(db.Float, default=0.0)
+
+    # Lo que el económico contó físicamente
+    stock_fisico_unidades = db.Column(db.Float, default=0.0)
+    stock_fisico_metros = db.Column(db.Float, default=0.0)
+
+    # Diferencias (positivo = falta material)
+    diferencia_unidades = db.Column(db.Float, default=0.0)
+    diferencia_metros = db.Column(db.Float, default=0.0)
+
+    # Merma operativa acumulada de la semana (desde parametros_etiqueta)
+    merma_operativa_semana_m2 = db.Column(db.Float, default=0.0)
+
+    # Merma imprevista = diferencia_metros*ancho - merma_operativa_semana
+    merma_imprevista_metros = db.Column(db.Float, default=0.0)
+    merma_imprevista_m2 = db.Column(db.Float, default=0.0)
+
+    comentario = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    producto = db.relationship('Producto', backref=db.backref('conteos_semanales', lazy='dynamic'))
+    usuario = db.relationship('User', backref='conteos_semanales')
+
+    def __repr__(self):
+        return f'<ConteoSemanal {self.semana} · {self.producto_id}>'
+
+    @staticmethod
+    def semana_iso(fecha=None):
+        """Devuelve 'YYYY-Www' (ISO week)."""
+        f = fecha or datetime.utcnow()
+        iso = f.isocalendar()
+        return f"{iso[0]}-W{iso[1]:02d}"

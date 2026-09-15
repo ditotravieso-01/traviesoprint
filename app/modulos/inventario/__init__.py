@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, send_file
 from flask_login import login_required, current_user
-from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad, GrupoAtributos, Atributo, Client, Proveedor, User
+from app.models import Producto, Movimiento, Order, OrdenProducto, Categoria, Area, Ubicacion, TipoProducto, Unidad, GrupoAtributos, Atributo, Client, Proveedor, User, ArchivoAdjunto
 from app import db
 from datetime import datetime, timedelta, date
 from sqlalchemy import func
@@ -15,7 +15,6 @@ import tempfile
 import json
 import math
 
-# Importar servicio de notificaciones
 from app.services.notification_service import notificar_usuarios
 
 inventario_bp = Blueprint('inventario', __name__, url_prefix='/inventario', template_folder='templates')
@@ -44,7 +43,7 @@ def admin_required(func):
     return wrapper
 
 # ==========================================
-# FUNCIÓN PARA NOTIFICAR STOCK BAJO
+# NOTIFICAR STOCK BAJO
 # ==========================================
 def verificar_y_notificar_stock_bajo(producto):
     if not producto or producto.stock_minimo is None or producto.stock_minimo <= 0:
@@ -65,7 +64,7 @@ def verificar_y_notificar_stock_bajo(producto):
         )
 
 # ==========================================
-# FUNCIONES AUXILIARES
+# AUXILIARES DE CATEGORÍAS
 # ==========================================
 def get_categoria_tree():
     root_cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
@@ -80,17 +79,33 @@ def get_categoria_tree():
         }
     return [build_tree(c) for c in root_cats]
 
-def get_categoria_options(cats=None, prefix=''):
+def get_categoria_options(cats=None, nivel=0):
+    """
+    Devuelve la lista plana de categorías con indentación visual según nivel.
+    - nivel 0: 'Materiales de Impresión'
+    - nivel 1: '　└─ Rollos'
+    - nivel 2: '　　└─ vinilo'
+    """
     if cats is None:
         cats = Categoria.query.filter_by(parent_id=None).order_by(Categoria.nombre).all()
     options = []
     for cat in cats:
-        options.append({'id': cat.id, 'nombre': prefix + cat.nombre})
+        if nivel == 0:
+            display = cat.nombre
+        else:
+            display = ('　' * (nivel - 1)) + '└─ ' + cat.nombre
+        options.append({
+            'id': cat.id,
+            'nombre': display,           # nombre visible con indentación
+            'nombre_puro': cat.nombre,   # nombre sin indentación
+            'nivel': nivel,
+        })
         children = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
-        options.extend(get_categoria_options(children, prefix + '— '))
+        options.extend(get_categoria_options(children, nivel + 1))
     return options
 
 def get_all_subcategory_ids(categoria_id):
+    """Devuelve [id_categoria] + [ids de todos los descendientes]."""
     if not categoria_id:
         return []
     cat = Categoria.query.get(categoria_id)
@@ -105,8 +120,79 @@ def get_all_subcategory_ids(categoria_id):
     get_child_ids(cat)
     return ids
 
+def get_grupo_atributos_para_categoria(categoria_id):
+    """
+    Devuelve el grupo de atributos asociado a la categoría O a su ancestro más cercano.
+    Así un grupo definido en 'Rollos' aplica también a 'vinilo', 'backlit', etc.
+    """
+    if not categoria_id:
+        return None
+    cat = Categoria.query.get(categoria_id)
+    while cat:
+        grupo = GrupoAtributos.query.filter_by(categoria_id=cat.id).first()
+        if grupo:
+            return grupo
+        cat = cat.parent
+    return None
+
 # ==========================================
-# VISTA PRINCIPAL: DASHBOARD
+# MERMA OPERATIVA ACUMULADA POR PRODUCTO
+# ==========================================
+def calcular_merma_estimada_producto(producto_id):
+    archivos = ArchivoAdjunto.query.filter(
+        ArchivoAdjunto.producto_id == producto_id,
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    ).all()
+
+    area_facturada = 0.0
+    material_consumido = 0.0
+    merma_operativa = 0.0
+    merma_borde = 0.0
+    merma_cut = 0.0
+    merma_gap = 0.0
+    merma_interna = 0.0
+    total_lineas = 0
+    ordenes_ids = set()
+
+    for a in archivos:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        if 'merma_operativa_m2' not in params and 'merma_estimada_m2' not in params:
+            continue
+
+        area_facturada += float(params.get('area_m2', 0) or 0)
+        material_consumido += float(params.get('material_consumido_m2', 0) or 0)
+        merma_operativa += float(params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0)
+        merma_borde += float(params.get('merma_borde_rollo_m2', 0) or 0)
+        merma_cut += float(params.get('merma_cut_marks_m2', 0) or 0)
+        merma_gap += float(params.get('merma_gap_m2', 0) or 0)
+        merma_interna += float(params.get('merma_interna_m2', 0) or 0)
+        total_lineas += 1
+        if a.orden_id:
+            ordenes_ids.add(a.orden_id)
+
+    if total_lineas == 0:
+        return None
+
+    merma_pct = (merma_operativa / area_facturada * 100) if area_facturada > 0 else 0
+
+    return {
+        'area_facturada_m2': round(area_facturada, 2),
+        'material_consumido_m2': round(material_consumido, 2),
+        'merma_operativa_m2': round(merma_operativa, 2),
+        'merma_operativa_pct': round(merma_pct, 2),
+        'merma_borde_rollo_m2': round(merma_borde, 2),
+        'merma_cut_marks_m2': round(merma_cut, 2),
+        'merma_gap_m2': round(merma_gap, 2),
+        'merma_interna_m2': round(merma_interna, 2),
+        'total_lineas': total_lineas,
+        'total_ordenes': len(ordenes_ids),
+    }
+
+# ==========================================
+# DASHBOARD
 # ==========================================
 @inventario_bp.route('/')
 @login_required
@@ -163,6 +249,25 @@ def index():
                 saldo -= m.cantidad
         valores.append(round(saldo, 2))
 
+    inicio_mes = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    archivos_mes = ArchivoAdjunto.query.filter(
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    ).join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+        Order.date >= inicio_mes.date()
+    ).all()
+
+    merma_mes_m2 = 0.0
+    area_facturada_mes_m2 = 0.0
+    for a in archivos_mes:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        if 'merma_operativa_m2' in params or 'merma_estimada_m2' in params:
+            merma_mes_m2 += float(params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0)
+            area_facturada_mes_m2 += float(params.get('area_m2', 0) or 0)
+    merma_mes_pct = (merma_mes_m2 / area_facturada_mes_m2 * 100) if area_facturada_mes_m2 > 0 else 0
+
     return render_template('inventario.html',
                            total_productos=total_productos,
                            stock_total=round(stock_total, 2),
@@ -172,11 +277,13 @@ def index():
                            criticos=criticos,
                            ultimos_movimientos=ultimos_movimientos,
                            categorias_data=categorias_data,
+                           merma_estimada_mes_m2=round(merma_mes_m2, 2),
+                           merma_estimada_mes_pct=round(merma_mes_pct, 1),
                            fechas_json=json.dumps(fechas),
                            valores_json=json.dumps(valores))
 
 # ==========================================
-# TODOS LOS PRODUCTOS (CON PAGINACIÓN)
+# TODOS LOS PRODUCTOS
 # ==========================================
 @inventario_bp.route('/todos')
 @login_required
@@ -197,7 +304,6 @@ def todos_productos():
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
 
-    # Ordenar
     if sort == 'nombre':
         col = Producto.nombre
     elif sort == 'stock':
@@ -218,13 +324,11 @@ def todos_productos():
     else:
         query = query.order_by(col.asc())
 
-    # Paginación
     paginated = query.paginate(page=page, per_page=per_page, error_out=False)
     productos = paginated.items
     total = paginated.total
     total_pages = paginated.pages
 
-    # Calcular métricas para cada producto
     for p in productos:
         p.disponible = (p.stock or 0) - (p.stock_comprometido or 0)
         p.disponible_metros = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0)
@@ -256,7 +360,7 @@ def todos_productos():
                            per_page=per_page)
 
 # ==========================================
-# PRODUCTOS POR CATEGORÍA (CON PAGINACIÓN)
+# PRODUCTOS POR CATEGORÍA
 # ==========================================
 @inventario_bp.route('/categoria/<int:categoria_id>')
 @login_required
@@ -273,8 +377,12 @@ def productos_por_categoria(categoria_id):
     cat_ids = get_all_subcategory_ids(categoria_id)
     query = Producto.query.filter(Producto.categoria_id.in_(cat_ids))
 
+    # ===== FIX: si se filtra por subcategoría, incluir sus descendientes =====
     if subcategoria_id:
-        query = query.filter_by(categoria_id=subcategoria_id)
+        sub_ids = get_all_subcategory_ids(subcategoria_id)
+        if sub_ids:
+            query = query.filter(Producto.categoria_id.in_(sub_ids))
+
     if search:
         query = query.filter(Producto.nombre.ilike(f'%{search}%'))
 
@@ -315,6 +423,7 @@ def productos_por_categoria(categoria_id):
             p.comprometido_metros_m2 = p.stock_comprometido_metros or 0
             p.disponible_metros_m2 = p.disponible_metros or 0
 
+    # Subcategorías directas (hijas) para el filtro
     subcategorias = Categoria.query.filter_by(parent_id=cat.id).order_by(Categoria.nombre).all()
     categoria_options = get_categoria_options()
     proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
@@ -347,16 +456,18 @@ def admin_panel():
     tipos = TipoProducto.query.order_by(TipoProducto.nombre).all()
     unidades = Unidad.query.order_by(Unidad.nombre).all()
     proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
+    grupos = GrupoAtributos.query.order_by(GrupoAtributos.nombre).all()
     return render_template('admin_panel.html',
                            areas=areas,
                            categorias=categorias,
                            ubicaciones=ubicaciones,
                            tipos=tipos,
                            unidades=unidades,
-                           proveedores=proveedores)
+                           proveedores=proveedores,
+                           grupos=grupos)
 
 # ==========================================
-# GESTIÓN DE CATEGORÍAS
+# CATEGORÍAS
 # ==========================================
 @inventario_bp.route('/categorias')
 @login_required
@@ -435,7 +546,7 @@ def eliminar_categoria(categoria_id):
     return redirect(url_for('inventario.listar_categorias'))
 
 # ==========================================
-# GESTIÓN DE ÁREAS (OBSOLETO)
+# ÁREAS (LEGACY)
 # ==========================================
 @inventario_bp.route('/areas')
 @login_required
@@ -466,7 +577,7 @@ def eliminar_area(area_id):
     return redirect(url_for('inventario.admin_panel'))
 
 # ==========================================
-# GESTIÓN DE UBICACIONES
+# UBICACIONES
 # ==========================================
 @inventario_bp.route('/ubicaciones')
 @login_required
@@ -531,7 +642,7 @@ def eliminar_ubicacion(ubicacion_id):
     return redirect(url_for('inventario.listar_ubicaciones'))
 
 # ==========================================
-# GESTIÓN DE TIPOS (OBSOLETO)
+# TIPOS (LEGACY)
 # ==========================================
 @inventario_bp.route('/tipos')
 @login_required
@@ -596,7 +707,7 @@ def eliminar_tipo(tipo_id):
     return redirect(url_for('inventario.listar_tipos'))
 
 # ==========================================
-# GESTIÓN DE UNIDADES
+# UNIDADES
 # ==========================================
 @inventario_bp.route('/unidades')
 @login_required
@@ -664,7 +775,7 @@ def eliminar_unidad(unidad_id):
     return redirect(url_for('inventario.listar_unidades'))
 
 # ==========================================
-# ACCIONES ADMINISTRATIVAS
+# ACCIONES ADMIN
 # ==========================================
 @inventario_bp.route('/producto/<int:producto_id>/borrar-historial', methods=['POST'])
 @login_required
@@ -675,7 +786,7 @@ def borrar_historial(producto_id):
     producto.stock_comprometido = 0
     producto.stock_comprometido_metros = 0
     db.session.commit()
-    flash(f'Historial de "{producto.nombre}" eliminado. Stock comprometido reseteado a 0.', 'success')
+    flash(f'Historial de "{producto.nombre}" eliminado.', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 @inventario_bp.route('/producto/<int:producto_id>/resetear-comprometido', methods=['POST'])
@@ -699,7 +810,7 @@ def resetear_comprometido_area(area_id):
         p.stock_comprometido = 0
         p.stock_comprometido_metros = 0
     db.session.commit()
-    flash(f'Stock comprometido de todos los productos en "{area.nombre}" reseteado a 0.', 'success')
+    flash(f'Stock comprometido reseteado.', 'success')
     return redirect(url_for('inventario.index'))
 
 # ==========================================
@@ -730,6 +841,7 @@ def crear_producto():
         unidad_id = request.form.get('unidad_id', type=int)
         ancho_rollo = request.form.get('ancho_rollo', type=float)
         ancho_util = request.form.get('ancho_util', type=float)
+        gap_panno_cm = request.form.get('gap_panno_cm', type=float, default=6.5)
         merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         largo_rollo = request.form.get('largo_rollo', type=float)
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
@@ -737,7 +849,8 @@ def crear_producto():
 
         atributos_extra = {}
         if categoria_id:
-            grupo = GrupoAtributos.query.filter_by(categoria_id=categoria_id).first()
+            # ===== FIX: hereda del ancestro si la categoría no tiene grupo propio =====
+            grupo = get_grupo_atributos_para_categoria(categoria_id)
             if grupo:
                 for attr in grupo.atributos.all():
                     val = request.form.get(f'attr_{attr.nombre}', '').strip()
@@ -780,6 +893,7 @@ def crear_producto():
             unidad_id=unidad_id if unidad_id else None,
             ancho_rollo=ancho_rollo,
             ancho_util=ancho_util,
+            gap_panno_cm=gap_panno_cm if gap_panno_cm is not None else 6.5,
             merma_porcentaje=merma_porcentaje,
             largo_rollo=largo_rollo,
             inversion_total=0.0,
@@ -793,7 +907,7 @@ def crear_producto():
                 pass
 
         db.session.add(producto)
-        db.session.commit()  # Para obtener el id
+        db.session.commit()
 
         if stock > 0:
             movimiento = Movimiento(
@@ -844,6 +958,8 @@ def editar_producto(producto_id):
         producto.ancho_rollo = request.form.get('ancho_rollo', type=float)
         producto.largo_rollo = request.form.get('largo_rollo', type=float)
         producto.ancho_util = request.form.get('ancho_util', type=float)
+        gap_panno_cm = request.form.get('gap_panno_cm', type=float)
+        producto.gap_panno_cm = gap_panno_cm if gap_panno_cm is not None else 6.5
         producto.merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         producto.es_material_impresion = request.form.get('es_material_impresion') == 'on'
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
@@ -853,7 +969,8 @@ def editar_producto(producto_id):
 
         atributos_extra = {}
         if producto.categoria_id:
-            grupo = GrupoAtributos.query.filter_by(categoria_id=producto.categoria_id).first()
+            # ===== FIX: hereda del ancestro si la categoría no tiene grupo propio =====
+            grupo = get_grupo_atributos_para_categoria(producto.categoria_id)
             if grupo:
                 for attr in grupo.atributos.all():
                     val = request.form.get(f'attr_{attr.nombre}', '').strip()
@@ -878,9 +995,7 @@ def editar_producto(producto_id):
             producto.fecha_vencimiento = None
 
         db.session.commit()
-
         verificar_y_notificar_stock_bajo(producto)
-
         flash(f'Producto "{producto.nombre}" actualizado.', 'success')
         return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
@@ -889,7 +1004,7 @@ def editar_producto(producto_id):
                            categoria_options=categoria_options)
 
 # ==========================================
-# ELIMINAR PRODUCTO
+# ELIMINAR / DUPLICAR PRODUCTO
 # ==========================================
 @inventario_bp.route('/eliminar/<int:producto_id>', methods=['POST'])
 @login_required
@@ -908,9 +1023,6 @@ def eliminar_producto(producto_id):
     flash(f'Producto "{nombre}" eliminado.', 'success')
     return redirect(url_for('inventario.index'))
 
-# ==========================================
-# DUPLICAR PRODUCTO
-# ==========================================
 @inventario_bp.route('/duplicar/<int:producto_id>')
 @login_required
 @economico_or_admin_required
@@ -930,6 +1042,8 @@ def duplicar_producto(producto_id):
         unidad_id=original.unidad_id,
         ancho_rollo=original.ancho_rollo,
         largo_rollo=original.largo_rollo,
+        gap_panno_cm=original.gap_panno_cm,
+        merma_porcentaje=original.merma_porcentaje,
         fecha_vencimiento=original.fecha_vencimiento,
         inversion_total=0.0,
         es_material_impresion=original.es_material_impresion,
@@ -937,7 +1051,7 @@ def duplicar_producto(producto_id):
     )
     db.session.add(nueva)
     db.session.commit()
-    flash(f'Producto "{original.nombre}" duplicado correctamente. Edita el nuevo producto para ajustarlo.', 'success')
+    flash(f'Producto "{original.nombre}" duplicado correctamente.', 'success')
     return redirect(url_for('inventario.editar_producto', producto_id=nueva.id))
 
 # ==========================================
@@ -985,16 +1099,19 @@ def detalle_producto(producto_id):
     movimientos_recientes = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
     proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
 
+    merma_estimada = calcular_merma_estimada_producto(producto_id)
+
     return render_template('detalle_producto.html',
                            producto=producto,
                            movimientos=movimientos_recientes,
                            proveedores=proveedores,
+                           merma_estimada=merma_estimada,
                            fechas_json=json.dumps(fechas),
                            saldos_json=json.dumps(saldos),
                            saldos_metros_json=json.dumps(saldos_metros))
 
 # ==========================================
-# REGISTRAR COMPRA (CON PROVEEDOR)
+# COMPRAR
 # ==========================================
 @inventario_bp.route('/comprar', methods=['POST'])
 @login_required
@@ -1047,12 +1164,11 @@ def comprar():
     db.session.commit()
 
     verificar_y_notificar_stock_bajo(producto)
-
-    flash(f'Compra registrada. Stock: {producto.stock} {producto.unidad}. Metros lineales: {producto.stock_metros:.2f}m', 'success')
+    flash(f'Compra registrada.', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 # ==========================================
-# REGISTRAR AJUSTE
+# AJUSTAR
 # ==========================================
 @inventario_bp.route('/ajustar', methods=['POST'])
 @login_required
@@ -1061,7 +1177,7 @@ def ajustar():
     producto_id = request.form.get('producto_id', type=int)
     stock_real = request.form.get('stock_real', type=float)
     comentario = request.form.get('comentario', '').strip()
-    tipo_ajuste = request.form.get('tipo_ajuste', 'conteo')  # por defecto 'conteo'
+    tipo_ajuste = request.form.get('tipo_ajuste', 'conteo')
     if not producto_id or stock_real is None or stock_real < 0:
         flash('Datos inválidos.', 'danger')
         return redirect(url_for('inventario.index'))
@@ -1093,8 +1209,7 @@ def ajustar():
     db.session.commit()
 
     verificar_y_notificar_stock_bajo(producto)
-
-    flash(f'Ajuste registrado. {diferencia > 0 and "Merma" or "Sobrante"}: {cantidad} {producto.unidad}', 'success')
+    flash(f'Ajuste registrado.', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 # ==========================================
@@ -1108,6 +1223,7 @@ def merma():
     fecha_inicio_str = request.args.get('fecha_inicio')
     fecha_fin_str = request.args.get('fecha_fin')
     agrupar_por = request.args.get('agrupar_por', 'producto')
+    tipo_merma = request.args.get('tipo_merma', 'real')
 
     hoy = datetime.now()
     if fecha_inicio_str and fecha_fin_str:
@@ -1128,103 +1244,201 @@ def merma():
         elif periodo == 'month':
             fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
             fecha_fin = hoy
-        else:  # year
+        else:
             fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
             fecha_fin = hoy
 
-    movimientos = Movimiento.query.filter(
-        Movimiento.fecha >= fecha_inicio, 
-        Movimiento.fecha <= fecha_fin,
-        # Excluir movimientos de ajuste que sean 'correccion'
-        # Nota: Para compatibilidad con datos viejos (donde tipo_ajuste es NULL), los tratamos como 'conteo'
-        db.or_(
-            Movimiento.tipo_ajuste != 'correccion',
-            Movimiento.tipo_ajuste.is_(None)
-        )
-    ).all()
+    datos_lista = []
+    labels = []
+    merma_values = []
+    pie_labels = []
+    pie_values = []
 
-    if agrupar_por == 'categoria':
-        datos = {}
-        for m in movimientos:
-            producto = m.producto
-            if not producto:
-                continue
-            cat = producto.categoria
-            cat_nombre = cat.nombre if cat else 'Sin categoría'
-            if cat_nombre not in datos:
-                datos[cat_nombre] = {'entradas': 0, 'consumos': 0, 'merma': 0}
-            if m.tipo == 'entrada':
-                datos[cat_nombre]['entradas'] += m.cantidad
-            elif m.tipo == 'consumo':
-                datos[cat_nombre]['consumos'] += m.cantidad
-            elif m.tipo == 'salida_ajuste':
-                datos[cat_nombre]['merma'] += m.cantidad
-            elif m.tipo == 'entrada_ajuste':
-                datos[cat_nombre]['merma'] -= m.cantidad
-        datos_lista = []
-        for cat, vals in datos.items():
-            merma = vals['merma']
-            porcentaje = (merma / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
-            datos_lista.append({
-                'nombre': cat,
-                'entradas': vals['entradas'],
-                'consumos': vals['consumos'],
-                'merma': merma,
-                'porcentaje': porcentaje
-            })
-        datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
+    if tipo_merma == 'estimada':
+        archivos = ArchivoAdjunto.query.filter(
+            ArchivoAdjunto.parametros_etiqueta.isnot(None)
+        ).join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+            Order.date >= fecha_inicio.date(),
+            Order.date <= fecha_fin.date()
+        ).all()
+
+        def _get_params_merma(params):
+            area = float(params.get('area_m2', 0) or 0)
+            material = float(params.get('material_consumido_m2', 0) or 0)
+            m_op = float(params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0)
+            return area, material, m_op
+
+        if agrupar_por == 'categoria':
+            grupos = {}
+            for a in archivos:
+                try:
+                    params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+                except:
+                    continue
+                if 'merma_operativa_m2' not in params and 'merma_estimada_m2' not in params:
+                    continue
+                prod = a.producto
+                cat = prod.categoria.nombre if prod and prod.categoria else 'Sin categoría'
+                if cat not in grupos:
+                    grupos[cat] = {'area_m2': 0, 'material_m2': 0, 'merma_m2': 0, 'lineas': 0}
+                area, material, m_op = _get_params_merma(params)
+                grupos[cat]['area_m2'] += area
+                grupos[cat]['material_m2'] += material
+                grupos[cat]['merma_m2'] += m_op
+                grupos[cat]['lineas'] += 1
+            for cat, vals in grupos.items():
+                pct = (vals['merma_m2'] / vals['area_m2'] * 100) if vals['area_m2'] > 0 else 0
+                datos_lista.append({
+                    'nombre': cat, 'categoria': '—',
+                    'area_facturada_m2': round(vals['area_m2'], 2),
+                    'material_consumido_m2': round(vals['material_m2'], 2),
+                    'merma_operativa_m2': round(vals['merma_m2'], 2),
+                    'merma_operativa_pct': round(pct, 2),
+                    'lineas': vals['lineas'],
+                })
+            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
+
+        elif agrupar_por == 'linea':
+            for a in archivos:
+                try:
+                    params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+                except:
+                    continue
+                if 'merma_operativa_m2' not in params and 'merma_estimada_m2' not in params:
+                    continue
+                prod = a.producto
+                cat = prod.categoria.nombre if prod and prod.categoria else 'Sin categoría'
+                orden_num = a.orden.order_num if a.orden else '—'
+                cliente = a.orden.client.nombre if a.orden and a.orden.client else '—'
+                area, material, m_op = _get_params_merma(params)
+                pct = (m_op / area * 100) if area > 0 else 0
+                datos_lista.append({
+                    'nombre': a.nombre_visible or '—',
+                    'categoria': cat,
+                    'orden_num': orden_num,
+                    'cliente': cliente,
+                    'area_facturada_m2': round(area, 2),
+                    'material_consumido_m2': round(material, 2),
+                    'merma_operativa_m2': round(m_op, 2),
+                    'merma_operativa_pct': round(pct, 2),
+                    'lineas': 1,
+                })
+            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
+
+        else:  # producto
+            grupos = {}
+            for a in archivos:
+                try:
+                    params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+                except:
+                    continue
+                if 'merma_operativa_m2' not in params and 'merma_estimada_m2' not in params:
+                    continue
+                prod = a.producto
+                nombre = prod.nombre if prod else 'Sin producto'
+                cat = prod.categoria.nombre if prod and prod.categoria else 'Sin categoría'
+                key = prod.id if prod else 0
+                if key not in grupos:
+                    grupos[key] = {'nombre': nombre, 'categoria': cat, 'area_m2': 0, 'material_m2': 0, 'merma_m2': 0, 'lineas': 0}
+                area, material, m_op = _get_params_merma(params)
+                grupos[key]['area_m2'] += area
+                grupos[key]['material_m2'] += material
+                grupos[key]['merma_m2'] += m_op
+                grupos[key]['lineas'] += 1
+            for key, vals in grupos.items():
+                pct = (vals['merma_m2'] / vals['area_m2'] * 100) if vals['area_m2'] > 0 else 0
+                datos_lista.append({
+                    'nombre': vals['nombre'],
+                    'categoria': vals['categoria'],
+                    'area_facturada_m2': round(vals['area_m2'], 2),
+                    'material_consumido_m2': round(vals['material_m2'], 2),
+                    'merma_operativa_m2': round(vals['merma_m2'], 2),
+                    'merma_operativa_pct': round(pct, 2),
+                    'lineas': vals['lineas'],
+                })
+            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
+
+        labels = [d['nombre'][:25] for d in datos_lista[:10]]
+        merma_values = [d['merma_operativa_m2'] for d in datos_lista[:10]]
+        pie_labels = labels
+        pie_values = merma_values
+
     else:
-        datos = {}
-        for m in movimientos:
-            producto = m.producto
-            if not producto:
-                continue
-            key = producto.id
-            if key not in datos:
-                datos[key] = {
-                    'producto': producto,
-                    'nombre': producto.nombre,
-                    'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
-                    'entradas': 0,
-                    'consumos': 0,
-                    'merma': 0
-                }
-            if m.tipo == 'entrada':
-                datos[key]['entradas'] += m.cantidad
-            elif m.tipo == 'consumo':
-                datos[key]['consumos'] += m.cantidad
-            elif m.tipo == 'salida_ajuste':
-                datos[key]['merma'] += m.cantidad
-            elif m.tipo == 'entrada_ajuste':
-                datos[key]['merma'] -= m.cantidad
-        datos_lista = []
-        for key, vals in datos.items():
-            merma = vals['merma']
-            porcentaje = (merma / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
-            datos_lista.append({
-                'producto': vals['producto'],
-                'nombre': vals['nombre'],
-                'categoria': vals['categoria'],
-                'entradas': vals['entradas'],
-                'consumos': vals['consumos'],
-                'merma': merma,
-                'porcentaje': porcentaje
-            })
-        datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
+        movimientos = Movimiento.query.filter(
+            Movimiento.fecha >= fecha_inicio,
+            Movimiento.fecha <= fecha_fin,
+            db.or_(
+                Movimiento.tipo_ajuste != 'correccion',
+                Movimiento.tipo_ajuste.is_(None)
+            )
+        ).all()
 
-    labels = [d['nombre'][:20] for d in datos_lista[:10]]
-    merma_values = [round(d['merma'], 2) for d in datos_lista[:10]]
+        if agrupar_por == 'categoria':
+            datos = {}
+            for m in movimientos:
+                producto = m.producto
+                if not producto:
+                    continue
+                cat = producto.categoria
+                cat_nombre = cat.nombre if cat else 'Sin categoría'
+                if cat_nombre not in datos:
+                    datos[cat_nombre] = {'entradas': 0, 'consumos': 0, 'merma': 0}
+                if m.tipo == 'entrada':
+                    datos[cat_nombre]['entradas'] += m.cantidad
+                elif m.tipo == 'consumo':
+                    datos[cat_nombre]['consumos'] += m.cantidad
+                elif m.tipo == 'salida_ajuste':
+                    datos[cat_nombre]['merma'] += m.cantidad
+                elif m.tipo == 'entrada_ajuste':
+                    datos[cat_nombre]['merma'] -= m.cantidad
+            for cat, vals in datos.items():
+                merma_val = vals['merma']
+                pct = (merma_val / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
+                datos_lista.append({
+                    'nombre': cat, 'categoria': '—',
+                    'entradas': round(vals['entradas'], 2),
+                    'consumos': round(vals['consumos'], 2),
+                    'merma': round(merma_val, 2),
+                    'porcentaje': round(pct, 2),
+                })
+            datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
 
-    if agrupar_por == 'producto':
-        categorias_merma = {}
-        for d in datos_lista:
-            cat = d['categoria']
-            if cat not in categorias_merma:
-                categorias_merma[cat] = 0
-            categorias_merma[cat] += d['merma']
-        pie_labels = list(categorias_merma.keys())
-        pie_values = [round(v, 2) for v in categorias_merma.values()]
-    else:
+        else:
+            datos = {}
+            for m in movimientos:
+                producto = m.producto
+                if not producto:
+                    continue
+                key = producto.id
+                if key not in datos:
+                    datos[key] = {
+                        'nombre': producto.nombre,
+                        'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
+                        'entradas': 0, 'consumos': 0, 'merma': 0
+                    }
+                if m.tipo == 'entrada':
+                    datos[key]['entradas'] += m.cantidad
+                elif m.tipo == 'consumo':
+                    datos[key]['consumos'] += m.cantidad
+                elif m.tipo == 'salida_ajuste':
+                    datos[key]['merma'] += m.cantidad
+                elif m.tipo == 'entrada_ajuste':
+                    datos[key]['merma'] -= m.cantidad
+            for key, vals in datos.items():
+                merma_val = vals['merma']
+                pct = (merma_val / (vals['entradas'] + vals['consumos']) * 100) if (vals['entradas'] + vals['consumos']) > 0 else 0
+                datos_lista.append({
+                    'nombre': vals['nombre'],
+                    'categoria': vals['categoria'],
+                    'entradas': round(vals['entradas'], 2),
+                    'consumos': round(vals['consumos'], 2),
+                    'merma': round(merma_val, 2),
+                    'porcentaje': round(pct, 2),
+                })
+            datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
+
+        labels = [d['nombre'][:20] for d in datos_lista[:10]]
+        merma_values = [round(d['merma'], 2) for d in datos_lista[:10]]
         pie_labels = labels
         pie_values = merma_values
 
@@ -1234,13 +1448,14 @@ def merma():
                            fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
                            fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
                            agrupar_por=agrupar_por,
+                           tipo_merma=tipo_merma,
                            labels=json.dumps(labels),
                            merma_values=json.dumps(merma_values),
                            pie_labels=json.dumps(pie_labels),
                            pie_values=json.dumps(pie_values))
 
 # ==========================================
-# OBTENER MOVIMIENTOS (AJAX)
+# MOVIMIENTOS
 # ==========================================
 @inventario_bp.route('/movimientos-json/<int:producto_id>')
 @login_required
@@ -1261,9 +1476,6 @@ def movimientos_json(producto_id):
     } for m in movs]
     return jsonify(data)
 
-# ==========================================
-# LISTADO DE MOVIMIENTOS (CON PAGINACIÓN)
-# ==========================================
 @inventario_bp.route('/movimientos', methods=['GET'])
 @login_required
 @economico_or_admin_required
@@ -1420,7 +1632,6 @@ def exportar_movimientos_excel(movimientos):
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 def generar_datos_graficos_movimientos(movimientos):
-    hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     dict_diario = defaultdict(lambda: {'entrada': 0, 'consumo': 0, 'reserva': 0, 'salida_ajuste': 0, 'entrada_ajuste': 0})
     for m in movimientos:
         fecha_key = m.fecha.strftime('%Y-%m-%d')
@@ -1465,7 +1676,7 @@ def generar_datos_graficos_movimientos(movimientos):
     }
 
 # ==========================================
-# EXPORTAR PRODUCTOS A EXCEL
+# EXPORTAR PRODUCTOS
 # ==========================================
 @inventario_bp.route('/exportar', methods=['GET', 'POST'])
 @login_required
@@ -1486,28 +1697,20 @@ def exportar_productos():
         productos = query.order_by(Producto.nombre).all()
 
         mapa_columnas = {
-            'id': 'id',
-            'nombre': 'nombre',
-            'descripcion': 'descripcion',
-            'costo': 'costo',
-            'inversion_total': 'inversion_total',
-            'stock': 'stock',
-            'stock_metros': 'stock_metros',
+            'id': 'id', 'nombre': 'nombre', 'descripcion': 'descripcion',
+            'costo': 'costo', 'inversion_total': 'inversion_total',
+            'stock': 'stock', 'stock_metros': 'stock_metros',
             'stock_minimo': 'stock_minimo',
             'stock_comprometido': 'stock_comprometido',
             'stock_comprometido_metros': 'stock_comprometido_metros',
             'fecha_vencimiento': 'fecha_vencimiento',
-            'categoria': 'categoria.nombre',
-            'area': 'area.nombre',
-            'ubicacion': 'ubicacion_rel.nombre',
-            'tipo_producto': 'tipo_rel.nombre',
-            'unidad_medida': 'unidad_rel.nombre',
-            'simbolo_unidad': 'unidad_rel.simbolo',
-            'ancho_rollo': 'ancho_rollo',
-            'largo_rollo': 'largo_rollo',
+            'categoria': 'categoria.nombre', 'area': 'area.nombre',
+            'ubicacion': 'ubicacion_rel.nombre', 'tipo_producto': 'tipo_rel.nombre',
+            'unidad_medida': 'unidad_rel.nombre', 'simbolo_unidad': 'unidad_rel.simbolo',
+            'ancho_rollo': 'ancho_rollo', 'largo_rollo': 'largo_rollo',
+            'gap_panno_cm': 'gap_panno_cm',
             'es_material_impresion': 'es_material_impresion',
-            'atributos_extra': 'atributos_extra',
-            'created_at': 'created_at'
+            'atributos_extra': 'atributos_extra', 'created_at': 'created_at'
         }
 
         wb = openpyxl.Workbook()
@@ -1541,7 +1744,7 @@ def exportar_productos():
                         valor = round(valor, 2)
                     elif isinstance(valor, bool):
                         valor = 'Sí' if valor else 'No'
-                    elif isinstance(valor, dict) or isinstance(valor, list):
+                    elif isinstance(valor, (dict, list)):
                         valor = json.dumps(valor, ensure_ascii=False)
                 ws.cell(row=row_idx, column=col_idx, value=valor)
 
@@ -1580,6 +1783,7 @@ def exportar_productos():
         {'id': 'simbolo_unidad', 'label': 'Símbolo de Unidad'},
         {'id': 'ancho_rollo', 'label': 'Ancho Rollo (m)'},
         {'id': 'largo_rollo', 'label': 'Largo Rollo (m)'},
+        {'id': 'gap_panno_cm', 'label': 'Gap entre Paños (cm)'},
         {'id': 'es_material_impresion', 'label': 'Material Impresión'},
         {'id': 'atributos_extra', 'label': 'Atributos Extra (JSON)'},
         {'id': 'created_at', 'label': 'Fecha Creación'}
@@ -1642,6 +1846,8 @@ def importar_productos():
                     col_map['categoria'] = idx
                 elif 'area' in h_clean:
                     col_map['area'] = idx
+                elif 'gap' in h_clean or 'pano' in h_clean or 'paño' in h_clean:
+                    col_map['gap_panno_cm'] = idx
                 elif 'ancho_rollo' in h_clean or 'ancho' in h_clean:
                     col_map['ancho_rollo'] = idx
                 elif 'largo_rollo' in h_clean or 'largo' in h_clean:
@@ -1714,7 +1920,6 @@ def importar_productos():
                             if isinstance(val, datetime):
                                 producto.fecha_vencimiento = val.date()
                             elif isinstance(val, (int, float)):
-                                from datetime import date
                                 producto.fecha_vencimiento = date(1899, 12, 30) + timedelta(days=int(val))
                             else:
                                 producto.fecha_vencimiento = datetime.strptime(str(val), '%Y-%m-%d').date()
@@ -1728,6 +1933,11 @@ def importar_productos():
                     if col_map.get('largo_rollo') is not None and row[col_map['largo_rollo']]:
                         try:
                             producto.largo_rollo = float(str(row[col_map['largo_rollo']]).replace(',', ''))
+                        except:
+                            pass
+                    if col_map.get('gap_panno_cm') is not None and row[col_map['gap_panno_cm']]:
+                        try:
+                            producto.gap_panno_cm = float(str(row[col_map['gap_panno_cm']]).replace(',', ''))
                         except:
                             pass
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
@@ -1820,7 +2030,6 @@ def importar_productos():
                             if isinstance(val, datetime):
                                 nuevo.fecha_vencimiento = val.date()
                             elif isinstance(val, (int, float)):
-                                from datetime import date
                                 nuevo.fecha_vencimiento = date(1899, 12, 30) + timedelta(days=int(val))
                             else:
                                 nuevo.fecha_vencimiento = datetime.strptime(str(val), '%Y-%m-%d').date()
@@ -1834,6 +2043,11 @@ def importar_productos():
                     if col_map.get('largo_rollo') is not None and row[col_map['largo_rollo']]:
                         try:
                             nuevo.largo_rollo = float(str(row[col_map['largo_rollo']]).replace(',', ''))
+                        except:
+                            pass
+                    if col_map.get('gap_panno_cm') is not None and row[col_map['gap_panno_cm']]:
+                        try:
+                            nuevo.gap_panno_cm = float(str(row[col_map['gap_panno_cm']]).replace(',', ''))
                         except:
                             pass
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
@@ -1892,13 +2106,13 @@ def importar_productos():
     return render_template('importar_productos.html')
 
 # ==========================================
-# API PARA ATRIBUTOS DINÁMICOS
+# API ATRIBUTOS DINÁMICOS (con herencia)
 # ==========================================
 @inventario_bp.route('/api/atributos-por-categoria/<int:categoria_id>')
 @login_required
 def api_atributos_por_categoria(categoria_id):
     cat = Categoria.query.get_or_404(categoria_id)
-    grupo = GrupoAtributos.query.filter_by(categoria_id=categoria_id).first()
+    grupo = get_grupo_atributos_para_categoria(categoria_id)
     atributos = []
     if grupo:
         atributos = [{
@@ -1912,11 +2126,13 @@ def api_atributos_por_categoria(categoria_id):
 
     return jsonify({
         'atributos': atributos,
-        'es_material_impresion': cat.es_material_impresion
+        'es_material_impresion': cat.es_material_impresion,
+        'grupo_origen': grupo.nombre if grupo else None,
+        'grupo_categoria': grupo.categoria.nombre if grupo and grupo.categoria else None
     })
 
 # ==========================================
-# ADMINISTRACIÓN DE ATRIBUTOS
+# GRUPOS DE ATRIBUTOS
 # ==========================================
 @inventario_bp.route('/grupos-atributos')
 @login_required
@@ -1935,17 +2151,17 @@ def crear_grupo():
         categoria_id = request.form.get('categoria_id', type=int) or None
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
-            return render_template('form_grupo_atributos.html')
+            return render_template('form_grupo_atributos.html', categoria_options=get_categoria_options())
         if GrupoAtributos.query.filter_by(nombre=nombre).first():
             flash('Ya existe un grupo con ese nombre.', 'danger')
-            return render_template('form_grupo_atributos.html')
+            return render_template('form_grupo_atributos.html', categoria_options=get_categoria_options())
         grupo = GrupoAtributos(nombre=nombre, descripcion=descripcion, categoria_id=categoria_id)
         db.session.add(grupo)
         db.session.commit()
         flash(f'Grupo "{nombre}" creado correctamente.', 'success')
         return redirect(url_for('inventario.listar_grupos'))
-    categorias = Categoria.query.order_by(Categoria.nombre).all()
-    return render_template('form_grupo_atributos.html', categorias=categorias)
+    categoria_options = get_categoria_options()
+    return render_template('form_grupo_atributos.html', categoria_options=categoria_options)
 
 @inventario_bp.route('/grupo-atributos/editar/<int:grupo_id>', methods=['GET', 'POST'])
 @login_required
@@ -1958,19 +2174,19 @@ def editar_grupo(grupo_id):
         categoria_id = request.form.get('categoria_id', type=int) or None
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
-            return render_template('form_grupo_atributos.html', grupo=grupo)
+            return render_template('form_grupo_atributos.html', grupo=grupo, categoria_options=get_categoria_options())
         existente = GrupoAtributos.query.filter(GrupoAtributos.nombre == nombre, GrupoAtributos.id != grupo.id).first()
         if existente:
             flash('Ya existe otro grupo con ese nombre.', 'danger')
-            return render_template('form_grupo_atributos.html', grupo=grupo)
+            return render_template('form_grupo_atributos.html', grupo=grupo, categoria_options=get_categoria_options())
         grupo.nombre = nombre
         grupo.descripcion = descripcion
         grupo.categoria_id = categoria_id
         db.session.commit()
         flash('Grupo actualizado.', 'success')
         return redirect(url_for('inventario.listar_grupos'))
-    categorias = Categoria.query.order_by(Categoria.nombre).all()
-    return render_template('form_grupo_atributos.html', grupo=grupo, categorias=categorias)
+    categoria_options = get_categoria_options()
+    return render_template('form_grupo_atributos.html', grupo=grupo, categoria_options=categoria_options)
 
 @inventario_bp.route('/grupo-atributos/eliminar/<int:grupo_id>', methods=['POST'])
 @login_required
@@ -2057,7 +2273,7 @@ def eliminar_atributo(grupo_id, atributo_id):
     return redirect(url_for('inventario.listar_atributos', grupo_id=grupo_id))
 
 # ==========================================
-# GESTIÓN DE PROVEEDORES
+# PROVEEDORES
 # ==========================================
 @inventario_bp.route('/proveedores')
 @login_required
@@ -2132,7 +2348,6 @@ def eliminar_proveedor(proveedor_id):
 @login_required
 @economico_or_admin_required
 def estadisticas_proveedores():
-    from sqlalchemy import func
     stats = db.session.query(
         Proveedor.id,
         Proveedor.nombre,
@@ -2145,7 +2360,7 @@ def estadisticas_proveedores():
     return render_template('estadisticas_proveedores.html', stats=stats)
 
 # ==========================================
-# GUÍA DE AYUDA PARA ADMINISTRACIÓN
+# AYUDA
 # ==========================================
 @inventario_bp.route('/admin/help')
 @login_required
@@ -2154,7 +2369,7 @@ def admin_help():
     return render_template('admin_help.html')
 
 # ==========================================
-# RUTAS LEGACY (REDIRECCIONES)
+# LEGACY
 # ==========================================
 @inventario_bp.route('/area/<int:area_id>')
 @login_required
@@ -2169,3 +2384,510 @@ def productos_por_area(area_id):
         return redirect(url_for('inventario.productos_por_categoria', categoria_id=productos.categoria_id))
     flash('No se encontró una categoría equivalente para esta área.', 'warning')
     return redirect(url_for('inventario.index'))
+
+# ==========================================
+# DESGLOSE DETALLADO DE MERMA POR PRODUCTO
+# ==========================================
+@inventario_bp.route('/producto/<int:producto_id>/desglose-merma')
+@login_required
+@economico_or_admin_required
+def desglose_merma_producto(producto_id):
+    """
+    Vista detallada: muestra cada línea de orden que usó este producto,
+    con el desglose de aire, gap efectivo, cut y material consumido.
+    """
+    producto = Producto.query.get_or_404(producto_id)
+    
+    archivos = ArchivoAdjunto.query.filter(
+        ArchivoAdjunto.producto_id == producto_id,
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    ).order_by(ArchivoAdjunto.orden_id.desc()).all()
+    
+    lineas = []
+    for a in archivos:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        
+        if 'merma_operativa_m2' not in params and 'merma_estimada_m2' not in params:
+            continue
+        
+        orden = a.orden
+        area = float(params.get('area_m2', 0) or 0)
+        material = float(params.get('material_consumido_m2', 0) or 0)
+        merma_op = float(params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0)
+        merma_pct = (merma_op / area * 100) if area > 0 else 0
+        
+        lineas.append({
+            'archivo_id': a.id,
+            'orden_id': orden.id if orden else None,
+            'orden_num': orden.order_num if orden else '—',
+            'cliente': orden.client.nombre if orden and orden.client else '—',
+            'fecha': orden.date if orden else None,
+            'nombre_linea': a.nombre_visible,
+            'cantidad': a.cantidad,
+            'unidad': a.unidad,
+            'ancho_cm': params.get('ancho', '—'),
+            'alto_cm': params.get('alto', '—'),
+            'n_paños': params.get('n_paños', 1),
+            'filas': params.get('filas', 0),
+            'columnas': params.get('columnas', 0),
+            'area_facturada_m2': area,
+            'material_consumido_m2': material,
+            'largo_total_m': params.get('largo_total_m', 0),
+            'merma_operativa_m2': merma_op,
+            'merma_operativa_pct': merma_pct,
+            'gap_usado_cm': params.get('gap_usado_cm', 6.5),
+            'desglose_paños': params.get('desglose_paños', []),
+        })
+    
+    # Totales
+    total_area = sum(l['area_facturada_m2'] for l in lineas)
+    total_material = sum(l['material_consumido_m2'] for l in lineas)
+    total_merma = sum(l['merma_operativa_m2'] for l in lineas)
+    total_pct = (total_merma / total_area * 100) if total_area > 0 else 0
+    
+    totales = {
+        'area_facturada_m2': round(total_area, 2),
+        'material_consumido_m2': round(total_material, 2),
+        'merma_operativa_m2': round(total_merma, 2),
+        'merma_operativa_pct': round(total_pct, 2),
+        'total_lineas': len(lineas),
+    }
+    
+    return render_template('desglose_merma_producto.html',
+                           producto=producto,
+                           lineas=lineas,
+                           totales=totales)
+
+# ==========================================
+# CONTEO SEMANAL DEL ECONÓMICO
+# ==========================================
+
+def _calcular_merma_operativa_semana(semana):
+    """Suma la merma operativa (m²) de todos los ArchivoAdjunto cuya orden
+    cayó dentro de la semana ISO indicada."""
+    from app.models import ConteoSemanal
+    # Parsear semana "YYYY-Www"
+    try:
+        year, week = semana.split('-W')
+        year, week = int(year), int(week)
+    except Exception:
+        return 0.0
+
+    # Lunes de esa semana ISO
+    lunes = datetime.fromisocalendar(year, week, 1)
+    domingo = lunes + timedelta(days=7)
+
+    archivos = ArchivoAdjunto.query.join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+        Order.date >= lunes.date(),
+        Order.date < domingo.date(),
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    ).all()
+
+    total = 0.0
+    for a in archivos:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        total += float(params.get('merma_operativa_m2', 0) or 0)
+    return round(total, 4)
+
+
+@inventario_bp.route('/conteos-semanales')
+@login_required
+@economico_or_admin_required
+def listar_conteos():
+    """Listado de conteos semanales agrupados por semana."""
+    from app.models import ConteoSemanal
+    semana = request.args.get('semana', '').strip()
+    producto_id = request.args.get('producto_id', type=int)
+
+    query = ConteoSemanal.query
+    if semana:
+        query = query.filter(ConteoSemanal.semana == semana)
+    if producto_id:
+        query = query.filter(ConteoSemanal.producto_id == producto_id)
+
+    conteos = query.order_by(ConteoSemanal.fecha.desc()).all()
+
+    # Agrupar por semana para resumen
+    semanas_resumen = {}
+    for c in conteos:
+        if c.semana not in semanas_resumen:
+            semanas_resumen[c.semana] = {
+                'semana': c.semana,
+                'total_conteos': 0,
+                'total_merma_imprevista_m2': 0.0,
+                'total_merma_operativa_m2': 0.0,
+                'fecha_primera': c.fecha,
+            }
+        semanas_resumen[c.semana]['total_conteos'] += 1
+        semanas_resumen[c.semana]['total_merma_imprevista_m2'] += c.merma_imprevista_m2 or 0
+        semanas_resumen[c.semana]['total_merma_operativa_m2'] += c.merma_operativa_semana_m2 or 0
+
+    semanas_lista = sorted(semanas_resumen.values(), key=lambda x: x['semana'], reverse=True)
+
+    # Lista de productos para el filtro
+    productos = Producto.query.filter(
+        Producto.es_material_impresion == True,
+        Producto.largo_rollo > 0
+    ).order_by(Producto.nombre).all()
+
+    return render_template('conteos_semanales.html',
+                           conteos=conteos,
+                           semanas_lista=semanas_lista,
+                           productos=productos,
+                           semana_seleccionada=semana,
+                           producto_seleccionado=producto_id)
+
+
+@inventario_bp.route('/conteos-semanales/nuevo', methods=['GET', 'POST'])
+@login_required
+@economico_or_admin_required
+def nuevo_conteo():
+    """Formulario de conteo rápido semanal. Input: unidades (rollos)."""
+    from app.models import ConteoSemanal
+
+    if request.method == 'POST':
+        producto_id = request.form.get('producto_id', type=int)
+        stock_fisico_unidades = request.form.get('stock_fisico_unidades', type=float)
+        comentario = request.form.get('comentario', '').strip()
+        fecha_str = request.form.get('fecha', '').strip()
+
+        if not producto_id or stock_fisico_unidades is None or stock_fisico_unidades < 0:
+            flash('Datos inválidos. Verifica producto y unidades.', 'danger')
+            return redirect(url_for('inventario.nuevo_conteo'))
+
+        producto = Producto.query.get(producto_id)
+        if not producto:
+            flash('Producto no encontrado.', 'danger')
+            return redirect(url_for('inventario.nuevo_conteo'))
+
+        if not producto.largo_rollo or producto.largo_rollo <= 0:
+            flash('El producto no tiene largo de rollo definido.', 'danger')
+            return redirect(url_for('inventario.nuevo_conteo'))
+
+        # Fecha del conteo (default: hoy)
+        if fecha_str:
+            try:
+                fecha_conteo = datetime.strptime(fecha_str, '%Y-%m-%d')
+            except Exception:
+                fecha_conteo = datetime.utcnow()
+        else:
+            fecha_conteo = datetime.utcnow()
+
+        semana = ConteoSemanal.semana_iso(fecha_conteo)
+
+        # Snapshot del sistema
+        stock_sistema_unidades = producto.stock or 0.0
+        stock_sistema_metros = producto.stock_metros or 0.0
+
+        # Conversiones (metros lineales y m²)
+        largo_rollo = producto.largo_rollo
+        ancho_rollo = producto.ancho_rollo or 1.34
+
+        stock_fisico_metros = stock_fisico_unidades * largo_rollo
+        stock_fisico_m2 = stock_fisico_metros * ancho_rollo
+        stock_sistema_m2 = stock_sistema_metros * ancho_rollo
+
+        # Diferencias
+        diferencia_unidades = stock_sistema_unidades - stock_fisico_unidades
+        diferencia_metros = stock_sistema_metros - stock_fisico_metros
+        diferencia_m2 = stock_sistema_m2 - stock_fisico_m2
+
+        # Merma operativa teórica de la semana
+        merma_operativa_m2 = _calcular_merma_operativa_semana(semana)
+
+        # Merma imprevista = diferencia en m² − merma operativa teórica
+        merma_imprevista_m2 = diferencia_m2 - merma_operativa_m2
+        merma_imprevista_metros = merma_imprevista_m2 / ancho_rollo if ancho_rollo > 0 else 0
+
+        conteo = ConteoSemanal(
+            producto_id=producto.id,
+            usuario_id=current_user.id,
+            fecha=fecha_conteo,
+            semana=semana,
+            stock_sistema_unidades=stock_sistema_unidades,
+            stock_sistema_metros=stock_sistema_metros,
+            stock_fisico_unidades=stock_fisico_unidades,
+            stock_fisico_metros=stock_fisico_metros,
+            diferencia_unidades=diferencia_unidades,
+            diferencia_metros=diferencia_metros,
+            merma_operativa_semana_m2=merma_operativa_m2,
+            merma_imprevista_metros=merma_imprevista_metros,
+            merma_imprevista_m2=merma_imprevista_m2,
+            comentario=comentario
+        )
+        db.session.add(conteo)
+
+        # Ajustar stock del sistema al valor contado
+        if abs(diferencia_unidades) > 0.001:
+            tipo = 'salida_ajuste' if diferencia_unidades > 0 else 'entrada_ajuste'
+            producto.stock = stock_fisico_unidades
+            producto.stock_metros = stock_fisico_metros
+            mov = Movimiento(
+                producto_id=producto.id,
+                tipo=tipo,
+                cantidad=abs(diferencia_unidades),
+                cantidad_metros=abs(diferencia_metros),
+                comentario=f'Conteo semanal {semana}: {comentario or "ajuste por conteo"}',
+                usuario_id=current_user.id,
+                tipo_ajuste='conteo'
+            )
+            db.session.add(mov)
+
+        db.session.commit()
+
+        flash(f'Conteo registrado para la semana {semana}.', 'success')
+        return redirect(url_for('inventario.reporte_conteos', semana=semana))
+
+    # GET
+    productos = Producto.query.filter(
+        Producto.es_material_impresion == True,
+        Producto.largo_rollo > 0
+    ).order_by(Producto.nombre).all()
+
+    return render_template('form_conteo_semanal.html',
+                           productos=productos,
+                           hoy=datetime.utcnow().strftime('%Y-%m-%d'))
+
+
+@inventario_bp.route('/conteos-semanales/reporte')
+@login_required
+@economico_or_admin_required
+def reporte_conteos():
+    """Reporte detallado de una semana: merma operativa vs imprevista."""
+    from app.models import ConteoSemanal
+
+    semana = request.args.get('semana', ConteoSemanal.semana_iso())
+    conteos = ConteoSemanal.query.filter_by(semana=semana).order_by(ConteoSemanal.fecha.desc()).all()
+
+    # Agrupar por producto
+    por_producto = {}
+    for c in conteos:
+        pid = c.producto_id
+        if pid not in por_producto:
+            por_producto[pid] = {
+                'producto': c.producto,
+                'conteos': [],
+                'total_diferencia_m2': 0.0,
+                'total_merma_operativa_m2': 0.0,
+                'total_merma_imprevista_m2': 0.0,
+            }
+        por_producto[pid]['conteos'].append(c)
+        por_producto[pid]['total_diferencia_m2'] += (c.diferencia_metros or 0) * (c.producto.ancho_rollo or 1.34)
+        por_producto[pid]['total_merma_operativa_m2'] += c.merma_operativa_semana_m2 or 0
+        por_producto[pid]['total_merma_imprevista_m2'] += c.merma_imprevista_m2 or 0
+
+    # Totales globales
+    total_diferencia_m2 = sum(v['total_diferencia_m2'] for v in por_producto.values())
+    total_merma_operativa_m2 = sum(v['total_merma_operativa_m2'] for v in por_producto.values())
+    total_merma_imprevista_m2 = sum(v['total_merma_imprevista_m2'] for v in por_producto.values())
+
+    # Desglose de merma operativa POR ORDEN dentro de la semana
+    try:
+        year, week = semana.split('-W')
+        year, week = int(year), int(week)
+        lunes = datetime.fromisocalendar(year, week, 1)
+        domingo = lunes + timedelta(days=7)
+    except Exception:
+        lunes = datetime.utcnow()
+        domingo = lunes + timedelta(days=7)
+
+    archivos_semana = ArchivoAdjunto.query.join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+        Order.date >= lunes.date(),
+        Order.date < domingo.date(),
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    ).all()
+
+    merma_por_orden = {}
+    for a in archivos_semana:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        if 'merma_operativa_m2' not in params:
+            continue
+        orden = a.orden
+        if not orden:
+            continue
+        key = orden.id
+        if key not in merma_por_orden:
+            merma_por_orden[key] = {
+                'orden_id': orden.id,
+                'orden_num': orden.order_num or 'Sin número',
+                'cliente': orden.client.nombre if orden.client else 'Sin cliente',
+                'fecha': orden.date,
+                'lineas': [],
+                'total_area_m2': 0.0,
+                'total_material_m2': 0.0,
+                'total_merma_m2': 0.0,
+            }
+        merma_por_orden[key]['lineas'].append({
+            'nombre': a.nombre_visible,
+            'producto': a.producto.nombre if a.producto else '—',
+            'area_m2': float(params.get('area_m2', 0) or 0),
+            'material_m2': float(params.get('material_consumido_m2', 0) or 0),
+            'merma_m2': float(params.get('merma_operativa_m2', 0) or 0),
+            'merma_pct': float(params.get('merma_operativa_pct', 0) or 0),
+            'ancho_cm': params.get('ancho', '—'),
+            'alto_cm': params.get('alto', '—'),
+            'n_paños': params.get('n_paños', 1),
+            'filas': params.get('filas', 0),
+            'columnas': params.get('columnas', 0),
+            'largo_total_m': float(params.get('largo_total_m', 0) or 0),
+            'gap_usado_cm': params.get('gap_usado_cm', 6.5),
+            'desglose_paños': params.get('desglose_paños', []),
+        })
+        merma_por_orden[key]['total_area_m2'] += float(params.get('area_m2', 0) or 0)
+        merma_por_orden[key]['total_material_m2'] += float(params.get('material_consumido_m2', 0) or 0)
+        merma_por_orden[key]['total_merma_m2'] += float(params.get('merma_operativa_m2', 0) or 0)
+
+    ordenes_lista = sorted(merma_por_orden.values(), key=lambda x: x['total_merma_m2'], reverse=True)
+
+    # Semanas disponibles para el dropdown
+    semanas_disponibles = sorted(
+        {c.semana for c in ConteoSemanal.query.all()},
+        reverse=True
+    )
+
+    return render_template('reporte_conteos.html',
+                           semana=semana,
+                           conteos=conteos,
+                           por_producto=por_producto,
+                           ordenes_lista=ordenes_lista,
+                           total_diferencia_m2=round(total_diferencia_m2, 2),
+                           total_merma_operativa_m2=round(total_merma_operativa_m2, 2),
+                           total_merma_imprevista_m2=round(total_merma_imprevista_m2, 2),
+                           semanas_disponibles=semanas_disponibles)
+
+
+@inventario_bp.route('/conteos-semanales/eliminar/<int:conteo_id>', methods=['POST'])
+@login_required
+@admin_required
+def eliminar_conteo(conteo_id):
+    from app.models import ConteoSemanal
+    c = ConteoSemanal.query.get_or_404(conteo_id)
+    db.session.delete(c)
+    db.session.commit()
+    flash('Conteo eliminado.', 'success')
+    return redirect(url_for('inventario.listar_conteos'))
+
+# ==========================================
+# MERMA DETALLADA POR ORDEN (vista del económico)
+# ==========================================
+@inventario_bp.route('/merma-por-orden')
+@login_required
+@economico_or_admin_required
+def merma_por_orden():
+    """Vista de merma agrupada por orden, con desglose por línea."""
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
+    order_num = request.args.get('order_num', '').strip()
+    producto_id = request.args.get('producto_id', type=int)
+
+    hoy = datetime.utcnow()
+    if fecha_inicio_str:
+        try:
+            fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
+        except Exception:
+            fecha_inicio = hoy - timedelta(days=30)
+    else:
+        fecha_inicio = hoy - timedelta(days=30)
+
+    if fecha_fin_str:
+        try:
+            fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d') + timedelta(days=1)
+        except Exception:
+            fecha_fin = hoy + timedelta(days=1)
+    else:
+        fecha_fin = hoy + timedelta(days=1)
+
+    query = ArchivoAdjunto.query.join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+        Order.date >= fecha_inicio.date(),
+        Order.date < fecha_fin.date(),
+        ArchivoAdjunto.parametros_etiqueta.isnot(None)
+    )
+
+    if order_num:
+        query = query.filter(Order.order_num.ilike(f'%{order_num}%'))
+    if producto_id:
+        query = query.filter(ArchivoAdjunto.producto_id == producto_id)
+
+    archivos = query.all()
+
+    ordenes = {}
+    for a in archivos:
+        try:
+            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+        except Exception:
+            continue
+        if 'merma_operativa_m2' not in params:
+            continue
+        orden = a.orden
+        if not orden:
+            continue
+        key = orden.id
+        if key not in ordenes:
+            ordenes[key] = {
+                'orden_id': orden.id,
+                'orden_num': orden.order_num or 'Sin número',
+                'cliente': orden.client.nombre if orden.client else 'Sin cliente',
+                'fecha': orden.date,
+                'estado': orden.column,
+                'lineas': [],
+                'total_area_m2': 0.0,
+                'total_material_m2': 0.0,
+                'total_merma_m2': 0.0,
+            }
+        ordenes[key]['lineas'].append({
+            'archivo_id': a.id,
+            'nombre': a.nombre_visible,
+            'producto': a.producto.nombre if a.producto else '—',
+            'producto_id': a.producto_id,
+            'area_m2': float(params.get('area_m2', 0) or 0),
+            'material_m2': float(params.get('material_consumido_m2', 0) or 0),
+            'merma_m2': float(params.get('merma_operativa_m2', 0) or 0),
+            'merma_pct': float(params.get('merma_operativa_pct', 0) or 0),
+            'ancho_cm': params.get('ancho', '—'),
+            'alto_cm': params.get('alto', '—'),
+            'n_paños': params.get('n_paños', 1),
+            'filas': params.get('filas', 0),
+            'columnas': params.get('columnas', 0),
+            'largo_total_m': float(params.get('largo_total_m', 0) or 0),
+            'largo_etiquetas_m': float(params.get('largo_etiquetas_m', 0) or 0),
+            'largo_gaps_m': float(params.get('largo_gaps_m', 0) or 0),
+            'largo_cut_m': float(params.get('largo_cut_m', 0) or 0),
+            'gap_usado_cm': params.get('gap_usado_cm', 6.5),
+            'desglose_paños': params.get('desglose_paños', []),
+        })
+        ordenes[key]['total_area_m2'] += float(params.get('area_m2', 0) or 0)
+        ordenes[key]['total_material_m2'] += float(params.get('material_consumido_m2', 0) or 0)
+        ordenes[key]['total_merma_m2'] += float(params.get('merma_operativa_m2', 0) or 0)
+
+    ordenes_lista = sorted(ordenes.values(), key=lambda x: x['fecha'] or datetime.min, reverse=True)
+
+    # Totales
+    total_area = sum(o['total_area_m2'] for o in ordenes_lista)
+    total_material = sum(o['total_material_m2'] for o in ordenes_lista)
+    total_merma = sum(o['total_merma_m2'] for o in ordenes_lista)
+    pct_global = (total_merma / total_area * 100) if total_area > 0 else 0
+
+    productos = Producto.query.filter(
+        Producto.es_material_impresion == True
+    ).order_by(Producto.nombre).all()
+
+    return render_template('merma_por_orden.html',
+                           ordenes=ordenes_lista,
+                           productos=productos,
+                           producto_seleccionado=producto_id,
+                           order_num=order_num,
+                           fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
+                           fecha_fin=(fecha_fin - timedelta(days=1)).strftime('%Y-%m-%d'),
+                           total_area=round(total_area, 2),
+                           total_material=round(total_material, 2),
+                           total_merma=round(total_merma, 2),
+                           pct_global=round(pct_global, 2))

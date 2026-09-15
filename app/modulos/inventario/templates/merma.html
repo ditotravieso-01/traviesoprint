@@ -6,6 +6,32 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================================
+       TABS
+       ============================================================ */
+    .tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f0ece8; flex-wrap: wrap; }
+    .tab-btn {
+        padding: 10px 24px;
+        background: transparent;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        color: #8e8e93;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .tab-btn:hover { color: #1c1c1e; }
+    .tab-btn.active { color: #a8854f; border-bottom-color: #a8854f; }
+
+    /* ============================================================
+       FILTROS
+       ============================================================ */
     .filters-bar {
         display: flex;
         gap: 12px;
@@ -18,58 +44,185 @@
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
     }
-    .filters-bar .filter-group { display:flex; flex-direction:column; gap:4px; }
-    .filters-bar label { font-size:12px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:0.5px; font-family:'Inter',sans-serif; }
+    .filters-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filters-bar label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-family: 'Inter', sans-serif;
+    }
     .filters-bar select, .filters-bar input {
-        padding:6px 12px; border:1px solid #d2d2d7; border-radius:8px;
-        font-size:13px; background:white; color:#1c1c1e;
-        min-width:140px; font-family:'Inter',sans-serif;
+        padding: 6px 12px;
+        border: 1px solid #d2d2d7;
+        border-radius: 8px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 140px;
+        font-family: 'Inter', sans-serif;
     }
-    .filters-bar select:focus, .filters-bar input:focus { outline:none; border-color:#1a1a1a; box-shadow:0 0 0 3px rgba(0,0,0,0.05); }
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    .card h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:12px; color:#1c1c1e; }
-    .table-wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font-size:14px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
-    td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
-    .badge-merma-positive { color:#dc2626; font-weight:600; }
-    .badge-merma-negative { color:#10b981; font-weight:600; }
-    .badge-merma-zero { color:#8e8e93; }
-    .chart-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
-    .chart-container { background:white; border-radius:12px; padding:16px; border:1px solid #f0ece8; position:relative; height:300px; }
-    .chart-container .chart-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-    .chart-container h5 { font-family:'Playfair Display',serif; font-size:15px; margin:0; color:#1c1c1e; }
+    .filters-bar select:focus, .filters-bar input:focus {
+        outline: none;
+        border-color: #1a1a1a;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .card {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 18px 20px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 16px;
+    }
+    .card h4 {
+        font-family: 'Playfair Display', serif;
+        font-size: 18px;
+        margin-bottom: 12px;
+        color: #1c1c1e;
+    }
+
+    /* ============================================================
+       TABLA ESCRITORIO
+       ============================================================ */
+    .table-wrap { overflow-x: auto; }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+    }
+    th {
+        text-align: left;
+        padding: 8px 10px;
+        font-weight: 600;
+        color: #8e8e93;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    td {
+        padding: 8px 10px;
+        border-bottom: 1px solid rgba(0,0,0,0.02);
+    }
+    .badge-merma-positive { color: #dc2626; font-weight: 600; }
+    .badge-merma-negative { color: #10b981; font-weight: 600; }
+    .badge-merma-zero { color: #8e8e93; }
+    .badge-tipo {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .badge-real { background: #dbeafe; color: #1e40af; }
+    .badge-estimada { background: #fef3c7; color: #78350f; }
+
+    /* ============================================================
+       GRÁFICOS
+       ============================================================ */
+    .chart-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+    }
+    .chart-container {
+        background: white;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #f0ece8;
+        position: relative;
+        height: 300px;
+    }
+    .chart-container .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .chart-container h5 {
+        font-family: 'Playfair Display', serif;
+        font-size: 15px;
+        margin: 0;
+        color: #1c1c1e;
+    }
     .chart-container .chart-type-select {
-        padding:4px 8px; border:1px solid #d2d2d7; border-radius:6px;
-        font-size:12px; background:white; color:#1c1c1e;
-        font-family:'Inter',sans-serif; cursor:pointer;
+        padding: 4px 8px;
+        border: 1px solid #d2d2d7;
+        border-radius: 6px;
+        font-size: 12px;
+        background: white;
+        color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
+        cursor: pointer;
     }
-    @media (max-width:768px) {
-        .filters-bar { flex-direction:column; align-items:stretch; }
-        .filters-bar .filter-group { width:100%; }
-        .chart-grid { grid-template-columns:1fr; }
-        .chart-container { height:220px; }
-        /* Tabla a tarjetas */
+
+    /* ============================================================
+       RESPONSIVE — 5 BREAKPOINTS INTERNACIONALES
+       ============================================================ */
+
+    /* ---------- xs: < 576px ---------- */
+    @media (max-width: 575.98px) {
+        .tabs { gap: 4px; }
+        .tab-btn {
+            flex: 1 1 auto;
+            justify-content: center;
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+        .filters-bar { flex-direction: column; align-items: stretch; padding: 12px; gap: 10px; }
+        .filters-bar .filter-group { width: 100%; }
+        .filters-bar select, .filters-bar input { width: 100%; min-width: 0; height: 44px; font-size: 15px; }
+        .filters-bar .btn { width: 100%; justify-content: center; height: 44px; }
+        .card { padding: 14px 12px; border-radius: 12px; }
+        .card h4 { font-size: 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
+        .chart-grid { grid-template-columns: 1fr; gap: 12px; }
+        .chart-container { height: 220px; padding: 12px; }
+        .chart-container h5 { font-size: 13px; }
+
+        /* Tabla → cards apilables */
+        .table-wrap { overflow-x: visible; }
         .table-wrap table,
         .table-wrap thead,
         .table-wrap tbody,
         .table-wrap tr,
         .table-wrap th,
-        .table-wrap td {
-            display: block;
-        }
-        .table-wrap thead {
-            display: none;
-        }
-        .table-wrap tbody {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        .table-wrap td { display: block; }
+        .table-wrap thead { display: none; }
+        .table-wrap tbody { display: flex; flex-direction: column; gap: 12px; }
         .table-wrap tr {
             background: white;
             border-radius: 14px;
@@ -104,13 +257,69 @@
             font-weight: 600;
             font-size: 15px;
             margin-bottom: 4px;
+            color: #1c1c1e;
         }
-        .table-wrap td:first-child:before {
-            display: none;
-        }
+        .table-wrap td:first-child:before { display: none; }
     }
-    @media (max-width: 480px) {
-        .chart-container { height: 180px; }
+
+    /* ---------- sm: 576–767px ---------- */
+    @media (min-width: 576px) and (max-width: 767.98px) {
+        .tab-btn { flex: 1 1 auto; justify-content: center; }
+        .filters-bar { gap: 10px; }
+        .filters-bar select, .filters-bar input { min-width: 120px; }
+        .chart-grid { grid-template-columns: 1fr; gap: 16px; }
+        .chart-container { height: 260px; }
+
+        .table-wrap { overflow-x: visible; }
+        .table-wrap table,
+        .table-wrap thead,
+        .table-wrap tbody,
+        .table-wrap tr,
+        .table-wrap th,
+        .table-wrap td { display: block; }
+        .table-wrap thead { display: none; }
+        .table-wrap tbody { display: flex; flex-direction: column; gap: 12px; }
+        .table-wrap tr {
+            background: white;
+            border-radius: 14px;
+            padding: 14px 16px;
+            border: 1px solid #f0ece8;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 16px;
+        }
+        .table-wrap td { border: none; padding: 2px 0; flex: 1 1 auto; min-width: 0; }
+        .table-wrap td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #8e8e93;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        .table-wrap td:first-child { flex-basis: 100%; font-weight: 600; font-size: 15px; color: #1c1c1e; }
+        .table-wrap td:first-child:before { display: none; }
+    }
+
+    /* ---------- md: 768–991px ---------- */
+    @media (min-width: 768px) and (max-width: 991.98px) {
+        .chart-grid { grid-template-columns: 1fr 1fr; }
+        .chart-container { height: 280px; }
+        .filters-bar select, .filters-bar input { min-width: 130px; }
+    }
+
+    /* ---------- lg: 992–1199px ---------- */
+    @media (min-width: 992px) and (max-width: 1199.98px) {
+        .chart-container { height: 300px; }
+    }
+
+    /* ---------- xl: ≥ 1200px ---------- */
+    @media (min-width: 1200px) {
+        .chart-container { height: 340px; padding: 20px; }
+        .filters-bar { padding: 18px 24px; }
+        .card { padding: 22px 26px; }
     }
 </style>
 {% endblock %}
@@ -125,8 +334,19 @@
     </div>
 </div>
 
+<!-- ===== PESTAÑAS ===== -->
+<div class="tabs">
+    <button type="button" class="tab-btn {% if tipo_merma == 'real' %}active{% endif %}" onclick="cambiarTab('real')">
+        <i class="fas fa-ruler"></i> Merma real (conteo)
+    </button>
+    <button type="button" class="tab-btn {% if tipo_merma == 'estimada' %}active{% endif %}" onclick="cambiarTab('estimada')">
+        <i class="fas fa-calculator"></i> Merma operativa (órdenes)
+    </button>
+</div>
+
 <div class="card">
-    <form method="GET" action="{{ url_for('inventario.merma') }}" class="filters-bar">
+    <form method="GET" action="{{ url_for('inventario.merma') }}" class="filters-bar" id="filtrosMermaForm">
+        <input type="hidden" name="tipo_merma" id="tipoMermaInput" value="{{ tipo_merma }}">
         <div class="filter-group">
             <label>Período</label>
             <select name="periodo" onchange="this.form.submit()">
@@ -148,6 +368,7 @@
             <label>Agrupar por</label>
             <select name="agrupar_por" onchange="this.form.submit()">
                 <option value="producto" {% if agrupar_por == 'producto' %}selected{% endif %}>Producto</option>
+                <option value="linea" {% if agrupar_por == 'linea' %}selected{% endif %}>Línea de orden</option>
                 <option value="categoria" {% if agrupar_por == 'categoria' %}selected{% endif %}>Categoría</option>
             </select>
         </div>
@@ -162,10 +383,10 @@
 <div class="chart-grid">
     <div class="chart-container">
         <div class="chart-header">
-            <h5>📊 Merma por {{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}</h5>
+            <h5>📊 Merma por {{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }} ({{ tipo_merma }})</h5>
             <select class="chart-type-select" id="tipoMerma" onchange="cambiarTipoMerma()">
-                <option value="bar">Barras verticales</option>
                 <option value="horizontalBar" selected>Barras horizontales</option>
+                <option value="bar">Barras verticales</option>
                 <option value="line">Líneas</option>
                 <option value="area">Área</option>
             </select>
@@ -174,7 +395,7 @@
     </div>
     <div class="chart-container">
         <div class="chart-header">
-            <h5>🍩 Distribución por {{ 'Producto' if agrupar_por == 'categoria' else 'Categoría' }}</h5>
+            <h5>🍩 Distribución</h5>
             <select class="chart-type-select" id="tipoDistribucion" onchange="cambiarTipoDistribucion()">
                 <option value="pie" selected>Pastel</option>
                 <option value="doughnut">Donut</option>
@@ -186,36 +407,82 @@
 
 <!-- TABLA -->
 <div class="card">
-    <h4>📋 Detalle de merma</h4>
+    <h4>
+        📋 Detalle de merma
+        <span class="badge-tipo {% if tipo_merma == 'real' %}badge-real{% else %}badge-estimada{% endif %}" style="margin-left:8px;">
+            {{ 'Real (conteo físico)' if tipo_merma == 'real' else 'Operativa (órdenes)' }}
+        </span>
+    </h4>
     <div class="table-wrap">
         <table>
             <thead>
-                <tr>
-                    <th>{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}</th>
-                    {% if agrupar_por == 'producto' %}<th>Categoría</th>{% endif %}
-                    <th>Entradas</th>
-                    <th>Consumos</th>
-                    <th>Merma</th>
-                    <th>% Merma</th>
-                </tr>
+                {% if tipo_merma == 'estimada' %}
+                    <tr>
+                        <th>{{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}</th>
+                        {% if agrupar_por == 'producto' %}<th>Categoría</th>{% endif %}
+                        {% if agrupar_por == 'linea' %}<th>Orden</th><th>Cliente</th>{% endif %}
+                        <th>Facturado (m²)</th>
+                        <th>Consumido (m²)</th>
+                        <th>Merma (m²)</th>
+                        <th>% Merma</th>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <th>{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}</th>
+                        {% if agrupar_por == 'producto' %}<th>Categoría</th>{% endif %}
+                        <th>Entradas</th>
+                        <th>Consumos</th>
+                        <th>Merma</th>
+                        <th>% Merma</th>
+                    </tr>
+                {% endif %}
             </thead>
             <tbody>
-                {% for d in datos %}
-                <tr>
-                    <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}"><strong>{{ d.nombre }}</strong></td>
-                    {% if agrupar_por == 'producto' %}<td data-label="Categoría">{{ d.categoria }}</td>{% endif %}
-                    <td data-label="Entradas">{{ d.entradas|round(2) }}</td>
-                    <td data-label="Consumos">{{ d.consumos|round(2) }}</td>
-                    <td data-label="Merma" class="{% if d.merma > 0 %}badge-merma-positive{% elif d.merma < 0 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
-                        {{ d.merma > 0 and '+' or '' }}{{ d.merma|round(2) }}
-                    </td>
-                    <td data-label="% Merma" class="{% if d.porcentaje > 10 %}badge-merma-positive{% elif d.porcentaje > 5 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
-                        {{ d.porcentaje|round(1) }}%
-                    </td>
-                </tr>
+                {% if tipo_merma == 'estimada' %}
+                    {% for d in datos %}
+                    <tr>
+                        <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}">
+                            <strong>{{ d.nombre }}</strong>
+                        </td>
+                        {% if agrupar_por == 'producto' %}
+                            <td data-label="Categoría">{{ d.categoria }}</td>
+                        {% endif %}
+                        {% if agrupar_por == 'linea' %}
+                            <td data-label="Orden">{{ d.orden_num or '—' }}</td>
+                            <td data-label="Cliente">{{ d.cliente or '—' }}</td>
+                        {% endif %}
+                        <td data-label="Facturado (m²)">{{ d.area_facturada_m2 }}</td>
+                        <td data-label="Consumido (m²)">{{ d.material_consumido_m2 }}</td>
+                        <td data-label="Merma (m²)" class="badge-merma-positive">{{ d.merma_operativa_m2 }}</td>
+                        <td data-label="% Merma" class="{% if d.merma_operativa_pct > 20 %}badge-merma-positive{% elif d.merma_operativa_pct > 10 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
+                            {{ d.merma_operativa_pct }}%
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center;color:#8e8e93;padding:20px;">No hay datos en este período.</td></tr>
+                    {% endfor %}
                 {% else %}
-                <tr><td colspan="10" style="text-align:center;color:#8e8e93;">No hay datos en este período.</td></tr>
-                {% endfor %}
+                    {% for d in datos %}
+                    <tr>
+                        <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}">
+                            <strong>{{ d.nombre }}</strong>
+                        </td>
+                        {% if agrupar_por == 'producto' %}
+                            <td data-label="Categoría">{{ d.categoria }}</td>
+                        {% endif %}
+                        <td data-label="Entradas">{{ d.entradas }}</td>
+                        <td data-label="Consumos">{{ d.consumos }}</td>
+                        <td data-label="Merma" class="{% if d.merma > 0 %}badge-merma-positive{% elif d.merma < 0 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
+                            {{ d.merma > 0 and '+' or '' }}{{ d.merma }}
+                        </td>
+                        <td data-label="% Merma" class="{% if d.porcentaje > 10 %}badge-merma-positive{% elif d.porcentaje > 5 %}badge-merma-negative{% else %}badge-merma-zero{% endif %}">
+                            {{ d.porcentaje }}%
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" style="text-align:center;color:#8e8e93;padding:20px;">No hay datos en este período.</td></tr>
+                    {% endfor %}
+                {% endif %}
             </tbody>
         </table>
     </div>
@@ -232,58 +499,99 @@
     const mermaValues = {{ merma_values | safe }};
     const pieLabels = {{ pie_labels | safe }};
     const pieValues = {{ pie_values | safe }};
+    const tipoMerma = "{{ tipo_merma }}";
     let chartMerma, chartDistribucion;
+
+    function isMobile() { return window.innerWidth < 768; }
+
+    // ============================================================
+    // CAMBIO DE PESTAÑA — usa el form específico con id
+    // (antes usaba document.querySelector('form') que agarraba
+    //  el primer <form> de base.html, probablemente el de logout)
+    // ============================================================
+    function cambiarTab(tipo) {
+        const input = document.getElementById('tipoMermaInput');
+        const form = document.getElementById('filtrosMermaForm');
+        if (!input || !form) {
+            console.error('No se encontró el formulario o el input de tipo_merma');
+            return;
+        }
+        input.value = tipo;
+        form.submit();
+    }
 
     function crearGraficoMerma(tipo) {
         const ctx = document.getElementById('mermaBarChart').getContext('2d');
         if (chartMerma) chartMerma.destroy();
+
+        const colorPos = '#dc262680';
+        const colorNeg = '#10b98180';
+        const colorPosLine = '#dc2626';
+        const colorNegLine = '#10b981';
+
+        // En móvil forzamos barras verticales para evitar problemas de espacio
+        if (isMobile() && tipo === 'horizontalBar') {
+            tipo = 'bar';
+        }
+
         const config = {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Merma (unidades)',
+                    label: 'Merma',
                     data: mermaValues,
-                    backgroundColor: mermaValues.map(v => v >= 0 ? '#dc262680' : '#10b98180'),
-                    borderColor: mermaValues.map(v => v >= 0 ? '#dc2626' : '#10b981'),
+                    backgroundColor: mermaValues.map(v => v >= 0 ? colorPos : colorNeg),
+                    borderColor: mermaValues.map(v => v >= 0 ? colorPosLine : colorNegLine),
                     borderWidth: 2,
                     fill: false,
                 }]
             },
             options: {
-                responsive:true, maintainAspectRatio:false,
-                plugins: { legend: { display:false }, tooltip: { callbacks: { label: function(context) { return context.parsed.y + ' unidades'; } } } },
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return (tipo === 'horizontalBar' ? context.parsed.x : context.parsed.y) + ' m²';
+                            }
+                        }
+                    }
+                },
                 scales: {
-                    x: { grid:{ color:'rgba(0,0,0,0.03)' }, ticks:{ font:{ size:10 } } },
-                    y: { grid:{ color:'rgba(0,0,0,0.03)' }, ticks:{ font:{ size:10 } } }
+                    x: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } }
                 }
             }
         };
+
         if (tipo === 'horizontalBar') {
             config.options.indexAxis = 'y';
             config.options.scales = {
-                x: { grid:{ color:'rgba(0,0,0,0.03)' }, ticks:{ font:{ size:10 } } },
-                y: { grid:{ display:false }, ticks:{ font:{ size:10 } } }
+                x: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
+                y: { grid: { display: false }, ticks: { font: { size: 10 } } }
             };
-            config.options.plugins.tooltip.callbacks.label = function(context) { return context.parsed.x + ' unidades'; };
         } else if (tipo === 'line' || tipo === 'area') {
             config.type = 'line';
             config.data.datasets[0].fill = (tipo === 'area');
             config.data.datasets[0].tension = 0.3;
             config.data.datasets[0].pointRadius = 4;
-            config.data.datasets[0].pointBackgroundColor = mermaValues.map(v => v >= 0 ? '#dc2626' : '#10b981');
+            config.data.datasets[0].pointBackgroundColor = mermaValues.map(v => v >= 0 ? colorPosLine : colorNegLine);
             delete config.options.indexAxis;
             config.options.scales = {
-                x: { grid:{ display:false }, ticks:{ font:{ size:10 } } },
-                y: { grid:{ color:'rgba(0,0,0,0.03)' }, ticks:{ font:{ size:10 } } }
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } }
             };
         } else {
             delete config.options.indexAxis;
             config.options.scales = {
-                x: { grid:{ display:false }, ticks:{ font:{ size:10 } } },
-                y: { grid:{ color:'rgba(0,0,0,0.03)' }, ticks:{ font:{ size:10 } } }
+                x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } }
             };
         }
+
         chartMerma = new Chart(ctx, config);
     }
 
@@ -291,6 +599,7 @@
         const ctx = document.getElementById('mermaPieChart').getContext('2d');
         if (chartDistribucion) chartDistribucion.destroy();
         const colors = ['#10b981','#f59e0b','#dc2626','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
+        const legendPos = isMobile() ? 'bottom' : 'right';
         const config = {
             type: tipo,
             data: {
@@ -298,30 +607,64 @@
                 datasets: [{
                     data: pieValues,
                     backgroundColor: colors.slice(0, pieLabels.length),
-                    borderColor: '#ffffff', borderWidth:2,
+                    borderColor: '#ffffff',
+                    borderWidth: 2,
                 }]
             },
             options: {
-                responsive:true, maintainAspectRatio:false,
+                responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
-                    legend: { position:'right', labels: { font:{ size:10, family:'Inter' }, boxWidth:12, padding:8 } },
-                    tooltip: { callbacks: { label: function(context) {
-                        const total = context.dataset.data.reduce((a,b)=>a+b,0);
-                        const pct = total > 0 ? (context.parsed / total * 100).toFixed(1) : 0;
-                        return context.label + ': ' + context.parsed + ' (' + pct + '%)';
-                    } } }
+                    legend: {
+                        position: legendPos,
+                        labels: { font: { size: 10, family: 'Inter' }, boxWidth: 12, padding: 8 }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? (context.parsed / total * 100).toFixed(1) : 0;
+                                return context.label + ': ' + context.parsed + ' (' + pct + '%)';
+                            }
+                        }
+                    }
                 }
             }
         };
         chartDistribucion = new Chart(ctx, config);
     }
 
-    function cambiarTipoMerma() { crearGraficoMerma(document.getElementById('tipoMerma').value); }
-    function cambiarTipoDistribucion() { crearGraficoDistribucion(document.getElementById('tipoDistribucion').value); }
+    function cambiarTipoMerma() {
+        crearGraficoMerma(document.getElementById('tipoMerma').value);
+    }
+    function cambiarTipoDistribucion() {
+        crearGraficoDistribucion(document.getElementById('tipoDistribucion').value);
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
-        crearGraficoMerma(document.getElementById('tipoMerma').value);
+        // En móvil forzamos 'bar' como valor por defecto
+        const tipoSelect = document.getElementById('tipoMerma');
+        if (isMobile()) {
+            tipoSelect.value = 'bar';
+        }
+        crearGraficoMerma(tipoSelect.value);
         crearGraficoDistribucion(document.getElementById('tipoDistribucion').value);
+
+        // Redibujar en resize para adaptar el tipo de gráfico
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                const tipoActual = document.getElementById('tipoMerma').value;
+                if (isMobile() && tipoActual === 'horizontalBar') {
+                    tipoSelect.value = 'bar';
+                    crearGraficoMerma('bar');
+                } else {
+                    crearGraficoMerma(tipoActual);
+                }
+                crearGraficoDistribucion(document.getElementById('tipoDistribucion').value);
+            }, 300);
+        });
     });
 </script>
 {% endblock %}

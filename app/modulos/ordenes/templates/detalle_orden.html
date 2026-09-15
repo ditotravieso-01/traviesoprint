@@ -6,61 +6,17 @@
 
 {% block extra_css %}
 <style>
-    /* ===== ESTUDIO BLANC – BASE ===== */
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-        background: #f7f0e8;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-    }
+    body { background: #f7f0e8; font-family: 'Inter', sans-serif; color: #1c1c1e; }
     .container { max-width: 1000px; margin: 0 auto; }
-    .card {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-        border: 1px solid rgba(0,0,0,0.04);
-    }
+    .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border: 1px solid rgba(0,0,0,0.04); }
     .serif { font-family: 'Playfair Display', serif; }
 
-    /* ===== CABECERA ===== */
-    .header-order {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-    .header-order .title {
-        font-family: 'Playfair Display', serif;
-        font-size: 26px;
-        font-weight: 700;
-        color: #1c1c1e;
-    }
-    .header-order .sub {
-        font-size: 14px;
-        color: #8e8e93;
-    }
-    .badge-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 20px;
-        border-radius: 30px;
-        font-weight: 700;
-        font-size: 16px;
-        text-transform: capitalize;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .badge-status .dot {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-    }
+    .header-order { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .header-order .title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; color: #1c1c1e; }
+    .header-order .sub { font-size: 14px; color: #8e8e93; }
+    .badge-status { display: inline-flex; align-items: center; gap: 8px; padding: 6px 20px; border-radius: 30px; font-weight: 700; font-size: 16px; text-transform: capitalize; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .badge-status .dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
     .status-pendiente { background: #fef3c7; color: #78350f; }
     .status-pendiente .dot { background: #f59e0b; }
     .status-por-preparar { background: #ffedd5; color: #9a3412; }
@@ -76,126 +32,30 @@
     .status-entregados { background: #fefce8; color: #78350f; }
     .status-entregados .dot { background: #f59e0b; }
 
-    .actions-bar {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .btn {
-        padding: 6px 16px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        text-decoration: none;
-        font-family: 'Inter', sans-serif;
-        background: #1c1c1e;
-        color: white;
-    }
+    .actions-bar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { padding: 6px 16px; border-radius: 30px; border: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-family: 'Inter', sans-serif; background: #1c1c1e; color: white; }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
     .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; }
     .btn-warning { background: #f59e0b; color: white; }
-    .btn-warning:hover { background: #d97706; }
     .btn-pdf { background: #dc2626; color: white; }
-    .btn-pdf:hover { background: #b91c1c; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; }
 
-    /* ===== DATOS GENERALES – Resumen en badges ===== */
-    .resumen-badges {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px;
-        margin-bottom: 12px;
-    }
-    .badge-dato {
-        background: #f5f2ef;
-        padding: 6px 16px;
-        border-radius: 30px;
-        font-size: 13px;
-        font-weight: 500;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        color: #1c1c1e;
-        border: 1px solid #e8e0da;
-    }
+    .resumen-badges { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
+    .badge-dato { background: #f5f2ef; padding: 6px 16px; border-radius: 30px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; color: #1c1c1e; border: 1px solid #e8e0da; }
     .badge-dato i { color: #a8854f; width: 16px; }
     .badge-dato .valor { font-weight: 700; color: #1c1c1e; }
 
-    .detalle-colapsable {
-        margin-top: 8px;
-        border-top: 1px solid #f0ece8;
-        padding-top: 12px;
-    }
-    .detalle-colapsable .btn-toggle-detalle {
-        background: none;
-        border: none;
-        color: #a8854f;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 13px;
-        font-family: 'Inter', sans-serif;
-    }
-    .detalle-colapsable .btn-toggle-detalle:hover { text-decoration: underline; }
-    .detalle-colapsable .panel-detalle {
-        display: none;
-        margin-top: 8px;
-        background: #fcfaf8;
-        border-radius: 8px;
-        padding: 10px 14px;
-        border-left: 3px solid #a8854f;
-    }
+    .detalle-colapsable { margin-top: 8px; border-top: 1px solid #f0ece8; padding-top: 12px; }
+    .detalle-colapsable .btn-toggle-detalle { background: none; border: none; color: #a8854f; font-weight: 600; cursor: pointer; font-size: 13px; font-family: 'Inter', sans-serif; }
+    .detalle-colapsable .panel-detalle { display: none; margin-top: 8px; background: #fcfaf8; border-radius: 8px; padding: 10px 14px; border-left: 3px solid #a8854f; }
     .detalle-colapsable .panel-detalle.visible { display: block; }
-    .panel-detalle .fila {
-        display: flex;
-        justify-content: space-between;
-        padding: 2px 0;
-        border-bottom: 1px solid #f0ece8;
-        font-size: 13px;
-    }
+    .panel-detalle .fila { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f0ece8; font-size: 13px; }
     .panel-detalle .fila .label { color: #8e8e93; font-weight: 500; }
     .panel-detalle .fila .valor { font-weight: 600; }
 
-    /* ===== SERVICIOS – Iconos ===== */
-    .servicios-iconos {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 20px;
-        padding: 4px 0;
-    }
-    .servicio-icono {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 4px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #555;
-    }
-    .servicio-icono .icon-circle {
-        width: 56px;
-        height: 56px;
-        background: #f5f2ef;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: #a8854f;
-        transition: 0.2s;
-    }
-    .servicio-icono .icon-circle:hover {
-        background: #e8e0da;
-        transform: scale(1.05);
-    }
-    /* Colores por tipo de servicio (se asignan dinámicamente) */
+    .servicios-iconos { display: flex; flex-wrap: wrap; gap: 20px; padding: 4px 0; }
+    .servicio-icono { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 13px; font-weight: 500; color: #555; }
+    .servicio-icono .icon-circle { width: 56px; height: 56px; background: #f5f2ef; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #a8854f; }
     .servicio-icono.diseno .icon-circle { background: #e0e7ff; color: #3b82f6; }
     .servicio-icono.ruter .icon-circle { background: #d1fae5; color: #10b981; }
     .servicio-icono.montaje .icon-circle { background: #fef3c7; color: #f59e0b; }
@@ -203,224 +63,54 @@
     .servicio-icono.herreria .icon-circle { background: #fce4ec; color: #dc2626; }
     .servicio-icono.otros .icon-circle { background: #e5e7eb; color: #4b5563; }
 
-    /* ===== TENER EN CUENTA – Nota con fondo ===== */
-    .nota-fondo {
-        background: #fcfaf8;
-        padding: 12px 18px;
-        border-radius: 10px;
-        border: 1px solid #f0ece8;
-        font-size: 14px;
-        line-height: 1.6;
-        color: #333;
-        display: flex;
-        gap: 12px;
-        align-items: flex-start;
-    }
-    .nota-fondo i {
-        color: #a8854f;
-        font-size: 18px;
-        margin-top: 2px;
-    }
+    .nota-fondo { background: #fcfaf8; padding: 12px 18px; border-radius: 10px; border: 1px solid #f0ece8; font-size: 14px; line-height: 1.6; color: #333; display: flex; gap: 12px; align-items: flex-start; }
+    .nota-fondo i { color: #a8854f; font-size: 18px; margin-top: 2px; }
 
-    /* ===== LÍNEAS DE TRABAJO – Tarjetas (sin progreso) ===== */
-    .grid-lineas {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 20px;
-        margin-top: 12px;
-    }
-    .tarjeta-linea {
-        background: #fefcf9;
-        border-radius: 20px;
-        padding: 18px;
-        border: 1px solid #f0ece8;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-        transition: all 0.25s ease;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        border-top: 4px solid #a8854f;
-    }
-    .tarjeta-linea:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
-        border-color: #e0dcd8;
-    }
-    .tarjeta-linea .cabecera-linea {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    .tarjeta-linea .icono-grande {
-        font-size: 28px;
-        width: 44px;
-        height: 44px;
-        background: #f5f2ef;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #a8854f;
-        flex-shrink: 0;
-    }
-    .tarjeta-linea .nombre-linea {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        font-weight: 700;
-        color: #1c1c1e;
-        line-height: 1.2;
-    }
-    .tarjeta-linea .cantidad-destacada {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-top: 2px;
-    }
-    .tarjeta-linea .circulo-cantidad {
-        background: #a8854f;
-        color: white;
-        font-weight: 700;
-        font-size: 20px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Playfair Display', serif;
-        box-shadow: 0 2px 8px rgba(168,133,79,0.2);
-    }
-    .tarjeta-linea .unidad-cantidad {
-        font-size: 13px;
-        color: #8e8e93;
-        font-weight: 500;
-    }
-    .tarjeta-linea .badge-material {
-        display: inline-block;
-        background: #f0ece8;
-        padding: 2px 14px;
-        border-radius: 30px;
-        font-size: 13px;
-        font-weight: 500;
-        color: #333;
-        align-self: flex-start;
-    }
+    .grid-lineas { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 12px; }
+    .tarjeta-linea { background: #fefcf9; border-radius: 20px; padding: 20px; border: 1px solid #f0ece8; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border-top: 4px solid #a8854f; }
+    .tarjeta-linea .cabecera-linea { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .tarjeta-linea .icono-grande { font-size: 28px; width: 44px; height: 44px; background: #f5f2ef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #a8854f; flex-shrink: 0; }
+    .tarjeta-linea .nombre-linea { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #1c1c1e; }
+    .tarjeta-linea .badge-material { display: inline-block; background: #f0ece8; padding: 2px 14px; border-radius: 30px; font-size: 13px; font-weight: 500; color: #333; }
     .badge-material.vinilo { background: #dbeafe; color: #1e40af; }
     .badge-material.cartulina { background: #fef3c7; color: #78350f; }
     .badge-material.lona { background: #d1fae5; color: #065f46; }
-    .badge-material.papel { background: #fef3c7; color: #78350f; }
-    .badge-material.metal { background: #e5e7eb; color: #4b5563; }
-    .badge-material.plastico { background: #e0e7ff; color: #1e40af; }
 
-    .tarjeta-linea .datos-tecnicos {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px 16px;
-        font-size: 13px;
-        color: #1c1c1e;
-        background: #fcfaf8;
-        padding: 6px 10px;
-        border-radius: 8px;
-        border: 1px solid #f0ece8;
-    }
-    .tarjeta-linea .datos-tecnicos .item {
-        display: flex;
-        gap: 4px;
-    }
-    .tarjeta-linea .datos-tecnicos .item .label {
-        color: #8e8e93;
-        font-weight: 500;
-    }
-    .tarjeta-linea .datos-tecnicos .item .valor {
-        font-weight: 600;
-    }
+    /* Paneles comercial/interno */
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+    @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+    .panel { border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); }
+    .panel-commercial { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
+    .panel-internal { background: linear-gradient(135deg, #fef3c7 0%, #fde8e5 100%); border-color: #fcd34d; }
+    .panel h5 { font-family: 'Playfair Display', serif; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .panel-commercial h5 { color: #1e40af; }
+    .panel-internal h5 { color: #78350f; }
+    .panel-rows { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+    .panel-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
+    .panel-row .lbl { color: #555; }
+    .panel-row .val { font-weight: 600; }
+    .panel-row.highlight { border-bottom: none; padding-top: 6px; margin-top: 4px; border-top: 2px solid rgba(0,0,0,0.1); }
+    .panel-row.highlight .lbl { font-weight: 700; color: var(--dark); }
+    .panel-row.highlight .val { font-size: 15px; font-family: 'Playfair Display', serif; }
+    .panel-row .val.merma { color: #dc2626; }
+    .panel-row .val.green { color: #10b981; }
 
-    .tarjeta-linea .indicador-stock {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-    .indicador-stock .punto {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-    }
+    .indicador-stock { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; }
+    .indicador-stock .punto { width: 12px; height: 12px; border-radius: 50%; display: inline-block; }
     .punto.suficiente { background: #10b981; }
     .punto.justo { background: #f59e0b; }
     .punto.falta { background: #dc2626; }
 
-    .tarjeta-linea .acciones-linea {
-        display: flex;
-        gap: 8px;
-        margin-top: 4px;
-    }
-    .tarjeta-linea .acciones-linea .btn-accion {
-        background: none;
-        border: 1px solid #d2d2d7;
-        border-radius: 30px;
-        padding: 4px 14px;
-        font-size: 12px;
-        cursor: pointer;
-        color: #555;
-        font-family: 'Inter', sans-serif;
-        transition: 0.2s;
-    }
-    .tarjeta-linea .acciones-linea .btn-accion:hover {
-        border-color: #a8854f;
-        background: #fafaf9;
-    }
-    .tarjeta-linea .acciones-linea .btn-accion.primary {
-        background: #a8854f;
-        color: white;
-        border-color: #a8854f;
-    }
-    .tarjeta-linea .acciones-linea .btn-accion.primary:hover {
-        background: #8a6f3f;
-    }
-
-    .tarjeta-linea .panel-extra {
-        display: none;
-        background: #fcfaf8;
-        border-radius: 8px;
-        padding: 10px 14px;
-        border-left: 3px solid #a8854f;
-        font-size: 13px;
-        margin-top: 4px;
-    }
-    .tarjeta-linea .panel-extra.visible {
-        display: block;
-    }
-    .tarjeta-linea .panel-extra .fila {
-        display: flex;
-        justify-content: space-between;
-        padding: 2px 0;
-        border-bottom: 1px solid #f0ece8;
-    }
-    .tarjeta-linea .panel-extra .fila .label {
-        color: #8e8e93;
-        font-weight: 500;
-    }
-    .tarjeta-linea .panel-extra .fila .valor {
-        font-weight: 600;
-        color: #1c1c1e;
-    }
-
     @media (max-width: 768px) {
-        .grid-lineas { grid-template-columns: 1fr; }
         .resumen-badges { gap: 8px; }
         .badge-dato { font-size: 12px; padding: 4px 12px; }
-        .servicios-iconos { gap: 12px; }
-        .servicio-icono .icon-circle { width: 44px; height: 44px; font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <!-- ===== CABECERA ===== -->
+    <!-- CABECERA -->
     <div class="card">
         <div class="header-order">
             <div>
@@ -446,7 +136,7 @@
         </div>
     </div>
 
-    <!-- ===== DATOS GENERALES – Resumen + colapsable ===== -->
+    <!-- DATOS GENERALES -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Datos Generales</h4>
         <div class="resumen-badges">
@@ -461,7 +151,6 @@
             <div class="panel-detalle" id="panelDetalleB">
                 <div class="fila"><span class="label">Solicitado por</span><span class="valor">{{ order.solicitado or '—' }}</span></div>
                 <div class="fila"><span class="label">Tipo de proyecto</span><span class="valor">{{ order.tipo_proyecto or 'grafica' }}</span></div>
-                <div class="fila"><span class="label">Proyecto</span><span class="valor">{{ order.proyecto or '—' }}</span></div>
                 {% if order.fecha_entregado %}
                 <div class="fila"><span class="label">Fecha de entrega</span><span class="valor">{{ order.fecha_entregado.strftime('%d/%m/%Y %H:%M') }}</span></div>
                 {% endif %}
@@ -469,7 +158,7 @@
         </div>
     </div>
 
-    <!-- ===== SERVICIOS – Iconos ===== -->
+    <!-- SERVICIOS -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Servicios</h4>
         <div class="servicios-iconos">
@@ -502,7 +191,7 @@
         </div>
     </div>
 
-    <!-- ===== TENER EN CUENTA ===== -->
+    <!-- TENER EN CUENTA -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Tener en cuenta</h4>
         <div class="nota-fondo">
@@ -511,110 +200,125 @@
         </div>
     </div>
 
-    <!-- ===== LÍNEAS DE TRABAJO – Tarjetas (sin progreso) ===== -->
+    <!-- LÍNEAS DE TRABAJO -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Líneas de trabajo</h4>
         {% if order.archivos %}
-        <div class="grid-lineas" id="gridLineas">
+        <div class="grid-lineas">
             {% for archivo in order.archivos %}
             {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
             {% set is_etiqueta = params is not none %}
             {% set producto = archivo.producto %}
-            {% set consumo_metros = params.consumo if params and params.consumo else archivo.cantidad %}
 
-            {# Calcular estado del stock #}
             {% set stock_disponible = 0 %}
             {% set stock_clase = 'falta' %}
             {% set stock_texto = 'Sin stock' %}
-            {% if producto and producto.stock_metros is defined and producto.stock_comprometido_metros is defined %}
+            {% if producto and is_etiqueta and params.consumo_lineal %}
                 {% set stock_disponible = (producto.stock_metros or 0) - (producto.stock_comprometido_metros or 0) %}
-                {% if consumo_metros and consumo_metros > 0 %}
-                    {% if stock_disponible >= consumo_metros * 1.2 %}
-                        {% set stock_clase = 'suficiente' %}
-                        {% set stock_texto = 'Stock suficiente' %}
-                    {% elif stock_disponible >= consumo_metros %}
-                        {% set stock_clase = 'justo' %}
-                        {% set stock_texto = 'Stock justo' %}
-                    {% else %}
-                        {% set stock_clase = 'falta' %}
-                        {% set stock_texto = 'Stock insuficiente' %}
-                    {% endif %}
+                {% set consumo_metros = params.consumo_lineal %}
+                {% if stock_disponible >= consumo_metros * 1.2 %}
+                    {% set stock_clase = 'suficiente' %}
+                    {% set stock_texto = 'Stock suficiente' %}
+                {% elif stock_disponible >= consumo_metros %}
+                    {% set stock_clase = 'justo' %}
+                    {% set stock_texto = 'Stock justo' %}
                 {% else %}
-                    {% if stock_disponible > 0 %}
-                        {% set stock_clase = 'suficiente' %}
-                        {% set stock_texto = 'Stock disponible' %}
-                    {% else %}
-                        {% set stock_clase = 'falta' %}
-                        {% set stock_texto = 'Sin stock' %}
-                    {% endif %}
+                    {% set stock_clase = 'falta' %}
+                    {% set stock_texto = 'Stock insuficiente' %}
                 {% endif %}
             {% endif %}
 
-            {# Determinar icono según tipo #}
             {% set icono = 'fa-tag' if is_etiqueta else 'fa-file' %}
-            {% if archivo.nombre_visible and ('cartel' in archivo.nombre_visible.lower()) %}
-                {% set icono = 'fa-image' %}
-            {% elif archivo.nombre_visible and ('roll-up' in archivo.nombre_visible.lower() or 'rollup' in archivo.nombre_visible.lower()) %}
-                {% set icono = 'fa-flag' %}
-            {% endif %}
-
-            {# Determinar clase de material #}
             {% set material_clase = 'vinilo' %}
             {% if producto %}
-                {% set nombre_prod = producto.nombre.lower() %}
-                {% if 'cartulina' in nombre_prod or 'cartón' in nombre_prod %}
-                    {% set material_clase = 'cartulina' %}
-                {% elif 'lona' in nombre_prod %}
-                    {% set material_clase = 'lona' %}
-                {% elif 'metal' in nombre_prod or 'aluminio' in nombre_prod %}
-                    {% set material_clase = 'metal' %}
-                {% elif 'plástico' in nombre_prod or 'plastico' in nombre_prod or 'pvc' in nombre_prod %}
-                    {% set material_clase = 'plastico' %}
-                {% elif 'papel' in nombre_prod %}
-                    {% set material_clase = 'papel' %}
-                {% endif %}
+                {% set n = producto.nombre.lower() %}
+                {% if 'cartulina' in n %}{% set material_clase = 'cartulina' %}
+                {% elif 'lona' in n %}{% set material_clase = 'lona' %}{% endif %}
             {% endif %}
 
-            <div class="tarjeta-linea" data-id="{{ archivo.id }}">
+            <div class="tarjeta-linea">
                 <div class="cabecera-linea">
                     <div class="icono-grande"><i class="fas {{ icono }}"></i></div>
-                    <div class="nombre-linea">{{ archivo.nombre_visible or 'Sin nombre' }}</div>
+                    <div style="flex:1;">
+                        <div class="nombre-linea">{{ archivo.nombre_visible or 'Sin nombre' }}</div>
+                        <div style="font-size:12px; color:#8e8e93; margin-top:2px;">
+                            {{ archivo.cantidad|int if archivo.cantidad else '?' }}
+                            {% if archivo.unidad == 'unidades' %}unidades{% else %}m²{% endif %}
+                            · {{ archivo.material or 'Sin material' }}
+                        </div>
+                    </div>
+                    <span class="badge-material {{ material_clase }}">{{ archivo.material or 'Sin material' }}</span>
                 </div>
-                <div class="cantidad-destacada">
-                    <div class="circulo-cantidad">{{ archivo.cantidad|int if archivo.cantidad else '?' }}</div>
-                    <span class="unidad-cantidad">{{ archivo.unidad or 'unidades' }}</span>
-                </div>
-                <span class="badge-material {{ material_clase }}">{{ archivo.material or 'Sin material' }}</span>
-                <div class="datos-tecnicos">
-                    {% if is_etiqueta %}
-                        <span class="item"><span class="label">Ancho:</span><span class="valor">{{ params.ancho }} cm</span></span>
-                        <span class="item"><span class="label">Alto:</span><span class="valor">{{ params.alto }} cm</span></span>
-                        <span class="item"><span class="label">Consumo:</span><span class="valor">{{ params.consumo|round(2) if params.consumo else '—' }} m</span></span>
-                    {% else %}
-                        <span class="item" style="color:#8e8e93;">Sin parámetros específicos</span>
-                    {% endif %}
-                </div>
-                <div class="indicador-stock">
+
+                <div class="indicador-stock" style="margin-top:6px;">
                     <span class="punto {{ stock_clase }}"></span> {{ stock_texto }}
                 </div>
-                <div class="acciones-linea">
-                    {% if order.column != 'entregados' and current_user.role in ['operario', 'admin', 'odalys'] %}
-                        <button class="btn-accion primary" onclick="marcarListo({{ archivo.id }})"><i class="fas fa-check"></i> Marcar listo</button>
-                    {% endif %}
-                    <button class="btn-accion btn-ver-mas" data-target="extra-{{ archivo.id }}">Ver más</button>
+
+                {% if is_etiqueta %}
+                <div class="detail-grid">
+                    <!-- Panel COMERCIAL -->
+                    <div class="panel panel-commercial">
+                        <h5>📄 Vista COMERCIAL (cliente)</h5>
+                        <div class="panel-rows">
+                            <div class="panel-row">
+                                <span class="lbl">Área solicitada</span>
+                                <span class="val">{{ params.area_m2|round(2) }} m²</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">Etiquetas que caben</span>
+                                <span class="val">{{ params.n_etiquetas or 0 }} ({{ params.filas or 0 }} × {{ params.columnas or 0 }})</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">Ancho útil</span>
+                                <span class="val">{{ params.ancho_util_usado|round(2) }} m</span>
+                            </div>
+                            <div class="panel-row highlight">
+                                <span class="lbl">Costo al cliente</span>
+                                <span class="val">${{ params.costo_estimado|round(2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel INTERNO -->
+                    <div class="panel panel-internal">
+                        <h5>📦 Vista INTERNA (negocio)</h5>
+                        <div class="panel-rows">
+                            <div class="panel-row">
+                                <span class="lbl">Ancho real del rollo</span>
+                                <span class="val">{{ params.ancho_real_usado|round(2) }} m</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">Largo etiquetas</span>
+                                <span class="val">{{ params.largo_etiquetas_m|round(2) }} m</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">+ Cut mark</span>
+                                <span class="val">+ {{ params.cut_largo_m|round(2) }} m</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">Gap efectivo (7 × var.)</span>
+                                <span class="val">{{ (params.largo_total_m - params.largo_etiquetas_m - params.largo_cut_m)|round(2) }} m</span>
+                            </div>                            
+                            <div class="panel-row">
+                                <span class="lbl">Largo total consumido</span>
+                                <span class="val">{{ params.largo_total_m|round(2) }} m</span>
+                            </div>
+                            <div class="panel-row highlight">
+                                <span class="lbl">Material consumido</span>
+                                <span class="val">{{ params.material_consumido_m2|round(2) }} m²</span>
+                            </div>
+                            <div class="panel-row sub">
+                                <span class="lbl">↳ Gaps ({{ params.n_paños or 1 }} × {{ params.gap_usado_cm }} cm)</span>
+                                <span class="val">+ {{ params.largo_gaps_m|round(2) if params.largo_gaps_m else '—' }} m</span>
+                            </div>                          
+                            <div class="panel-row">
+                                <span class="lbl">Merma operativa</span>
+                                <span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="panel-extra" id="extra-{{ archivo.id }}">
-                    {% if is_etiqueta %}
-                        <div class="fila"><span class="label">Costo estimado</span><span class="valor">${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span></div>
-                        <div class="fila"><span class="label">Metros completos</span><span class="valor">{{ params.metros_completos if params.metros_completos is not none else '—' }}</span></div>
-                        <div class="fila"><span class="label">Resto etiquetas</span><span class="valor">{{ params.resto_etiquetas if params.resto_etiquetas is not none else '—' }}</span></div>
-                        <div class="fila"><span class="label">Precio unitario</span><span class="valor">${{ params.precio|round(2) if params.precio else '—' }}</span></div>
-                        <div class="fila"><span class="label">Mesa</span><span class="valor">{{ 'Sí' if params.mesa else 'No' }}</span></div>
-                        <div class="fila"><span class="label">Girar 90°</span><span class="valor">{{ 'Sí' if params.girar else 'No' }}</span></div>
-                    {% else %}
-                        <div class="fila"><span class="label">Observación</span><span class="valor">Sin datos adicionales</span></div>
-                    {% endif %}
-                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>
@@ -625,67 +329,21 @@
 </div>
 
 <script>
-    // ============================================================
-    //  LOCALSTORAGE – panel de detalles generales
-    // ============================================================
     (function() {
         const toggleBtn = document.getElementById('toggleDetalleB');
         const panel = document.getElementById('panelDetalleB');
         if (!toggleBtn || !panel) return;
-
-        // Restaurar estado
         const isOpen = localStorage.getItem('detalle_panel_general') === 'true';
         if (isOpen) {
             panel.classList.add('visible');
             toggleBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Ocultar detalles';
         }
-
         toggleBtn.addEventListener('click', function() {
             panel.classList.toggle('visible');
-            const ahoraVisible = panel.classList.contains('visible');
-            this.innerHTML = ahoraVisible ?
-                '<i class="fas fa-chevron-up"></i> Ocultar detalles' :
-                '<i class="fas fa-chevron-down"></i> Ver más detalles';
-            localStorage.setItem('detalle_panel_general', ahoraVisible);
+            const v = panel.classList.contains('visible');
+            this.innerHTML = v ? '<i class="fas fa-chevron-up"></i> Ocultar detalles' : '<i class="fas fa-chevron-down"></i> Ver más detalles';
+            localStorage.setItem('detalle_panel_general', v);
         });
     })();
-
-    // ============================================================
-    //  LOCALSTORAGE – paneles extra de cada tarjeta
-    // ============================================================
-    document.querySelectorAll('.tarjeta-linea .btn-ver-mas').forEach(btn => {
-        const targetId = btn.dataset.target;
-        const panel = document.getElementById(targetId);
-        if (!panel) return;
-
-        // Restaurar estado
-        const isOpen = localStorage.getItem('panel_extra_' + targetId) === 'true';
-        if (isOpen) {
-            panel.classList.add('visible');
-            btn.textContent = 'Ocultar';
-        }
-
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            panel.classList.toggle('visible');
-            const ahoraVisible = panel.classList.contains('visible');
-            this.textContent = ahoraVisible ? 'Ocultar' : 'Ver más';
-            localStorage.setItem('panel_extra_' + targetId, ahoraVisible);
-        });
-    });
-
-    // ============================================================
-    //  FUNCIÓN PARA "MARCAR LISTO" (simulada)
-    // ============================================================
-    function marcarListo(archivoId) {
-        // En una implementación real, se llamaría a una API para mover la línea o la orden.
-        // Por ahora, mostramos un mensaje y redirigimos al workflow.
-        if (confirm('¿Marcar esta línea como lista? Esto moverá la orden a la siguiente columna.')) {
-            // Redirigir al workflow o llamar a un endpoint.
-            // Ejemplo: window.location.href = '/workflow/mover/' + orderId;
-            alert('Función en desarrollo. Por ahora, ve al tablero Kanban para mover la orden.');
-            // window.location.href = "{{ url_for('workflow.board') }}";
-        }
-    }
 </script>
 {% endblock %}

@@ -7,104 +7,102 @@
 {% block extra_css %}
 <style>
     .form-container { max-width: 800px; margin: 0 auto; }
-    .form-section {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 28px 32px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
-        border: 1px solid rgba(0,0,0,0.04);
-    }
-    .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 20px;
-        color: #1c1c1e;
-        border-bottom: 2px solid #f0ece8;
-        padding-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
+    .form-section { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 28px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
+    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: #1c1c1e; border-bottom: 2px solid #f0ece8; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
     .form-section h4 i { color: #a8854f; font-size: 22px; }
     .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     .form-group { margin-bottom: 16px; }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
-        font-family: 'Inter', sans-serif;
-    }
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 12px 16px;
-        border: 1.5px solid #e0dcd8;
-        border-radius: 10px;
-        font-size: 16px;
-        background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-        -webkit-appearance: none;
-        appearance: none;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        outline: none;
-        border-color: #a8854f;
-        background: white;
-        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
-    }
+    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; font-family: 'Inter', sans-serif; }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #e0dcd8; border-radius: 10px; font-size: 16px; background: #fafaf9; transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Inter', sans-serif; color: #1c1c1e; -webkit-appearance: none; appearance: none; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #a8854f; background: white; box-shadow: 0 0 0 4px rgba(168,133,79,0.08); }
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
-    .form-group input[readonly] {
-        background: #f0ece8;
-        cursor: not-allowed;
-        color: #6b7280;
+    .form-group input[readonly] { background: #f0ece8; cursor: not-allowed; color: #6b7280; }
+
+    /* ===== SELECT DE CATEGORÍA — estilo mejorado con jerarquía ===== */
+    .categoria-select-wrap { position: relative; }
+    .categoria-select-wrap::after {
+        content: '';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0;
+        height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #8e8e93;
+        pointer-events: none;
     }
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 24px;
-        padding-top: 16px;
-        border-top: 1px solid #f0ece8;
-    }
-    .btn {
-        padding: 10px 28px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
+    .categoria-select-wrap select {
+        padding-right: 42px;
+        font-weight: 500;
+        background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+        border: 1.5px solid #e0dcd8;
         cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        text-decoration: none;
-        font-size: 14px;
-        font-family: 'Inter', sans-serif;
     }
-    .btn-success {
-        background: #10b981;
-        color: white;
+    .categoria-select-wrap select:hover {
+        border-color: #c9b48a;
     }
-    .btn-success:hover {
-        background: #059669;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(16,185,129,0.2);
+    .categoria-select-wrap select:focus {
+        border-color: #a8854f;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+        background: white;
     }
-    .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
+    /* Opciones: en navegadores compatibles aplicamos niveles visuales */
+    .categoria-select-wrap select option[data-level="0"] {
+        font-weight: 700;
         color: #1c1c1e;
+        background: #f8f6f4;
+        padding: 6px 0;
     }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
+    .categoria-select-wrap select option[data-level="1"] {
+        font-weight: 500;
+        color: #444;
     }
+    .categoria-select-wrap select option[data-level="2"] {
+        font-weight: 400;
+        color: #555;
+    }
+    .categoria-select-wrap select option[data-level="3"] {
+        font-weight: 400;
+        color: #666;
+    }
+
+    /* Chip de jerarquía dentro del select */
+    .categoria-breadcrumb {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        margin-top: 6px;
+        font-size: 11px;
+        color: #8e8e93;
+        min-height: 16px;
+    }
+    .categoria-breadcrumb .crumb {
+        background: #f5f2ef;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-weight: 500;
+        color: #555;
+    }
+    .categoria-breadcrumb .crumb-root {
+        background: #fef3c7;
+        color: #78350f;
+        font-weight: 600;
+    }
+    .categoria-breadcrumb .crumb-sep {
+        color: #c9b48a;
+        font-weight: 600;
+    }
+
+    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0ece8; }
+    .btn { padding: 10px 28px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-family: 'Inter', sans-serif; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(16,185,129,0.2); }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
     .campos-extra { margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid #f0ece8; display: none; }
     .campos-extra.visible { display: block; }
     .campos-extra h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
@@ -112,51 +110,27 @@
     .campos-rollo.visible { display: block; }
     .campos-rollo h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
     .legacy-hidden { display: none; }
-    .material-impresion-group {
-        margin-top: 16px;
-        padding: 16px;
-        background: rgba(16,185,129,0.04);
-        border-radius: 12px;
-        border: 1px solid rgba(16,185,129,0.1);
-        display: none;
-    }
+    .material-impresion-group { margin-top: 16px; padding: 16px; background: rgba(16,185,129,0.04); border-radius: 12px; border: 1px solid rgba(16,185,129,0.1); display: none; }
     .material-impresion-group.visible { display: block; }
-    .material-impresion-group label {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        color: #10b981;
-    }
-    .material-impresion-group small {
-        color: #8e8e93;
-        font-size: 12px;
-        margin-top: 4px;
-        display: block;
-    }
+    .material-impresion-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #10b981; }
+    .material-impresion-group small { color: #8e8e93; font-size: 12px; margin-top: 4px; display: block; }
+    .info-box { background: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #0c4a6e; margin-bottom: 12px; }
+    .info-box i { color: #0ea5e9; margin-right: 6px; }
+    .grupo-info { background: #ede9fe; border-left: 4px solid #8b5cf6; padding: 8px 12px; border-radius: 8px; font-size: 12px; color: #4c1d95; margin-bottom: 12px; display: none; }
+    .grupo-info.visible { display: block; }
+    .grupo-info i { color: #8b5cf6; margin-right: 6px; }
 
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; }
         .form-section { padding: 20px; }
         .btn-group { flex-direction: column; }
-        .btn { 
-            justify-content: center;
-            padding: 14px 20px;
-            font-size: 16px;
-        }
-        .form-group input, .form-group select, .form-group textarea {
-            padding: 14px 16px;
-            font-size: 16px;
-        }
+        .btn { justify-content: center; padding: 14px 20px; font-size: 16px; }
+        .form-group input, .form-group select, .form-group textarea { padding: 14px 16px; font-size: 16px; }
     }
     @media (max-width: 480px) {
         .form-section { padding: 16px; }
         .btn { padding: 12px 16px; font-size: 15px; }
-        .form-group input, .form-group select, .form-group textarea {
-            padding: 12px 14px;
-            font-size: 16px;
-        }
+        .form-group input, .form-group select, .form-group textarea { padding: 12px 14px; font-size: 16px; }
     }
 </style>
 {% endblock %}
@@ -166,7 +140,6 @@
     <div class="form-section">
         <h4><i class="fas fa-box"></i> {{ 'Editar producto' if producto else 'Nuevo producto' }}</h4>
         <form method="POST" id="productoForm">
-            <!-- Datos básicos -->
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Nombre *</label>
@@ -174,18 +147,23 @@
                 </div>
                 <div class="form-group">
                     <label>Categoría *</label>
-                    <select name="categoria_id" id="categoria_id" required>
-                        <option value="">-- Seleccionar --</option>
-                        {% for cat in categoria_options %}
-                        <option value="{{ cat.id }}" {% if producto and producto.categoria_id == cat.id %}selected{% endif %}>
-                            {{ cat.nombre }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="categoria-select-wrap">
+                        <select name="categoria_id" id="categoria_id" required>
+                            <option value="">— Seleccionar —</option>
+                            {% for cat in categoria_options %}
+                            <option value="{{ cat.id }}"
+                                    data-level="{{ cat.nivel }}"
+                                    data-nombre-puro="{{ cat.nombre_puro }}"
+                                    {% if producto and producto.categoria_id == cat.id %}selected{% endif %}>
+                                {{ cat.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="categoria-breadcrumb" id="categoriaBreadcrumb"></div>
                 </div>
             </div>
 
-            <!-- Campos legacy (ocultos) -->
             <div class="legacy-hidden">
                 <div class="form-grid-2">
                     <div class="form-group">
@@ -244,31 +222,37 @@
                 </div>
             </div>
 
-            <!-- ATRIBUTOS DINÁMICOS -->
             <div id="atributos_dinamicos" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0ece8;"></div>
+            <div class="grupo-info" id="grupoInfo"></div>
 
-            <!-- CAMPOS DE ROLLO (con ancho útil y merma) -->
+            <!-- CAMPOS DE ROLLO -->
             <div class="campos-rollo" id="campos_rollo">
                 <h5>📐 Datos del rollo</h5>
+
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    El <strong>ancho real</strong> es el ancho físico del rollo. El <strong>gap entre paños</strong> es la separación que deja la máquina al imprimir (afecta al cálculo de merma).
+                </div>
+
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>Ancho real (m)</label>
-                        <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.37">
-                        <small>Ancho físico del rollo (solo informativo).</small>
+                        <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.34">
+                        <small>Ancho físico del rollo (default 1.34, rango real 1.342–1.347).</small>
                     </div>
-                </div>
-                <div class="form-grid-2">
                     <div class="form-group">
                         <label>Largo de rollo (m) *</label>
                         <input type="number" step="0.01" min="0" name="largo_rollo" id="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50" required>
                         <small>Se usa para calcular el stock en metros y el consumo en órdenes.</small>
                     </div>
-                    <div class="form-group">
-                        <label>Merma estimada (%)</label>
-                        <input type="number" step="0.1" min="0" max="100" name="merma_porcentaje" id="merma_porcentaje" value="{{ producto.merma_porcentaje if producto else 0 }}" placeholder="Ej. 5">
-                        <small>Porcentaje de material extra a reservar (sobre el consumo base).</small>
-                    </div>
                 </div>
+
+                <div class="form-group">
+                    <label>Separación entre paños (cm)</label>
+                    <input type="number" step="0.1" min="0" name="gap_panno_cm" id="gap_panno_cm" value="{{ producto.gap_panno_cm if producto else 6.5 }}" placeholder="Ej. 6.5">
+                    <small>Distancia entre paños que deja la máquina. Valor por defecto <strong>6.5 cm</strong>. Ajusta según tu máquina.</small>
+                </div>
+
                 <div class="form-group">
                     <label>Fecha de vencimiento</label>
                     <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
@@ -312,7 +296,25 @@
 
 <script>
     // =============================================
-    // 1. CARGAR ATRIBUTOS DINÁMICOS SEGÚN CATEGORÍA
+    // BREADCRUMB DE CATEGORÍA SELECCIONADA
+    // =============================================
+    function actualizarBreadcrumb() {
+        const select = document.getElementById('categoria_id');
+        const breadcrumb = document.getElementById('categoriaBreadcrumb');
+        const opt = select.options[select.selectedIndex];
+        if (!opt || !opt.value) {
+            breadcrumb.innerHTML = '';
+            return;
+        }
+        const level = parseInt(opt.dataset.level || '0');
+        const nombre = opt.dataset.nombrePuro || opt.text;
+        const crumbs = [];
+        crumbs.push(`<span class="crumb ${level === 0 ? 'crumb-root' : ''}">${nombre}</span>`);
+        breadcrumb.innerHTML = crumbs.join('');
+    }
+
+    // =============================================
+    // CARGAR ATRIBUTOS DINÁMICOS SEGÚN CATEGORÍA
     // =============================================
     function cargarAtributos() {
         const catId = document.getElementById('categoria_id').value;
@@ -320,21 +322,30 @@
         const camposRollo = document.getElementById('campos_rollo');
         const stockMetrosGroup = document.getElementById('stock_metros_group');
         const materialGroup = document.getElementById('material_impresion_group');
+        const grupoInfo = document.getElementById('grupoInfo');
 
         container.innerHTML = '';
         camposRollo.classList.remove('visible');
         stockMetrosGroup.style.display = 'none';
         materialGroup.classList.remove('visible');
+        grupoInfo.classList.remove('visible');
+        grupoInfo.innerHTML = '';
 
-        if (!catId) {
-            return;
-        }
+        if (!catId) return;
 
         fetch(`/inventario/api/atributos-por-categoria/${catId}`)
             .then(response => response.json())
             .then(data => {
                 const atributos = data.atributos || [];
                 const esMaterialImpresion = data.es_material_impresion || false;
+                const grupoOrigen = data.grupo_origen;
+                const grupoCategoria = data.grupo_categoria;
+
+                // Aviso de herencia: si el grupo viene de una categoría ancestro
+                if (grupoOrigen && grupoCategoria) {
+                    grupoInfo.innerHTML = `<i class="fas fa-info-circle"></i> Los atributos provienen del grupo <strong>"${grupoOrigen}"</strong> heredado de la categoría <strong>${grupoCategoria}</strong>.`;
+                    grupoInfo.classList.add('visible');
+                }
 
                 if (esMaterialImpresion) {
                     stockMetrosGroup.style.display = 'block';
@@ -348,7 +359,7 @@
                 const atributosFiltrados = atributos.filter(a => a.nombre !== 'ancho' && a.nombre !== 'largo');
 
                 if (atributosFiltrados.length === 0) {
-                    container.innerHTML = '<p class="text-muted">No hay atributos adicionales definidos para esta categoría.</p>';
+                    container.innerHTML = '';
                 } else {
                     let html = '<h5 class="serif" style="font-size:16px; margin-bottom:12px;">Atributos personalizados</h5>';
                     atributosFiltrados.forEach(attr => {
@@ -397,17 +408,12 @@
             });
     }
 
-    // =============================================
-    // 2. CALCULAR STOCK EN METROS AUTOMÁTICAMENTE
-    // =============================================
     function calcularMetros() {
         const stock = parseFloat(document.getElementById('stock_unidades').value) || 0;
         const largo = parseFloat(document.getElementById('largo_rollo').value) || 0;
         const metros = stock * largo;
         const campoMetros = document.getElementById('stock_metros');
-        if (campoMetros) {
-            campoMetros.value = metros.toFixed(2);
-        }
+        if (campoMetros) campoMetros.value = metros.toFixed(2);
         document.getElementById('stock_mostrar').textContent = stock;
         document.getElementById('largo_mostrar').textContent = largo;
         document.getElementById('calculo_metros').textContent = metros.toFixed(2);
@@ -426,11 +432,17 @@
         }
 
         const catSelect = document.getElementById('categoria_id');
+        if (catSelect) {
+            catSelect.addEventListener('change', function() {
+                actualizarBreadcrumb();
+                cargarAtributos();
+            });
+        }
+
+        // Estado inicial
+        actualizarBreadcrumb();
         if (catSelect && catSelect.value) {
             cargarAtributos();
-        }
-        if (catSelect) {
-            catSelect.addEventListener('change', cargarAtributos);
         }
 
         calcularMetros();

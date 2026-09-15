@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+
+{% block title %}Merma por Orden · Inventario{% endblock %}
+{% block page_title %}📋 Merma por Orden{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
+    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
+    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
+    .btn-warning { background:#f59e0b; color:white; }
+    .btn-warning:hover { background:#d97706; }
+    .btn-sm { padding:4px 12px; font-size:12px; }
+
+    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
+    .card h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:12px; color:#1c1c1e; }
+
+    .filters-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; background:rgba(255,255,255,0.6); border-radius:12px; border:1px solid rgba(0,0,0,0.04); margin-bottom:18px; }
+    .filters-bar .filter-group { display:flex; flex-direction:column; gap:4px; }
+    .filters-bar label { font-size:11px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:0.5px; }
+    .filters-bar select, .filters-bar input { padding:6px 12px; border:1px solid #d2d2d7; border-radius:8px; font-size:13px; background:white; min-width:160px; }
+
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card { background:white; border-radius:14px; padding:14px 18px; border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02); }
+    .kpi-card .value { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:#1c1c1e; }
+    .kpi-card .label { font-size:11px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
+    .kpi-card.rojo { border-top-color:#dc2626; }
+    .kpi-card.rojo .value { color:#dc2626; }
+    .kpi-card.verde { border-top-color:#10b981; }
+    .kpi-card.verde .value { color:#10b981; }
+
+    .orden-card { background:white; border-radius:14px; border:1px solid #f0ece8; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
+    .orden-card .orden-header { background:linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%); padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer; }
+    .orden-card .orden-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#1c1c1e; }
+    .orden-card .orden-title a { color:#3b82f6; text-decoration:none; }
+    .orden-card .orden-title a:hover { text-decoration:underline; }
+    .orden-card .orden-meta { font-size:13px; color:#666; margin-top:2px; }
+    .orden-card .orden-total { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
+    .orden-card .merma-tag { background:#fde8e5; color:#991b1b; padding:4px 12px; border-radius:30px; font-weight:700; font-size:13px; }
+    .orden-card .pct-tag { background:#fef3c7; color:#78350f; padding:4px 12px; border-radius:30px; font-weight:700; font-size:13px; }
+    .orden-card .orden-body { padding:16px 20px; display:none; border-top:1px solid #f0ece8; }
+    .orden-card.open .orden-body { display:block; }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
+    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; background:#fafaf9; }
+    td { padding:8px 10px; border-bottom:1px solid #f5f2ef; }
+    .num { font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .merma-pos { color:#dc2626; font-weight:600; }
+    .paños-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+    .paños-table th { background:#fafaf9; font-size:10px; padding:6px 8px; }
+    .paños-table td { padding:6px 8px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+    <div>
+        <p style="color:#8e8e93; margin:0;">Vista detallada de merma operativa agrupada por orden</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-clipboard-check"></i> Conteos</a>
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+</div>
+
+<div class="card">
+    <form method="GET" class="filters-bar">
+        <div class="filter-group">
+            <label>Fecha inicio</label>
+            <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="filter-group">
+            <label>Fecha fin</label>
+            <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
+        </div>
+        <div class="filter-group">
+            <label>Nº Orden</label>
+            <input type="text" name="order_num" value="{{ order_num }}" placeholder="Ej. S03055">
+        </div>
+        <div class="filter-group">
+            <label>Producto</label>
+            <select name="producto_id">
+                <option value="">Todos</option>
+                {% for p in productos %}
+                    <option value="{{ p.id }}" {% if producto_seleccionado == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
+        <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline"><i class="fas fa-undo"></i> Limpiar</a>
+    </form>
+</div>
+
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="value">{{ ordenes|length }}</div>
+        <div class="label">Órdenes con merma</div>
+    </div>
+    <div class="kpi-card verde">
+        <div class="value">{{ total_area }} m²</div>
+        <div class="label">Área facturada total</div>
+    </div>
+    <div class="kpi-card">
+        <div class="value">{{ total_material }} m²</div>
+        <div class="label">Material consumido</div>
+    </div>
+    <div class="kpi-card rojo">
+        <div class="value">{{ total_merma }} m²</div>
+        <div class="label">Merma operativa ({{ pct_global }}%)</div>
+    </div>
+</div>
+
+{% if ordenes %}
+    {% for o in ordenes %}
+    <div class="orden-card">
+        <div class="orden-header" onclick="this.parentElement.classList.toggle('open')">
+            <div>
+                <div class="orden-title">
+                    Orden
+                    <a href="{{ url_for('ordenes.detalle_order', order_id=o.orden_id) }}" target="_blank" onclick="event.stopPropagation()">
+                        {{ o.orden_num }}
+                    </a>
+                </div>
+                <div class="orden-meta">
+                    {{ o.cliente }} · {{ o.fecha.strftime('%d/%m/%Y') if o.fecha else '—' }}
+                    · {{ o.lineas|length }} línea{{ 's' if o.lineas|length != 1 else '' }}
+                </div>
+            </div>
+            <div class="orden-total">
+                <span class="merma-tag">Merma: {{ "%.2f"|format(o.total_merma_m2) }} m²</span>
+                <span class="pct-tag">
+                    {{ "%.1f"|format((o.total_merma_m2 / o.total_area_m2 * 100) if o.total_area_m2 > 0 else 0) }}%
+                </span>
+                <i class="fas fa-chevron-down" style="color:#8e8e93;"></i>
+            </div>
+        </div>
+        <div class="orden-body">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Línea</th>
+                        <th>Producto</th>
+                        <th>Etiqueta</th>
+                        <th>Área</th>
+                        <th>Material</th>
+                        <th>Merma</th>
+                        <th>%</th>
+                        <th>Detalle</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for l in o.lineas %}
+                    <tr>
+                        <td>{{ l.nombre }}</td>
+                        <td>{{ l.producto }}</td>
+                        <td class="num">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</td>
+                        <td class="num">{{ "%.2f"|format(l.area_m2) }} m²</td>
+                        <td class="num">{{ "%.2f"|format(l.material_m2) }} m²</td>
+                        <td class="num merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
+                        <td class="num">{{ "%.1f"|format(l.merma_pct) }}%</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
+                                {{ l.n_paños }} paño{{ 's' if l.n_paños != 1 else '' }}
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="paños-row" style="display:none;">
+                        <td colspan="8" style="background:#fafaf9;">
+                            {% if l.desglose_paños %}
+                            <table class="paños-table">
+                                <thead>
+                                    <tr>
+                                        <th>Paño</th>
+                                        <th>Área</th>
+                                        <th>Filas</th>
+                                        <th>Largo etiquetas</th>
+                                        <th>Aire</th>
+                                        <th>Gap original</th>
+                                        <th>Gap efectivo</th>
+                                        <th>Cut</th>
+                                        <th>Largo avance</th>
+                                        <th>Material</th>
+                                        <th>Sobrante</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for p in l.desglose_paños %}
+                                    <tr>
+                                        <td class="num">#{{ p.n }}</td>
+                                        <td class="num">{{ "%.2f"|format(p.area_m2 or p.area or 0) }} m²</td>
+                                        <td class="num">{{ p.filas }}</td>
+                                        <td class="num">{{ "%.3f"|format(p.largo_etiquetas_m or 0) }} m</td>
+                                        <td class="num">{{ p.aire_total_mm or p.aire_mm or 0 }} mm</td>
+                                        <td class="num">{{ p.gap_original_mm or (l.gap_usado_cm * 10) }} mm</td>
+                                        <td class="num" style="color:{% if (p.gap_efectivo_mm or 0) < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};font-weight:600;">
+                                            {{ p.gap_efectivo_mm }} mm
+                                        </td>
+                                        <td class="num">{{ p.cut_mm or 40 }} mm</td>
+                                        <td class="num">{{ "%.3f"|format(p.largo_avance_m or 0) }} m</td>
+                                        <td class="num">{{ "%.4f"|format(p.material_paño_m2 or 0) }} m²</td>
+                                        <td class="num" style="color:{% if (p.sobrante_salida_mm or 0) > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
+                                            {{ p.sobrante_salida_mm or p.sobrante_mm or 0 }} mm
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                            {% else %}
+                            <em style="color:#8e8e93; font-size:12px;">Sin desglose detallado (orden anterior a la implementación).</em>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+<div class="card" style="text-align:center; padding:40px;">
+    <p style="color:#8e8e93; font-size:16px;">No hay órdenes con merma operativa en este período.</p>
+</div>
+{% endif %}
+
+<script>
+    function togglePaños(btn) {
+        const row = btn.closest('tr').nextElementSibling;
+        if (row && row.classList.contains('paños-row')) {
+            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        }
+    }
+</script>
+{% endblock %}

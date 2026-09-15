@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}Conteos Semanales · Inventario{% endblock %}
+{% block page_title %}📅 Conteos Semanales{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
+    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
+    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
+    .btn-success { background:#10b981; color:white; }
+    .btn-success:hover { background:#059669; }
+    .btn-warning { background:#f59e0b; color:white; }
+    .btn-warning:hover { background:#d97706; }
+    .btn-danger { background:#dc2626; color:white; }
+    .btn-danger:hover { background:#b91c1c; }
+    .btn-sm { padding:4px 12px; font-size:12px; }
+    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card { background:white; border-radius:14px; padding:14px 18px; border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02); }
+    .kpi-card .value { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:#1c1c1e; }
+    .kpi-card .label { font-size:12px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
+    .kpi-card.rojo { border-top-color:#dc2626; }
+    .kpi-card.rojo .value { color:#dc2626; }
+    .kpi-card.verde { border-top-color:#10b981; }
+    .kpi-card.verde .value { color:#10b981; }
+
+    .filters-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; background:rgba(255,255,255,0.6); border-radius:12px; border:1px solid rgba(0,0,0,0.04); margin-bottom:18px; }
+    .filters-bar .filter-group { display:flex; flex-direction:column; gap:4px; }
+    .filters-bar label { font-size:11px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:0.5px; }
+    .filters-bar select, .filters-bar input { padding:6px 12px; border:1px solid #d2d2d7; border-radius:8px; font-size:13px; background:white; min-width:160px; }
+
+    .semana-card { background:white; border-radius:14px; padding:16px 20px; border:1px solid #f0ece8; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
+    .semana-card .semana-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+    .semana-card .semana-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:#1c1c1e; }
+    .semana-card .semana-stats { display:flex; gap:20px; flex-wrap:wrap; font-size:13px; }
+    .semana-card .semana-stats .item { display:flex; flex-direction:column; }
+    .semana-card .semana-stats .item .lbl { color:#8e8e93; font-size:11px; text-transform:uppercase; font-weight:600; }
+    .semana-card .semana-stats .item .val { font-weight:700; color:#1c1c1e; font-size:15px; }
+    .semana-card .semana-stats .item .val.rojo { color:#dc2626; }
+    .semana-card .semana-stats .item .val.verde { color:#10b981; }
+
+    table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
+    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; }
+    td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
+    .merma-pos { color:#dc2626; font-weight:600; }
+    .merma-neg { color:#10b981; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+    <div>
+        <p style="color:#8e8e93; margin:0;">Conteo semanal del económico · merma imprevista</p>
+    </div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo conteo</a>
+        <a href="{{ url_for('inventario.reporte_conteos') }}" class="btn btn-warning"><i class="fas fa-chart-line"></i> Reporte</a>
+        <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline"><i class="fas fa-list-alt"></i> Merma por orden</a>
+        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+    </div>
+</div>
+
+<div class="card">
+    <form method="GET" class="filters-bar">
+        <div class="filter-group">
+            <label>Semana</label>
+            <select name="semana" onchange="this.form.submit()">
+                <option value="">Todas</option>
+                {% for s in semanas_lista %}
+                    <option value="{{ s.semana }}" {% if semana_seleccionada == s.semana %}selected{% endif %}>{{ s.semana }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label>Producto</label>
+            <select name="producto_id" onchange="this.form.submit()">
+                <option value="">Todos</option>
+                {% for p in productos %}
+                    <option value="{{ p.id }}" {% if producto_seleccionado == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-undo"></i> Limpiar</a>
+    </form>
+</div>
+
+{% if semanas_lista %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="value">{{ semanas_lista|length }}</div>
+        <div class="label">Semanas registradas</div>
+    </div>
+    <div class="kpi-card">
+        <div class="value">{{ conteos|length }}</div>
+        <div class="label">Conteos totales</div>
+    </div>
+    <div class="kpi-card verde">
+        <div class="value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_operativa_m2')) }} m²</div>
+        <div class="label">Merma operativa</div>
+    </div>
+    <div class="kpi-card rojo">
+        <div class="value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_imprevista_m2')) }} m²</div>
+        <div class="label">Merma imprevista</div>
+    </div>
+</div>
+{% endif %}
+
+{% for s in semanas_lista %}
+<div class="semana-card">
+    <div class="semana-header">
+        <div class="semana-title">📅 {{ s.semana }}</div>
+        <div class="semana-stats">
+            <div class="item">
+                <span class="lbl">Conteos</span>
+                <span class="val">{{ s.total_conteos }}</span>
+            </div>
+            <div class="item">
+                <span class="lbl">Merma operativa</span>
+                <span class="val verde">{{ "%.2f"|format(s.total_merma_operativa_m2) }} m²</span>
+            </div>
+            <div class="item">
+                <span class="lbl">Merma imprevista</span>
+                <span class="val rojo">{{ "%.2f"|format(s.total_merma_imprevista_m2) }} m²</span>
+            </div>
+        </div>
+        <a href="{{ url_for('inventario.reporte_conteos', semana=s.semana) }}" class="btn btn-sm btn-warning">
+            <i class="fas fa-chart-line"></i> Ver reporte
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="card" style="text-align:center; padding:40px;">
+    <p style="color:#8e8e93; font-size:16px;">No hay conteos registrados aún.</p>
+    <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success" style="margin-top:12px;">
+        <i class="fas fa-plus"></i> Registrar primer conteo
+    </a>
+</div>
+{% endfor %}
+{% endblock %}

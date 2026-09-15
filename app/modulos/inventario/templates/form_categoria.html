@@ -65,6 +65,32 @@
         height:18px;
         accent-color:#a8854f;
     }
+
+    /* ===== Select estilizado con jerarquía ===== */
+    .parent-select-wrap { position: relative; }
+    .parent-select-wrap::after {
+        content: '';
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0; height: 0;
+        border-left: 5px solid transparent;
+        border-right: 5px solid transparent;
+        border-top: 6px solid #8e8e93;
+        pointer-events: none;
+    }
+    .parent-select-wrap select {
+        padding-right: 42px;
+        background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
+        cursor: pointer;
+        font-weight: 500;
+    }
+    .parent-select-wrap select:hover { border-color: #c9b48a; }
+    .parent-select-wrap select option[data-level="0"] { font-weight: 700; color: #1c1c1e; background: #f8f6f4; }
+    .parent-select-wrap select option[data-level="1"] { font-weight: 500; color: #444; }
+    .parent-select-wrap select option[data-level="2"] { font-weight: 400; color: #555; }
+
     .btn-group {
         display:flex;
         gap:12px;
@@ -126,18 +152,22 @@
             </div>
             <div class="form-group">
                 <label>Categoría padre (opcional)</label>
-                <select name="parent_id">
-                    <option value="">-- Ninguna (categoría raíz) --</option>
-                    {% for opt in categoria_options %}
-                        {# Excluir la categoría actual y sus descendientes para evitar ciclos #}
-                        {% if not categoria or (categoria and opt.id != categoria.id and not opt.id in categoria.get_descendant_ids()) %}
-                            <option value="{{ opt.id }}" {% if categoria and categoria.parent_id == opt.id %}selected{% endif %}>
-                                {{ opt.nombre }}
-                            </option>
-                        {% endif %}
-                    {% endfor %}
-                </select>
-                <small>Si seleccionas un padre, esta categoría será una subcategoría. <strong>Para crear jerarquías profundas, primero crea las categorías raíz y luego ve creando las subcategorías.</strong></small>
+                <div class="parent-select-wrap">
+                    <select name="parent_id">
+                        <option value="">— Ninguna (categoría raíz) —</option>
+                        {% for opt in categoria_options %}
+                            {# Excluir la categoría actual y sus descendientes para evitar ciclos #}
+                            {% if not categoria or (categoria and opt.id != categoria.id and opt.id not in categoria.get_descendant_ids()) %}
+                                <option value="{{ opt.id }}"
+                                        data-level="{{ opt.nivel }}"
+                                        {% if categoria and categoria.parent_id == opt.id %}selected{% endif %}>
+                                    {{ opt.nombre }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+                <small>Si seleccionas un padre, esta categoría será una subcategoría. <strong>Los atributos definidos en el padre también aplican a esta categoría.</strong></small>
             </div>
             <div class="form-group">
                 <label>Descripción</label>
