@@ -25,7 +25,6 @@ DEFAULT_APP_DIR="/opt/${APP_NAME}"
 REPO_URL="https://github.com/ditotravieso-01/traviesoprint.git"
 SERVICE_NAME="traviesoprint"
 
-# Rutas de certificados autofirmados
 SSL_CERT="/etc/ssl/certs/${APP_NAME}.crt"
 SSL_KEY="/etc/ssl/private/${APP_NAME}.key"
 
@@ -34,7 +33,7 @@ SSL_KEY="/etc/ssl/private/${APP_NAME}.key"
 # ============================================================
 echo -e "${GREEN}${BOLD}"
 echo "=================================================="
-echo "   TraviesoPrint - Instalación automática v1.3"
+echo "   TraviesoPrint - Instalación automática v1.4"
 echo "   Gestión para talleres de impresión"
 echo "=================================================="
 echo -e "${NC}"
@@ -67,11 +66,6 @@ case "${OS_ID}" in
     *) log_warn "SO no probado oficialmente (${OS_ID}). Continuando bajo tu responsabilidad." ;;
 esac
 
-case "${OS_VERSION}" in
-    22.04|24.04|24.10|25.04|25.10|26.04|26.06) ;;
-    *) log_warn "Versión ${OS_VERSION} no testeada. Los paquetes podrían variar." ;;
-esac
-
 # ============================================================
 # 3. Detectar si estamos dentro de un repo clonado
 # ============================================================
@@ -95,12 +89,9 @@ echo ""
 read -r -p "🌐 Dominio o IP pública [${DEFAULT_DOMAIN}]: " INPUT_DOMAIN
 DOMAIN="${INPUT_DOMAIN:-$DEFAULT_DOMAIN}"
 
-# ¿El dominio es una IP o un nombre?
 if [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    DOMAIN_IS_IP=true
     DEFAULT_HOSTNAME="traviesoprint"
 else
-    DOMAIN_IS_IP=false
     DEFAULT_HOSTNAME=$(echo "${DOMAIN}" | cut -d. -f1)
 fi
 
@@ -110,9 +101,6 @@ APP_USER="${INPUT_USER:-$APP_USER}"
 read -r -p "📂 Directorio de instalación [${APP_DIR}]: " INPUT_DIR
 APP_DIR="${INPUT_DIR:-$APP_DIR}"
 
-# ------------------------------------------------------------
-# Preguntar SIEMPRE por hostname (con default según el caso)
-# ------------------------------------------------------------
 echo ""
 log_info "Configuración del hostname del servidor"
 echo "   El hostname se usa internamente por el sistema y ayuda"
@@ -126,7 +114,6 @@ if [[ "${INPUT_HOSTNAME:-N}" =~ ^[sS]$ ]]; then
     read -r -p "   Nombre corto del hostname [${DEFAULT_HOSTNAME}]: " INPUT_SHORT
     SHORT_HOSTNAME="${INPUT_SHORT:-$DEFAULT_HOSTNAME}"
 
-    # Validación básica: solo letras, números, guiones
     if ! [[ "${SHORT_HOSTNAME}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
         log_error "Hostname inválido: '${SHORT_HOSTNAME}'. Solo letras, números y guiones."
         exit 1
@@ -148,7 +135,6 @@ echo "   • Directorio     : ${APP_DIR}"
 echo "   • HTTPS          : $( [ "${ENABLE_HTTPS}" = true ] && echo 'Sí (cert autofirmado, 1 año)' || echo 'No' )"
 if [ "${CHANGE_HOSTNAME}" = true ]; then
     echo "   • Hostname       : Sí → ${SHORT_HOSTNAME}"
-    echo "   • /etc/hosts     : Se añadirá '127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}'"
 else
     echo "   • Hostname       : No (se conserva el actual)"
 fi
@@ -170,31 +156,19 @@ if [ "${CHANGE_HOSTNAME}" = true ]; then
     else
         log_info "Configurando hostname: ${CURRENT_HOSTNAME} → ${SHORT_HOSTNAME}"
 
-        # Cambiar hostname (actualiza /etc/hostname y el running hostname)
         hostnamectl set-hostname "${SHORT_HOSTNAME}" 2>/dev/null || {
-            # Fallback si no existe systemd-hostnamed
             echo "${SHORT_HOSTNAME}" > /etc/hostname
             hostname "${SHORT_HOSTNAME}"
         }
 
-        # ------------------------------------------------------------
-        # Actualizar /etc/hosts
-        # ------------------------------------------------------------
-        # 1. Eliminar la línea 127.0.1.1 previa si existe
         if grep -q "^127.0.1.1" /etc/hosts; then
             sed -i '/^127\.0\.1\.1/d' /etc/hosts
         fi
-        # 2. Eliminar cualquier línea previa que mencione el dominio
         sed -i "\|[[:space:]]${DOMAIN}[[:space:]]|d" /etc/hosts 2>/dev/null || true
-        # 3. Añadir nueva entrada
         echo "127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}" >> /etc/hosts
 
         log_ok "Hostname configurado: ${SHORT_HOSTNAME}"
-        log_info "/etc/hosts actualizado:"
-        log_info "   127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}"
-        echo ""
-        log_info "Contenido actual de /etc/hosts:"
-        cat /etc/hosts | sed 's/^/   /'
+        log_info "/etc/hosts actualizado: 127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}"
     fi
 fi
 
@@ -245,7 +219,7 @@ fi
 usermod -aG www-data "${APP_USER}" || true
 
 # ============================================================
-# 8. Clonar o usar repositorio existente  (FIX: permisos /opt)
+# 8. Clonar o usar repositorio existente
 # ============================================================
 if [ "${IS_IN_REPO}" = true ]; then
     log_info "Usando repositorio existente en ${APP_DIR}"
@@ -266,23 +240,23 @@ else
     else
         log_info "Clonando repositorio en ${APP_DIR}..."
 
-        # Si el directorio existe y no está vacío, abortar
         if [ -e "${APP_DIR}" ] && [ -n "$(ls -A "${APP_DIR}" 2>/dev/null)" ]; then
             log_error "${APP_DIR} existe y no está vacío. Abortando."
             exit 1
         fi
 
-        # FIX: crear el directorio como root y pasar propiedad al usuario de la app
-        # Esto evita "Permission denied" al hacer git clone como usuario no-root
+        # Crear el directorio como root con GROUP=www-data para que Nginx
+        # pueda traversear la ruta y llegar al socket/estáticos.
         mkdir -p "${APP_DIR}"
-        chown "${APP_USER}:${APP_USER}" "${APP_DIR}"
+        chown "${APP_USER}:www-data" "${APP_DIR}"
         chmod 750 "${APP_DIR}"
 
         sudo -u "${APP_USER}" git clone "${REPO_URL}" "${APP_DIR}"
     fi
 fi
 
-chown -R "${APP_USER}:${APP_USER}" "${APP_DIR}"
+# Propiedad de todo el árbol: travieso:www-data (así Nginx puede leer estáticos)
+chown -R "${APP_USER}:www-data" "${APP_DIR}"
 chmod 750 "${APP_DIR}"
 
 log_ok "Código fuente listo en ${APP_DIR}"
@@ -292,13 +266,19 @@ log_ok "Código fuente listo en ${APP_DIR}"
 # ============================================================
 log_info "Creando directorios de trabajo..."
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/instance"
+sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/instance/backups"
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/logs"
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/app/static/uploads/ordenes"
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/app/static/uploads/tmp"
 
+# Directorios: travieso:www-data rwxr-x---
+chown -R "${APP_USER}:www-data" "${APP_DIR}/instance" "${APP_DIR}/logs" "${APP_DIR}/app/static/uploads"
 chmod 750 "${APP_DIR}/instance"
+chmod 750 "${APP_DIR}/instance/backups"
 chmod 750 "${APP_DIR}/logs"
 chmod 755 "${APP_DIR}/app/static/uploads"
+chmod 755 "${APP_DIR}/app/static/uploads/ordenes"
+chmod 755 "${APP_DIR}/app/static/uploads/tmp"
 
 log_ok "Directorios listos."
 
@@ -357,33 +337,106 @@ SERVER_NAME=${DOMAIN}
 PREFERRED_URL_SCHEME=${SCHEME}
 EOF
 "
-    chmod 640 "${ENV_FILE}"
     chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
+    chmod 600 "${ENV_FILE}"
     log_ok ".env generado en ${ENV_FILE}"
 fi
 
 # ============================================================
-# 12. Aplicar migraciones Alembic
+# 12. Preparar base de datos (schema + migraciones)
 # ============================================================
-log_info "Aplicando migraciones Alembic..."
-cd "${APP_DIR}"
+log_info "Preparando base de datos..."
 
-sudo -u "${APP_USER}" bash -c "
-    set -e
-    cd '${APP_DIR}'
-    export \$(grep -v '^#' .env | xargs -d '\n')
-    '${VENV_DIR}/bin/flask' db upgrade
-" || {
-    log_warn "flask db upgrade falló. Intentando db.create_all() como fallback..."
-    sudo -u "${APP_USER}" bash -c "
-        set -e
+DB_FILE="${APP_DIR}/instance/traviesoprint.db"
+
+# Contar tablas existentes (excluyendo internas de SQLite y alembic_version)
+TABLE_COUNT=0
+if [ -f "${DB_FILE}" ]; then
+    TABLE_COUNT=$(sudo -u "${APP_USER}" "${VENV_DIR}/bin/python" -c "
+import sqlite3
+try:
+    conn = sqlite3.connect('${DB_FILE}')
+    cur = conn.cursor()
+    cur.execute(\"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != 'alembic_version'\")
+    print(cur.fetchone()[0])
+    conn.close()
+except Exception:
+    print(0)
+" 2>/dev/null || echo "0")
+fi
+
+if [ "${TABLE_COUNT}" -gt 0 ]; then
+    # ---------- BD existente: aplicar migraciones pendientes ----------
+    log_info "BD existente con ${TABLE_COUNT} tablas. Aplicando migraciones..."
+
+    if sudo -u "${APP_USER}" bash -c "
         cd '${APP_DIR}'
-        export \$(grep -v '^#' .env | xargs -d '\n')
-        '${VENV_DIR}/bin/python' -c 'from app import create_app, db; app = create_app(); app.app_context().push(); db.create_all()'
-    " || log_error "No se pudo crear el esquema. Revisa los logs."
-}
+        set -a; source .env; set +a
+        '${VENV_DIR}/bin/flask' db upgrade
+    "; then
+        log_ok "Migraciones aplicadas correctamente."
+    else
+        log_error "flask db upgrade falló sobre una BD existente."
+        log_error "Esto suele pasar si el historial de migraciones quedó inconsistente."
+        log_error "Revisa: sudo -u ${APP_USER} bash -c 'cd ${APP_DIR} && source venv/bin/activate && flask db current'"
+        exit 1
+    fi
+else
+    # ---------- BD vacía: crear schema desde modelos + stamp ----------
+    log_info "BD vacía o inexistente. Creando schema desde modelos..."
 
-log_ok "Base de datos lista."
+    # Si existía un archivo pero sin tablas (corrupto), backup y borrar
+    if [ -f "${DB_FILE}" ]; then
+        BACKUP="${APP_DIR}/instance/backups/traviesoprint_preinstall_$(date +%Y%m%d_%H%M%S).db"
+        mv "${DB_FILE}" "${BACKUP}"
+        log_warn "BD previa sin tablas movida a: ${BACKUP}"
+    fi
+
+    # 1) Crear todas las tablas desde los modelos
+    if ! sudo -u "${APP_USER}" bash -c "
+        cd '${APP_DIR}'
+        set -a; source .env; set +a
+        '${VENV_DIR}/bin/python' -c '
+from app import create_app, db
+app = create_app()
+with app.app_context():
+    db.create_all()
+    print(\"Schema creado con db.create_all()\")
+'
+    "; then
+        log_error "db.create_all() falló. Revisa el traceback arriba."
+        exit 1
+    fi
+
+    # 2) Marcar TODAS las migraciones como aplicadas (sin ejecutarlas)
+    if ! sudo -u "${APP_USER}" bash -c "
+        cd '${APP_DIR}'
+        set -a; source .env; set +a
+        '${VENV_DIR}/bin/flask' db stamp head
+    "; then
+        log_error "flask db stamp head falló. Revisa el traceback arriba."
+        exit 1
+    fi
+
+    log_ok "Schema creado y migraciones marcadas como aplicadas."
+fi
+
+# Verificación final: la BD debe tener tablas
+FINAL_COUNT=$(sudo -u "${APP_USER}" "${VENV_DIR}/bin/python" -c "
+import sqlite3
+conn = sqlite3.connect('${DB_FILE}')
+cur = conn.cursor()
+cur.execute(\"SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'\")
+print(cur.fetchone()[0])
+conn.close()
+" 2>/dev/null || echo "0")
+
+if [ "${FINAL_COUNT}" -lt 1 ]; then
+    log_error "La BD no contiene tablas tras la preparación. Algo falló."
+    exit 1
+fi
+
+log_ok "Base de datos lista (${FINAL_COUNT} tablas)."
 
 # ============================================================
 # 13. Servicio systemd
@@ -404,13 +457,18 @@ User=${APP_USER}
 Group=www-data
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
+
+# Limpiar socket viejo antes de arrancar (por si quedó un archivo regular)
+ExecStartPre=/bin/rm -f ${SOCKET_FILE}
+
 ExecStart=${VENV_DIR}/bin/gunicorn \\
     --workers 3 \\
     --worker-class sync \\
     --bind unix:${SOCKET_FILE} \\
-    --access-logfile ${APP_DIR}/logs/access.log \\
-    --error-logfile ${APP_DIR}/logs/error.log \\
+    --access-logfile - \\
+    --error-logfile - \\
     --capture-output \\
+    --log-level info \\
     --timeout 120 \\
     'app:create_app()'
 
@@ -419,6 +477,10 @@ Restart=always
 RestartSec=3
 KillMode=mixed
 
+# El socket debe ser 660 para que www-data (Nginx) pueda leer/escribir
+UMask=0007
+
+# Seguridad básica
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
@@ -431,9 +493,8 @@ EOF
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service"
 
-touch "${SOCKET_FILE}"
-chown "${APP_USER}:www-data" "${SOCKET_FILE}"
-chmod 660 "${SOCKET_FILE}"
+# Eliminar cualquier socket viejo que pudiera existir como archivo regular
+rm -f "${SOCKET_FILE}"
 
 log_ok "Servicio systemd configurado."
 
@@ -444,9 +505,6 @@ if [ "${ENABLE_HTTPS}" = true ]; then
     log_info "Generando certificado SSL autofirmado (válido 1 año)..."
 
     SAN="DNS:${DOMAIN},DNS:localhost,IP:${SERVER_IP},IP:127.0.0.1"
-    if [ "${DOMAIN}" != "${SERVER_IP}" ]; then
-        SAN="DNS:${DOMAIN},DNS:localhost,IP:${SERVER_IP},IP:127.0.0.1"
-    fi
 
     mkdir -p "$(dirname "${SSL_CERT}")" "$(dirname "${SSL_KEY}")"
 
@@ -485,6 +543,9 @@ server {
 }
 
 # Servidor HTTPS (certificado autofirmado)
+# NOTA: se usa "listen ... http2" (sintaxis antigua) por compatibilidad
+# con Nginx 1.18–1.24 (Ubuntu 22.04 y 24.04). En Nginx 1.25+ emite un
+# warning de deprecación pero sigue funcionando.
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
@@ -501,7 +562,6 @@ server {
     ssl_session_tickets off;
 
     server_tokens off;
-
     client_max_body_size 50M;
 
     access_log /var/log/nginx/${APP_NAME}-access.log;
@@ -593,8 +653,11 @@ sleep 3
 if systemctl is-active --quiet "${SERVICE_NAME}.service"; then
     log_ok "Servicio activo."
 else
-    log_error "El servicio no arrancó. Revisa:"
-    echo "   sudo journalctl -u ${SERVICE_NAME}.service -n 100"
+    log_error "El servicio no arrancó. Últimas líneas del log:"
+    echo ""
+    journalctl -u "${SERVICE_NAME}.service" -n 30 --no-pager
+    echo ""
+    log_error "Revisa el traceback arriba."
     exit 1
 fi
 
