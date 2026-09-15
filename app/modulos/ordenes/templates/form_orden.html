@@ -719,7 +719,7 @@
                                             </div>
                                             <div class="calc-result-linea">
                                                 <div class="item">
-                                                    <span class="label">Etiquetas / m²</span>
+                                                    <span class="label">Etiquetas producidas</span>
                                                     <span class="value etiquetas_por_m2_display_edit">—</span>
                                                     <span class="hint filas_cols_display_edit">—</span>
                                                 </div>
@@ -1191,7 +1191,7 @@ function agregarLinea() {
                 </div>
                 <div class="calc-result-linea">
                     <div class="item">
-                        <span class="label">Etiquetas / m²</span>
+                        <span class="label">Etiquetas producidas</span>
                         <span class="value etiquetas_por_m2_display">—</span>
                         <span class="hint filas_cols_display">—</span>
                     </div>
@@ -1634,7 +1634,14 @@ function calcularLinea(paramsRow) {
             areaFacturadaReal += areaPaño;
 
             const largoNominalPaño = anchoUtilEfectivo > 0 ? areaPaño / anchoUtilEfectivo : 0;
-            let filasPaño = altoCellM > 0 ? Math.floor(largoNominalPaño / altoCellM) : 0;
+            // En el último paño (parcial), redondear hacia arriba porque el cliente
+            // ya está pagando ese paño. En paños completos, floor (caben exactas).
+            let filasPaño;
+            if (areaPaño < 1.0 - 0.001) {
+                filasPaño = altoCellM > 0 ? Math.ceil(largoNominalPaño / altoCellM) : 0;
+            } else {
+                filasPaño = altoCellM > 0 ? Math.floor(largoNominalPaño / altoCellM) : 0;
+            }
 
             if (esUnidades && filasMinimas !== null) {
                 const filasRestantesAntes = filasMinimas - filasTotales;

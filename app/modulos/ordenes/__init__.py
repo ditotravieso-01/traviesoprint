@@ -131,7 +131,12 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         area_facturada_real += area_paño
 
         largo_nominal_paño = area_paño / ancho_util if ancho_util > 0 else 0
-        filas_paño = int(largo_nominal_paño / alto_cell_m) if alto_cell_m > 0 else 0
+        # En el último paño (parcial), redondear hacia arriba porque el cliente
+        # ya está pagando ese paño. En paños completos, floor (caben exactas).
+        if area_paño < 1.0 - 0.001:
+            filas_paño = math.ceil(largo_nominal_paño / alto_cell_m) if alto_cell_m > 0 else 0
+        else:
+            filas_paño = int(largo_nominal_paño / alto_cell_m) if alto_cell_m > 0 else 0
 
         if modo == 'unidades':
             filas_restantes_antes = filas_minimas - filas_totales
