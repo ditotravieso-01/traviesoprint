@@ -895,8 +895,11 @@ function calcularTamañoOptimo(N, anchoImprimible, largoNominal, anchoReal, area
         const largoEtiquetas = r * altoCellMin;
         const largoTotal = largoEtiquetas + CUT_LARGO_M + gapM;
         const materialConsumido = anchoReal * largoTotal;
-        const mermaM2 = materialConsumido - areaFacturada;
-        const mermaPct = areaFacturada > 0 ? (mermaM2 / areaFacturada) * 100 : 0;
+        // NUEVA FÓRMULA: área útil del rollo vs área de etiquetas
+        const areaUtilRollo = anchoImprimible * largoTotal;
+        const areaEtiquetas = r * altoCellMin * c * anchoCellMax;
+        const mermaM2 = Math.max(0, areaUtilRollo - areaEtiquetas);
+        const mermaPct = areaUtilRollo > 0 ? (mermaM2 / areaUtilRollo) * 100 : 0;
         candidatos.push({
             ancho: anchoCm, alto: altoCmMin, cols: c, rows: r,
             mermaM2, mermaPct, area: anchoCm * altoCmMin, aspect
@@ -1563,6 +1566,11 @@ function calcularLinea(paramsRow) {
             ? (anchoCmNum / 100) + MARGEN_MESA_M
             : (altoCmNum / 100) + MARGEN_MESA_M;
 
+        // Ancho de cada celda (para calcular área real de etiquetas)
+        const anchoCellM = esRotado
+            ? (altoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0)
+            : (anchoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0);
+
         // ═══════════════════════════════════════════════════════════
         // MODO m² vs MODO UNIDADES
         // ═══════════════════════════════════════════════════════════
@@ -1628,7 +1636,6 @@ function calcularLinea(paramsRow) {
             const largoNominalPaño = anchoUtilEfectivo > 0 ? areaPaño / anchoUtilEfectivo : 0;
             let filasPaño = altoCellM > 0 ? Math.floor(largoNominalPaño / altoCellM) : 0;
 
-            // Modo unidades: forzar filas exactas en el último paño
             if (esUnidades && filasMinimas !== null) {
                 const filasRestantesAntes = filasMinimas - filasTotales;
                 if (filasPaño > filasRestantesAntes) filasPaño = filasRestantesAntes;
@@ -1659,8 +1666,23 @@ function calcularLinea(paramsRow) {
         const nEtiquetas = columnas * filasTotales;
         const materialConsumido = materialTotal;
         const largoTotalReal = materialConsumido / anchoRollo;
-        const mermaM2 = materialConsumido - areaTotalFinal;
-        const mermaPct = areaTotalFinal > 0 ? (mermaM2 / areaTotalFinal) * 100 : 0;
+
+        // ============================================================
+        // CÁLCULO DE MERMA OPERATIVA — CORREGIDO
+        // La merma se mide contra el ÁREA ÚTIL DEL ROLLO (zona imprimible),
+        // NO contra el área facturada al cliente (que es un mínimo comercial).
+        //
+        // Merma operativa = (ancho útil × largo total) − (área real de etiquetas)
+        // % Merma = merma operativa ÷ área útil del rollo × 100
+        // ============================================================
+        const areaUtilRolloM2 = anchoUtilEfectivo * largoTotalReal;
+        const areaEtiquetasM2 = filasTotales * altoCellM * columnas * anchoCellM;
+        const mermaOperativaM2 = Math.max(0, areaUtilRolloM2 - areaEtiquetasM2);
+        const mermaBordeRolloM2 = Math.max(0, (anchoRollo - anchoUtilEfectivo) * largoTotalReal);
+        const mermaTotalM2 = mermaOperativaM2 + mermaBordeRolloM2;
+        const mermaPct = areaUtilRolloM2 > 0 ? (mermaOperativaM2 / areaUtilRolloM2) * 100 : 0;
+        // Alias para compatibilidad con variables viejas
+        const mermaM2 = mermaOperativaM2;
 
         const areaRedondeada = Math.round(areaTotalFinal * 100) / 100;
         let costoEstimado = areaRedondeada * precioUnitario;

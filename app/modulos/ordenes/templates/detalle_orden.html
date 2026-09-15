@@ -312,8 +312,20 @@
                                 <span class="val">+ {{ params.largo_gaps_m|round(2) if params.largo_gaps_m else '—' }} m</span>
                             </div>                          
                             <div class="panel-row">
+                                <span class="lbl">Área útil del rollo</span>
+                                <span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">Área de etiquetas</span>
+                                <span class="val">{{ params.area_etiquetas_m2|round(2) if params.area_etiquetas_m2 else '—' }} m²</span>
+                            </div>
+                            <div class="panel-row">
                                 <span class="lbl">Merma operativa</span>
                                 <span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span>
+                            </div>
+                            <div class="panel-row">
+                                <span class="lbl">↳ Borde del rollo</span>
+                                <span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span>
                             </div>
                         </div>
                     </div>

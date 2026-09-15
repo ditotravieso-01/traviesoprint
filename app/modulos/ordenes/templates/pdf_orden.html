@@ -120,6 +120,11 @@
                                     <br><span style="color:#dc2626; font-weight:600;">
                                         Merma operativa: {{ params.merma_operativa_m2|round(2) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
                                     </span>
+                                    {% if params.merma_borde_rollo_m2 %}
+                                        <br><span style="color:#f59e0b; font-weight:600;">
+                                            Borde rollo: {{ params.merma_borde_rollo_m2|round(3) }} m²
+                                        </span>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         {% else %}

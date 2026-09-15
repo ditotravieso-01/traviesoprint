@@ -62,7 +62,7 @@ def view_orders_or_admin_comercial_required(func):
 # FUNCIÓN AUXILIAR: CÁLCULO DE MERMA OPERATIVA
 # ==========================================
 def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
-                              gap_panno_cm, alto_cell_m, columnas,
+                              gap_panno_cm, alto_cell_m, ancho_cell_m, columnas,
                               filas_minimas=None):
     """
     Fórmula Opción C (por paño con acumulación de aire).
@@ -73,10 +73,12 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         - Se imprimen tantas filas como caben
 
     Modo unidades (filas_minimas=int):
-        - Se imprimen AL MENOS filas_minimas filas (completar última línea)
-        - n_paños = ceil(filas_minimas / filas_por_paño_max)
+        - Se imprimen AL MENOS filas_minimas filas
         - El último paño se ajusta exactamente a las filas restantes
-        - area_facturada final se recalcula basándose en las filas reales
+
+    IMPORTANTE: La merma operativa se mide como diferencia de ÁREAS FÍSICAS
+    (material útil del rollo − área real de etiquetas), NO contra el área
+    facturada al cliente (que es un mínimo comercial).
 
     Retorna dict con parámetros de merma y desglose.
     """
@@ -90,22 +92,17 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         filas_por_paño_max = 1
 
     if filas_minimas is not None:
-        # MODO UNIDADES
         modo = 'unidades'
         filas_minimas = max(1, int(filas_minimas))
         n_paños = max(1, math.ceil(filas_minimas / filas_por_paño_max))
-
-        # Recalcular área facturada basándose en filas_minimas
         paños_completos = filas_minimas // filas_por_paño_max
         filas_restantes = filas_minimas % filas_por_paño_max
         area_facturada_calc = float(paños_completos)
         if filas_restantes > 0:
-            # Área del último paño: justo lo necesario para las filas restantes
             area_ultimo = filas_restantes * alto_cell_m * ancho_util
             area_facturada_calc += area_ultimo
         area_facturada = area_facturada_calc
     else:
-        # MODO m²
         modo = 'm2'
         n_paños = max(1, math.ceil(area_facturada))
         filas_minimas = None
@@ -124,7 +121,6 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
             if filas_restantes_ahora <= 0:
                 break
             if filas_restantes_ahora <= filas_por_paño_max:
-                # Último paño: área justa para las filas restantes
                 area_paño = filas_restantes_ahora * alto_cell_m * ancho_util
             else:
                 area_paño = 1.0
@@ -137,7 +133,6 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         largo_nominal_paño = area_paño / ancho_util if ancho_util > 0 else 0
         filas_paño = int(largo_nominal_paño / alto_cell_m) if alto_cell_m > 0 else 0
 
-        # En modo unidades: forzar que el último paño tenga exactamente las filas restantes
         if modo == 'unidades':
             filas_restantes_antes = filas_minimas - filas_totales
             if filas_paño > filas_restantes_antes:
@@ -177,7 +172,6 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         if modo == 'unidades' and filas_totales >= filas_minimas:
             break
 
-    # Área facturada final (para modo unidades, la suma real; para modo m², la original)
     if modo == 'unidades':
         area_facturada_final = area_facturada_real
     else:
@@ -185,11 +179,29 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
 
     largo_gaps_total = n_paños * gap_m
     largo_cut_total = n_paños * CUT_LARGO_M
-    largo_total = material_total / ancho_r
+    largo_total = material_total / ancho_r if ancho_r > 0 else 0
     largo_sin_aire = largo_etiquetas_total + largo_gaps_total + largo_cut_total
 
-    merma_m2 = material_total - area_facturada_final
-    merma_pct = (merma_m2 / area_facturada_final * 100) if area_facturada_final > 0 else 0
+    # ============================================================
+    # CÁLCULO DE MERMA OPERATIVA (CORREGIDO)
+    # ============================================================
+    # Área útil del rollo: la zona imprimible (ancho útil × largo total)
+    area_util_rollo_m2 = ancho_util * largo_total
+
+    # Área real de las etiquetas impresas
+    area_etiquetas_m2 = filas_totales * alto_cell_m * columnas * ancho_cell_m
+
+    # Merma operativa = material útil del rollo que NO se convirtió en etiqueta
+    merma_operativa_m2 = max(0.0, area_util_rollo_m2 - area_etiquetas_m2)
+
+    # Merma por borde del rollo (ancho real − ancho útil, siempre se desperdicia)
+    merma_borde_rollo_m2 = max(0.0, (ancho_r - ancho_util) * largo_total)
+
+    # Merma total: operativa + borde
+    merma_total_m2 = merma_operativa_m2 + merma_borde_rollo_m2
+
+    # % merma sobre el área útil del rollo (no sobre lo facturado)
+    merma_pct = (merma_operativa_m2 / area_util_rollo_m2 * 100) if area_util_rollo_m2 > 0 else 0
 
     return {
         'modo': modo,
@@ -209,8 +221,13 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         'largo_total_m': round(largo_total, 4),
         'area_facturada_m2': round(area_facturada_final, 4),
         'material_consumido_m2': round(material_total, 4),
-        'merma_operativa_m2': round(merma_m2, 4),
+        # ===== MERMA CORREGIDA =====
+        'area_util_rollo_m2': round(area_util_rollo_m2, 4),
+        'area_etiquetas_m2': round(area_etiquetas_m2, 4),
+        'merma_operativa_m2': round(merma_operativa_m2, 4),
         'merma_operativa_pct': round(merma_pct, 2),
+        'merma_borde_rollo_m2': round(merma_borde_rollo_m2, 4),
+        'merma_total_m2': round(merma_total_m2, 4),
         'desglose_paños': desglose_paños,
     }
 
@@ -449,8 +466,10 @@ def _procesar_linea_etiqueta(
 
     if es_rotado:
         alto_cell_m = (ancho_cm / 100.0) + MARGEN_MESA_M
+        ancho_cell_m = (alto_cm / 100.0) + MARGEN_MESA_M if mesa else (alto_cm / 100.0)
     else:
         alto_cell_m = (alto_cm / 100.0) + MARGEN_MESA_M
+        ancho_cell_m = (ancho_cm / 100.0) + MARGEN_MESA_M if mesa else (ancho_cm / 100.0)
 
     gap_cm = producto.gap_panno_cm if producto.gap_panno_cm is not None else GAP_PAÑOS_DEFAULT_CM
 
@@ -470,6 +489,7 @@ def _procesar_linea_etiqueta(
         ancho_real=ancho_real,
         gap_panno_cm=gap_cm,
         alto_cell_m=alto_cell_m,
+        ancho_cell_m=ancho_cell_m,
         columnas=columnas,
         filas_minimas=filas_minimas
     )
@@ -548,6 +568,12 @@ def _procesar_linea_etiqueta(
             'material_consumido_m2': merma_data['material_consumido_m2'],
             'merma_operativa_m2': merma_data['merma_operativa_m2'],
             'merma_operativa_pct': merma_data['merma_operativa_pct'],
+            # ===== NUEVOS CAMPOS DE MERMA CORREGIDA =====
+            'area_util_rollo_m2': merma_data['area_util_rollo_m2'],
+            'area_etiquetas_m2': merma_data['area_etiquetas_m2'],
+            'merma_borde_rollo_m2': merma_data['merma_borde_rollo_m2'],
+            'merma_total_m2': merma_data['merma_total_m2'],
+            'ancho_cell_usado_m': ancho_cell_m,
         })
     )
 
