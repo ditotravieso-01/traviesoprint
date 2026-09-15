@@ -33,7 +33,7 @@ SSL_KEY="/etc/ssl/private/${APP_NAME}.key"
 # ============================================================
 echo -e "${GREEN}${BOLD}"
 echo "=================================================="
-echo "   TraviesoPrint - Instalación automática v1.4"
+echo "   TraviesoPrint - Instalación automática v1.5"
 echo "   Gestión para talleres de impresión"
 echo "=================================================="
 echo -e "${NC}"
@@ -101,22 +101,41 @@ APP_USER="${INPUT_USER:-$APP_USER}"
 read -r -p "📂 Directorio de instalación [${APP_DIR}]: " INPUT_DIR
 APP_DIR="${INPUT_DIR:-$APP_DIR}"
 
+# ------------------------------------------------------------
+# Hostname: una sola pregunta, valor por defecto = actual
+# ------------------------------------------------------------
 echo ""
-log_info "Configuración del hostname del servidor"
-echo "   El hostname se usa internamente por el sistema y ayuda"
-echo "   a que 'hostname', 'sudo', logs y HTTPS sean consistentes."
+log_info "Hostname del servidor"
+echo "   El hostname aparece en el prompt del shell y en logs."
+echo "   NO afecta al funcionamiento de la app."
 echo ""
-read -r -p "🖥️  ¿Configurar hostname del servidor a '${DEFAULT_HOSTNAME}'? [s/N]: " INPUT_HOSTNAME
-CHANGE_HOSTNAME=false
-SHORT_HOSTNAME=""
-if [[ "${INPUT_HOSTNAME:-N}" =~ ^[sS]$ ]]; then
-    CHANGE_HOSTNAME=true
-    read -r -p "   Nombre corto del hostname [${DEFAULT_HOSTNAME}]: " INPUT_SHORT
-    SHORT_HOSTNAME="${INPUT_SHORT:-$DEFAULT_HOSTNAME}"
+CURRENT_HOSTNAME=$(hostname)
+echo "   Hostname actual: ${CURRENT_HOSTNAME}"
+echo "   Sugerencia:      ${DEFAULT_HOSTNAME}"
+read -r -p "   Nuevo hostname (Enter = sin cambios): " INPUT_HOSTNAME
 
-    if ! [[ "${SHORT_HOSTNAME}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
-        log_error "Hostname inválido: '${SHORT_HOSTNAME}'. Solo letras, números y guiones."
+if [ -z "${INPUT_HOSTNAME}" ]; then
+    CHANGE_HOSTNAME=false
+    SHORT_HOSTNAME="${CURRENT_HOSTNAME}"
+    log_info "Hostname sin cambios (${CURRENT_HOSTNAME})."
+else
+    SHORT_HOSTNAME="${INPUT_HOSTNAME}"
+
+    if [ ${#SHORT_HOSTNAME} -lt 2 ]; then
+        log_error "Hostname demasiado corto (mínimo 2 caracteres): '${SHORT_HOSTNAME}'"
         exit 1
+    fi
+    if ! [[ "${SHORT_HOSTNAME}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+        log_error "Hostname inválido: '${SHORT_HOSTNAME}'."
+        log_error "Solo letras, números y guiones. No puede empezar/terminar con guion."
+        exit 1
+    fi
+
+    if [ "${SHORT_HOSTNAME}" = "${CURRENT_HOSTNAME}" ]; then
+        CHANGE_HOSTNAME=false
+        log_info "Hostname ya es ${SHORT_HOSTNAME}. Sin cambios."
+    else
+        CHANGE_HOSTNAME=true
     fi
 fi
 
@@ -134,9 +153,9 @@ echo "   • Usuario        : ${APP_USER}"
 echo "   • Directorio     : ${APP_DIR}"
 echo "   • HTTPS          : $( [ "${ENABLE_HTTPS}" = true ] && echo 'Sí (cert autofirmado, 1 año)' || echo 'No' )"
 if [ "${CHANGE_HOSTNAME}" = true ]; then
-    echo "   • Hostname       : Sí → ${SHORT_HOSTNAME}"
+    echo "   • Hostname       : ${CURRENT_HOSTNAME} → ${SHORT_HOSTNAME}"
 else
-    echo "   • Hostname       : No (se conserva el actual)"
+    echo "   • Hostname       : Sin cambios (${SHORT_HOSTNAME})"
 fi
 echo ""
 read -r -p "¿Continuar? [s/N]: " CONFIRM
@@ -149,27 +168,21 @@ fi
 # 5. Configurar hostname del servidor (opcional)
 # ============================================================
 if [ "${CHANGE_HOSTNAME}" = true ]; then
-    CURRENT_HOSTNAME=$(hostname)
+    log_info "Configurando hostname: ${CURRENT_HOSTNAME} → ${SHORT_HOSTNAME}"
 
-    if [ "${CURRENT_HOSTNAME}" = "${SHORT_HOSTNAME}" ]; then
-        log_info "Hostname ya es ${SHORT_HOSTNAME}. No se modifica."
-    else
-        log_info "Configurando hostname: ${CURRENT_HOSTNAME} → ${SHORT_HOSTNAME}"
+    hostnamectl set-hostname "${SHORT_HOSTNAME}" 2>/dev/null || {
+        echo "${SHORT_HOSTNAME}" > /etc/hostname
+        hostname "${SHORT_HOSTNAME}"
+    }
 
-        hostnamectl set-hostname "${SHORT_HOSTNAME}" 2>/dev/null || {
-            echo "${SHORT_HOSTNAME}" > /etc/hostname
-            hostname "${SHORT_HOSTNAME}"
-        }
-
-        if grep -q "^127.0.1.1" /etc/hosts; then
-            sed -i '/^127\.0\.1\.1/d' /etc/hosts
-        fi
-        sed -i "\|[[:space:]]${DOMAIN}[[:space:]]|d" /etc/hosts 2>/dev/null || true
-        echo "127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}" >> /etc/hosts
-
-        log_ok "Hostname configurado: ${SHORT_HOSTNAME}"
-        log_info "/etc/hosts actualizado: 127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}"
+    if grep -q "^127.0.1.1" /etc/hosts; then
+        sed -i '/^127\.0\.1\.1/d' /etc/hosts
     fi
+    sed -i "\|[[:space:]]${DOMAIN}[[:space:]]|d" /etc/hosts 2>/dev/null || true
+    echo "127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}" >> /etc/hosts
+
+    log_ok "Hostname configurado: ${SHORT_HOSTNAME}"
+    log_info "/etc/hosts actualizado: 127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}"
 fi
 
 # ============================================================
@@ -245,8 +258,6 @@ else
             exit 1
         fi
 
-        # Crear el directorio como root con GROUP=www-data para que Nginx
-        # pueda traversear la ruta y llegar al socket/estáticos.
         mkdir -p "${APP_DIR}"
         chown "${APP_USER}:www-data" "${APP_DIR}"
         chmod 750 "${APP_DIR}"
@@ -255,7 +266,6 @@ else
     fi
 fi
 
-# Propiedad de todo el árbol: travieso:www-data (así Nginx puede leer estáticos)
 chown -R "${APP_USER}:www-data" "${APP_DIR}"
 chmod 750 "${APP_DIR}"
 
@@ -271,7 +281,6 @@ sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/logs"
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/app/static/uploads/ordenes"
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/app/static/uploads/tmp"
 
-# Directorios: travieso:www-data rwxr-x---
 chown -R "${APP_USER}:www-data" "${APP_DIR}/instance" "${APP_DIR}/logs" "${APP_DIR}/app/static/uploads"
 chmod 750 "${APP_DIR}/instance"
 chmod 750 "${APP_DIR}/instance/backups"
@@ -306,11 +315,9 @@ sudo -u "${APP_USER}" "${VENV_DIR}/bin/pip" install gunicorn python-dotenv -q
 log_ok "Dependencias Python instaladas."
 
 # ============================================================
-# 11. Generar .env
+# 11. Generar .env  (SIN SERVER_NAME ni PREFERRED_URL_SCHEME)
 # ============================================================
 ENV_FILE="${APP_DIR}/.env"
-SCHEME="http"
-[ "${ENABLE_HTTPS}" = true ] && SCHEME="https"
 
 if [ -f "${ENV_FILE}" ]; then
     log_warn "El archivo .env ya existe. Se conservará."
@@ -318,6 +325,7 @@ else
     log_info "Generando .env..."
     SECRET_KEY=$(openssl rand -hex 32)
 
+    # OJO: DATABASE_URL con CUATRO slashes (sqlite:////ruta/absoluta)
     sudo -u "${APP_USER}" bash -c "cat > '${ENV_FILE}' <<EOF
 # ============================================================
 # TraviesoPrint - Variables de entorno
@@ -331,10 +339,6 @@ FLASK_ENV=production
 # Rutas
 UPLOAD_FOLDER=${APP_DIR}/app/static/uploads
 LOG_FOLDER=${APP_DIR}/logs
-
-# Servidor
-SERVER_NAME=${DOMAIN}
-PREFERRED_URL_SCHEME=${SCHEME}
 EOF
 "
     chown "${APP_USER}:${APP_USER}" "${ENV_FILE}"
@@ -349,7 +353,6 @@ log_info "Preparando base de datos..."
 
 DB_FILE="${APP_DIR}/instance/traviesoprint.db"
 
-# Contar tablas existentes (excluyendo internas de SQLite y alembic_version)
 TABLE_COUNT=0
 if [ -f "${DB_FILE}" ]; then
     TABLE_COUNT=$(sudo -u "${APP_USER}" "${VENV_DIR}/bin/python" -c "
@@ -366,7 +369,6 @@ except Exception:
 fi
 
 if [ "${TABLE_COUNT}" -gt 0 ]; then
-    # ---------- BD existente: aplicar migraciones pendientes ----------
     log_info "BD existente con ${TABLE_COUNT} tablas. Aplicando migraciones..."
 
     if sudo -u "${APP_USER}" bash -c "
@@ -377,22 +379,17 @@ if [ "${TABLE_COUNT}" -gt 0 ]; then
         log_ok "Migraciones aplicadas correctamente."
     else
         log_error "flask db upgrade falló sobre una BD existente."
-        log_error "Esto suele pasar si el historial de migraciones quedó inconsistente."
-        log_error "Revisa: sudo -u ${APP_USER} bash -c 'cd ${APP_DIR} && source venv/bin/activate && flask db current'"
         exit 1
     fi
 else
-    # ---------- BD vacía: crear schema desde modelos + stamp ----------
     log_info "BD vacía o inexistente. Creando schema desde modelos..."
 
-    # Si existía un archivo pero sin tablas (corrupto), backup y borrar
     if [ -f "${DB_FILE}" ]; then
         BACKUP="${APP_DIR}/instance/backups/traviesoprint_preinstall_$(date +%Y%m%d_%H%M%S).db"
         mv "${DB_FILE}" "${BACKUP}"
         log_warn "BD previa sin tablas movida a: ${BACKUP}"
     fi
 
-    # 1) Crear todas las tablas desde los modelos
     if ! sudo -u "${APP_USER}" bash -c "
         cd '${APP_DIR}'
         set -a; source .env; set +a
@@ -408,7 +405,6 @@ with app.app_context():
         exit 1
     fi
 
-    # 2) Marcar TODAS las migraciones como aplicadas (sin ejecutarlas)
     if ! sudo -u "${APP_USER}" bash -c "
         cd '${APP_DIR}'
         set -a; source .env; set +a
@@ -421,7 +417,6 @@ with app.app_context():
     log_ok "Schema creado y migraciones marcadas como aplicadas."
 fi
 
-# Verificación final: la BD debe tener tablas
 FINAL_COUNT=$(sudo -u "${APP_USER}" "${VENV_DIR}/bin/python" -c "
 import sqlite3
 conn = sqlite3.connect('${DB_FILE}')
@@ -458,7 +453,6 @@ Group=www-data
 WorkingDirectory=${APP_DIR}
 EnvironmentFile=${APP_DIR}/.env
 
-# Limpiar socket viejo antes de arrancar (por si quedó un archivo regular)
 ExecStartPre=/bin/rm -f ${SOCKET_FILE}
 
 ExecStart=${VENV_DIR}/bin/gunicorn \\
@@ -477,10 +471,8 @@ Restart=always
 RestartSec=3
 KillMode=mixed
 
-# El socket debe ser 660 para que www-data (Nginx) pueda leer/escribir
 UMask=0007
 
-# Seguridad básica
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
@@ -493,13 +485,12 @@ EOF
 systemctl daemon-reload
 systemctl enable "${SERVICE_NAME}.service"
 
-# Eliminar cualquier socket viejo que pudiera existir como archivo regular
 rm -f "${SOCKET_FILE}"
 
 log_ok "Servicio systemd configurado."
 
 # ============================================================
-# 14. Certificado SSL autofirmado (si se pidió)
+# 14. Certificado SSL autofirmado
 # ============================================================
 if [ "${ENABLE_HTTPS}" = true ]; then
     log_info "Generando certificado SSL autofirmado (válido 1 año)..."
@@ -526,7 +517,7 @@ if [ "${ENABLE_HTTPS}" = true ]; then
 fi
 
 # ============================================================
-# 15. Nginx (con o sin HTTPS)
+# 15. Nginx  (SIN include proxy_params, headers explícitos)
 # ============================================================
 NGINX_CONF="/etc/nginx/sites-available/${APP_NAME}"
 
@@ -539,13 +530,11 @@ server {
     listen 80;
     listen [::]:80;
     server_name ${DOMAIN};
-    return 301 https://\$host\$request_uri;
+    return 301 https://\$http_host\$request_uri;
 }
 
 # Servidor HTTPS (certificado autofirmado)
-# NOTA: se usa "listen ... http2" (sintaxis antigua) por compatibilidad
-# con Nginx 1.18–1.24 (Ubuntu 22.04 y 24.04). En Nginx 1.25+ emite un
-# warning de deprecación pero sigue funcionando.
+# "listen ... http2" (sintaxis antigua) por compatibilidad Nginx 1.18–1.24
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
@@ -575,14 +564,21 @@ server {
     }
 
     location / {
-        include proxy_params;
-        proxy_pass http://unix:${SOCKET_FILE};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto https;
+        # Importante: no usar "include proxy_params" — definimos headers
+        # explícitamente para asegurar que "Host" llegue correctamente
+        # a Gunicorn (evita "Invalid HTTP Header: 'HOST'").
+        proxy_pass http://unix:${SOCKET_FILE}:/;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              \$http_host;
+        proxy_set_header X-Real-IP         \$remote_addr;
+        proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host  \$http_host;
+
         proxy_read_timeout 120s;
         proxy_connect_timeout 120s;
+        proxy_buffering off;
     }
 }
 EOF
@@ -608,14 +604,18 @@ server {
     }
 
     location / {
-        include proxy_params;
-        proxy_pass http://unix:${SOCKET_FILE};
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_pass http://unix:${SOCKET_FILE}:/;
+        proxy_http_version 1.1;
+
+        proxy_set_header Host              \$http_host;
+        proxy_set_header X-Real-IP         \$remote_addr;
+        proxy_set_header X-Forwarded-For   \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_set_header X-Forwarded-Host  \$http_host;
+
         proxy_read_timeout 120s;
         proxy_connect_timeout 120s;
+        proxy_buffering off;
     }
 }
 EOF
@@ -662,7 +662,20 @@ else
 fi
 
 # ============================================================
-# 18. Resumen final
+# 18. Prueba final desde el propio servidor
+# ============================================================
+log_info "Verificando respuesta HTTPS desde el servidor..."
+sleep 1
+HTTP_CODE=$(curl -k -o /dev/null -s -w "%{http_code}" "https://${DOMAIN}/" 2>/dev/null || echo "000")
+if [ "${HTTP_CODE}" = "200" ] || [ "${HTTP_CODE}" = "302" ]; then
+    log_ok "Nginx responde correctamente (HTTP ${HTTP_CODE})."
+else
+    log_warn "Respuesta inesperada del servidor: HTTP ${HTTP_CODE}"
+    log_warn "Revisa: sudo journalctl -u ${SERVICE_NAME} -n 30 && sudo tail -30 /var/log/nginx/${APP_NAME}-error.log"
+fi
+
+# ============================================================
+# 19. Resumen final
 # ============================================================
 URL_FINAL="http://${DOMAIN}"
 [ "${ENABLE_HTTPS}" = true ] && URL_FINAL="https://${DOMAIN}"
