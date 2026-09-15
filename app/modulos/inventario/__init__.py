@@ -1077,11 +1077,15 @@ def detalle_producto(producto_id):
     fechas = []
     saldos = []
     saldos_metros = []
+    # Tipos que suman stock
+    TIPOS_SUMAN = ['entrada', 'entrada_ajuste', 'sobrante', 'correccion_alta']
+    # Tipos que restan stock
+    TIPOS_RESTAN = ['consumo', 'merma', 'reserva', 'correccion_baja']
     for m in movimientos:
-        if m.tipo in ['entrada', 'entrada_ajuste']:
+        if m.tipo in TIPOS_SUMAN:
             saldo += m.cantidad
             saldo_metros += m.cantidad_metros or m.cantidad
-        elif m.tipo in ['consumo', 'salida_ajuste', 'reserva']:
+        elif m.tipo in TIPOS_RESTAN:
             saldo -= m.cantidad
             saldo_metros -= m.cantidad_metros or m.cantidad
         fechas.append(m.fecha.strftime('%Y-%m-%d %H:%M'))
@@ -1168,8 +1172,11 @@ def comprar():
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 # ==========================================
-# AJUSTAR
+# AJUSTAR (solo correcciones de captura)
 # ==========================================
+# NOTA: Esta ruta es SOLO para corregir errores de captura.
+# NO afecta la merma real. Los conteos físicos se hacen en
+# /inventario/conteos-semanales/nuevo (nuevo_conteo).
 @inventario_bp.route('/ajustar', methods=['POST'])
 @login_required
 @economico_or_admin_required
@@ -1177,39 +1184,42 @@ def ajustar():
     producto_id = request.form.get('producto_id', type=int)
     stock_real = request.form.get('stock_real', type=float)
     comentario = request.form.get('comentario', '').strip()
-    tipo_ajuste = request.form.get('tipo_ajuste', 'conteo')
+
     if not producto_id or stock_real is None or stock_real < 0:
         flash('Datos inválidos.', 'danger')
         return redirect(url_for('inventario.index'))
+
     producto = Producto.query.get(producto_id)
     if not producto:
         flash('Producto no encontrado.', 'danger')
         return redirect(url_for('inventario.index'))
+
     diferencia = producto.stock - stock_real
     if diferencia == 0:
-        flash('El stock coincide con el real.', 'info')
+        flash('El stock ya coincide con el valor ingresado.', 'info')
         return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
-    tipo = 'salida_ajuste' if diferencia > 0 else 'entrada_ajuste'
+
+    # SIEMPRE corrección de error (nunca merma/sobrante)
+    tipo = 'correccion_baja' if diferencia > 0 else 'correccion_alta'
     cantidad = abs(diferencia)
+
     producto.stock = stock_real
-    if producto.largo_rollo:
-        producto.stock_metros = stock_real * producto.largo_rollo
-    else:
-        producto.stock_metros = stock_real
+    producto.stock_metros = stock_real * (producto.largo_rollo or 1)
+
     movimiento = Movimiento(
         producto_id=producto.id,
         tipo=tipo,
         cantidad=cantidad,
         cantidad_metros=cantidad * (producto.largo_rollo or 1),
-        comentario=comentario or f'Ajuste ({tipo_ajuste}) por conteo físico',
+        comentario=comentario or f'Corrección de captura ({tipo.replace("correccion_", "")})',
         usuario_id=current_user.id,
-        tipo_ajuste=tipo_ajuste
+        tipo_ajuste='correccion'
     )
     db.session.add(movimiento)
     db.session.commit()
 
     verificar_y_notificar_stock_bajo(producto)
-    flash(f'Ajuste registrado.', 'success')
+    flash('Corrección registrada. Para conteos físicos usa "Conteos semanales".', 'success')
     return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
 
 # ==========================================
@@ -1367,10 +1377,7 @@ def merma():
         movimientos = Movimiento.query.filter(
             Movimiento.fecha >= fecha_inicio,
             Movimiento.fecha <= fecha_fin,
-            db.or_(
-                Movimiento.tipo_ajuste != 'correccion',
-                Movimiento.tipo_ajuste.is_(None)
-            )
+            Movimiento.tipo.notin_(['correccion_baja', 'correccion_alta'])
         ).all()
 
         if agrupar_por == 'categoria':
@@ -1387,9 +1394,9 @@ def merma():
                     datos[cat_nombre]['entradas'] += m.cantidad
                 elif m.tipo == 'consumo':
                     datos[cat_nombre]['consumos'] += m.cantidad
-                elif m.tipo == 'salida_ajuste':
+                elif m.tipo == 'merma':
                     datos[cat_nombre]['merma'] += m.cantidad
-                elif m.tipo == 'entrada_ajuste':
+                elif m.tipo == 'sobrante':
                     datos[cat_nombre]['merma'] -= m.cantidad
             for cat, vals in datos.items():
                 merma_val = vals['merma']
@@ -1420,9 +1427,9 @@ def merma():
                     datos[key]['entradas'] += m.cantidad
                 elif m.tipo == 'consumo':
                     datos[key]['consumos'] += m.cantidad
-                elif m.tipo == 'salida_ajuste':
+                elif m.tipo == 'merma':
                     datos[key]['merma'] += m.cantidad
-                elif m.tipo == 'entrada_ajuste':
+                elif m.tipo == 'sobrante':
                     datos[key]['merma'] -= m.cantidad
             for key, vals in datos.items():
                 merma_val = vals['merma']
@@ -1567,7 +1574,7 @@ def movimientos():
     productos = Producto.query.order_by(Producto.nombre).all()
     categorias = Categoria.query.order_by(Categoria.nombre).all()
     clientes = Client.query.order_by(Client.nombre).all()
-    tipos_lista = ['entrada', 'consumo', 'reserva', 'salida_ajuste', 'entrada_ajuste']
+    tipos_lista = ['entrada', 'consumo', 'reserva', 'merma', 'sobrante', 'correccion_baja', 'correccion_alta']
     fecha_inicio_defecto = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
     fecha_fin_defecto = datetime.now().strftime('%Y-%m-%d')
 
@@ -1632,16 +1639,24 @@ def exportar_movimientos_excel(movimientos):
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 def generar_datos_graficos_movimientos(movimientos):
-    dict_diario = defaultdict(lambda: {'entrada': 0, 'consumo': 0, 'reserva': 0, 'salida_ajuste': 0, 'entrada_ajuste': 0})
+    TIPOS_ORDEN = ['entrada', 'consumo', 'reserva', 'merma', 'sobrante', 'correccion_baja', 'correccion_alta']
+    colores = {
+        'entrada':          '#10b981',
+        'consumo':          '#f59e0b',
+        'reserva':          '#3b82f6',
+        'merma':            '#dc2626',
+        'sobrante':         '#0ea5e9',
+        'correccion_baja':  '#92400e',
+        'correccion_alta':  '#3730a3',
+    }
+    dict_diario = defaultdict(lambda: {t: 0 for t in TIPOS_ORDEN})
     for m in movimientos:
         fecha_key = m.fecha.strftime('%Y-%m-%d')
-        dict_diario[fecha_key][m.tipo] += m.cantidad
+        if m.tipo in dict_diario[fecha_key]:
+            dict_diario[fecha_key][m.tipo] += m.cantidad
     fechas_ordenadas = sorted(dict_diario.keys())
-    tipos = ['entrada', 'consumo', 'reserva', 'salida_ajuste', 'entrada_ajuste']
-    colores = {'entrada': '#10b981', 'consumo': '#f59e0b', 'reserva': '#3b82f6',
-               'salida_ajuste': '#dc2626', 'entrada_ajuste': '#0ea5e9'}
     datasets = []
-    for t in tipos:
+    for t in TIPOS_ORDEN:
         data = [dict_diario[fecha].get(t, 0) for fecha in fechas_ordenadas]
         if any(data):
             datasets.append({
@@ -2625,7 +2640,7 @@ def nuevo_conteo():
 
         # Ajustar stock del sistema al valor contado
         if abs(diferencia_unidades) > 0.001:
-            tipo = 'salida_ajuste' if diferencia_unidades > 0 else 'entrada_ajuste'
+            tipo = 'merma' if diferencia_unidades > 0 else 'sobrante'
             producto.stock = stock_fisico_unidades
             producto.stock_metros = stock_fisico_metros
             mov = Movimiento(
