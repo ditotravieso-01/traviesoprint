@@ -232,31 +232,45 @@ def index():
             'inversion_total': sum(p.inversion_total or 0 for p in productos_cat)
         })
 
+    # ===== Evolución del stock (últimos 30 días) =====
+    # IMPORTANTE: incluye TODOS los tipos de movimiento actuales
     hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     inicio = hoy - timedelta(days=30)
     movs = Movimiento.query.filter(Movimiento.fecha >= inicio).order_by(Movimiento.fecha).all()
     fechas = []
     valores = []
     saldo = 0
+
+    TIPOS_SUMAN = ['entrada', 'entrada_ajuste', 'sobrante', 'correccion_alta']
+    TIPOS_RESTAN = ['consumo', 'salida_ajuste', 'reserva', 'merma', 'correccion_baja']
+
     for d in range(31):
         fecha = inicio + timedelta(days=d)
         fechas.append(fecha.strftime('%d/%m'))
         dia_movs = [m for m in movs if m.fecha.date() == fecha.date()]
         for m in dia_movs:
-            if m.tipo in ['entrada', 'entrada_ajuste']:
+            if m.tipo in TIPOS_SUMAN:
                 saldo += m.cantidad
-            elif m.tipo in ['consumo', 'salida_ajuste', 'reserva']:
+            elif m.tipo in TIPOS_RESTAN:
                 saldo -= m.cantidad
         valores.append(round(saldo, 2))
 
+    # ============================================================
+    # MERMA DEL MES — Combina 3 fuentes:
+    #   1) Merma operativa de ÓRDENES (ArchivoAdjunto.parametros_etiqueta)
+    #   2) Merma bruta de CONTEOS semanales (diferencia sistema-físico)
+    #   3) Merma imprevista de conteos (bruta - operativa teórica)
+    # ============================================================
     inicio_mes = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # ---- Fuente 1: merma operativa desde órdenes ----
     archivos_mes = ArchivoAdjunto.query.filter(
         ArchivoAdjunto.parametros_etiqueta.isnot(None)
     ).join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
         Order.date >= inicio_mes.date()
     ).all()
 
-    merma_mes_m2 = 0.0
+    merma_operativa_ordenes_m2 = 0.0
     area_facturada_mes_m2 = 0.0
     for a in archivos_mes:
         try:
@@ -264,9 +278,48 @@ def index():
         except Exception:
             continue
         if 'merma_operativa_m2' in params or 'merma_estimada_m2' in params:
-            merma_mes_m2 += float(params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0)
+            merma_operativa_ordenes_m2 += float(
+                params.get('merma_operativa_m2', params.get('merma_estimada_m2', 0)) or 0
+            )
             area_facturada_mes_m2 += float(params.get('area_m2', 0) or 0)
-    merma_mes_pct = (merma_mes_m2 / area_facturada_mes_m2 * 100) if area_facturada_mes_m2 > 0 else 0
+
+    # ---- Fuente 2: merma real desde conteos semanales ----
+    try:
+        from app.models import ConteoSemanal
+        conteos_mes = ConteoSemanal.query.filter(
+            ConteoSemanal.fecha >= inicio_mes
+        ).all()
+    except Exception:
+        conteos_mes = []
+
+    merma_bruta_conteos_m2 = 0.0
+    merma_imprevista_conteos_m2 = 0.0
+    merma_operativa_conteos_m2 = 0.0
+    for c in conteos_mes:
+        ancho = (c.producto.ancho_rollo if c.producto else None) or 1.34
+        merma_bruta_conteos_m2 += (c.diferencia_metros or 0) * ancho
+        merma_imprevista_conteos_m2 += (c.merma_imprevista_m2 or 0)
+        merma_operativa_conteos_m2 += (c.merma_operativa_semana_m2 or 0)
+
+    # ---- Decidir qué mostrar en el KPI ----
+    # Regla: si hay conteos este mes, preferir la merma real (bruta).
+    # Si no, mostrar la merma operativa de órdenes.
+    if conteos_mes:
+        merma_mes_m2 = merma_bruta_conteos_m2
+        merma_mes_origen = 'conteo'
+    else:
+        merma_mes_m2 = merma_operativa_ordenes_m2
+        merma_mes_origen = 'órdenes'
+
+    # Base para el %:
+    #  - Si hay área facturada (órdenes) usarla
+    #  - Si no, usar el stock actual en m² (aproximación del material movido)
+    if area_facturada_mes_m2 > 0:
+        area_base_m2 = area_facturada_mes_m2
+    else:
+        area_base_m2 = stock_m2_total if stock_m2_total > 0 else 1.0
+
+    merma_mes_pct = (merma_mes_m2 / area_base_m2 * 100) if area_base_m2 > 0 else 0
 
     return render_template('inventario.html',
                            total_productos=total_productos,
@@ -279,6 +332,10 @@ def index():
                            categorias_data=categorias_data,
                            merma_estimada_mes_m2=round(merma_mes_m2, 2),
                            merma_estimada_mes_pct=round(merma_mes_pct, 1),
+                           merma_mes_origen=merma_mes_origen,
+                           merma_operativa_ordenes_m2=round(merma_operativa_ordenes_m2, 2),
+                           merma_bruta_conteos_m2=round(merma_bruta_conteos_m2, 2),
+                           merma_imprevista_conteos_m2=round(merma_imprevista_conteos_m2, 2),
                            fechas_json=json.dumps(fechas),
                            valores_json=json.dumps(valores))
 
@@ -1234,29 +1291,40 @@ def merma():
     fecha_fin_str = request.args.get('fecha_fin')
     agrupar_por = request.args.get('agrupar_por', 'producto')
     tipo_merma = request.args.get('tipo_merma', 'real')
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    sort = request.args.get('sort', 'merma')
+    order = request.args.get('order', 'desc')
 
     hoy = datetime.now()
+    # ============================================================
+    # FIX: fin de día para "hoy" (antes usaba la hora actual y
+    # excluía movimientos del mismo día posteriores a la hora)
+    # ============================================================
+    fin_de_hoy = hoy.replace(hour=23, minute=59, second=59, microsecond=999999)
+    inicio_de_hoy = hoy.replace(hour=0, minute=0, second=0, microsecond=0)
+
     if fecha_inicio_str and fecha_fin_str:
         try:
             fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d')
             fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
         except:
             fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            fecha_fin = hoy
+            fecha_fin = fin_de_hoy
     else:
         if periodo == 'day':
-            fecha_inicio = hoy.replace(hour=0, minute=0, second=0, microsecond=0)
-            fecha_fin = hoy
+            fecha_inicio = inicio_de_hoy
+            fecha_fin = fin_de_hoy
         elif periodo == 'week':
             inicio_semana = hoy - timedelta(days=hoy.weekday())
             fecha_inicio = inicio_semana.replace(hour=0, minute=0, second=0, microsecond=0)
-            fecha_fin = hoy
+            fecha_fin = fin_de_hoy
         elif periodo == 'month':
             fecha_inicio = hoy.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-            fecha_fin = hoy
-        else:
+            fecha_fin = fin_de_hoy
+        else:  # year
             fecha_inicio = hoy.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-            fecha_fin = hoy
+            fecha_fin = fin_de_hoy
 
     datos_lista = []
     labels = []
@@ -1306,7 +1374,6 @@ def merma():
                     'merma_operativa_pct': round(pct, 2),
                     'lineas': vals['lineas'],
                 })
-            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
 
         elif agrupar_por == 'linea':
             for a in archivos:
@@ -1333,7 +1400,6 @@ def merma():
                     'merma_operativa_pct': round(pct, 2),
                     'lineas': 1,
                 })
-            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
 
         else:  # producto
             grupos = {}
@@ -1366,14 +1432,8 @@ def merma():
                     'merma_operativa_pct': round(pct, 2),
                     'lineas': vals['lineas'],
                 })
-            datos_lista.sort(key=lambda x: x['merma_operativa_m2'], reverse=True)
 
-        labels = [d['nombre'][:25] for d in datos_lista[:10]]
-        merma_values = [d['merma_operativa_m2'] for d in datos_lista[:10]]
-        pie_labels = labels
-        pie_values = merma_values
-
-    else:
+    else:  # tipo_merma == 'real'
         movimientos = Movimiento.query.filter(
             Movimiento.fecha >= fecha_inicio,
             Movimiento.fecha <= fecha_fin,
@@ -1408,9 +1468,8 @@ def merma():
                     'merma': round(merma_val, 2),
                     'porcentaje': round(pct, 2),
                 })
-            datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
 
-        else:
+        else:  # producto
             datos = {}
             for m in movimientos:
                 producto = m.producto
@@ -1442,15 +1501,163 @@ def merma():
                     'merma': round(merma_val, 2),
                     'porcentaje': round(pct, 2),
                 })
-            datos_lista.sort(key=lambda x: abs(x['merma']), reverse=True)
 
-        labels = [d['nombre'][:20] for d in datos_lista[:10]]
-        merma_values = [round(d['merma'], 2) for d in datos_lista[:10]]
-        pie_labels = labels
-        pie_values = merma_values
+    # ============================================================
+    # ORDENAMIENTO
+    # ============================================================
+    def _get_sort_key(item):
+        if sort == 'nombre':
+            return (item.get('nombre') or '').lower()
+        if sort == 'categoria':
+            return (item.get('categoria') or '').lower()
+        if sort == 'entradas':
+            return item.get('entradas', 0)
+        if sort == 'consumos':
+            return item.get('consumos', 0)
+        if sort == 'merma':
+            return item.get('merma', item.get('merma_operativa_m2', 0))
+        if sort == 'porcentaje':
+            return item.get('porcentaje', item.get('merma_operativa_pct', 0))
+        if sort == 'area_facturada':
+            return item.get('area_facturada_m2', 0)
+        if sort == 'material_consumido':
+            return item.get('material_consumido_m2', 0)
+        if sort == 'orden':
+            return (item.get('orden_num') or '').lower()
+        if sort == 'cliente':
+            return (item.get('cliente') or '').lower()
+        return item.get('merma', item.get('merma_operativa_m2', 0))
+
+    datos_lista.sort(key=_get_sort_key, reverse=(order == 'desc'))
+
+    # ============================================================
+    # GRÁFICOS — top 10
+    # ============================================================
+    if tipo_merma == 'estimada':
+        top = sorted(datos_lista, key=lambda x: x['merma_operativa_m2'], reverse=True)[:10]
+        labels = [d['nombre'][:25] for d in top]
+        merma_values = [d['merma_operativa_m2'] for d in top]
+    else:
+        top = sorted(datos_lista, key=lambda x: abs(x['merma']), reverse=True)[:10]
+        labels = [d['nombre'][:20] for d in top]
+        merma_values = [round(d['merma'], 2) for d in top]
+    pie_labels = labels
+    pie_values = merma_values
+
+    # ============================================================
+    # PAGINACIÓN
+    # ============================================================
+    total_registros = len(datos_lista)
+    total_pages = max(1, (total_registros + per_page - 1) // per_page)
+    page = max(1, min(page, total_pages))
+    offset = (page - 1) * per_page
+    datos_paginados = datos_lista[offset:offset + per_page]
 
     return render_template('merma.html',
-                           datos=datos_lista,
+                           datos=datos_paginados,
+                           total_registros=total_registros,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page,
+                           periodo=periodo,
+                           fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
+                           fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
+                           agrupar_por=agrupar_por,
+                           tipo_merma=tipo_merma,
+                           sort=sort,
+                           order=order,
+                           labels=json.dumps(labels),
+                           merma_values=json.dumps(merma_values),
+                           pie_labels=json.dumps(pie_labels),
+                           pie_values=json.dumps(pie_values))
+
+    # ============================================================
+    # ORDENAMIENTO DINÁMICO
+    # ============================================================
+    def _get_sort_key(item):
+        if sort == 'nombre':
+            return (item.get('nombre') or '').lower()
+        if sort == 'categoria':
+            return (item.get('categoria') or '').lower()
+        if sort == 'entradas':
+            return item.get('entradas', 0)
+        if sort == 'consumos':
+            return item.get('consumos', 0)
+        if sort == 'merma':
+            # Para real usa 'merma', para estimada usa 'merma_operativa_m2'
+            return item.get('merma', item.get('merma_operativa_m2', 0))
+        if sort == 'porcentaje':
+            return item.get('porcentaje', item.get('merma_operativa_pct', 0))
+        if sort == 'area_facturada':
+            return item.get('area_facturada_m2', 0)
+        if sort == 'material_consumido':
+            return item.get('material_consumido_m2', 0)
+        if sort == 'orden':
+            return (item.get('orden_num') or '').lower()
+        if sort == 'cliente':
+            return (item.get('cliente') or '').lower()
+        # default: merma (real o estimada)
+        return item.get('merma', item.get('merma_operativa_m2', 0))
+
+    datos_lista.sort(key=_get_sort_key, reverse=(order == 'desc'))
+
+    # ============================================================
+    # GRÁFICOS — top 10 de TODOS los registros (no paginados)
+    # ============================================================
+    if tipo_merma == 'estimada':
+        top = sorted(datos_lista, key=lambda x: x['merma_operativa_m2'], reverse=True)[:10]
+        labels = [d['nombre'][:25] for d in top]
+        merma_values = [d['merma_operativa_m2'] for d in top]
+    else:
+        top = sorted(datos_lista, key=lambda x: abs(x['merma']), reverse=True)[:10]
+        labels = [d['nombre'][:20] for d in top]
+        merma_values = [round(d['merma'], 2) for d in top]
+    pie_labels = labels
+    pie_values = merma_values
+
+    # ============================================================
+    # PAGINACIÓN
+    # ============================================================
+    total_registros = len(datos_lista)
+    total_pages = max(1, (total_registros + per_page - 1) // per_page)
+    page = max(1, min(page, total_pages))
+    offset = (page - 1) * per_page
+    datos_paginados = datos_lista[offset:offset + per_page]
+
+    return render_template('merma.html',
+                           datos=datos_paginados,
+                           total_registros=total_registros,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page,
+                           periodo=periodo,
+                           fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
+                           fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
+                           agrupar_por=agrupar_por,
+                           tipo_merma=tipo_merma,
+                           sort=sort,
+                           order=order,
+                           labels=json.dumps(labels),
+                           merma_values=json.dumps(merma_values),
+                           pie_labels=json.dumps(pie_labels),
+                           pie_values=json.dumps(pie_values))
+
+    # ============================================================
+    # PAGINACIÓN — solo para la tabla de detalle (los gráficos
+    # siempre muestran el top 10 de TODOS los registros).
+    # ============================================================
+    total_registros = len(datos_lista)
+    total_pages = max(1, (total_registros + per_page - 1) // per_page)
+    page = max(1, min(page, total_pages))
+    offset = (page - 1) * per_page
+    datos_paginados = datos_lista[offset:offset + per_page]
+
+    return render_template('merma.html',
+                           datos=datos_paginados,
+                           total_registros=total_registros,
+                           page=page,
+                           total_pages=total_pages,
+                           per_page=per_page,
                            periodo=periodo,
                            fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
                            fecha_fin=fecha_fin.strftime('%Y-%m-%d'),
