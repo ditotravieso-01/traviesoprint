@@ -177,16 +177,24 @@ if [ "${CHANGE_HOSTNAME}" = true ]; then
             hostname "${SHORT_HOSTNAME}"
         }
 
+        # ------------------------------------------------------------
         # Actualizar /etc/hosts
+        # ------------------------------------------------------------
         # 1. Eliminar la línea 127.0.1.1 previa si existe
         if grep -q "^127.0.1.1" /etc/hosts; then
             sed -i '/^127\.0\.1\.1/d' /etc/hosts
         fi
-        # 2. Añadir nueva entrada
+        # 2. Eliminar cualquier línea previa que mencione el dominio
+        sed -i "\|[[:space:]]${DOMAIN}[[:space:]]|d" /etc/hosts 2>/dev/null || true
+        # 3. Añadir nueva entrada
         echo "127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}" >> /etc/hosts
 
         log_ok "Hostname configurado: ${SHORT_HOSTNAME}"
-        log_info "/etc/hosts actualizado: 127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}"
+        log_info "/etc/hosts actualizado:"
+        log_info "   127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}"
+        echo ""
+        log_info "Contenido actual de /etc/hosts:"
+        cat /etc/hosts | sed 's/^/   /'
     fi
 fi
 
