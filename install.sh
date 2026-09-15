@@ -34,7 +34,7 @@ SSL_KEY="/etc/ssl/private/${APP_NAME}.key"
 # ============================================================
 echo -e "${GREEN}${BOLD}"
 echo "=================================================="
-echo "   TraviesoPrint - Instalación automática v1.2"
+echo "   TraviesoPrint - Instalación automática v1.3"
 echo "   Gestión para talleres de impresión"
 echo "=================================================="
 echo -e "${NC}"
@@ -95,11 +95,29 @@ echo ""
 read -r -p "🌐 Dominio o IP pública [${DEFAULT_DOMAIN}]: " INPUT_DOMAIN
 DOMAIN="${INPUT_DOMAIN:-$DEFAULT_DOMAIN}"
 
+# ¿El dominio es una IP o un nombre?
+if [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    DOMAIN_IS_IP=true
+else
+    DOMAIN_IS_IP=false
+fi
+
 read -r -p "👤 Usuario Linux para la app [${APP_USER}]: " INPUT_USER
 APP_USER="${INPUT_USER:-$APP_USER}"
 
 read -r -p "📂 Directorio de instalación [${APP_DIR}]: " INPUT_DIR
 APP_DIR="${INPUT_DIR:-$APP_DIR}"
+
+# Preguntar sobre hostname solo si el dominio es un nombre (no IP)
+CHANGE_HOSTNAME=false
+SHORT_HOSTNAME=""
+if [ "${DOMAIN_IS_IP}" = false ]; then
+    SHORT_HOSTNAME=$(echo "${DOMAIN}" | cut -d. -f1)
+    read -r -p "🖥️  ¿Configurar hostname del servidor a '${SHORT_HOSTNAME}'? [s/N]: " INPUT_HOSTNAME
+    if [[ "${INPUT_HOSTNAME:-N}" =~ ^[sS]$ ]]; then
+        CHANGE_HOSTNAME=true
+    fi
+fi
 
 echo ""
 read -r -p "🔒 ¿Generar certificado autofirmado y habilitar HTTPS? [S/n]: " INPUT_HTTPS
@@ -110,10 +128,15 @@ fi
 
 echo ""
 log_info "Resumen:"
-echo "   • Dominio/IP : ${DOMAIN}"
-echo "   • Usuario    : ${APP_USER}"
-echo "   • Directorio : ${APP_DIR}"
-echo "   • HTTPS      : $( [ "${ENABLE_HTTPS}" = true ] && echo 'Sí (cert autofirmado, 1 año)' || echo 'No' )"
+echo "   • Dominio/IP     : ${DOMAIN}"
+echo "   • Usuario        : ${APP_USER}"
+echo "   • Directorio     : ${APP_DIR}"
+echo "   • HTTPS          : $( [ "${ENABLE_HTTPS}" = true ] && echo 'Sí (cert autofirmado, 1 año)' || echo 'No' )"
+if [ "${CHANGE_HOSTNAME}" = true ]; then
+    echo "   • Hostname       : Sí → ${SHORT_HOSTNAME}"
+else
+    echo "   • Hostname       : No (se conserva el actual)"
+fi
 echo ""
 read -r -p "¿Continuar? [s/N]: " CONFIRM
 if [[ ! "${CONFIRM:-N}" =~ ^[sS]$ ]]; then
@@ -122,7 +145,38 @@ if [[ ! "${CONFIRM:-N}" =~ ^[sS]$ ]]; then
 fi
 
 # ============================================================
-# 5. Actualizar sistema e instalar dependencias
+# 5. Configurar hostname del servidor (opcional)
+# ============================================================
+if [ "${CHANGE_HOSTNAME}" = true ]; then
+    CURRENT_HOSTNAME=$(hostname)
+
+    if [ "${CURRENT_HOSTNAME}" = "${SHORT_HOSTNAME}" ]; then
+        log_info "Hostname ya es ${SHORT_HOSTNAME}. No se modifica."
+    else
+        log_info "Configurando hostname: ${CURRENT_HOSTNAME} → ${SHORT_HOSTNAME}"
+
+        # Cambiar hostname (actualiza /etc/hostname y el running hostname)
+        hostnamectl set-hostname "${SHORT_HOSTNAME}" 2>/dev/null || {
+            # Fallback si no existe systemd-hostnamed
+            echo "${SHORT_HOSTNAME}" > /etc/hostname
+            hostname "${SHORT_HOSTNAME}"
+        }
+
+        # Actualizar /etc/hosts
+        # 1. Eliminar la línea 127.0.1.1 previa si existe
+        if grep -q "^127.0.1.1" /etc/hosts; then
+            sed -i '/^127\.0\.1\.1/d' /etc/hosts
+        fi
+        # 2. Añadir nueva entrada
+        echo "127.0.1.1    ${DOMAIN}    ${SHORT_HOSTNAME}" >> /etc/hosts
+
+        log_ok "Hostname configurado: ${SHORT_HOSTNAME}"
+        log_info "/etc/hosts actualizado: 127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}"
+    fi
+fi
+
+# ============================================================
+# 6. Actualizar sistema e instalar dependencias
 # ============================================================
 log_info "Actualizando lista de paquetes..."
 export DEBIAN_FRONTEND=noninteractive
@@ -155,7 +209,7 @@ apt-get install -y --no-install-recommends \
 log_ok "Dependencias del sistema instaladas."
 
 # ============================================================
-# 6. Crear usuario del sistema
+# 7. Crear usuario del sistema
 # ============================================================
 if ! id "${APP_USER}" &>/dev/null; then
     log_info "Creando usuario del sistema: ${APP_USER}"
@@ -168,7 +222,7 @@ fi
 usermod -aG www-data "${APP_USER}" || true
 
 # ============================================================
-# 7. Clonar o usar repositorio existente
+# 8. Clonar o usar repositorio existente  (FIX: permisos /opt)
 # ============================================================
 if [ "${IS_IN_REPO}" = true ]; then
     log_info "Usando repositorio existente en ${APP_DIR}"
@@ -188,11 +242,19 @@ else
         sudo -u "${APP_USER}" git -C "${APP_DIR}" reset --hard origin/main
     else
         log_info "Clonando repositorio en ${APP_DIR}..."
-        mkdir -p "$(dirname "${APP_DIR}")"
-        if [ -e "${APP_DIR}" ] && [ "$(ls -A "${APP_DIR}" 2>/dev/null)" ]; then
+
+        # Si el directorio existe y no está vacío, abortar
+        if [ -e "${APP_DIR}" ] && [ -n "$(ls -A "${APP_DIR}" 2>/dev/null)" ]; then
             log_error "${APP_DIR} existe y no está vacío. Abortando."
             exit 1
         fi
+
+        # FIX: crear el directorio como root y pasar propiedad al usuario de la app
+        # Esto evita "Permission denied" al hacer git clone como usuario no-root
+        mkdir -p "${APP_DIR}"
+        chown "${APP_USER}:${APP_USER}" "${APP_DIR}"
+        chmod 750 "${APP_DIR}"
+
         sudo -u "${APP_USER}" git clone "${REPO_URL}" "${APP_DIR}"
     fi
 fi
@@ -203,7 +265,7 @@ chmod 750 "${APP_DIR}"
 log_ok "Código fuente listo en ${APP_DIR}"
 
 # ============================================================
-# 8. Crear directorios necesarios
+# 9. Crear directorios necesarios
 # ============================================================
 log_info "Creando directorios de trabajo..."
 sudo -u "${APP_USER}" mkdir -p "${APP_DIR}/instance"
@@ -218,7 +280,7 @@ chmod 755 "${APP_DIR}/app/static/uploads"
 log_ok "Directorios listos."
 
 # ============================================================
-# 9. Crear entorno virtual
+# 10. Crear entorno virtual
 # ============================================================
 VENV_DIR="${APP_DIR}/venv"
 
@@ -241,7 +303,7 @@ sudo -u "${APP_USER}" "${VENV_DIR}/bin/pip" install gunicorn python-dotenv -q
 log_ok "Dependencias Python instaladas."
 
 # ============================================================
-# 10. Generar .env
+# 11. Generar .env
 # ============================================================
 ENV_FILE="${APP_DIR}/.env"
 SCHEME="http"
@@ -278,7 +340,7 @@ EOF
 fi
 
 # ============================================================
-# 11. Aplicar migraciones Alembic
+# 12. Aplicar migraciones Alembic
 # ============================================================
 log_info "Aplicando migraciones Alembic..."
 cd "${APP_DIR}"
@@ -301,7 +363,7 @@ sudo -u "${APP_USER}" bash -c "
 log_ok "Base de datos lista."
 
 # ============================================================
-# 12. Servicio systemd  (Type=simple para evitar cuelgues)
+# 13. Servicio systemd
 # ============================================================
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 SOCKET_FILE="${APP_DIR}/${APP_NAME}.sock"
@@ -334,7 +396,6 @@ Restart=always
 RestartSec=3
 KillMode=mixed
 
-# Seguridad básica
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=full
@@ -354,12 +415,11 @@ chmod 660 "${SOCKET_FILE}"
 log_ok "Servicio systemd configurado."
 
 # ============================================================
-# 13. Certificado SSL autofirmado (si se pidió)
+# 14. Certificado SSL autofirmado (si se pidió)
 # ============================================================
 if [ "${ENABLE_HTTPS}" = true ]; then
     log_info "Generando certificado SSL autofirmado (válido 1 año)..."
 
-    # SAN con dominio, IP pública, IP de red y localhost
     SAN="DNS:${DOMAIN},DNS:localhost,IP:${SERVER_IP},IP:127.0.0.1"
     if [ "${DOMAIN}" != "${SERVER_IP}" ]; then
         SAN="DNS:${DOMAIN},DNS:localhost,IP:${SERVER_IP},IP:127.0.0.1"
@@ -378,13 +438,6 @@ if [ "${ENABLE_HTTPS}" = true ]; then
     chmod 644 "${SSL_CERT}"
     chown root:root "${SSL_KEY}" "${SSL_CERT}"
 
-    # Generar dhparam para mejor seguridad TLS (opcional pero recomendado)
-    if [ ! -f "/etc/ssl/certs/dhparam.pem" ]; then
-        log_info "Generando dhparam (puede tardar 30-60s)..."
-        openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048 >/dev/null 2>&1 || \
-            log_warn "No se pudo generar dhparam; se omitirá."
-    fi
-
     log_ok "Certificado generado:"
     echo "   • Cert : ${SSL_CERT}"
     echo "   • Key  : ${SSL_KEY}"
@@ -392,18 +445,15 @@ if [ "${ENABLE_HTTPS}" = true ]; then
 fi
 
 # ============================================================
-# 14. Nginx (con o sin HTTPS)
+# 15. Nginx (con o sin HTTPS)
 # ============================================================
 NGINX_CONF="/etc/nginx/sites-available/${APP_NAME}"
 
 log_info "Configurando Nginx..."
 
 if [ "${ENABLE_HTTPS}" = true ]; then
-    # HTTP → HTTPS redirect + HTTPS server
     cat > "${NGINX_CONF}" <<EOF
-# ============================================================
 # Redirección HTTP → HTTPS
-# ============================================================
 server {
     listen 80;
     listen [::]:80;
@@ -411,20 +461,16 @@ server {
     return 301 https://\$host\$request_uri;
 }
 
-# ============================================================
 # Servidor HTTPS (certificado autofirmado)
-# ============================================================
 server {
     listen 443 ssl;
     listen [::]:443 ssl;
     http2 on;
     server_name ${DOMAIN};
 
-    # Certificado autofirmado
     ssl_certificate     ${SSL_CERT};
     ssl_certificate_key ${SSL_KEY};
 
-    # Configuración TLS moderna
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
     ssl_prefer_server_ciphers off;
@@ -432,7 +478,6 @@ server {
     ssl_session_timeout 1d;
     ssl_session_tickets off;
 
-    # Ocultar versión de Nginx
     server_tokens off;
 
     client_max_body_size 50M;
@@ -461,7 +506,6 @@ server {
 EOF
     log_ok "Nginx configurado con HTTPS (autofirmado)."
 else
-    # Solo HTTP
     cat > "${NGINX_CONF}" <<EOF
 server {
     listen 80;
@@ -508,7 +552,7 @@ systemctl reload nginx || systemctl restart nginx
 log_ok "Nginx recargado."
 
 # ============================================================
-# 15. Firewall (UFW)
+# 16. Firewall (UFW)
 # ============================================================
 log_info "Configurando firewall UFW..."
 ufw allow 22/tcp   >/dev/null 2>&1 || true
@@ -518,7 +562,7 @@ ufw --force enable >/dev/null 2>&1 || true
 log_ok "Firewall activo (22, 80, 443)."
 
 # ============================================================
-# 16. Arrancar el servicio
+# 17. Arrancar el servicio
 # ============================================================
 log_info "Iniciando ${SERVICE_NAME}..."
 systemctl restart "${SERVICE_NAME}.service"
@@ -533,7 +577,7 @@ else
 fi
 
 # ============================================================
-# 17. Resumen final
+# 18. Resumen final
 # ============================================================
 URL_FINAL="http://${DOMAIN}"
 [ "${ENABLE_HTTPS}" = true ] && URL_FINAL="https://${DOMAIN}"
@@ -549,6 +593,7 @@ echo -e "  👤 Usuario:     ${APP_USER}"
 echo -e "  🐍 Virtualenv:  ${VENV_DIR}"
 echo -e "  🗄️  BD SQLite:   ${APP_DIR}/instance/traviesoprint.db"
 echo -e "  📄 Logs:        ${APP_DIR}/logs/"
+echo -e "  🖥️  Hostname:    $(hostname)"
 
 if [ "${ENABLE_HTTPS}" = true ]; then
     echo -e "  🔒 Cert SSL:    ${SSL_CERT}"
@@ -567,9 +612,6 @@ if [ "${ENABLE_HTTPS}" = true ]; then
     echo -e "  ${YELLOW}${BOLD}⚠️  CERTIFICADO AUTOFIRMADO:${NC}"
     echo -e "   El navegador mostrará una advertencia de seguridad la primera vez."
     echo -e "   Es normal y esperado: solo acepta la excepción y continúa."
-    echo -e "   Cuando tengas un dominio real, reemplázalo con Let's Encrypt:"
-    echo -e "     sudo apt install certbot python3-certbot-nginx"
-    echo -e "     sudo certbot --nginx -d tu-dominio.com"
     echo ""
 fi
 
