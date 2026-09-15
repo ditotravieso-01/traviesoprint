@@ -196,7 +196,7 @@
                     <td data-label="Fecha">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
                     <td data-label="Producto"><strong>{{ m.producto.nombre if m.producto else '—' }}</strong></td>
                     <td data-label="Tipo">
-                        <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'salida_ajuste' %}#fde8e5{% elif m.tipo == 'entrada_ajuste' %}#e0f2fe{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'salida_ajuste' %}#dc2626{% elif m.tipo == 'entrada_ajuste' %}#0ea5e9{% else %}#555{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">
+                        <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'merma' %}#fde8e5{% elif m.tipo == 'sobrante' %}#e0f2fe{% elif m.tipo == 'correccion_baja' %}#fef3c7{% elif m.tipo == 'correccion_alta' %}#e0e7ff{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'merma' %}#dc2626{% elif m.tipo == 'sobrante' %}#0ea5e9{% elif m.tipo == 'correccion_baja' %}#92400e{% elif m.tipo == 'correccion_alta' %}#3730a3{% else %}#555{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">
                             {{ m.tipo.replace('_', ' ').title() }}
                         </span>
                     </td>

@@ -39,8 +39,10 @@
     .badge-entrada { background:#d1fae5; color:#10b981; }
     .badge-consumo { background:#fef3c7; color:#d97706; }
     .badge-reserva { background:#e0e7ff; color:#3b82f6; }
-    .badge-salida_ajuste { background:#fde8e5; color:#dc2626; }
-    .badge-entrada_ajuste { background:#e0f2fe; color:#0ea5e9; }
+    .badge-merma { background:#fde8e5; color:#dc2626; }
+    .badge-sobrante { background:#e0f2fe; color:#0ea5e9; }
+    .badge-correccion_baja { background:#fef3c7; color:#92400e; }
+    .badge-correccion_alta { background:#e0e7ff; color:#3730a3; }
 
     .resumen-card {
         display:flex; flex-wrap:wrap; gap:20px; padding:12px 16px;
@@ -75,7 +77,6 @@
         min-height: 240px;
     }
 
-    /* Tabla responsiva con tarjetas en móvil */
     .movimientos-table-wrap {
         width: 100%;
         overflow-x: auto;
@@ -215,10 +216,9 @@
         </div>
     </div>
 
-    <!-- Resumen rápido -->
     {% set total_entradas = movimientos|selectattr('tipo', 'equalto', 'entrada')|sum(attribute='cantidad') %}
     {% set total_consumos = movimientos|selectattr('tipo', 'equalto', 'consumo')|sum(attribute='cantidad') %}
-    {% set total_merma = movimientos|selectattr('tipo', 'equalto', 'salida_ajuste')|sum(attribute='cantidad') %}
+    {% set total_merma = movimientos|selectattr('tipo', 'equalto', 'merma')|sum(attribute='cantidad') %}
     <div class="resumen-card">
         <div class="resumen-item"><span class="label">Total entradas</span><span class="value positivo">{{ total_entradas|round(2) }}</span></div>
         <div class="resumen-item"><span class="label">Total consumos</span><span class="value negativo">{{ total_consumos|round(2) }}</span></div>
@@ -226,7 +226,6 @@
         <div class="resumen-item"><span class="label">Movimientos totales</span><span class="value">{{ total_movimientos }}</span></div>
     </div>
 
-    <!-- Filtros -->
     <form method="GET" action="{{ url_for('inventario.movimientos') }}" class="filters-bar">
         <div class="filter-group">
             <label>Categoría</label>
@@ -281,7 +280,6 @@
         </div>
     </form>
 
-    <!-- GRÁFICOS -->
     <div class="chart-grid">
         <div class="chart-container">
             <div class="chart-header">
@@ -316,7 +314,6 @@
         <canvas id="chartTop"></canvas>
     </div>
 
-    <!-- Tabla de movimientos (responsiva) -->
     <h4 style="margin-top:20px;">📋 Detalle de movimientos</h4>
     <div class="movimientos-table-wrap">
         <table>
@@ -349,8 +346,8 @@
                     <td data-label="Comentario">{{ m.comentario or '-' }}</td>
                     <td data-label="Orden / Cliente">
                         {% if m.orden %}
-                            <a href="{{ url_for('ordenes.detalle_order', order_id=m.orden.id) }}" 
-                               target="_blank" 
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=m.orden.id) }}"
+                               target="_blank"
                                style="color: #3b82f6; text-decoration: none; font-weight: 500;"
                                onmouseover="this.style.textDecoration='underline'"
                                onmouseout="this.style.textDecoration='none'"
@@ -383,17 +380,17 @@
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    // Datos desde el backend
     const chartData = {{ chart_data | safe }};
     let chartEvolucion, chartDistribucion, chartTop;
 
-    // Colores consistentes para tipos
     const TIPO_COLORS = {
-        'entrada': '#10b981',
-        'consumo': '#f59e0b',
-        'reserva': '#3b82f6',
-        'salida_ajuste': '#dc2626',
-        'entrada_ajuste': '#0ea5e9'
+        'entrada':          '#10b981',
+        'consumo':          '#f59e0b',
+        'reserva':          '#3b82f6',
+        'merma':            '#dc2626',
+        'sobrante':         '#0ea5e9',
+        'correccion_baja':  '#92400e',
+        'correccion_alta':  '#3730a3'
     };
 
     function isMobile() {
@@ -545,10 +542,7 @@
                 scales: {
                     x: indexAxis === 'y' ? {
                         grid: { display: false },
-                        ticks: {
-                            font: { size: 10 },
-                            callback: tickCallback
-                        }
+                        ticks: { font: { size: 10 }, callback: tickCallback }
                     } : {
                         grid: { display: false },
                         ticks: {
@@ -579,8 +573,7 @@
         crearGraficoDistribucion(document.getElementById('tipoDistribucion').value);
     }
     function cambiarTipoTop() {
-        const tipo = document.getElementById('tipoTop').value;
-        crearGraficoTop(tipo);
+        crearGraficoTop(document.getElementById('tipoTop').value);
     }
 
     document.addEventListener('DOMContentLoaded', function() {
@@ -606,7 +599,7 @@
         });
     });
 
-    // Ordenación de tabla (frontend)
+    // Ordenación de tabla
     document.addEventListener('DOMContentLoaded', function() {
         const table = document.querySelector('.movimientos-table-wrap table');
         if (!table) return;
