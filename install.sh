@@ -98,8 +98,10 @@ DOMAIN="${INPUT_DOMAIN:-$DEFAULT_DOMAIN}"
 # ¿El dominio es una IP o un nombre?
 if [[ "${DOMAIN}" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     DOMAIN_IS_IP=true
+    DEFAULT_HOSTNAME="traviesoprint"
 else
     DOMAIN_IS_IP=false
+    DEFAULT_HOSTNAME=$(echo "${DOMAIN}" | cut -d. -f1)
 fi
 
 read -r -p "👤 Usuario Linux para la app [${APP_USER}]: " INPUT_USER
@@ -108,14 +110,26 @@ APP_USER="${INPUT_USER:-$APP_USER}"
 read -r -p "📂 Directorio de instalación [${APP_DIR}]: " INPUT_DIR
 APP_DIR="${INPUT_DIR:-$APP_DIR}"
 
-# Preguntar sobre hostname solo si el dominio es un nombre (no IP)
+# ------------------------------------------------------------
+# Preguntar SIEMPRE por hostname (con default según el caso)
+# ------------------------------------------------------------
+echo ""
+log_info "Configuración del hostname del servidor"
+echo "   El hostname se usa internamente por el sistema y ayuda"
+echo "   a que 'hostname', 'sudo', logs y HTTPS sean consistentes."
+echo ""
+read -r -p "🖥️  ¿Configurar hostname del servidor a '${DEFAULT_HOSTNAME}'? [s/N]: " INPUT_HOSTNAME
 CHANGE_HOSTNAME=false
 SHORT_HOSTNAME=""
-if [ "${DOMAIN_IS_IP}" = false ]; then
-    SHORT_HOSTNAME=$(echo "${DOMAIN}" | cut -d. -f1)
-    read -r -p "🖥️  ¿Configurar hostname del servidor a '${SHORT_HOSTNAME}'? [s/N]: " INPUT_HOSTNAME
-    if [[ "${INPUT_HOSTNAME:-N}" =~ ^[sS]$ ]]; then
-        CHANGE_HOSTNAME=true
+if [[ "${INPUT_HOSTNAME:-N}" =~ ^[sS]$ ]]; then
+    CHANGE_HOSTNAME=true
+    read -r -p "   Nombre corto del hostname [${DEFAULT_HOSTNAME}]: " INPUT_SHORT
+    SHORT_HOSTNAME="${INPUT_SHORT:-$DEFAULT_HOSTNAME}"
+
+    # Validación básica: solo letras, números, guiones
+    if ! [[ "${SHORT_HOSTNAME}" =~ ^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$ ]]; then
+        log_error "Hostname inválido: '${SHORT_HOSTNAME}'. Solo letras, números y guiones."
+        exit 1
     fi
 fi
 
@@ -134,6 +148,7 @@ echo "   • Directorio     : ${APP_DIR}"
 echo "   • HTTPS          : $( [ "${ENABLE_HTTPS}" = true ] && echo 'Sí (cert autofirmado, 1 año)' || echo 'No' )"
 if [ "${CHANGE_HOSTNAME}" = true ]; then
     echo "   • Hostname       : Sí → ${SHORT_HOSTNAME}"
+    echo "   • /etc/hosts     : Se añadirá '127.0.1.1 ${DOMAIN} ${SHORT_HOSTNAME}'"
 else
     echo "   • Hostname       : No (se conserva el actual)"
 fi
