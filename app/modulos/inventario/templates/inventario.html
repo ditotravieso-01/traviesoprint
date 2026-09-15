@@ -129,11 +129,20 @@
         <div class="kpi-value">{{ criticos }}</div>
         <div class="kpi-label">Productos críticos</div>
     </div>
-    <!-- ===== NUEVO KPI: MERMA ESTIMADA DEL MES ===== -->
+    <!-- ===== KPI MERMA DEL MES (combina conteos + órdenes) ===== -->
     <div class="kpi-card rojo" style="border-top-color:#dc2626;">
         <i class="fas fa-calculator kpi-icon"></i>
         <div class="kpi-value">{{ merma_estimada_mes_m2 }}</div>
-        <div class="kpi-label">Merma est. mes (m²) · {{ merma_estimada_mes_pct }}%</div>
+        <div class="kpi-label" title="{% if merma_mes_origen == 'conteo' %}Merma real detectada en los conteos semanales del mes{% else %}Merma operativa calculada de las órdenes del mes{% endif %}">
+            Merma mes (m²) · {{ merma_estimada_mes_pct }}%
+            <span style="display:block; font-size:10px; color:#8e8e93; margin-top:2px;">
+                {% if merma_mes_origen == 'conteo' %}
+                    📋 real · {{ merma_bruta_conteos_m2 }} m²
+                {% else %}
+                    📐 operativa · {{ merma_operativa_ordenes_m2 }} m²
+                {% endif %}
+            </span>
+        </div>
     </div>
 </div>
 

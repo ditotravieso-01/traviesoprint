@@ -18,10 +18,14 @@
     .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
     .card h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:12px; color:#1c1c1e; }
 
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-bottom:20px; }
-    .kpi-card { background:white; border-radius:14px; padding:16px 20px; border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02); }
+    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:20px; }
+    .kpi-card {
+        background:white; border-radius:14px; padding:16px 20px;
+        border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02);
+    }
     .kpi-card .value { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; color:#1c1c1e; }
-    .kpi-card .label { font-size:12px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
+    .kpi-card .label { font-size:13px; color:#1c1c1e; font-weight:600; margin-top:6px; }
+    .kpi-card .hint { font-size:11px; color:#8e8e93; margin-top:2px; line-height:1.35; }
     .kpi-card.rojo { border-top-color:#dc2626; }
     .kpi-card.rojo .value { color:#dc2626; }
     .kpi-card.verde { border-top-color:#10b981; }
@@ -49,13 +53,21 @@
     .paños-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
     .paños-table th { background:#fafaf9; font-size:10px; padding:6px 8px; }
     .paños-table td { padding:6px 8px; }
+
+    .info-box {
+        display:flex; gap:10px; align-items:flex-start;
+        background:#eff6ff; border-left:4px solid #3b82f6;
+        padding:12px 16px; border-radius:8px;
+        font-size:13px; color:#1e3a8a; margin-bottom:16px; line-height:1.5;
+    }
+    .info-box i { color:#3b82f6; margin-top:2px; flex-shrink:0; }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
     <div>
-        <p style="color:#8e8e93; margin:0;">Desglose de la semana {{ semana }}</p>
+        <p style="color:#8e8e93; margin:0;">Reporte de la semana del {{ semana }}</p>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <select onchange="window.location.href='{{ url_for('inventario.reporte_conteos') }}?semana=' + this.value"
@@ -69,38 +81,56 @@
     </div>
 </div>
 
-<!-- KPIs -->
+<!-- AYUDA CONTEXTUAL -->
+<div class="info-box">
+    <i class="fas fa-info-circle"></i>
+    <div>
+        <strong>¿Qué estoy viendo?</strong> Este es el resumen del conteo físico que hiciste esta semana.
+        Compara <em>lo que el sistema creía tener</em> contra <em>lo que contaste a mano</em>, y separa
+        lo que es <strong>desperdicio normal de impresión</strong> de lo que es <strong>pérdida no explicada</strong>.
+    </div>
+</div>
+
+<!-- KPIs con lenguaje natural -->
 <div class="kpi-grid">
     <div class="kpi-card rojo">
         <div class="value">{{ "%.2f"|format(total_diferencia_m2) }} m²</div>
-        <div class="label">Diferencia total (sistema − físico)</div>
+        <div class="label">📉 Lo que faltó según el conteo</div>
+        <div class="hint">Diferencia entre lo que el sistema creía tener y lo que contaste físicamente.</div>
     </div>
     <div class="kpi-card verde">
         <div class="value">{{ "%.2f"|format(total_merma_operativa_m2) }} m²</div>
-        <div class="label">Merma operativa teórica</div>
+        <div class="label">🖨️ Desperdicio esperado al imprimir</div>
+        <div class="hint">Lo que la máquina tira normalmente (bordes, cortes, gaps). Es normal.</div>
     </div>
     <div class="kpi-card amarillo">
         <div class="value">{{ "%.2f"|format(total_merma_imprevista_m2) }} m²</div>
-        <div class="label">Merma imprevista</div>
+        <div class="label">⚠️ Pérdida no explicada</div>
+        <div class="hint">Lo que falta y NO se explica con la impresión. Si es alto, hay que investigar.</div>
     </div>
     <div class="kpi-card">
         <div class="value">{{ conteos|length }}</div>
-        <div class="label">Conteos registrados</div>
+        <div class="label">📦 Productos contados esta semana</div>
+        <div class="hint">Cada uno lo registraste individualmente.</div>
     </div>
 </div>
 
 <!-- Desglose por producto contado -->
 {% if por_producto %}
 <div class="card">
-    <h4>📦 Productos contados en esta semana</h4>
+    <h4>📦 Productos contados esta semana</h4>
+    <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
+        Cada fila es un producto que contaste. La columna <strong>“Faltó”</strong> muestra la diferencia entre lo que el sistema creía y lo que contaste.
+        La columna <strong>“Pérdida no explicada”</strong> muestra lo que sobra después de restar el desperdicio normal de impresión.
+    </p>
     <table>
         <thead>
             <tr>
                 <th>Producto</th>
-                <th>Conteos</th>
-                <th>Diferencia (m²)</th>
-                <th>Merma operativa (m²)</th>
-                <th>Merma imprevista (m²)</th>
+                <th>Veces contado</th>
+                <th>Faltó (m²)</th>
+                <th>Desperdicio esperado (m²)</th>
+                <th>Pérdida no explicada (m²)</th>
             </tr>
         </thead>
         <tbody>
@@ -118,11 +148,12 @@
 </div>
 {% endif %}
 
-<!-- Merma operativa POR ORDEN de la semana -->
+<!-- Desperdicio por orden de la semana -->
 <div class="card">
-    <h4>📋 Merma operativa por orden (semana {{ semana }})</h4>
+    <h4>🖨️ Desperdicio de cada orden procesada esta semana</h4>
     <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
-        Cada orden muestra el desglose completo de la merma operativa calculada con la fórmula por paño (Opción C).
+        Cada orden muestra cuánto material se usó de más al imprimir (bordes, cortes, gaps, aire).
+        Toca cualquier orden para ver el desglose paño por paño.
     </p>
 
     {% if ordenes_lista %}
@@ -143,7 +174,7 @@
                 </div>
                 <div class="orden-total">
                     <span class="merma-tag">
-                        Merma: {{ "%.2f"|format(o.total_merma_m2) }} m²
+                        Desperdicio: {{ "%.2f"|format(o.total_merma_m2) }} m²
                     </span>
                     <i class="fas fa-chevron-down" style="color:#8e8e93;"></i>
                 </div>
@@ -154,9 +185,9 @@
                         <tr>
                             <th>Línea</th>
                             <th>Etiqueta</th>
-                            <th>Área</th>
-                            <th>Material</th>
-                            <th>Merma</th>
+                            <th>Se facturó</th>
+                            <th>Se usó</th>
+                            <th>Desperdicio</th>
                             <th>%</th>
                             <th>Paños</th>
                         </tr>
@@ -219,7 +250,7 @@
         </div>
         {% endfor %}
     {% else %}
-    <p style="color:#8e8e93; text-align:center; padding:20px;">No hay órdenes con merma operativa en esta semana.</p>
+    <p style="color:#8e8e93; text-align:center; padding:20px;">No hay órdenes procesadas esta semana.</p>
     {% endif %}
 </div>
 
