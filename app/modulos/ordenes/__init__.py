@@ -1,3 +1,5 @@
+# app/modulos/ordenes/__init__.py
+
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Order, User, ArchivoAdjunto, Client, Producto, Movimiento, OrdenProducto, Categoria
@@ -74,7 +76,7 @@ def view_orders_or_admin_comercial_required(func):
     return wrapper
 
 # ==========================================
-# CÁLCULO DE DISTRIBUCIÓN DE CARTELES (CORREGIDO)
+# CÁLCULO DE DISTRIBUCIÓN DE CARTELES
 # ==========================================
 def calcular_distribucion_carteles(ancho_cm, alto_cm, cantidad, ancho_util_cm, girar=False, modo_inteligente=True):
     """
@@ -547,6 +549,7 @@ def _procesar_linea_etiqueta(
             'merma_borde_rollo_m2': merma_data['merma_borde_rollo_m2'],
             'merma_total_m2': merma_data['merma_total_m2'],
             'ancho_cell_usado_m': ancho_cell_m,
+            'alto_cell_usado_m': alto_cell_m, # <-- NUEVO CAMPO AGREGADO
         })
     )
 
@@ -578,7 +581,7 @@ def _procesar_linea_etiqueta(
     return adjunto, op, mov, None
 
 # ==========================================
-# PROCESAR LÍNEA DE CARTEL (CORREGIDO)
+# PROCESAR LÍNEA DE CARTEL
 # ==========================================
 def _procesar_linea_cartel(
     order, producto, ancho_cm, alto_cm, cantidad_piezas, girar, auto_girar, centrar,
@@ -769,6 +772,7 @@ def create_order():
         mesa_etiqueta_list = request.form.getlist('mesa_etiqueta[]')
         girar_etiqueta_list = request.form.getlist('girar_etiqueta[]')
         auto_girar_etiqueta_list = request.form.getlist('auto_girar_etiqueta[]')
+        centrar_etiqueta_list = request.form.getlist('centrar_etiqueta[]') # <-- NUEVO
         ancho_util_override_list = request.form.getlist('ancho_util_override[]')
 
         # Carteles
@@ -823,6 +827,7 @@ def create_order():
                 mesa = mesa_etiqueta_list[i] == '1' if i < len(mesa_etiqueta_list) else False
                 girar = girar_etiqueta_list[i] == '1' if i < len(girar_etiqueta_list) else False
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
+                centrar = centrar_etiqueta_list[i] == '1' if i < len(centrar_etiqueta_list) else True # <-- NUEVO
 
                 adjunto, op, mov, error = _procesar_linea_etiqueta(
                     order=order, producto=producto, ancho_cm=ancho_cm, alto_cm=alto_cm,
@@ -1049,6 +1054,7 @@ def edit_order(order_id):
                     mesa = params.get('mesa', False)
                     girar = params.get('girar', False)
                     auto_girar = params.get('auto_girar', False)
+                    centrar = params.get('centrar', True) # <-- NUEVO
 
                     adjunto_tmp, op_nuevo, mov, error = _procesar_linea_etiqueta(
                         order=order, producto=producto_nuevo,
@@ -1156,6 +1162,7 @@ def edit_order(order_id):
         mesa_etiqueta_list = request.form.getlist('mesa_etiqueta[]')
         girar_etiqueta_list = request.form.getlist('girar_etiqueta[]')
         auto_girar_etiqueta_list = request.form.getlist('auto_girar_etiqueta[]')
+        centrar_etiqueta_list = request.form.getlist('centrar_etiqueta[]') # <-- NUEVO
         ancho_util_override_list = request.form.getlist('ancho_util_override[]')
 
         ancho_cartel_list = request.form.getlist('ancho_cartel[]')
@@ -1208,6 +1215,7 @@ def edit_order(order_id):
                 mesa = mesa_etiqueta_list[i] == '1' if i < len(mesa_etiqueta_list) else False
                 girar = girar_etiqueta_list[i] == '1' if i < len(girar_etiqueta_list) else False
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
+                centrar = centrar_etiqueta_list[i] == '1' if i < len(centrar_etiqueta_list) else True # <-- NUEVO
 
                 adjunto, op, mov, error = _procesar_linea_etiqueta(
                     order=order, producto=producto, ancho_cm=ancho_cm, alto_cm=alto_cm,

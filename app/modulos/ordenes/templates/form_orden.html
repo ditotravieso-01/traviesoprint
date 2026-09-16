@@ -1,3 +1,4 @@
+<!-- app/modulos/ordenes/templates/form_orden.html -->
 {% extends "base.html" %}
 
 {% block title %}{{ 'Editar' if edit else 'Nueva' }} Orden de Trabajo · CairoStudio{% endblock %}
@@ -616,7 +617,22 @@
                                                 <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
                                                 <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
                                                 <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
+                                                <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                                <label><input type="checkbox" class="mostrar_preview_etiqueta_edit" name="mostrar_preview_etiqueta_edit[]" value="1" checked>Mostrar vista previa</label>
                                             </div>
+
+                                            <div class="form-group">
+                                                <label>Vista previa</label>
+                                                <div class="preview-canvas-wrap">
+                                                    <canvas id="preview-etiqueta-{{ paramsId }}" width="500" height="220"></canvas>
+                                                </div>
+                                                <div class="preview-legend">
+                                                    <span class="item"><span class="swatch" style="background:#fef3c7;border:1px solid #f59e0b;"></span> Etiqueta</span>
+                                                    <span class="item"><span class="swatch" style="background:rgba(0,0,0,0.06);"></span> Borde rollo</span>
+                                                    <span class="item"><span class="swatch" style="background:rgba(245,158,11,0.35);border:1px dashed #f59e0b;"></span> Gap/Cut</span>
+                                                </div>
+                                            </div>
+
                                             <div class="calc-result-linea">
                                                 <div class="item"><span class="label">Etiquetas producidas</span><span class="value etiquetas_por_m2_display_edit">—</span><span class="hint filas_cols_display_edit">—</span></div>
                                                 <div class="item"><span class="label">Área solicitada</span><span class="value area_total_display_edit">—</span><span class="hint area_formula_display_edit">—</span></div>
@@ -679,12 +695,13 @@
                                                 <label><input type="checkbox" class="girar_cartel_edit" name="girar_cartel_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
                                                 <label><input type="checkbox" class="auto_girar_cartel_edit" name="auto_girar_cartel_edit[]" value="1" {% if not params or params.auto_girar is not defined or params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
                                                 <label><input type="checkbox" class="centrar_cartel_edit" name="centrar_cartel_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                                <label><input type="checkbox" class="mostrar_preview_cartel_edit" name="mostrar_preview_cartel_edit[]" value="1" checked>Mostrar vista previa</label>
                                             </div>
 
-                                            <div class="form-group">
+                                            <div class="form-group preview-block-cartel">
                                                 <label>Vista previa</label>
                                                 <div class="preview-canvas-wrap">
-                                                    <canvas id="preview-{{ paramsId }}" width="500" height="220"></canvas>
+                                                    <canvas id="preview-cartel-{{ paramsId }}" width="500" height="220"></canvas>
                                                 </div>
                                                 <div class="preview-legend">
                                                     <span class="item"><span class="swatch" style="background:#bae6fd;border:1px solid #0ea5e9;"></span> Pieza</span>
@@ -983,6 +1000,105 @@ function actualizarPlaceholderCantidad(unidadSelect) {
 }
 
 // =============================================
+// DIBUJAR PREVIEW ETIQUETAS
+// =============================================
+function dibujarPreviewEtiquetas(canvasId, data) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#f8f6f4';
+    ctx.fillRect(0, 0, W, H);
+
+    if (!data || data.error || !data.filas || !data.ancho_real) {
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(data && data.error ? '⚠️ No cabe en el rollo' : 'Vista previa', W/2, H/2);
+        return;
+    }
+
+    const roll_w_m = data.ancho_real;
+    const ancho_util_m = data.ancho_util;
+    const total_h_m = (data.filas * data.alto_cell) + data.gap;
+    const centrar = data.centrar !== false;
+
+    const pad = 14;
+    const avail_w = W - 2 * pad;
+    const avail_h = H - 2 * pad;
+    const scale = Math.min(avail_w / roll_w_m, avail_h / total_h_m);
+
+    const roll_w_px = roll_w_m * scale;
+    const roll_h_px = total_h_m * scale;
+    const offsetX = (W - roll_w_px) / 2;
+    const offsetY = (H - roll_h_px) / 2;
+
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(offsetX, offsetY, roll_w_px, roll_h_px);
+    ctx.strokeStyle = '#8e8e93';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(offsetX, offsetY, roll_w_px, roll_h_px);
+
+    const ancho_util_px = ancho_util_m * scale;
+    const imprimible_h_px = (data.filas * data.alto_cell) * scale;
+
+    const cols = data.cols || 1;
+    const filas = data.filas || 1;
+    const ancho_pieza_px = data.ancho_cell * scale;
+    const alto_pieza_px = data.alto_cell * scale;
+
+    const total_pieces_width_px = cols * ancho_pieza_px;
+    let offsetX_piezas = offsetX;
+    if (centrar) {
+        offsetX_piezas = offsetX + (ancho_util_px - total_pieces_width_px) / 2;
+    }
+
+    let count = 0;
+    for (let f = 0; f < filas; f++) {
+        for (let c = 0; c < cols; c++) {
+            if (count >= data.n_etiquetas) break;
+            const x = offsetX_piezas + c * ancho_pieza_px;
+            const y = offsetY + f * alto_pieza_px;
+            ctx.fillStyle = '#fef3c7';
+            ctx.fillRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
+            count++;
+        }
+        if (count >= data.n_etiquetas) break;
+    }
+
+    const gap_px = data.gap * scale;
+    ctx.fillStyle = 'rgba(245,158,11,0.35)';
+    ctx.fillRect(offsetX, offsetY + imprimible_h_px, roll_w_px, gap_px);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(offsetX, offsetY + imprimible_h_px, roll_w_px, gap_px);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#1c1c1e';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${cols}×${filas} · ${data.n_etiquetas} etiq`, offsetX_piezas + 4, offsetY + 12);
+
+    if (gap_px > 8) {
+        ctx.fillStyle = '#78350f';
+        ctx.font = 'bold 9px Inter, sans-serif';
+        ctx.fillText('Gap/Cut', offsetX + 4, offsetY + imprimible_h_px + gap_px - 3);
+    }
+
+    ctx.fillStyle = '#8e8e93';
+    ctx.font = '9px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${roll_w_m.toFixed(2)} m`, W - pad, offsetY + 10);
+}
+
+
+// =============================================
 // DIBUJAR PREVIEW CARTEL (CORREGIDO)
 // =============================================
 function dibujarPreviewCartel(canvasId, simData) {
@@ -1244,7 +1360,21 @@ function agregarLinea() {
                     <label><input type="checkbox" class="mesa_etiqueta" name="mesa_etiqueta[]" value="1" checked> Margen de mesa (2 mm)</label>
                     <label><input type="checkbox" class="girar_etiqueta" name="girar_etiqueta[]" value="1"> Girar 90° (manual)</label>
                     <label><input type="checkbox" class="auto_girar_etiqueta" name="auto_girar_etiqueta[]" value="1" checked>Modo Inteligente</label>
+                    <label><input type="checkbox" class="centrar_etiqueta" name="centrar_etiqueta[]" value="1" checked>Centrar en el rollo</label>
                 </div>
+
+                <div class="form-group">
+                    <label>Vista previa</label>
+                    <div class="preview-canvas-wrap">
+                        <canvas id="preview-etiqueta-${paramsId}" width="500" height="220"></canvas>
+                    </div>
+                    <div class="preview-legend">
+                        <span class="item"><span class="swatch" style="background:#fef3c7;border:1px solid #f59e0b;"></span> Etiqueta</span>
+                        <span class="item"><span class="swatch" style="background:rgba(0,0,0,0.06);"></span> Borde rollo</span>
+                        <span class="item"><span class="swatch" style="background:rgba(245,158,11,0.35);border:1px dashed #f59e0b;"></span> Gap/Cut</span>
+                    </div>
+                </div>
+
                 <div class="calc-result-linea">
                     <div class="item"><span class="label">Etiquetas producidas</span><span class="value etiquetas_por_m2_display">—</span><span class="hint filas_cols_display">—</span></div>
                     <div class="item"><span class="label">Área solicitada</span><span class="value area_total_display">—</span><span class="hint area_formula_display">—</span></div>
@@ -1314,12 +1444,13 @@ function agregarLinea() {
                     <label><input type="checkbox" class="girar_cartel" name="girar_cartel[]" value="1"> Girar 90° (manual)</label>
                     <label><input type="checkbox" class="auto_girar_cartel" name="auto_girar_cartel[]" value="1" checked>Modo Inteligente</label>
                     <label><input type="checkbox" class="centrar_cartel" name="centrar_cartel[]" value="1" checked>Centrar en el rollo</label>
+                    <label><input type="checkbox" class="mostrar_preview_cartel" name="mostrar_preview_cartel[]" value="1" checked>Mostrar vista previa</label>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group preview-block-cartel">
                     <label>Vista previa</label>
                     <div class="preview-canvas-wrap">
-                        <canvas id="preview-${paramsId}" width="500" height="220"></canvas>
+                        <canvas id="preview-cartel-${paramsId}" width="500" height="220"></canvas>
                     </div>
                     <div class="preview-legend">
                         <span class="item"><span class="swatch" style="background:#bae6fd;border:1px solid #0ea5e9;"></span> Pieza</span>
@@ -1368,6 +1499,8 @@ function agregarLinea() {
     const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta');
     const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
     const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
+    const mostrarPreviewEtiqCheck = paramsDiv.querySelector('.mostrar_preview_etiqueta');
+    const previewBlockEtiq = paramsDiv.querySelector('.preview-block-etiqueta');
 
     // Cartel refs
     const anchoCartel = cartelParamsDiv.querySelector('.ancho_cartel');
@@ -1380,6 +1513,8 @@ function agregarLinea() {
     const girarCartel = cartelParamsDiv.querySelector('.girar_cartel');
     const autoGirarCartel = cartelParamsDiv.querySelector('.auto_girar_cartel');
     const centrarCartel = cartelParamsDiv.querySelector('.centrar_cartel');
+    const mostrarPreviewCartelCheck = cartelParamsDiv.querySelector('.mostrar_preview_cartel');
+    const previewBlockCartel = cartelParamsDiv.querySelector('.preview-block-cartel');
 
     function triggerCalculo() {
         if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
@@ -1407,8 +1542,16 @@ function agregarLinea() {
         triggerCartel();
     });
     [mesaCheck, girarCheck, autoGirarCheck].forEach(el => el.addEventListener('change', triggerCalculo));
+    const centrarEtiqCheck = paramsDiv.querySelector('.centrar_etiqueta');
+    if (centrarEtiqCheck) centrarEtiqCheck.addEventListener('change', triggerCalculo);
     anchoUtilOverride.addEventListener('input', function() { validarAnchoUtil(this); triggerCalculo(); });
     anchoUtilOverride.addEventListener('change', function() { validarAnchoUtil(this); triggerCalculo(); });
+    if (mostrarPreviewEtiqCheck && previewBlockEtiq) {
+        mostrarPreviewEtiqCheck.addEventListener('change', function() {
+            previewBlockEtiq.style.display = this.checked ? 'block' : 'none';
+        });
+        previewBlockEtiq.style.display = mostrarPreviewEtiqCheck.checked ? 'block' : 'none';
+    }
 
     // Cartel events
     [anchoCartel, altoCartel, cantidadCartel, anchoUtilCartel, precioImpresionCartel, precioMermaCartel].forEach(el => {
@@ -1424,6 +1567,12 @@ function agregarLinea() {
         triggerCartel();
     });
     if (centrarCartel) centrarCartel.addEventListener('change', triggerCartel);
+    if (mostrarPreviewCartelCheck && previewBlockCartel) {
+        mostrarPreviewCartelCheck.addEventListener('change', function() {
+            previewBlockCartel.style.display = this.checked ? 'block' : 'none';
+        });
+        previewBlockCartel.style.display = mostrarPreviewCartelCheck.checked ? 'block' : 'none';
+    }
 
     if (tipoMaterialCartel) {
         tipoMaterialCartel.addEventListener('change', function() {
@@ -1687,6 +1836,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const girarCheck = paramsDiv.querySelector('.girar_etiqueta_edit');
         const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta_edit');
         const anchoUtilOverride = paramsDiv.querySelector('.ancho_util_override_edit');
+        const centrarCheck = paramsDiv.querySelector('.centrar_etiqueta_edit');
+        const mostrarPreviewCheck = paramsDiv.querySelector('.mostrar_preview_etiqueta_edit');
+        const previewBlock = paramsDiv.querySelector('.preview-block-etiqueta');
 
         const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
         if (!archivoId) return;
@@ -1702,7 +1854,8 @@ document.addEventListener('DOMContentLoaded', function() {
         [anchoInput, altoInput, precioInput].forEach(el => {
             if (el) { el.addEventListener('input', triggerCalculoEdit); el.addEventListener('change', triggerCalculoEdit); }
         });
-        [mesaCheck, girarCheck, autoGirarCheck].forEach(el => el && el.addEventListener('change', triggerCalculoEdit));
+        if (centrarCheck) centrarCheck.addEventListener('change', triggerCalculoEdit);
+        if (centrarCheck) centrarCheck.addEventListener('change', triggerCalculoEdit);
         if (productoSelect) productoSelect.addEventListener('change', triggerCalculoEdit);
         if (cantidadInput) { cantidadInput.addEventListener('input', triggerCalculoEdit); cantidadInput.addEventListener('change', triggerCalculoEdit); }
         if (unidadSelect) {
@@ -1716,6 +1869,12 @@ document.addEventListener('DOMContentLoaded', function() {
             anchoUtilOverride.addEventListener('change', function() { validarAnchoUtilEdit(this); triggerCalculoEdit(); });
         }
         if (unidadSelect) actualizarPlaceholderCantidad(unidadSelect);
+        if (mostrarPreviewCheck && previewBlock) {
+            mostrarPreviewCheck.addEventListener('change', function() {
+                previewBlock.style.display = this.checked ? 'block' : 'none';
+            });
+            previewBlock.style.display = mostrarPreviewCheck.checked ? 'block' : 'none';
+        }
         if (paramsRow.style.display !== 'none') setTimeout(triggerCalculoEdit, 200);
     });
 
@@ -1737,6 +1896,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const girarInput = cartelDiv.querySelector('.girar_cartel_edit');
         const autoGirarInput = cartelDiv.querySelector('.auto_girar_cartel_edit');
         const centrarInput = cartelDiv.querySelector('.centrar_cartel_edit');
+        const mostrarPreviewCheck = cartelDiv.querySelector('.mostrar_preview_cartel_edit');
+        const previewBlock = cartelDiv.querySelector('.preview-block-cartel');
 
         function triggerCartelEdit() { calcularLineaCartel(cartelesRow); }
 
@@ -1752,6 +1913,12 @@ document.addEventListener('DOMContentLoaded', function() {
             triggerCartelEdit();
         });
         if (centrarInput) centrarInput.addEventListener('change', triggerCartelEdit);
+        if (mostrarPreviewCheck && previewBlock) {
+            mostrarPreviewCheck.addEventListener('change', function() {
+                previewBlock.style.display = this.checked ? 'block' : 'none';
+            });
+            previewBlock.style.display = mostrarPreviewCheck.checked ? 'block' : 'none';
+        }
 
         if (tipoMatSelect) {
             tipoMatSelect.addEventListener('change', function() {
@@ -1802,6 +1969,7 @@ function calcularLinea(paramsRow) {
     const mesaEl = paramsDiv.querySelector(`.mesa_etiqueta${prefix}`);
     const girarEl = paramsDiv.querySelector(`.girar_etiqueta${prefix}`);
     const autoGirarEl = paramsDiv.querySelector(`.auto_girar_etiqueta${prefix}`);
+    const centrarEl = paramsDiv.querySelector(`.centrar_etiqueta${prefix}`);
     const anchoUtilOverrideInput = paramsDiv.querySelector(`.ancho_util_override${prefix}`);
     if (!anchoEl || !altoEl || !precioEl) return;
 
@@ -1811,6 +1979,7 @@ function calcularLinea(paramsRow) {
     const mesa = mesaEl && mesaEl.checked ? '1' : '0';
     const girar = girarEl && girarEl.checked ? '1' : '0';
     const auto_girar = autoGirarEl && autoGirarEl.checked ? '1' : '0';
+    const centrar = centrarEl && centrarEl.checked ? '1' : '0';
     const anchoUtilOverride = anchoUtilOverrideInput ? anchoUtilOverrideInput.value : '';
 
     const paramsId = paramsRow.dataset.paramsId;
@@ -1998,6 +2167,19 @@ function calcularLinea(paramsRow) {
             const esAutogenerado = !currentName || /^(Etiquetas|Cartel) \d+(\.\d+)?x\d+(\.\d+)? cm$/.test(currentName);
             if (esAutogenerado) nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
+
+        // Dibujar vista previa de etiquetas (ID único)
+        dibujarPreviewEtiquetas('preview-etiqueta-' + paramsId, {
+            ancho_real: anchoRollo,
+            ancho_util: anchoUtilEfectivo,
+            cols: columnas,
+            filas: filasTotales,
+            ancho_cell: anchoCellM,
+            alto_cell: altoCellM,
+            gap: gapM,
+            n_etiquetas: nEtiquetas,
+            centrar: centrar === '1'
+        });
     })
     .catch(err => {
         console.error('Error al calcular:', err);
@@ -2084,7 +2266,7 @@ function calcularLineaCartel(cartelesRow) {
                     const el = cartelDiv.querySelector('.' + cls + prefix);
                     if (el) el.textContent = '—';
                 });
-                dibujarPreviewCartel('preview-' + paramsId, { error: true });
+                dibujarPreviewCartel('preview-cartel-' + paramsId, { error: true });
                 return;
             }
             const s = data.simData;
@@ -2110,8 +2292,8 @@ function calcularLineaCartel(cartelesRow) {
                 if (esAutogenerado) nombreInput.value = `Cartel ${ancho}x${alto} cm`;
             }
 
-            // Dibujar preview
-            dibujarPreviewCartel('preview-' + paramsId, s);
+            // Dibujar preview cartel (ID único)
+            dibujarPreviewCartel('preview-cartel-' + paramsId, s);
         })
         .catch(err => {
             console.error('Error cartel:', err);
