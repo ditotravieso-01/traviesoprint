@@ -6,107 +6,57 @@
 
 {% block extra_css %}
 <style>
-    /* ============================================================
-       RESET Y BASE
-       ============================================================ */
     .form-container { max-width: 1000px; margin: 0 auto; padding: 0 16px; width: 100%; }
     .form-section {
-        background: white;
-        border-radius: 16px;
-        padding: 24px 28px;
-        margin-bottom: 24px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-        border: 1px solid #e8e0da;
-        width: 100%;
-        box-sizing: border-box;
+        background: white; border-radius: 16px; padding: 24px 28px;
+        margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        border: 1px solid #e8e0da; width: 100%; box-sizing: border-box;
     }
     .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        margin-bottom: 16px;
-        color: #1a1a1a;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 8px;
+        font-family: 'Playfair Display', serif; font-size: 20px;
+        margin-bottom: 16px; color: #1a1a1a;
+        border-bottom: 1px solid #eee; padding-bottom: 8px;
     }
     .form-section p.section-desc { color: #666; font-size: 14px; margin-bottom: 12px; }
 
-    /* ============================================================
-       GRID Y GRUPOS
-       ============================================================ */
     .form-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; width: 100%; }
     .form-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; width: 100%; }
 
     .form-group { margin-bottom: 16px; width: 100%; min-width: 0; }
     .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 15px;
-        background: #fafafa;
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 10px 14px; border: 1px solid #ddd;
+        border-radius: 8px; font-size: 15px; background: #fafafa;
         transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: inherit;
-        box-sizing: border-box;
+        font-family: inherit; box-sizing: border-box;
     }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        border-color: #1a1a1a;
-        outline: none;
-        background: white;
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        border-color: #1a1a1a; outline: none; background: white;
         box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
     }
     .form-group textarea { resize: vertical; min-height: 60px; }
     .form-group small { display: block; color: #999; font-size: 12px; margin-top: 4px; }
 
-    /* ============================================================
-       CHECKBOXES Y RADIOS
-       ============================================================ */
     .checkbox-grid {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 20px;
-        align-items: center;
-        width: 100%;
+        display: flex; flex-wrap: wrap; gap: 12px 20px;
+        align-items: center; width: 100%;
     }
     .checkbox-grid label {
-        font-weight: 400;
-        font-size: 14px;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        white-space: nowrap;
+        font-weight: 400; font-size: 14px;
+        display: inline-flex; align-items: center;
+        gap: 6px; cursor: pointer; white-space: nowrap;
     }
     .checkbox-grid input[type="checkbox"],
     .checkbox-grid input[type="radio"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #1a1a1a;
-        flex-shrink: 0;
+        width: 18px; height: 18px; accent-color: #1a1a1a; flex-shrink: 0;
     }
 
-    /* ============================================================
-       BOTONES
-       ============================================================ */
     .btn {
-        padding: 10px 24px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        text-decoration: none;
-        font-family: inherit;
-        font-size: 14px;
-        box-sizing: border-box;
+        padding: 10px 24px; border-radius: 30px; border: none;
+        font-weight: 600; cursor: pointer; transition: all 0.2s;
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 6px; text-decoration: none; font-family: inherit;
+        font-size: 14px; box-sizing: border-box;
     }
     .btn-primary { background: #1a1a1a; color: white; }
     .btn-primary:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
@@ -122,132 +72,83 @@
     .btn-success:hover { background: #059669; }
     .btn-sm { padding: 4px 12px; font-size: 12px; }
     .btn-crear-cliente {
-        background: #10b981;
-        color: white;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        cursor: pointer;
-        font-size: 13px;
-        white-space: nowrap;
-        font-family: inherit;
+        background: #10b981; color: white; border: none;
+        padding: 6px 14px; border-radius: 6px; cursor: pointer;
+        font-size: 13px; white-space: nowrap; font-family: inherit;
     }
     .btn-crear-cliente:hover { background: #059669; }
     .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 20px;
-        justify-content: space-between;
-        align-items: center;
+        display: flex; gap: 12px; flex-wrap: wrap;
+        margin-top: 20px; justify-content: space-between; align-items: center;
     }
     .btn-group .left-buttons,
     .btn-group .right-buttons { display: flex; gap: 12px; flex-wrap: wrap; }
 
-    /* ============================================================
-       SELECTOR DE CLIENTE
-       ============================================================ */
     .client-select-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        width: 100%;
+        display: flex; align-items: center; gap: 8px;
+        flex-wrap: wrap; width: 100%;
     }
     .client-select-wrapper input[type="text"] { flex: 1; min-width: 0; }
 
-    /* ============================================================
-       NOTIFICACIONES
-       ============================================================ */
     .user-search-row {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 6px;
-        flex-wrap: wrap;
-        width: 100%;
+        display: flex; gap: 8px; margin-bottom: 6px;
+        flex-wrap: wrap; width: 100%;
     }
     .user-search-row input[type="text"] {
-        flex: 1;
-        padding: 6px 10px;
-        border: 1px solid #ddd;
-        border-radius: 6px;
-        min-width: 150px;
-        font-family: inherit;
-        box-sizing: border-box;
+        flex: 1; padding: 6px 10px; border: 1px solid #ddd;
+        border-radius: 6px; min-width: 150px;
+        font-family: inherit; box-sizing: border-box;
     }
     .user-search-row .btn { flex-shrink: 0; }
     .usuarios-multi-select {
-        width: 100%;
-        height: auto;
-        min-height: 80px;
-        padding: 6px;
-        box-sizing: border-box;
+        width: 100%; height: auto; min-height: 80px;
+        padding: 6px; box-sizing: border-box;
     }
 
-    /* ============================================================
-       TABLA DE LÍNEAS
-       ============================================================ */
     .table-scroll-wrapper {
-        width: 100%;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        border-radius: 8px;
+        width: 100%; overflow-x: auto;
+        -webkit-overflow-scrolling: touch; border-radius: 8px;
     }
     .lineas-table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 12px;
-        min-width: 720px;
+        width: 100%; border-collapse: collapse;
+        margin-top: 12px; min-width: 720px;
     }
     .lineas-table th {
-        background: #f8f6f4;
-        text-align: left;
-        padding: 8px 6px;
-        font-weight: 600;
-        font-size: 13px;
+        background: #f8f6f4; text-align: left; padding: 8px 6px;
+        font-weight: 600; font-size: 13px;
         border-bottom: 2px solid #e8e0da;
     }
     .lineas-table td {
-        padding: 6px;
-        vertical-align: middle;
+        padding: 6px; vertical-align: middle;
         border-bottom: 1px solid #eee;
     }
-    .lineas-table input,
-    .lineas-table select {
-        width: 100%;
-        padding: 6px 8px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        background: #fafafa;
-        font-family: inherit;
-        box-sizing: border-box;
+    .lineas-table input, .lineas-table select {
+        width: 100%; padding: 6px 8px; border: 1px solid #ddd;
+        border-radius: 4px; font-size: 14px; background: #fafafa;
+        font-family: inherit; box-sizing: border-box;
     }
-    .lineas-table input:focus,
-    .lineas-table select:focus { border-color: #1a1a1a; outline: none; background: white; }
+    .lineas-table input:focus, .lineas-table select:focus {
+        border-color: #1a1a1a; outline: none; background: white;
+    }
     .lineas-table .btn-eliminar {
-        background: #dc2626;
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 4px 10px;
-        cursor: pointer;
-        font-size: 14px;
-        width: 100%;
+        background: #dc2626; color: white; border: none;
+        border-radius: 4px; padding: 4px 10px;
+        cursor: pointer; font-size: 14px; width: 100%;
     }
     .lineas-table .btn-eliminar:hover { background: #b91c1c; }
 
-    /* ============================================================
-       BLOQUE DE PARÁMETROS DE ETIQUETAS
-       ============================================================ */
+    /* Estilo para el guion en cartel */
+    .cartel-dash {
+        display: none; text-align: center;
+        color: #8e8e93; font-weight: bold; font-size: 16px;
+    }
+
+    /* ===== ETIQUETAS ===== */
     .etiquetas-params-row { background: #f8f8fc; }
     .etiquetas-params {
-        padding: 12px 14px;
-        margin: 4px 0;
-        border-left: 3px solid #b8860b;
-        background: white;
-        border-radius: 6px;
-        display: none;
+        padding: 12px 14px; margin: 4px 0;
+        border-left: 3px solid #b8860b; background: white;
+        border-radius: 6px; display: none;
     }
     .etiquetas-params.visible { display: block; }
     .etiquetas-params .form-grid-2 { gap: 8px; }
@@ -256,17 +157,40 @@
     .etiquetas-params .form-group input,
     .etiquetas-params .form-group select { font-size: 13px; padding: 4px 8px; }
 
-    /* ============================================================
-       CAJA DE RESULTADOS
-       ============================================================ */
+    /* ===== CARTELES ===== */
+    .carteles-params-row { background: #f0f9ff; }
+    .carteles-params {
+        padding: 12px 14px; margin: 4px 0;
+        border-left: 3px solid #0ea5e9; background: white;
+        border-radius: 6px; display: none;
+    }
+    .carteles-params.visible { display: block; }
+    .carteles-params .form-grid-2 { gap: 8px; }
+    .carteles-params .form-group { margin-bottom: 8px; }
+    .carteles-params .form-group label { font-size: 12px; }
+    .carteles-params .form-group input,
+    .carteles-params .form-group select { font-size: 13px; padding: 4px 8px; }
+    .precio-hint { font-size: 11px; color: #0ea5e9; margin-top: 2px; display: block; }
+
+    .preview-canvas-wrap {
+        margin-top: 6px; background: white;
+        border: 1px solid #bae6fd; border-radius: 6px;
+        padding: 6px; display: flex; justify-content: center;
+    }
+    .preview-canvas-wrap canvas {
+        display: block; width: 100%; height: auto; max-height: 220px;
+    }
+    .preview-legend {
+        display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;
+        font-size: 11px; color: #555;
+    }
+    .preview-legend .item { display: inline-flex; align-items: center; gap: 4px; }
+    .preview-legend .swatch { width: 12px; height: 12px; border-radius: 3px; display: inline-block; }
+
     .calc-result-linea {
-        display: grid;
-        gap: 12px 16px;
-        background: #fafafa;
-        padding: 12px 16px;
-        border-radius: 8px;
-        margin-top: 8px;
-        font-size: 0.8rem;
+        display: grid; gap: 12px 16px; background: #fafafa;
+        padding: 12px 16px; border-radius: 8px;
+        margin-top: 8px; font-size: 0.8rem;
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
     .calc-result-linea .item { display: flex; flex-direction: column; min-width: 0; }
@@ -278,32 +202,20 @@
 
     .input-error { border-color: #dc2626 !important; background: #fde8e5 !important; }
 
-    /* ============================================================
-       BOTÓN CALCULAR ÓPTIMO
-       ============================================================ */
     .calcular-optimo-wrap { display: flex; gap: 8px; align-items: stretch; flex-wrap: wrap; width: 100%; }
     .calcular-optimo-wrap input { flex: 1; min-width: 120px; }
     .btn-calcular-optimo {
         background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-        color: white;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
-        font-size: 13px;
-        font-weight: 600;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: 0.2s;
-        font-family: inherit;
+        color: white; border: none; padding: 6px 14px;
+        border-radius: 6px; font-size: 13px; font-weight: 600;
+        cursor: pointer; white-space: nowrap;
+        transition: 0.2s; font-family: inherit;
     }
     .btn-calcular-optimo:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
     .optimo-hint { font-size: 11px; color: #8e8e93; margin-top: 4px; display: block; }
     .optimo-resultado { font-size: 11px; color: #10b981; font-weight: 600; margin-top: 4px; display: none; }
     .optimo-resultado.visible { display: block; }
 
-    /* ============================================================
-       MODAL CLIENTE
-       ============================================================ */
     .modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); overflow: auto; }
     .modal-content { background: white; margin: 5% auto; padding: 24px; border-radius: 12px; max-width: 500px; width: calc(100% - 32px); box-shadow: 0 4px 20px rgba(0,0,0,0.2); box-sizing: border-box; }
     .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 16px; }
@@ -313,9 +225,6 @@
     .modal .form-group { margin-bottom: 12px; }
     .modal-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 
-    /* ============================================================
-       MODAL DE ALERTA PERSONALIZADO
-       ============================================================ */
     .cs-alert-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 10000; justify-content: center; align-items: center; padding: 16px; animation: csAlertFadeIn 0.2s ease; }
     .cs-alert-overlay.active { display: flex; }
     @keyframes csAlertFadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -332,9 +241,6 @@
     .cs-alert-btn { padding: 9px 26px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; background: #1c1c1e; color: white; min-width: 100px; }
     .cs-alert-btn:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
-    /* ============================================================
-       RESPONSIVE — 5 BREAKPOINTS
-       ============================================================ */
     @media (max-width: 575.98px) {
         .form-container { padding: 0 10px; }
         .form-section { padding: 16px 14px; border-radius: 12px; margin-bottom: 16px; }
@@ -363,43 +269,32 @@
         .lineas-table thead { display: none; }
         .lineas-table tbody { display: block; width: 100%; }
         .lineas-table tr.linea-fila {
-            display: block;
-            background: white;
-            border: 1px solid #e8e0da;
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            box-sizing: border-box;
+            display: block; background: white; border: 1px solid #e8e0da;
+            border-radius: 10px; padding: 12px 14px;
+            margin-bottom: 8px; box-sizing: border-box;
         }
         .lineas-table tr.linea-fila td {
-            display: block;
-            width: 100%;
-            padding: 6px 0;
-            border: none;
-            box-sizing: border-box;
+            display: block; width: 100%; padding: 6px 0;
+            border: none; box-sizing: border-box;
         }
         .lineas-table tr.linea-fila td::before {
-            content: attr(data-label);
-            display: block;
-            font-weight: 600;
-            font-size: 10px;
-            color: #8e8e93;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
+            content: attr(data-label); display: block;
+            font-weight: 600; font-size: 10px; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.4px;
             margin-bottom: 4px;
         }
         .lineas-table tr.linea-fila td.td-hidden-label::before { display: none; }
-        .lineas-table tr.etiquetas-params-row { display: block; width: 100%; }
-        .lineas-table tr.etiquetas-params-row td {
-            display: block;
-            width: 100%;
-            padding: 0;
-            border: none;
-            box-sizing: border-box;
+        .lineas-table tr.etiquetas-params-row,
+        .lineas-table tr.carteles-params-row { display: block; width: 100%; }
+        .lineas-table tr.etiquetas-params-row td,
+        .lineas-table tr.carteles-params-row td {
+            display: block; width: 100%; padding: 0;
+            border: none; box-sizing: border-box;
         }
 
-        .etiquetas-params { padding: 12px 12px; }
-        .etiquetas-params .form-grid-2 { grid-template-columns: 1fr; gap: 6px; }
+        .etiquetas-params, .carteles-params { padding: 12px 12px; }
+        .etiquetas-params .form-grid-2,
+        .carteles-params .form-grid-2 { grid-template-columns: 1fr; gap: 6px; }
         .calc-result-linea { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 10px 12px; gap: 10px 12px; }
         .calc-result-linea .value { font-size: 14px; }
         .calcular-optimo-wrap { flex-direction: column; }
@@ -426,28 +321,24 @@
         .lineas-table thead { display: none; }
         .lineas-table tbody { display: block; width: 100%; }
         .lineas-table tr.linea-fila {
-            display: block;
-            background: white;
-            border: 1px solid #e8e0da;
-            border-radius: 10px;
-            padding: 12px 14px;
-            margin-bottom: 10px;
+            display: block; background: white;
+            border: 1px solid #e8e0da; border-radius: 10px;
+            padding: 12px 14px; margin-bottom: 10px;
         }
         .lineas-table tr.linea-fila td { display: block; width: 100%; padding: 6px 0; border: none; }
         .lineas-table tr.linea-fila td::before {
-            content: attr(data-label);
-            display: block;
-            font-weight: 600;
-            font-size: 10px;
-            color: #8e8e93;
-            text-transform: uppercase;
-            letter-spacing: 0.4px;
+            content: attr(data-label); display: block;
+            font-weight: 600; font-size: 10px; color: #8e8e93;
+            text-transform: uppercase; letter-spacing: 0.4px;
             margin-bottom: 4px;
         }
         .lineas-table tr.linea-fila td.td-hidden-label::before { display: none; }
-        .lineas-table tr.etiquetas-params-row { display: block; width: 100%; }
-        .lineas-table tr.etiquetas-params-row td { display: block; width: 100%; padding: 0; border: none; }
-        .etiquetas-params .form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+        .lineas-table tr.etiquetas-params-row,
+        .lineas-table tr.carteles-params-row { display: block; width: 100%; }
+        .lineas-table tr.etiquetas-params-row td,
+        .lineas-table tr.carteles-params-row td { display: block; width: 100%; padding: 0; border: none; }
+        .etiquetas-params .form-grid-2,
+        .carteles-params .form-grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
         .calc-result-linea { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
@@ -462,8 +353,10 @@
         .lineas-table tr.linea-fila { display: table-row; padding: 0; border: none; background: transparent; margin: 0; }
         .lineas-table tr.linea-fila td { display: table-cell; width: auto; padding: 6px; border-bottom: 1px solid #eee; }
         .lineas-table tr.linea-fila td::before { display: none; }
-        .lineas-table tr.etiquetas-params-row { display: table-row; }
-        .lineas-table tr.etiquetas-params-row td { display: table-cell; padding: 0; border: none; }
+        .lineas-table tr.etiquetas-params-row,
+        .lineas-table tr.carteles-params-row { display: table-row; }
+        .lineas-table tr.etiquetas-params-row td,
+        .lineas-table tr.carteles-params-row td { display: table-cell; padding: 0; border: none; }
         .calc-result-linea { grid-template-columns: repeat(4, minmax(0, 1fr)); }
     }
 
@@ -484,8 +377,7 @@
         .lineas-table thead { display: table-header-group; }
         .calc-result-linea {
             grid-template-columns: repeat(5, minmax(0, 1fr));
-            gap: 16px 20px;
-            padding: 14px 20px;
+            gap: 16px 20px; padding: 14px 20px;
         }
         .calc-result-linea .value { font-size: 16px; }
         .cs-alert-box { padding: 30px 32px 26px; max-width: 460px; }
@@ -612,8 +504,8 @@
         <div class="form-section">
             <h4>Archivos y Líneas de trabajo</h4>
             <p class="section-desc">
-                <strong>Unidad "metros cuadrados (m²)":</strong> el cliente paga por m² de paño. El sistema calcula
-                el largo necesario para conformar ese m² sobre el ancho útil.
+                <strong>Etiquetas:</strong> el cliente paga por m² de paño.<br>
+                <strong>Carteles:</strong> el cliente paga por área impresa + merma a precio separado.
             </p>
 
             <button type="button" class="btn btn-primary" onclick="agregarLinea()" style="margin-bottom:12px;">
@@ -636,9 +528,11 @@
                         {% if edit and order.archivos %}
                             {% for archivo in order.archivos %}
                             {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
-                            {% set is_etiqueta = params is not none %}
+                            {% set tipo_archivo = params.tipo if (params and params.tipo is defined) else ('etiqueta' if params else 'otros') %}
+                            {% set is_etiqueta = (tipo_archivo == 'etiqueta') %}
+                            {% set is_cartel = (tipo_archivo == 'cartel') %}
                             {% set paramsId = 'edit-' ~ archivo.id %}
-                            <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false">
+                            <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false" data-tipo="{{ tipo_archivo }}">
                                 <td data-label="Nombre visible">
                                     <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
                                     <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
@@ -653,11 +547,13 @@
                                         {% endfor %}
                                     </select>
                                 </td>
-                                <td data-label="Cantidad">
-                                    <input type="number" step="0.01" name="cantidad_{{ archivo.id }}" value="{{ archivo.cantidad if archivo.cantidad is not none else '' }}" placeholder="m² o etiquetas" required class="cantidad-edit" data-archivo-id="{{ archivo.id }}">
+                                <td data-label="Cantidad" class="col-cantidad">
+                                    <span class="cartel-dash" style="{% if is_cartel %}display:block;{% else %}display:none;{% endif %}">-</span>
+                                    <input type="number" step="0.01" name="cantidad_{{ archivo.id }}" value="{{ archivo.cantidad if archivo.cantidad is not none else '' }}" placeholder="m² o etiquetas" class="cantidad-edit" data-archivo-id="{{ archivo.id }}" style="{% if is_cartel %}display:none;{% endif %}">
                                 </td>
-                                <td data-label="Unidad">
-                                    <select name="unidad_{{ archivo.id }}" class="unidad-edit" data-archivo-id="{{ archivo.id }}">
+                                <td data-label="Unidad" class="col-unidad">
+                                    <span class="cartel-dash" style="{% if is_cartel %}display:block;{% else %}display:none;{% endif %}">-</span>
+                                    <select name="unidad_{{ archivo.id }}" class="unidad-edit" data-archivo-id="{{ archivo.id }}" style="{% if is_cartel %}display:none;{% endif %}">
                                         <option value="m2" {% if archivo.unidad in ('m', 'm2') %}selected{% endif %}>metros cuadrados (m²)</option>
                                         <option value="unidades" {% if archivo.unidad == 'unidades' %}selected{% endif %}>unidades</option>
                                     </select>
@@ -665,6 +561,9 @@
                                 <td data-label="Proyecto/Producto">
                                     {% if is_etiqueta %}
                                         <span class="badge" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
+                                        <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
+                                    {% elif is_cartel %}
+                                        <span class="badge" style="background:#0ea5e9; color:white; padding:2px 8px; border-radius:12px;">Cartel</span>
                                         <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
                                     {% else %}
                                         <span style="color:#999;">Otros</span>
@@ -674,6 +573,7 @@
                                     <button type="button" class="btn-eliminar" onclick="marcarEliminarLinea({{ archivo.id }})"><i class="fas fa-trash-alt"></i></button>
                                 </td>
                             </tr>
+
                             {% if is_etiqueta %}
                                 <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                                     <td colspan="6">
@@ -718,33 +618,92 @@
                                                 <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
                                             </div>
                                             <div class="calc-result-linea">
-                                                <div class="item">
-                                                    <span class="label">Etiquetas producidas</span>
-                                                    <span class="value etiquetas_por_m2_display_edit">—</span>
-                                                    <span class="hint filas_cols_display_edit">—</span>
-                                                </div>
-                                                <div class="item">
-                                                    <span class="label">Área solicitada</span>
-                                                    <span class="value area_total_display_edit">—</span>
-                                                    <span class="hint area_formula_display_edit">—</span>
-                                                </div>
-                                                <div class="item">
-                                                    <span class="label">Material consumido</span>
-                                                    <span class="value material_consumido_display_edit">—</span>
-                                                    <span class="hint largo_total_display_edit">—</span>
-                                                </div>
-                                                <div class="item">
-                                                    <span class="label">Costo estimado</span>
-                                                    <span class="value costo_estimado_display_edit">—</span>
-                                                </div>
-                                                <div class="item">
-                                                    <span class="label">Merma operativa</span>
-                                                    <span class="value merma_pct_display_edit merma">—</span>
-                                                    <span class="hint merma_m2_display_edit">—</span>
-                                                </div>
+                                                <div class="item"><span class="label">Etiquetas producidas</span><span class="value etiquetas_por_m2_display_edit">—</span><span class="hint filas_cols_display_edit">—</span></div>
+                                                <div class="item"><span class="label">Área solicitada</span><span class="value area_total_display_edit">—</span><span class="hint area_formula_display_edit">—</span></div>
+                                                <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_display_edit">—</span><span class="hint largo_total_display_edit">—</span></div>
+                                                <div class="item"><span class="label">Costo estimado</span><span class="value costo_estimado_display_edit">—</span></div>
+                                                <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_display_edit merma">—</span><span class="hint merma_m2_display_edit">—</span></div>
                                             </div>
                                             <div style="margin-top:4px;">
                                                 <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="{{ paramsId }}">Ocultar</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% endif %}
+
+                            {% if is_cartel %}
+                                <tr class="carteles-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
+                                    <td colspan="6">
+                                        <div class="carteles-params visible" style="display:block;">
+                                            <div class="form-grid-2">
+                                                <div class="form-group">
+                                                    <label>Ancho (cm)</label>
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_cartel_edit" name="ancho_cartel_edit[]" value="{{ params.ancho if params else 100 }}" data-archivo-id="{{ archivo.id }}">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Alto (cm)</label>
+                                                    <input type="number" step="0.01" min="0.01" class="alto_cartel_edit" name="alto_cartel_edit[]" value="{{ params.alto if params else 200 }}" data-archivo-id="{{ archivo.id }}">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Cantidad de piezas</label>
+                                                <input type="number" min="1" step="1" class="cantidad_cartel_edit" name="cantidad_cartel_edit[]" value="{{ params.cantidad if params else 1 }}" data-archivo-id="{{ archivo.id }}">
+                                            </div>
+                                            <div class="form-grid-2">
+                                                <div class="form-group">
+                                                    <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(default = ancho real)</span></label>
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_util_override_cartel_edit" name="ancho_util_override_cartel_edit[]" value="{{ params.ancho_util_usado or '' }}" data-archivo-id="{{ archivo.id }}">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Tipo de material <span style="font-weight:400; color:#8e8e93;">(precios sugeridos)</span></label>
+                                                    <select class="tipo_material_cartel_edit" name="tipo_material_cartel_edit[]" data-archivo-id="{{ archivo.id }}">
+                                                        {% for key, mat in materiales_cartel.items() %}
+                                                        <option value="{{ key }}" data-impresion="{{ mat.impresion }}" data-merma="{{ mat.merma }}" {% if params and params.tipo_material == key %}selected{% endif %}>{{ key }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="form-grid-2">
+                                                <div class="form-group">
+                                                    <label>Precio impresión ($/m²)</label>
+                                                    <input type="number" step="0.01" min="0" class="precio_impresion_cartel_edit" name="precio_impresion_cartel_edit[]" value="{{ params.precio_impresion_m2 if params else 10.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Precio merma ($/m²)</label>
+                                                    <input type="number" step="0.01" min="0" class="precio_merma_cartel_edit" name="precio_merma_cartel_edit[]" value="{{ params.precio_merma_m2 if params else 4.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <span class="precio-hint">💡 La merma se cobra al cliente a este precio</span>
+                                                </div>
+                                            </div>
+                                            <div class="checkbox-grid">
+                                                <label><input type="checkbox" class="girar_cartel_edit" name="girar_cartel_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
+                                                <label><input type="checkbox" class="auto_girar_cartel_edit" name="auto_girar_cartel_edit[]" value="1" {% if not params or params.auto_girar is not defined or params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
+                                                <label><input type="checkbox" class="centrar_cartel_edit" name="centrar_cartel_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label>Vista previa</label>
+                                                <div class="preview-canvas-wrap">
+                                                    <canvas id="preview-{{ paramsId }}" width="500" height="220"></canvas>
+                                                </div>
+                                                <div class="preview-legend">
+                                                    <span class="item"><span class="swatch" style="background:#bae6fd;border:1px solid #0ea5e9;"></span> Pieza</span>
+                                                    <span class="item"><span class="swatch" style="background:rgba(0,0,0,0.06);"></span> Borde rollo</span>
+                                                    <span class="item"><span class="swatch" style="background:rgba(245,158,11,0.35);border:1px dashed #f59e0b;"></span> Gap 6.5 cm</span>
+                                                </div>
+                                            </div>
+
+                                            <div class="calc-result-linea">
+                                                <div class="item"><span class="label">Piezas</span><span class="value piezas_cartel_display_edit">{{ params.cantidad or 0 }}</span><span class="hint distribucion_cartel_display_edit">{{ params.filas or 0 }} filas × {{ params.cols or 0 }} cols</span></div>
+                                                <div class="item"><span class="label">Área piezas</span><span class="value area_piezas_cartel_display_edit">{{ params.area_piezas_m2|round(2) if params else '—' }} m²</span></div>
+                                                <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_cartel_display_edit">{{ params.area_rollo_m2|round(2) if params else '—' }} m²</span><span class="hint largo_total_cartel_display_edit">{{ params.largo_total_m|round(2) if params else '—' }} m</span></div>
+                                                <div class="item"><span class="label">Costo impresión</span><span class="value costo_impresion_cartel_display_edit">${{ params.costo_impresion|round(2) if params else '—' }}</span></div>
+                                                <div class="item"><span class="label">Costo merma</span><span class="value costo_merma_cartel_display_edit merma">${{ params.costo_merma|round(2) if params else '—' }}</span></div>
+                                                <div class="item"><span class="label">Costo total</span><span class="value costo_total_cartel_display_edit">${{ params.costo_estimado|round(2) if params else '—' }}</span></div>
+                                                <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_cartel_display_edit merma">{{ params.merma_operativa_pct|round(1) if params else '—' }}%</span><span class="hint merma_m2_cartel_display_edit">{{ params.merma_operativa_m2|round(2) if params else '—' }} m²</span></div>
+                                            </div>
+                                            <div style="margin-top:4px;">
+                                                <button type="button" class="btn btn-sm btn-outline ocultar-carteles" data-params-id="{{ paramsId }}">Ocultar</button>
                                             </div>
                                         </div>
                                     </td>
@@ -832,18 +791,12 @@
 </div>
 
 <script>
-// =============================================
-// CONSTANTES
-// =============================================
 const MARGEN_MESA_M = 0.002;
 const CUT_LARGO_M = 0.04;
 const GAP_DEFAULT_M = 0.065;
 const ANCHO_REAL_DEFAULT = 1.34;
 const ANCHO_UTIL_DEFAULT = 1.30;
 
-// =============================================
-// CUSTOM ALERT
-// =============================================
 const CS_ALERT_ICONS = { info: 'ℹ️', warning: '⚠️', error: '❌', success: '✅' };
 const CS_ALERT_TITLES = { info: 'Información', warning: 'Atención', error: 'Error', success: '¡Listo!' };
 
@@ -874,7 +827,7 @@ document.addEventListener('click', e => {
 });
 
 // =============================================
-// CÁLCULO TAMAÑO ÓPTIMO
+// CÁLCULO TAMAÑO ÓPTIMO (etiquetas)
 // =============================================
 function calcularTamañoOptimo(N, anchoImprimible, largoNominal, anchoReal, areaFacturada, gapM) {
     if (N < 1) return null;
@@ -894,16 +847,11 @@ function calcularTamañoOptimo(N, anchoImprimible, largoNominal, anchoReal, area
         if (aspect > 3.0) continue;
         const largoEtiquetas = r * altoCellMin;
         const largoTotal = largoEtiquetas + CUT_LARGO_M + gapM;
-        const materialConsumido = anchoReal * largoTotal;
-        // NUEVA FÓRMULA: área útil del rollo vs área de etiquetas
         const areaUtilRollo = anchoImprimible * largoTotal;
         const areaEtiquetas = r * altoCellMin * c * anchoCellMax;
         const mermaM2 = Math.max(0, areaUtilRollo - areaEtiquetas);
         const mermaPct = areaUtilRollo > 0 ? (mermaM2 / areaUtilRollo) * 100 : 0;
-        candidatos.push({
-            ancho: anchoCm, alto: altoCmMin, cols: c, rows: r,
-            mermaM2, mermaPct, area: anchoCm * altoCmMin, aspect
-        });
+        candidatos.push({ ancho: anchoCm, alto: altoCmMin, cols: c, rows: r, mermaM2, mermaPct, area: anchoCm * altoCmMin, aspect });
     }
     if (candidatos.length === 0) return null;
     candidatos.sort((a, b) => {
@@ -988,9 +936,6 @@ function calcularOptimo(btn) {
     }, 50);
 }
 
-// =============================================
-// VALIDACIÓN ANCHO ÚTIL
-// =============================================
 function validarAnchoUtil(input) {
     const valor = parseFloat(input.value);
     const row = input.closest('tr');
@@ -1035,6 +980,117 @@ function actualizarPlaceholderCantidad(unidadSelect) {
         cantidadInput.placeholder = 'm²';
         cantidadInput.title = 'Área del paño (m²) que paga el cliente';
     }
+}
+
+// =============================================
+// DIBUJAR PREVIEW CARTEL (CORREGIDO)
+// =============================================
+function dibujarPreviewCartel(canvasId, simData) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#f8f6f4';
+    ctx.fillRect(0, 0, W, H);
+
+    if (!simData || simData.error || !simData.filas || !simData.ancho_real) {
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(simData && simData.error ? '⚠️ No cabe en el rollo' : 'Vista previa', W/2, H/2);
+        return;
+    }
+
+    const roll_w_m = simData.ancho_real;
+    const ancho_util_m = simData.ancho_util;
+    const impresion_h_m = (simData.alto_impresion_cm || 0) / 100.0;
+    const gap_m = (simData.gap_final_cm || 6.5) / 100.0;
+    const total_h_m = impresion_h_m + gap_m;
+    const centrar = simData.centrar !== false;
+
+    const pad = 14;
+    const avail_w = W - 2 * pad;
+    const avail_h = H - 2 * pad;
+    const scale = Math.min(avail_w / roll_w_m, avail_h / total_h_m);
+
+    const roll_w_px = roll_w_m * scale;
+    const roll_h_px = total_h_m * scale;
+    const offsetX = (W - roll_w_px) / 2;
+    const offsetY = (H - roll_h_px) / 2;
+
+    // Fondo del rollo (borde)
+    ctx.fillStyle = 'rgba(0,0,0,0.06)';
+    ctx.fillRect(offsetX, offsetY, roll_w_px, roll_h_px);
+    ctx.strokeStyle = '#8e8e93';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(offsetX, offsetY, roll_w_px, roll_h_px);
+
+    // Zona imprimible
+    const ancho_util_px = ancho_util_m * scale;
+    const impresion_h_px = impresion_h_m * scale;
+
+    // Piezas (grid)
+    const cols = simData.cols || 1;
+    const filas = simData.filas || 1;
+    const cantidad = simData.cantidad || 0;
+    
+    const piece_w_m = (simData.ancho_efectivo_cm || simData.ancho_cm) / 100.0;
+    const piece_h_m = (simData.alto_efectivo_cm || simData.alto_cm) / 100.0;
+    
+    const ancho_pieza_px = piece_w_m * scale;
+    const alto_pieza_px = piece_h_m * scale;
+    
+    const total_pieces_width_px = cols * ancho_pieza_px;
+    let offsetX_piezas = offsetX;
+    if (centrar) {
+        offsetX_piezas = offsetX + (ancho_util_px - total_pieces_width_px) / 2;
+    }
+
+    let count = 0;
+    for (let f = 0; f < filas; f++) {
+        for (let c = 0; c < cols; c++) {
+            if (count >= cantidad) break;
+            const x = offsetX_piezas + c * ancho_pieza_px;
+            const y = offsetY + f * alto_pieza_px;
+            ctx.fillStyle = '#bae6fd';
+            ctx.fillRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
+            ctx.strokeStyle = '#0ea5e9';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
+            count++;
+        }
+        if (count >= cantidad) break;
+    }
+
+    // Gap final (6.5 cm)
+    const gap_px = gap_m * scale;
+    ctx.fillStyle = 'rgba(245,158,11,0.35)';
+    ctx.fillRect(offsetX, offsetY + impresion_h_px, roll_w_px, gap_px);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.setLineDash([4, 3]);
+    ctx.strokeRect(offsetX, offsetY + impresion_h_px, roll_w_px, gap_px);
+    ctx.setLineDash([]);
+
+    // Etiquetas informativas
+    ctx.fillStyle = '#1c1c1e';
+    ctx.font = 'bold 10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${cols}×${filas}`, offsetX_piezas + 4, offsetY + 12);
+
+    if (gap_px > 8) {
+        ctx.fillStyle = '#78350f';
+        ctx.font = 'bold 9px Inter, sans-serif';
+        ctx.fillText('Gap 6.5cm', offsetX + 4, offsetY + impresion_h_px + gap_px - 3);
+    }
+
+    // Indicadores de ancho
+    ctx.fillStyle = '#8e8e93';
+    ctx.font = '9px Inter, sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText(`${roll_w_m.toFixed(2)} m`, W - pad, offsetY + 10);
 }
 
 // =============================================
@@ -1104,6 +1160,7 @@ window.onclick = function(event) {
 // =============================================
 let nuevaLineaCounter = 0;
 const productosData = {{ productos|tojson }};
+const materialesCartel = {{ materiales_cartel|tojson }};
 
 function agregarLinea() {
     const tbody = document.getElementById('cuerpoLineas');
@@ -1114,6 +1171,7 @@ function agregarLinea() {
     row.className = 'linea-fila';
     row.dataset.nuevo = 'true';
     row.dataset.paramsId = paramsId;
+    row.dataset.tipo = 'otros';
 
     let prodOptions = '<option value="">-- Seleccionar --</option>';
     for (let p of productosData) {
@@ -1123,8 +1181,12 @@ function agregarLinea() {
     row.innerHTML = `
         <td data-label="Nombre visible"><input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required></td>
         <td data-label="Material (Producto)"><select name="productos_ids[]" class="producto-select" required>${prodOptions}</select></td>
-        <td data-label="Cantidad"><input type="number" step="0.01" name="cantidades[]" placeholder="m²" required></td>
-        <td data-label="Unidad">
+        <td data-label="Cantidad" class="col-cantidad">
+            <span class="cartel-dash" style="display:none;">-</span>
+            <input type="number" step="0.01" name="cantidades[]" placeholder="m²">
+        </td>
+        <td data-label="Unidad" class="col-unidad">
+            <span class="cartel-dash" style="display:none;">-</span>
             <select name="unidades[]" class="unidad-select">
                 <option value="m2" selected>metros cuadrados (m²)</option>
                 <option value="unidades">unidades</option>
@@ -1142,12 +1204,12 @@ function agregarLinea() {
     `;
     tbody.appendChild(row);
 
+    // Bloque ETIQUETAS
     const paramsRow = document.createElement('tr');
     paramsRow.className = 'etiquetas-params-row';
     paramsRow.dataset.paramsId = paramsId;
     paramsRow.dataset.paramsRow = 'true';
     paramsRow.style.display = 'none';
-
     paramsRow.innerHTML = `
         <td colspan="6">
             <div class="etiquetas-params" id="etiquetas-params-${paramsId}">
@@ -1161,7 +1223,6 @@ function agregarLinea() {
                         <input type="number" step="0.01" min="0.01" class="alto_etiqueta" name="alto_etiqueta[]" value="10">
                     </div>
                 </div>
-
                 <div class="form-group">
                     <label>¿El cliente sabe cuántas etiquetas quiere? <span style="font-weight:400; color:#8e8e93;">(sugerimos el tamaño con menor merma)</span></label>
                     <div class="calcular-optimo-wrap">
@@ -1171,14 +1232,9 @@ function agregarLinea() {
                     <span class="optimo-hint">El sistema buscará el tamaño que minimice la merma operativa manteniendo esa cantidad de etiquetas.</span>
                     <span class="optimo-resultado"></span>
                 </div>
-
                 <div class="form-group">
                     <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(por defecto 1.30, máx. ancho real del rollo)</span></label>
-                    <input type="number" step="0.01" min="0.01" class="ancho_util_override"
-                           name="ancho_util_override[]"
-                           value="1.30"
-                           placeholder="Ej. 1.30"
-                           oninput="validarAnchoUtil(this)">
+                    <input type="number" step="0.01" min="0.01" class="ancho_util_override" name="ancho_util_override[]" value="1.30" placeholder="Ej. 1.30" oninput="validarAnchoUtil(this)">
                 </div>
                 <div class="form-group">
                     <label>Precio (USD/m²)</label>
@@ -1190,30 +1246,11 @@ function agregarLinea() {
                     <label><input type="checkbox" class="auto_girar_etiqueta" name="auto_girar_etiqueta[]" value="1" checked>Modo Inteligente</label>
                 </div>
                 <div class="calc-result-linea">
-                    <div class="item">
-                        <span class="label">Etiquetas producidas</span>
-                        <span class="value etiquetas_por_m2_display">—</span>
-                        <span class="hint filas_cols_display">—</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">Área solicitada</span>
-                        <span class="value area_total_display">—</span>
-                        <span class="hint area_formula_display">—</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">Material consumido</span>
-                        <span class="value material_consumido_display">—</span>
-                        <span class="hint largo_total_display">—</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">Costo estimado</span>
-                        <span class="value costo_estimado_display">—</span>
-                    </div>
-                    <div class="item">
-                        <span class="label">Merma operativa</span>
-                        <span class="value merma_pct_display merma">—</span>
-                        <span class="hint merma_m2_display">—</span>
-                    </div>
+                    <div class="item"><span class="label">Etiquetas producidas</span><span class="value etiquetas_por_m2_display">—</span><span class="hint filas_cols_display">—</span></div>
+                    <div class="item"><span class="label">Área solicitada</span><span class="value area_total_display">—</span><span class="hint area_formula_display">—</span></div>
+                    <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_display">—</span><span class="hint largo_total_display">—</span></div>
+                    <div class="item"><span class="label">Costo estimado</span><span class="value costo_estimado_display">—</span></div>
+                    <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_display merma">—</span><span class="hint merma_m2_display">—</span></div>
                 </div>
                 <div style="margin-top:4px;">
                     <button type="button" class="btn btn-sm btn-outline ocultar-etiquetas" data-params-id="${paramsId}">Ocultar</button>
@@ -1221,16 +1258,109 @@ function agregarLinea() {
             </div>
         </td>
     `;
+    tbody.appendChild(paramsRow);
 
-    if (row.nextSibling) tbody.insertBefore(paramsRow, row.nextSibling);
-    else tbody.appendChild(paramsRow);
+    // Bloque CARTELES
+    const cartelesRow = document.createElement('tr');
+    cartelesRow.className = 'carteles-params-row';
+    cartelesRow.dataset.paramsId = paramsId;
+    cartelesRow.dataset.paramsRow = 'true';
+    cartelesRow.style.display = 'none';
 
+    let materialesOpts = '';
+    for (const [key, mat] of Object.entries(materialesCartel)) {
+        materialesOpts += `<option value="${key}" data-impresion="${mat.impresion}" data-merma="${mat.merma}">${key}</option>`;
+    }
+
+    cartelesRow.innerHTML = `
+        <td colspan="6">
+            <div class="carteles-params" id="carteles-params-${paramsId}">
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Ancho (cm)</label>
+                        <input type="number" step="0.01" min="0.01" class="ancho_cartel" name="ancho_cartel[]" value="100">
+                    </div>
+                    <div class="form-group">
+                        <label>Alto (cm)</label>
+                        <input type="number" step="0.01" min="0.01" class="alto_cartel" name="alto_cartel[]" value="200">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad de piezas</label>
+                    <input type="number" min="1" step="1" class="cantidad_cartel" name="cantidad_cartel[]" value="1">
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(default = ancho real)</span></label>
+                        <input type="number" step="0.01" min="0.01" class="ancho_util_override_cartel" name="ancho_util_override_cartel[]" placeholder="Ej. 1.30">
+                    </div>
+                    <div class="form-group">
+                        <label>Tipo de material <span style="font-weight:400; color:#8e8e93;">(precios sugeridos)</span></label>
+                        <select class="tipo_material_cartel" name="tipo_material_cartel[]">${materialesOpts}</select>
+                    </div>
+                </div>
+                <div class="form-grid-2">
+                    <div class="form-group">
+                        <label>Precio impresión ($/m²)</label>
+                        <input type="number" step="0.01" min="0" class="precio_impresion_cartel" name="precio_impresion_cartel[]" value="10.00">
+                    </div>
+                    <div class="form-group">
+                        <label>Precio merma ($/m²)</label>
+                        <input type="number" step="0.01" min="0" class="precio_merma_cartel" name="precio_merma_cartel[]" value="4.00">
+                        <span class="precio-hint">💡 La merma se cobra al cliente a este precio (más económico)</span>
+                    </div>
+                </div>
+                <div class="checkbox-grid">
+                    <label><input type="checkbox" class="girar_cartel" name="girar_cartel[]" value="1"> Girar 90° (manual)</label>
+                    <label><input type="checkbox" class="auto_girar_cartel" name="auto_girar_cartel[]" value="1" checked>Modo Inteligente</label>
+                    <label><input type="checkbox" class="centrar_cartel" name="centrar_cartel[]" value="1" checked>Centrar en el rollo</label>
+                </div>
+
+                <div class="form-group">
+                    <label>Vista previa</label>
+                    <div class="preview-canvas-wrap">
+                        <canvas id="preview-${paramsId}" width="500" height="220"></canvas>
+                    </div>
+                    <div class="preview-legend">
+                        <span class="item"><span class="swatch" style="background:#bae6fd;border:1px solid #0ea5e9;"></span> Pieza</span>
+                        <span class="item"><span class="swatch" style="background:rgba(0,0,0,0.06);"></span> Borde rollo</span>
+                        <span class="item"><span class="swatch" style="background:rgba(245,158,11,0.35);border:1px dashed #f59e0b;"></span> Gap 6.5 cm</span>
+                    </div>
+                </div>
+
+                <div class="calc-result-linea">
+                    <div class="item"><span class="label">Piezas producidas</span><span class="value piezas_cartel_display">—</span><span class="hint distribucion_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Área piezas</span><span class="value area_piezas_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_cartel_display">—</span><span class="hint largo_total_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Costo impresión</span><span class="value costo_impresion_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Costo merma</span><span class="value costo_merma_cartel_display merma">—</span></div>
+                    <div class="item"><span class="label">Costo total</span><span class="value costo_total_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_cartel_display merma">—</span><span class="hint merma_m2_cartel_display">—</span></div>
+                </div>
+                <div style="margin-top:4px;">
+                    <button type="button" class="btn btn-sm btn-outline ocultar-carteles" data-params-id="${paramsId}">Ocultar</button>
+                </div>
+            </div>
+        </td>
+    `;
+    tbody.appendChild(cartelesRow);
+
+    // ============================
+    // SETUP EVENTOS
+    // ============================
     const proyectoSelect = row.querySelector('.proyecto-linea');
     const cantidadInput = row.querySelector('input[name="cantidades[]"]');
     const unidadSelect = row.querySelector('.unidad-select');
     const productoSelect = row.querySelector('.producto-select');
     const toggleBtn = row.querySelector('.toggle-etiquetas');
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
+    const cartelParamsDiv = cartelesRow.querySelector('.carteles-params');
+    const tdCantidad = row.querySelector('.col-cantidad');
+    const tdUnidad = row.querySelector('.col-unidad');
+    const dashCantidad = tdCantidad.querySelector('.cartel-dash');
+    const dashUnidad = tdUnidad.querySelector('.cartel-dash');
+
+    // Etiquetas refs
     const anchoInput = paramsDiv.querySelector('.ancho_etiqueta');
     const altoInput = paramsDiv.querySelector('.alto_etiqueta');
     const precioInput = paramsDiv.querySelector('.precio_etiqueta');
@@ -1239,39 +1369,30 @@ function agregarLinea() {
     const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
     const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
 
-    function mostrarBloque() {
-        paramsRow.style.display = 'table-row';
-        paramsDiv.classList.add('visible');
-        paramsDiv.style.display = 'block';
-        toggleBtn.style.display = 'inline-block';
-        toggleBtn.textContent = 'Ocultar';
-        setTimeout(() => triggerCalculo(), 100);
-    }
-    function ocultarBloque() {
-        paramsRow.style.display = 'none';
-        paramsDiv.classList.remove('visible');
-        paramsDiv.style.display = 'none';
-        toggleBtn.textContent = 'Ver';
-        limpiarResultados(paramsRow);
-    }
+    // Cartel refs
+    const anchoCartel = cartelParamsDiv.querySelector('.ancho_cartel');
+    const altoCartel = cartelParamsDiv.querySelector('.alto_cartel');
+    const cantidadCartel = cartelParamsDiv.querySelector('.cantidad_cartel');
+    const anchoUtilCartel = cartelParamsDiv.querySelector('.ancho_util_override_cartel');
+    const tipoMaterialCartel = cartelParamsDiv.querySelector('.tipo_material_cartel');
+    const precioImpresionCartel = cartelParamsDiv.querySelector('.precio_impresion_cartel');
+    const precioMermaCartel = cartelParamsDiv.querySelector('.precio_merma_cartel');
+    const girarCartel = cartelParamsDiv.querySelector('.girar_cartel');
+    const autoGirarCartel = cartelParamsDiv.querySelector('.auto_girar_cartel');
+    const centrarCartel = cartelParamsDiv.querySelector('.centrar_cartel');
+
     function triggerCalculo() {
         if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
             calcularLinea(paramsRow);
         }
     }
-    proyectoSelect.addEventListener('change', function() {
-        if (this.value === 'etiquetas') mostrarBloque();
-        else ocultarBloque();
-    });
-    toggleBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        if (paramsRow.style.display === 'none') mostrarBloque();
-        else ocultarBloque();
-    });
-    paramsRow.querySelector('.ocultar-etiquetas').addEventListener('click', e => {
-        e.preventDefault();
-        ocultarBloque();
-    });
+    function triggerCartel() {
+        if (proyectoSelect.value === 'cartel' && cartelesRow.style.display !== 'none') {
+            calcularLineaCartel(cartelesRow);
+        }
+    }
+
+    // Etiquetas events
     [cantidadInput, anchoInput, altoInput, precioInput].forEach(el => {
         el.addEventListener('input', triggerCalculo);
         el.addEventListener('change', triggerCalculo);
@@ -1283,15 +1404,132 @@ function agregarLinea() {
     productoSelect.addEventListener('change', function() {
         if (anchoUtilOverride && !anchoUtilOverride.value) anchoUtilOverride.value = '1.30';
         triggerCalculo();
+        triggerCartel();
     });
     [mesaCheck, girarCheck, autoGirarCheck].forEach(el => el.addEventListener('change', triggerCalculo));
-    anchoUtilOverride.addEventListener('input', function() {
-        validarAnchoUtil(this);
-        triggerCalculo();
+    anchoUtilOverride.addEventListener('input', function() { validarAnchoUtil(this); triggerCalculo(); });
+    anchoUtilOverride.addEventListener('change', function() { validarAnchoUtil(this); triggerCalculo(); });
+
+    // Cartel events
+    [anchoCartel, altoCartel, cantidadCartel, anchoUtilCartel, precioImpresionCartel, precioMermaCartel].forEach(el => {
+        el.addEventListener('input', triggerCartel);
+        el.addEventListener('change', triggerCartel);
     });
-    anchoUtilOverride.addEventListener('change', function() {
-        validarAnchoUtil(this);
-        triggerCalculo();
+    if (girarCartel) girarCartel.addEventListener('change', function() {
+        if (this.checked && autoGirarCartel) autoGirarCartel.checked = false;
+        triggerCartel();
+    });
+    if (autoGirarCartel) autoGirarCartel.addEventListener('change', function() {
+        if (this.checked && girarCartel) girarCartel.checked = false;
+        triggerCartel();
+    });
+    if (centrarCartel) centrarCartel.addEventListener('change', triggerCartel);
+
+    if (tipoMaterialCartel) {
+        tipoMaterialCartel.addEventListener('change', function() {
+            const opt = this.options[this.selectedIndex];
+            if (opt && opt.dataset.impresion) {
+                precioImpresionCartel.value = parseFloat(opt.dataset.impresion).toFixed(2);
+                precioMermaCartel.value = parseFloat(opt.dataset.merma).toFixed(2);
+            }
+            triggerCartel();
+        });
+    }
+
+    // Ocultar bloques
+    paramsRow.querySelector('.ocultar-etiquetas').addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        paramsRow.style.display = 'none';
+        paramsDiv.classList.remove('visible');
+        paramsDiv.style.display = 'none';
+        toggleBtn.textContent = 'Ver';
+    });
+    cartelesRow.querySelector('.ocultar-carteles').addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        cartelesRow.style.display = 'none';
+        cartelParamsDiv.classList.remove('visible');
+        cartelParamsDiv.style.display = 'none';
+        toggleBtn.textContent = 'Ver';
+    });
+
+    // Mostrar / ocultar
+    function mostrarEtiquetas() {
+        paramsRow.style.display = 'table-row';
+        paramsDiv.classList.add('visible');
+        paramsDiv.style.display = 'block';
+        cartelesRow.style.display = 'none';
+        cartelParamsDiv.classList.remove('visible');
+        cartelParamsDiv.style.display = 'none';
+        dashCantidad.style.display = 'none';
+        cantidadInput.style.display = 'block';
+        dashUnidad.style.display = 'none';
+        unidadSelect.style.display = 'block';
+        cantidadInput.required = true;
+        toggleBtn.style.display = 'inline-block';
+        toggleBtn.textContent = 'Ocultar';
+        row.dataset.tipo = 'etiquetas';
+        setTimeout(triggerCalculo, 100);
+    }
+    function mostrarCarteles() {
+        paramsRow.style.display = 'none';
+        paramsDiv.classList.remove('visible');
+        paramsDiv.style.display = 'none';
+        cartelesRow.style.display = 'table-row';
+        cartelParamsDiv.classList.add('visible');
+        cartelParamsDiv.style.display = 'block';
+        dashCantidad.style.display = 'block';
+        cantidadInput.style.display = 'none';
+        dashUnidad.style.display = 'block';
+        unidadSelect.style.display = 'none';
+        cantidadInput.required = false;
+        toggleBtn.style.display = 'inline-block';
+        toggleBtn.textContent = 'Ocultar';
+        row.dataset.tipo = 'cartel';
+        setTimeout(triggerCartel, 100);
+    }
+    function ocultarTodo() {
+        paramsRow.style.display = 'none';
+        paramsDiv.classList.remove('visible');
+        paramsDiv.style.display = 'none';
+        cartelesRow.style.display = 'none';
+        cartelParamsDiv.classList.remove('visible');
+        cartelParamsDiv.style.display = 'none';
+        dashCantidad.style.display = 'none';
+        cantidadInput.style.display = 'block';
+        dashUnidad.style.display = 'none';
+        unidadSelect.style.display = 'block';
+        cantidadInput.required = true;
+        toggleBtn.style.display = 'none';
+        toggleBtn.textContent = 'Ver';
+        row.dataset.tipo = 'otros';
+    }
+
+    proyectoSelect.addEventListener('change', function() {
+        if (this.value === 'etiquetas') mostrarEtiquetas();
+        else if (this.value === 'cartel') mostrarCarteles();
+        else ocultarTodo();
+    });
+
+    toggleBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const tipo = proyectoSelect.value;
+        if (tipo === 'etiquetas') {
+            if (paramsRow.style.display === 'none') mostrarEtiquetas();
+            else {
+                paramsRow.style.display = 'none';
+                paramsDiv.classList.remove('visible');
+                paramsDiv.style.display = 'none';
+                toggleBtn.textContent = 'Ver';
+            }
+        } else if (tipo === 'cartel') {
+            if (cartelesRow.style.display === 'none') mostrarCarteles();
+            else {
+                cartelesRow.style.display = 'none';
+                cartelParamsDiv.classList.remove('visible');
+                cartelParamsDiv.style.display = 'none';
+                toggleBtn.textContent = 'Ver';
+            }
+        }
     });
 }
 
@@ -1300,7 +1538,9 @@ function eliminarLinea(btn) {
     if (row) {
         const paramsId = row.dataset.paramsId;
         const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
+        const cartelesRow = document.querySelector(`tr.carteles-params-row[data-params-id="${paramsId}"]`);
         if (paramsRow) paramsRow.remove();
+        if (cartelesRow) cartelesRow.remove();
         row.remove();
     }
 }
@@ -1308,6 +1548,7 @@ function marcarEliminarLinea(archivoId) {
     if (!confirm('¿Eliminar esta línea permanentemente?')) return;
     const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
     const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-id="${archivoId}"]`);
+    const cartelesRow = document.querySelector(`tr.carteles-params-row[data-id="${archivoId}"]`);
     if (mainRow) {
         mainRow.style.display = 'none';
         mainRow.dataset.eliminado = 'true';
@@ -1318,20 +1559,28 @@ function marcarEliminarLinea(archivoId) {
         mainRow.appendChild(input);
     }
     if (paramsRow) paramsRow.style.display = 'none';
+    if (cartelesRow) cartelesRow.style.display = 'none';
 }
 
 // =============================================
-// DELEGACIÓN DE EVENTOS
+// DELEGACIÓN + INICIALIZACIÓN (edit lines)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
+    // Click handlers
     document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
         const toggleBtn = e.target.closest('.toggle-etiquetas');
         if (toggleBtn) {
+            const mainRow = toggleBtn.closest('tr.linea-fila');
+            if (!mainRow || mainRow.dataset.eliminado === 'true') return;
+            if (mainRow.dataset.nuevo === 'true') return;
+
             e.preventDefault();
             const paramsId = toggleBtn.dataset.paramsId;
             const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-params-id="${paramsId}"]`);
-            const mainRow = toggleBtn.closest('tr.linea-fila');
-            if (mainRow && paramsRow && mainRow.dataset.eliminado !== 'true') {
+            const cartelesRow = document.querySelector(`tr.carteles-params-row[data-params-id="${paramsId}"]`);
+            const tipo = mainRow.dataset.tipo || 'otros';
+
+            if (tipo === 'etiquetas' && paramsRow) {
                 const isVisible = paramsRow.style.display !== 'none';
                 if (isVisible) {
                     paramsRow.style.display = 'none';
@@ -1348,10 +1597,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                     toggleBtn.textContent = 'Ocultar';
                 }
+            } else if (tipo === 'cartel' && cartelesRow) {
+                const isVisible = cartelesRow.style.display !== 'none';
+                if (isVisible) {
+                    cartelesRow.style.display = 'none';
+                    const cartelDiv = cartelesRow.querySelector('.carteles-params');
+                    if (cartelDiv) { cartelDiv.classList.remove('visible'); cartelDiv.style.display = 'none'; }
+                    toggleBtn.textContent = 'Ver';
+                } else {
+                    cartelesRow.style.display = 'table-row';
+                    const cartelDiv = cartelesRow.querySelector('.carteles-params');
+                    if (cartelDiv) {
+                        cartelDiv.classList.add('visible');
+                        cartelDiv.style.display = 'block';
+                        setTimeout(() => calcularLineaCartel(cartelesRow), 100);
+                    }
+                    toggleBtn.textContent = 'Ocultar';
+                }
             }
         }
-    });
-    document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
+
         const ocultarBtn = e.target.closest('.ocultar-etiquetas');
         if (ocultarBtn) {
             e.preventDefault();
@@ -1363,8 +1628,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (paramsDiv) { paramsDiv.classList.remove('visible'); paramsDiv.style.display = 'none'; }
                 const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
                 if (mainRow) {
-                    const toggleBtn = mainRow.querySelector('.toggle-etiquetas');
-                    if (toggleBtn) toggleBtn.textContent = 'Ver';
+                    const tb = mainRow.querySelector('.toggle-etiquetas');
+                    if (tb) tb.textContent = 'Ver';
+                }
+            }
+        }
+        const ocultarCartelBtn = e.target.closest('.ocultar-carteles');
+        if (ocultarCartelBtn) {
+            e.preventDefault();
+            const paramsId = ocultarCartelBtn.dataset.paramsId;
+            const cartelesRow = document.querySelector(`tr.carteles-params-row[data-params-id="${paramsId}"]`);
+            if (cartelesRow) {
+                cartelesRow.style.display = 'none';
+                const cartelDiv = cartelesRow.querySelector('.carteles-params');
+                if (cartelDiv) { cartelDiv.classList.remove('visible'); cartelDiv.style.display = 'none'; }
+                const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+                if (mainRow) {
+                    const tb = mainRow.querySelector('.toggle-etiquetas');
+                    if (tb) tb.textContent = 'Ver';
                 }
             }
         }
@@ -1394,6 +1675,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ETIQUETAS EDIT
     document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(paramsRow) {
         const paramsDiv = paramsRow.querySelector('.etiquetas-params');
         if (!paramsDiv) return;
@@ -1436,10 +1718,58 @@ document.addEventListener('DOMContentLoaded', function() {
         if (unidadSelect) actualizarPlaceholderCantidad(unidadSelect);
         if (paramsRow.style.display !== 'none') setTimeout(triggerCalculoEdit, 200);
     });
+
+    // CARTELES EDIT
+    document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(cartelesRow) {
+        const cartelDiv = cartelesRow.querySelector('.carteles-params');
+        if (!cartelDiv) return;
+        const archivoId = cartelesRow.dataset.id;
+        const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
+        if (!mainRow) return;
+
+        const anchoInput = cartelDiv.querySelector('.ancho_cartel_edit');
+        const altoInput = cartelDiv.querySelector('.alto_cartel_edit');
+        const cantidadInput = cartelDiv.querySelector('.cantidad_cartel_edit');
+        const anchoUtilInput = cartelDiv.querySelector('.ancho_util_override_cartel_edit');
+        const tipoMatSelect = cartelDiv.querySelector('.tipo_material_cartel_edit');
+        const precioImpresionInput = cartelDiv.querySelector('.precio_impresion_cartel_edit');
+        const precioMermaInput = cartelDiv.querySelector('.precio_merma_cartel_edit');
+        const girarInput = cartelDiv.querySelector('.girar_cartel_edit');
+        const autoGirarInput = cartelDiv.querySelector('.auto_girar_cartel_edit');
+        const centrarInput = cartelDiv.querySelector('.centrar_cartel_edit');
+
+        function triggerCartelEdit() { calcularLineaCartel(cartelesRow); }
+
+        [anchoInput, altoInput, cantidadInput, anchoUtilInput, precioImpresionInput, precioMermaInput].forEach(el => {
+            if (el) { el.addEventListener('input', triggerCartelEdit); el.addEventListener('change', triggerCartelEdit); }
+        });
+        if (girarInput) girarInput.addEventListener('change', function() {
+            if (this.checked && autoGirarInput) autoGirarInput.checked = false;
+            triggerCartelEdit();
+        });
+        if (autoGirarInput) autoGirarInput.addEventListener('change', function() {
+            if (this.checked && girarInput) girarInput.checked = false;
+            triggerCartelEdit();
+        });
+        if (centrarInput) centrarInput.addEventListener('change', triggerCartelEdit);
+
+        if (tipoMatSelect) {
+            tipoMatSelect.addEventListener('change', function() {
+                const opt = this.options[this.selectedIndex];
+                if (opt && opt.dataset.impresion) {
+                    precioImpresionInput.value = parseFloat(opt.dataset.impresion).toFixed(2);
+                    precioMermaInput.value = parseFloat(opt.dataset.merma).toFixed(2);
+                }
+                triggerCartelEdit();
+            });
+        }
+
+        if (cartelesRow.style.display !== 'none') setTimeout(triggerCartelEdit, 300);
+    });
 });
 
 // =============================================
-// LIMPIAR RESULTADOS
+// CÁLCULO DE ETIQUETAS
 // =============================================
 function limpiarResultados(paramsRow) {
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
@@ -1458,9 +1788,6 @@ function limpiarResultados(paramsRow) {
     });
 }
 
-// =============================================
-// CÁLCULO DE ETIQUETAS (MODO m² Y MODO UNIDADES)
-// =============================================
 function calcularLinea(paramsRow) {
     if (!paramsRow) return;
     const paramsDiv = paramsRow.querySelector('.etiquetas-params');
@@ -1509,9 +1836,7 @@ function calcularLinea(paramsRow) {
     const anchoRollo = parseFloat(selectedOption.getAttribute('data-ancho')) || ANCHO_REAL_DEFAULT;
     const gapCm = parseFloat(selectedOption.getAttribute('data-gap')) || 6.5;
 
-    let anchoUtilEfectivo = (anchoUtilOverride && anchoUtilOverride.trim() !== '')
-        ? parseFloat(anchoUtilOverride)
-        : anchoRollo;
+    let anchoUtilEfectivo = (anchoUtilOverride && anchoUtilOverride.trim() !== '') ? parseFloat(anchoUtilOverride) : anchoRollo;
     if (anchoUtilEfectivo > anchoRollo + 0.001) {
         const eP2 = paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`);
         if (eP2) eP2.textContent = '⚠️';
@@ -1552,9 +1877,6 @@ function calcularLinea(paramsRow) {
         const areaTotalOriginal = simData.areaTotal || 0;
         const precioUnitario = parseFloat(precio) || 10;
 
-        // ═══════════════════════════════════════════════════════════
-        // DETECCIÓN DE ROTACIÓN
-        // ═══════════════════════════════════════════════════════════
         const anchoCmNum = parseFloat(ancho);
         const altoCmNum = parseFloat(alto);
         const anchoColumnaEfectivo = anchoUtilEfectivo / columnas;
@@ -1562,36 +1884,21 @@ function calcularLinea(paramsRow) {
         const diffRotado = Math.abs(anchoColumnaEfectivo - (altoCmNum / 100));
         const esRotado = diffRotado < diffUnrotado;
 
-        const altoCellM = esRotado
-            ? (anchoCmNum / 100) + MARGEN_MESA_M
-            : (altoCmNum / 100) + MARGEN_MESA_M;
+        const altoCellM = esRotado ? (anchoCmNum / 100) + MARGEN_MESA_M : (altoCmNum / 100) + MARGEN_MESA_M;
+        const anchoCellM = esRotado ? (altoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0) : (anchoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0);
 
-        // Ancho de cada celda (para calcular área real de etiquetas)
-        const anchoCellM = esRotado
-            ? (altoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0)
-            : (anchoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0);
-
-        // ═══════════════════════════════════════════════════════════
-        // MODO m² vs MODO UNIDADES
-        // ═══════════════════════════════════════════════════════════
         const esUnidades = (unidad === 'unidades');
         const gapM = gapCm / 100.0;
 
-        // Filas máximas por paño (1 m²)
-        const filasPorPañoMax = altoCellM > 0
-            ? Math.floor((1.0 / anchoUtilEfectivo) / altoCellM)
-            : 1;
+        const filasPorPañoMax = altoCellM > 0 ? Math.floor((1.0 / anchoUtilEfectivo) / altoCellM) : 1;
         const filasPorPañoMaxEff = filasPorPañoMax > 0 ? filasPorPañoMax : 1;
 
         let filasMinimas = null;
         if (esUnidades) {
             const cantidadNum = parseInt(cantidad);
-            if (cantidadNum > 0) {
-                filasMinimas = Math.ceil(cantidadNum / columnas);
-            }
+            if (cantidadNum > 0) filasMinimas = Math.ceil(cantidadNum / columnas);
         }
 
-        // Determinar área facturada y n_paños
         let areaFacturada, nPaños;
         if (esUnidades && filasMinimas !== null) {
             const pañosCompletos = Math.floor(filasMinimas / filasPorPañoMaxEff);
@@ -1621,79 +1928,48 @@ function calcularLinea(paramsRow) {
             if (esUnidades && filasMinimas !== null) {
                 const filasRestantesAhora = filasMinimas - filasTotales;
                 if (filasRestantesAhora <= 0) break;
-                if (filasRestantesAhora <= filasPorPañoMaxEff) {
-                    areaPaño = filasRestantesAhora * altoCellM * anchoUtilEfectivo;
-                } else {
-                    areaPaño = 1.0;
-                }
+                areaPaño = filasRestantesAhora <= filasPorPañoMaxEff ? filasRestantesAhora * altoCellM * anchoUtilEfectivo : 1.0;
             } else {
                 areaPaño = Math.min(1.0, areaRestanteM2);
                 areaRestanteM2 -= areaPaño;
             }
-
             areaFacturadaReal += areaPaño;
-
             const largoNominalPaño = anchoUtilEfectivo > 0 ? areaPaño / anchoUtilEfectivo : 0;
-            // En el último paño (parcial), redondear hacia arriba porque el cliente
-            // ya está pagando ese paño. En paños completos, floor (caben exactas).
             let filasPaño;
             if (areaPaño < 1.0 - 0.001) {
                 filasPaño = altoCellM > 0 ? Math.ceil(largoNominalPaño / altoCellM) : 0;
             } else {
                 filasPaño = altoCellM > 0 ? Math.floor(largoNominalPaño / altoCellM) : 0;
             }
-
             if (esUnidades && filasMinimas !== null) {
                 const filasRestantesAntes = filasMinimas - filasTotales;
                 if (filasPaño > filasRestantesAntes) filasPaño = filasRestantesAntes;
             }
-
             const largoEtiqPaño = filasPaño * altoCellM;
             const airePaño = Math.max(0, largoNominalPaño - largoEtiqPaño);
             const aireTotalPaño = airePaño + sobranteAcumulado;
-
             const gapEfectivoPaño = Math.max(0, gapM - aireTotalPaño);
             sobranteAcumulado = Math.max(0, aireTotalPaño - gapM);
-
             const largoAvancePaño = largoEtiqPaño + CUT_LARGO_M + gapEfectivoPaño;
             const materialPaño = anchoRollo * largoAvancePaño;
-
             filasTotales += filasPaño;
             largoEtiquetasTotal += largoEtiqPaño;
             materialTotal += materialPaño;
-
-            if (esUnidades && filasMinimas !== null && filasTotales >= filasMinimas) {
-                break;
-            }
+            if (esUnidades && filasMinimas !== null && filasTotales >= filasMinimas) break;
         }
 
-        // Área facturada final
         const areaTotalFinal = esUnidades ? areaFacturadaReal : areaFacturada;
-
         const nEtiquetas = columnas * filasTotales;
         const materialConsumido = materialTotal;
         const largoTotalReal = materialConsumido / anchoRollo;
 
-        // ============================================================
-        // CÁLCULO DE MERMA OPERATIVA — CORREGIDO
-        // La merma se mide contra el ÁREA ÚTIL DEL ROLLO (zona imprimible),
-        // NO contra el área facturada al cliente (que es un mínimo comercial).
-        //
-        // Merma operativa = (ancho útil × largo total) − (área real de etiquetas)
-        // % Merma = merma operativa ÷ área útil del rollo × 100
-        // ============================================================
         const areaUtilRolloM2 = anchoUtilEfectivo * largoTotalReal;
         const areaEtiquetasM2 = filasTotales * altoCellM * columnas * anchoCellM;
         const mermaOperativaM2 = Math.max(0, areaUtilRolloM2 - areaEtiquetasM2);
-        const mermaBordeRolloM2 = Math.max(0, (anchoRollo - anchoUtilEfectivo) * largoTotalReal);
-        const mermaTotalM2 = mermaOperativaM2 + mermaBordeRolloM2;
         const mermaPct = areaUtilRolloM2 > 0 ? (mermaOperativaM2 / areaUtilRolloM2) * 100 : 0;
-        // Alias para compatibilidad con variables viejas
-        const mermaM2 = mermaOperativaM2;
 
         const areaRedondeada = Math.round(areaTotalFinal * 100) / 100;
-        let costoEstimado = areaRedondeada * precioUnitario;
-        costoEstimado = Math.round(costoEstimado * 100) / 100;
+        let costoEstimado = Math.round(areaRedondeada * precioUnitario * 100) / 100;
 
         const eP2 = paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`);
         if (eP2) eP2.textContent = nEtiquetas;
@@ -1703,11 +1979,7 @@ function calcularLinea(paramsRow) {
         if (eArea) eArea.textContent = areaTotalFinal.toFixed(2) + ' m²';
         const eFormula = paramsDiv.querySelector(`.area_formula_display${prefix}`);
         if (eFormula) {
-            if (esUnidades) {
-                eFormula.textContent = `solicitado: ${cantidad} · entregar: ${nEtiquetas}`;
-            } else {
-                eFormula.textContent = `solicitado: ${parseFloat(cantidad).toFixed(2)} m²`;
-            }
+            eFormula.textContent = esUnidades ? `solicitado: ${cantidad} · entregar: ${nEtiquetas}` : `solicitado: ${parseFloat(cantidad).toFixed(2)} m²`;
         }
         const eMat = paramsDiv.querySelector(`.material_consumido_display${prefix}`);
         if (eMat) eMat.textContent = materialConsumido.toFixed(2) + ' m²';
@@ -1718,11 +1990,13 @@ function calcularLinea(paramsRow) {
         const eMermaPct = paramsDiv.querySelector(`.merma_pct_display${prefix}`);
         if (eMermaPct) eMermaPct.textContent = mermaPct.toFixed(1) + '%';
         const eMermaM2 = paramsDiv.querySelector(`.merma_m2_display${prefix}`);
-        if (eMermaM2) eMermaM2.textContent = mermaM2.toFixed(2) + ' m²';
+        if (eMermaM2) eMermaM2.textContent = mermaOperativaM2.toFixed(2) + ' m²';
 
         const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
-        if (nombreInput && !nombreInput.value.trim()) {
-            nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
+        if (nombreInput) {
+            const currentName = nombreInput.value.trim();
+            const esAutogenerado = !currentName || /^(Etiquetas|Cartel) \d+(\.\d+)?x\d+(\.\d+)? cm$/.test(currentName);
+            if (esAutogenerado) nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
     })
     .catch(err => {
@@ -1730,6 +2004,120 @@ function calcularLinea(paramsRow) {
         const eP2 = paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`);
         if (eP2) eP2.textContent = 'Error';
     });
+}
+
+// =============================================
+// CÁLCULO DE CARTELES
+// =============================================
+function calcularLineaCartel(cartelesRow) {
+    if (!cartelesRow) return;
+    const cartelDiv = cartelesRow.querySelector('.carteles-params');
+    if (!cartelDiv) return;
+
+    const isEdit = cartelesRow.dataset.paramsId && cartelesRow.dataset.paramsId.startsWith('edit-');
+    const prefix = isEdit ? '_edit' : '';
+
+    const anchoEl = cartelDiv.querySelector(`.ancho_cartel${prefix}`);
+    const altoEl = cartelDiv.querySelector(`.alto_cartel${prefix}`);
+    const cantidadEl = cartelDiv.querySelector(`.cantidad_cartel${prefix}`);
+    const anchoUtilEl = cartelDiv.querySelector(`.ancho_util_override_cartel${prefix}`);
+    const tipoMaterialEl = cartelDiv.querySelector(`.tipo_material_cartel${prefix}`);
+    const precioImpresionEl = cartelDiv.querySelector(`.precio_impresion_cartel${prefix}`);
+    const precioMermaEl = cartelDiv.querySelector(`.precio_merma_cartel${prefix}`);
+    const girarEl = cartelDiv.querySelector(`.girar_cartel${prefix}`);
+    const autoGirarEl = cartelDiv.querySelector(`.auto_girar_cartel${prefix}`);
+    const centrarEl = cartelDiv.querySelector(`.centrar_cartel${prefix}`);
+
+    if (!anchoEl || !altoEl || !cantidadEl) return;
+
+    const ancho = anchoEl.value;
+    const alto = altoEl.value;
+    const cantidad = cantidadEl.value;
+    const anchoUtilOverride = anchoUtilEl ? anchoUtilEl.value : '';
+    const tipoMaterial = tipoMaterialEl ? tipoMaterialEl.value : 'Vinilo';
+    const precioImpresion = precioImpresionEl ? precioImpresionEl.value : '10';
+    const precioMerma = precioMermaEl ? precioMermaEl.value : '4';
+    const girar = girarEl && girarEl.checked ? '1' : '0';
+    const auto_girar = autoGirarEl && autoGirarEl.checked ? '1' : '0';
+    const centrar = centrarEl && centrarEl.checked ? '1' : '0';
+
+    const paramsId = cartelesRow.dataset.paramsId;
+    const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+    if (!mainRow) return;
+
+    let productoSelect;
+    if (isEdit) {
+        const archivoId = paramsId.replace('edit-', '');
+        productoSelect = mainRow.querySelector(`.producto-select-edit[data-archivo-id="${archivoId}"]`);
+    } else {
+        productoSelect = mainRow.querySelector('.producto-select');
+    }
+    if (!productoSelect || !productoSelect.value) return;
+    if (!ancho || !alto || !cantidad) return;
+
+    const formData = new FormData();
+    formData.append('ancho', ancho);
+    formData.append('alto', alto);
+    formData.append('cantidad', cantidad);
+    formData.append('girar', girar);
+    formData.append('auto_girar', auto_girar);
+    formData.append('centrar', centrar);
+    formData.append('ancho_util', anchoUtilOverride);
+    formData.append('tipo_material', tipoMaterial);
+    formData.append('precio_impresion', precioImpresion);
+    formData.append('precio_merma', precioMerma);
+    formData.append('producto_id', productoSelect.value);
+
+    fetch("{{ url_for('ordenes.calcular_cartel_ajax') }}", { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                const el = cartelDiv.querySelector(`.piezas_cartel_display${prefix}`);
+                if (el) el.textContent = '⚠️';
+                const dist = cartelDiv.querySelector(`.distribucion_cartel_display${prefix}`);
+                if (dist) dist.textContent = data.error;
+                
+                // Limpiar otros campos
+                ['area_piezas_cartel_display', 'material_consumido_cartel_display', 'largo_total_cartel_display', 
+                 'costo_impresion_cartel_display', 'costo_merma_cartel_display', 'costo_total_cartel_display', 
+                 'merma_pct_cartel_display', 'merma_m2_cartel_display'].forEach(cls => {
+                    const el = cartelDiv.querySelector('.' + cls + prefix);
+                    if (el) el.textContent = '—';
+                });
+                dibujarPreviewCartel('preview-' + paramsId, { error: true });
+                return;
+            }
+            const s = data.simData;
+            const set = (cls, val) => {
+                const el = cartelDiv.querySelector('.' + cls + prefix);
+                if (el) el.textContent = val;
+            };
+            set('piezas_cartel_display', s.cantidad);
+            set('distribucion_cartel_display', `${s.filas} filas × ${s.cols} cols · ${s.alto_impresion_cm}cm + gap`);
+            set('area_piezas_cartel_display', s.area_piezas_m2.toFixed(2) + ' m²');
+            set('material_consumido_cartel_display', s.area_rollo_m2.toFixed(2) + ' m²');
+            set('largo_total_cartel_display', `${s.largo_total_m.toFixed(2)} m × ${s.ancho_real.toFixed(2)} m`);
+            set('costo_impresion_cartel_display', '$' + s.costo_impresion.toFixed(2));
+            set('costo_merma_cartel_display', '$' + s.costo_merma.toFixed(2));
+            set('costo_total_cartel_display', '$' + s.costo_total.toFixed(2));
+            set('merma_pct_cartel_display', s.merma_pct.toFixed(1) + '%');
+            set('merma_m2_cartel_display', s.merma_operativa_m2.toFixed(2) + ' m²');
+
+            const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
+            if (nombreInput) {
+                const currentName = nombreInput.value.trim();
+                const esAutogenerado = !currentName || /^(Etiquetas|Cartel) \d+(\.\d+)?x\d+(\.\d+)? cm$/.test(currentName);
+                if (esAutogenerado) nombreInput.value = `Cartel ${ancho}x${alto} cm`;
+            }
+
+            // Dibujar preview
+            dibujarPreviewCartel('preview-' + paramsId, s);
+        })
+        .catch(err => {
+            console.error('Error cartel:', err);
+            const el = cartelDiv.querySelector(`.piezas_cartel_display${prefix}`);
+            if (el) el.textContent = 'Error';
+        });
 }
 
 function seleccionarTodos() {

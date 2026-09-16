@@ -1,3 +1,4 @@
+<!-- app/modulos/ordenes/templates/pdf_orden.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -33,6 +34,7 @@
         .lineas-table .unidad-linea { color: #555; }
         .lineas-table .tipo-linea { font-size: 10px; background: #f0ece8; padding: 1px 6px; border-radius: 12px; }
         .lineas-table .detalle-etiqueta { font-size: 9px; color: #777; line-height: 1.4; }
+        .lineas-table .detalle-cartel { font-size: 9px; color: #777; line-height: 1.4; }
         .footer { margin-top: 20px; border-top: 2px solid #e8e0d8; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
         @media (max-width: 600px) {
             body { padding: 16px; }
@@ -96,21 +98,26 @@
             </thead>
             <tbody>
                 {% for archivo in order.archivos %}
+                {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
+                {% set tipo_archivo = params.tipo if (params and params.tipo is defined) else ('etiqueta' if params else 'otros') %}
+                {% set is_etiqueta = (tipo_archivo == 'etiqueta') %}
+                {% set is_cartel = (tipo_archivo == 'cartel') %}
                 <tr>
                     <td class="nombre-linea">{{ archivo.nombre_visible }}</td>
                     <td class="material-linea">{{ archivo.material or '-' }}</td>
                     <td class="cantidad-linea">{{ archivo.cantidad if archivo.cantidad is not none else '-' }}</td>
                     <td class="unidad-linea">{% if archivo.unidad == 'unidades' %}unidades{% elif archivo.unidad in ('m', 'm2') %}m²{% else %}{{ archivo.unidad or '-' }}{% endif %}</td>
                     <td>
-                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
+                        {% if is_etiqueta %}
                             <span class="tipo-linea" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
+                        {% elif is_cartel %}
+                            <span class="tipo-linea" style="background:#0ea5e9; color:white; padding:2px 8px; border-radius:12px;">Cartel</span>
                         {% else %}
                             <span class="tipo-linea">Otros</span>
                         {% endif %}
                     </td>
                     <td>
-                        {% if archivo.producto_id and archivo.parametros_etiqueta %}
-                            {% set params = archivo.get_parametros_etiqueta() %}
+                        {% if is_etiqueta %}
                             <div class="detalle-etiqueta">
                                 <span>Etiqueta: {{ params.ancho }}×{{ params.alto }} cm</span>
                                 <span> | Ancho útil: {{ params.ancho_util_usado|round(2) if params.ancho_util_usado else '—' }} m</span>
@@ -126,6 +133,23 @@
                                         </span>
                                     {% endif %}
                                 {% endif %}
+                            </div>
+                        {% elif is_cartel %}
+                            <div class="detalle-cartel">
+                                <span>Cartel: {{ params.ancho }}×{{ params.alto }} cm</span>
+                                <span> | Piezas: {{ params.cantidad }}</span>
+                                <span> | Distribución: {{ params.filas }}f × {{ params.cols }}c</span>
+                                <span> | Alto impresión: {{ params.alto_impresion_cm|round(1) }} cm + gap {{ params.gap_final_cm|round(1) }} cm</span>
+                                <span> | Material: {{ params.tipo_material }}</span>
+                                <span> | Alineación: {% if params.centrar %}Centrado{% else %}Izquierda{% endif %}</span> <!-- NUEVO -->
+                                <br>
+                                <span>Costo impresión: ${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span>
+                                <span> | Costo merma: ${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span>
+                                <span> | <strong>Costo total: ${{ params.costo_estimado|round(2) }}</strong></span>
+                                <br>
+                                <span style="color:#dc2626; font-weight:600;">
+                                    Merma operativa: {{ params.merma_operativa_m2|round(2) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
+                                </span>
                             </div>
                         {% else %}
                             <span style="font-size:10px; color:#999;">—</span>

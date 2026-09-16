@@ -1,3 +1,4 @@
+<!-- app/modulos/ordenes/templates/detalle_orden.html -->
 {% extends "base.html" %}
 
 {% block title %}Orden de Trabajo {{ order.order_num }} · CairoStudio{% endblock %}
@@ -68,23 +69,27 @@
 
     .grid-lineas { display: grid; grid-template-columns: 1fr; gap: 20px; margin-top: 12px; }
     .tarjeta-linea { background: #fefcf9; border-radius: 20px; padding: 20px; border: 1px solid #f0ece8; box-shadow: 0 2px 12px rgba(0,0,0,0.02); border-top: 4px solid #a8854f; }
+    .tarjeta-linea.cartel { border-top-color: #0ea5e9; background: #f8fbff; }
     .tarjeta-linea .cabecera-linea { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
     .tarjeta-linea .icono-grande { font-size: 28px; width: 44px; height: 44px; background: #f5f2ef; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #a8854f; flex-shrink: 0; }
+    .tarjeta-linea.cartel .icono-grande { background: #e0f2fe; color: #0ea5e9; }
     .tarjeta-linea .nombre-linea { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #1c1c1e; }
     .tarjeta-linea .badge-material { display: inline-block; background: #f0ece8; padding: 2px 14px; border-radius: 30px; font-size: 13px; font-weight: 500; color: #333; }
     .badge-material.vinilo { background: #dbeafe; color: #1e40af; }
     .badge-material.cartulina { background: #fef3c7; color: #78350f; }
     .badge-material.lona { background: #d1fae5; color: #065f46; }
 
-    /* Paneles comercial/interno */
     .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
     @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
     .panel { border-radius: 14px; padding: 14px 16px; border: 1px solid var(--border); }
     .panel-commercial { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #bfdbfe; }
     .panel-internal { background: linear-gradient(135deg, #fef3c7 0%, #fde8e5 100%); border-color: #fcd34d; }
+    .panel-cartel-commercial { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%); border-color: #7dd3fc; }
+    .panel-cartel-internal { background: linear-gradient(135deg, #fef3c7 0%, #fde8e5 100%); border-color: #fcd34d; }
     .panel h5 { font-family: 'Playfair Display', serif; font-size: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
     .panel-commercial h5 { color: #1e40af; }
-    .panel-internal h5 { color: #78350f; }
+    .panel-cartel-commercial h5 { color: #075985; }
+    .panel-internal h5, .panel-cartel-internal h5 { color: #78350f; }
     .panel-rows { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
     .panel-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(0,0,0,0.05); }
     .panel-row .lbl { color: #555; }
@@ -110,7 +115,6 @@
 
 {% block content %}
 <div class="container">
-    <!-- CABECERA -->
     <div class="card">
         <div class="header-order">
             <div>
@@ -136,7 +140,6 @@
         </div>
     </div>
 
-    <!-- DATOS GENERALES -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Datos Generales</h4>
         <div class="resumen-badges">
@@ -158,7 +161,6 @@
         </div>
     </div>
 
-    <!-- SERVICIOS -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Servicios</h4>
         <div class="servicios-iconos">
@@ -191,7 +193,6 @@
         </div>
     </div>
 
-    <!-- TENER EN CUENTA -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Tener en cuenta</h4>
         <div class="nota-fondo">
@@ -200,20 +201,21 @@
         </div>
     </div>
 
-    <!-- LÍNEAS DE TRABAJO -->
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Líneas de trabajo</h4>
         {% if order.archivos %}
         <div class="grid-lineas">
             {% for archivo in order.archivos %}
             {% set params = archivo.get_parametros_etiqueta() if archivo.parametros_etiqueta else None %}
-            {% set is_etiqueta = params is not none %}
+            {% set tipo_archivo = params.tipo if (params and params.tipo is defined) else ('etiqueta' if params else 'otros') %}
+            {% set is_etiqueta = (tipo_archivo == 'etiqueta') %}
+            {% set is_cartel = (tipo_archivo == 'cartel') %}
             {% set producto = archivo.producto %}
 
             {% set stock_disponible = 0 %}
             {% set stock_clase = 'falta' %}
             {% set stock_texto = 'Sin stock' %}
-            {% if producto and is_etiqueta and params.consumo_lineal %}
+            {% if producto and params and params.consumo_lineal %}
                 {% set stock_disponible = (producto.stock_metros or 0) - (producto.stock_comprometido_metros or 0) %}
                 {% set consumo_metros = params.consumo_lineal %}
                 {% if stock_disponible >= consumo_metros * 1.2 %}
@@ -228,7 +230,7 @@
                 {% endif %}
             {% endif %}
 
-            {% set icono = 'fa-tag' if is_etiqueta else 'fa-file' %}
+            {% set icono = 'fa-tag' if is_etiqueta else ('fa-image' if is_cartel else 'fa-file') %}
             {% set material_clase = 'vinilo' %}
             {% if producto %}
                 {% set n = producto.nombre.lower() %}
@@ -236,7 +238,7 @@
                 {% elif 'lona' in n %}{% set material_clase = 'lona' %}{% endif %}
             {% endif %}
 
-            <div class="tarjeta-linea">
+            <div class="tarjeta-linea {% if is_cartel %}cartel{% endif %}">
                 <div class="cabecera-linea">
                     <div class="icono-grande"><i class="fas {{ icono }}"></i></div>
                     <div style="flex:1;">
@@ -256,77 +258,67 @@
 
                 {% if is_etiqueta %}
                 <div class="detail-grid">
-                    <!-- Panel COMERCIAL -->
                     <div class="panel panel-commercial">
                         <h5>📄 Vista COMERCIAL (cliente)</h5>
                         <div class="panel-rows">
-                            <div class="panel-row">
-                                <span class="lbl">Área solicitada</span>
-                                <span class="val">{{ params.area_m2|round(2) }} m²</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Etiquetas que caben</span>
-                                <span class="val">{{ params.n_etiquetas or 0 }} ({{ params.filas or 0 }} × {{ params.columnas or 0 }})</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Ancho útil</span>
-                                <span class="val">{{ params.ancho_util_usado|round(2) }} m</span>
-                            </div>
-                            <div class="panel-row highlight">
-                                <span class="lbl">Costo al cliente</span>
-                                <span class="val">${{ params.costo_estimado|round(2) }}</span>
-                            </div>
+                            <div class="panel-row"><span class="lbl">Área solicitada</span><span class="val">{{ params.area_m2|round(2) }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Etiquetas que caben</span><span class="val">{{ params.n_etiquetas or 0 }} ({{ params.filas or 0 }} × {{ params.columnas or 0 }})</span></div>
+                            <div class="panel-row"><span class="lbl">Ancho útil</span><span class="val">{{ params.ancho_util_usado|round(2) }} m</span></div>
+                            <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ params.costo_estimado|round(2) }}</span></div>
                         </div>
                     </div>
-
-                    <!-- Panel INTERNO -->
                     <div class="panel panel-internal">
                         <h5>📦 Vista INTERNA (negocio)</h5>
                         <div class="panel-rows">
-                            <div class="panel-row">
-                                <span class="lbl">Ancho real del rollo</span>
-                                <span class="val">{{ params.ancho_real_usado|round(2) }} m</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Largo etiquetas</span>
-                                <span class="val">{{ params.largo_etiquetas_m|round(2) }} m</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">+ Cut mark</span>
-                                <span class="val">+ {{ params.cut_largo_m|round(2) }} m</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Gap efectivo (7 × var.)</span>
-                                <span class="val">{{ (params.largo_total_m - params.largo_etiquetas_m - params.largo_cut_m)|round(2) }} m</span>
-                            </div>                            
-                            <div class="panel-row">
-                                <span class="lbl">Largo total consumido</span>
-                                <span class="val">{{ params.largo_total_m|round(2) }} m</span>
-                            </div>
-                            <div class="panel-row highlight">
-                                <span class="lbl">Material consumido</span>
-                                <span class="val">{{ params.material_consumido_m2|round(2) }} m²</span>
-                            </div>
-                            <div class="panel-row sub">
-                                <span class="lbl">↳ Gaps ({{ params.n_paños or 1 }} × {{ params.gap_usado_cm }} cm)</span>
-                                <span class="val">+ {{ params.largo_gaps_m|round(2) if params.largo_gaps_m else '—' }} m</span>
-                            </div>                          
-                            <div class="panel-row">
-                                <span class="lbl">Área útil del rollo</span>
-                                <span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Área de etiquetas</span>
-                                <span class="val">{{ params.area_etiquetas_m2|round(2) if params.area_etiquetas_m2 else '—' }} m²</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">Merma operativa</span>
-                                <span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span>
-                            </div>
-                            <div class="panel-row">
-                                <span class="lbl">↳ Borde del rollo</span>
-                                <span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span>
-                            </div>
+                            <div class="panel-row"><span class="lbl">Ancho real del rollo</span><span class="val">{{ params.ancho_real_usado|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">Largo etiquetas</span><span class="val">{{ params.largo_etiquetas_m|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">+ Cut mark</span><span class="val">+ {{ params.cut_largo_m|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">Largo total consumido</span><span class="val">{{ params.largo_total_m|round(2) }} m</span></div>
+                            <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.material_consumido_m2|round(2) }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Área de etiquetas</span><span class="val">{{ params.area_etiquetas_m2|round(2) if params.area_etiquetas_m2 else '—' }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Merma operativa</span><span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
+                            <div class="panel-row"><span class="lbl">↳ Borde del rollo</span><span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span></div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if is_cartel %}
+                <div class="detail-grid">
+                    <div class="panel panel-cartel-commercial">
+                        <h5>📄 Vista COMERCIAL (cliente)</h5>
+                        <div class="panel-rows">
+                            <div class="panel-row"><span class="lbl">Dimensiones</span><span class="val">{{ params.ancho }} × {{ params.alto }} cm</span></div>
+                            <div class="panel-row"><span class="lbl">Cantidad de piezas</span><span class="val">{{ params.cantidad or 0 }}</span></div>
+                            <div class="panel-row"><span class="lbl">Orientación</span><span class="val">
+                                {% if params.auto_girar %}Inteligente{% elif params.girar %}Girada{% else %}Normal{% endif %}
+                            </span></div>
+                            <div class="panel-row"><span class="lbl">Alineación</span><span class="val">{% if params.centrar %}Centrado{% else %}Izquierda{% endif %}</span></div> <!-- NUEVO -->
+                            <div class="panel-row"><span class="lbl">Tipo de material</span><span class="val">{{ params.tipo_material or '—' }}</span></div>
+                            <div class="panel-row"><span class="lbl">Precio impresión</span><span class="val">${{ params.precio_impresion_m2|round(2) }}/m²</span></div>
+                            <div class="panel-row"><span class="lbl">Precio merma</span><span class="val">${{ params.precio_merma_m2|round(2) }}/m²</span></div>
+                            <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Costo impresión</span><span class="val">${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span></div>
+                            <div class="panel-row"><span class="lbl">Costo merma</span><span class="val merma">${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span></div>
+                            <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ params.costo_estimado|round(2) }}</span></div>
+                        </div>
+                    </div>
+
+                    <div class="panel panel-cartel-internal">
+                        <h5>📦 Vista INTERNA (negocio)</h5>
+                        <div class="panel-rows">
+                            <div class="panel-row"><span class="lbl">Ancho real del rollo</span><span class="val">{{ params.ancho_real_usado|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">Ancho útil usado</span><span class="val">{{ params.ancho_util_usado|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">Distribución</span><span class="val">{{ params.filas }} filas × {{ params.cols }} cols</span></div>
+                            <div class="panel-row"><span class="lbl">Alto impresión</span><span class="val">{{ params.alto_impresion_cm|round(1) if params.alto_impresion_cm else '—' }} cm</span></div>
+                            <div class="panel-row"><span class="lbl">+ Gap final</span><span class="val">+ {{ params.gap_final_cm|round(1) if params.gap_final_cm else 6.5 }} cm</span></div>
+                            <div class="panel-row"><span class="lbl">Alto total consumido</span><span class="val">{{ params.alto_total_cm|round(1) }} cm · {{ params.largo_total_m|round(2) }} m</span></div>
+                            <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
+                            <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.area_rollo_m2|round(2) }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span></div>
+                            <div class="panel-row"><span class="lbl">Merma operativa</span><span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
+                            <div class="panel-row"><span class="lbl">↳ Borde del rollo</span><span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span></div>
                         </div>
                     </div>
                 </div>

@@ -30,14 +30,29 @@ COLUMNAS_NOMBRES = {
 # ==========================================
 # CONSTANTES DE IMPRESIÓN
 # ==========================================
-MARGEN_MESA_M = 0.002       # 2 mm por etiqueta (margen de mesa)
-CUT_LARGO_M = 0.04          # 4 cm de cut mark de alto (por cada paño)
-GAP_PAÑOS_DEFAULT_CM = 6.5  # cm de gap entre paños por defecto
+MARGEN_MESA_M = 0.002
+CUT_LARGO_M = 0.04
+GAP_PAÑOS_DEFAULT_CM = 6.5
+
+# Gap final que consume la impresora al terminar cada trabajo (6.5 cm)
+GAP_FINAL_IMPRESION_M = 0.065
+
+# Precios por defecto para CARTELES (personalizables por línea en el form)
+# impresion: $/m² para el área impresa (lo que ve el cliente)
+# merma: $/m² para el desperdicio, cobrado aparte a precio más económico
+MATERIALES_CARTEL = {
+    'Vinilo':              {'impresion': 10.0, 'merma': 4.0},
+    'Vinilo transparente': {'impresion': 14.0, 'merma': 5.0},
+    'Vinilo backlit':      {'impresion': 15.0, 'merma': 5.0},
+    'Lona':                {'impresion': 12.0, 'merma': 5.0},
+    'Lienzo':              {'impresion': 20.0, 'merma': 5.0},
+    'Papel fotográfico':   {'impresion': 16.0, 'merma': 5.0},
+    'Wallpaper':           {'impresion': 12.0, 'merma': 5.0},
+}
 
 # ==========================================
 # DECORADORES DE PERMISOS
 # ==========================================
-
 def comercial_or_admin_required(func):
     from functools import wraps
     @wraps(func)
@@ -59,34 +74,69 @@ def view_orders_or_admin_comercial_required(func):
     return wrapper
 
 # ==========================================
-# FUNCIÓN AUXILIAR: CÁLCULO DE MERMA OPERATIVA
+# CÁLCULO DE DISTRIBUCIÓN DE CARTELES (CORREGIDO)
+# ==========================================
+def calcular_distribucion_carteles(ancho_cm, alto_cm, cantidad, ancho_util_cm, girar=False, modo_inteligente=True):
+    """
+    Calcula la distribución óptima de carteles en el rollo.
+    Retorna: (cols, filas, alto_impresion_cm, ancho_efectivo_cm, alto_efectivo_cm, orientacion)
+    """
+    if ancho_cm <= 0 or alto_cm <= 0 or cantidad < 1:
+        return 1, 1, alto_cm, ancho_cm, alto_cm, 'normal'
+
+    def _calcular_base(w, h):
+        # Si la pieza es más ancha que el área útil, no cabe.
+        if w > ancho_util_cm:
+            return 0, 0, 0, w, h, float('inf')
+        
+        cols = max(1, int(ancho_util_cm // w))
+        if cols > cantidad:
+            cols = cantidad
+        filas = math.ceil(cantidad / cols)
+        alto_imp = filas * h
+        # Área total consumida incluyendo el gap de 6.5 cm (para comparar eficiencia)
+        area_total = ancho_util_cm * (alto_imp + GAP_FINAL_IMPRESION_M * 100)
+        return cols, filas, alto_imp, w, h, area_total
+
+    if modo_inteligente:
+        # Probar orientación normal
+        cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, area_n = _calcular_base(ancho_cm, alto_cm)
+        # Probar orientación girada
+        cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, area_g = _calcular_base(alto_cm, ancho_cm)
+
+        # Si ninguna cabe, devolver error
+        if area_g == float('inf') and area_n == float('inf'):
+            return 0, 0, 0, ancho_cm, alto_cm, 'error'
+        
+        # Si solo una cabe, elegir esa
+        if area_g == float('inf'):
+            return cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, 'normal'
+        if area_n == float('inf'):
+            return cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, 'girada'
+        
+        # Si ambas caben, elegir la que menos área consuma
+        if area_g < area_n:
+            return cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, 'girada'
+        else:
+            return cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, 'normal'
+    else:
+        if girar:
+            cols, filas, alto_imp, ancho_ef, alto_ef, _ = _calcular_base(alto_cm, ancho_cm)
+            return cols, filas, alto_imp, ancho_ef, alto_ef, 'girada'
+        else:
+            cols, filas, alto_imp, ancho_ef, alto_ef, _ = _calcular_base(ancho_cm, alto_cm)
+            return cols, filas, alto_imp, ancho_ef, alto_ef, 'normal'
+
+# ==========================================
+# CÁLCULO DE MERMA OPERATIVA (ETIQUETAS)
 # ==========================================
 def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
                               gap_panno_cm, alto_cell_m, ancho_cell_m, columnas,
                               filas_minimas=None):
-    """
-    Fórmula Opción C (por paño con acumulación de aire).
-
-    Modo m² (filas_minimas=None):
-        - n_paños = ceil(area_facturada)
-        - Cada paño toma 1 m² (el último puede ser menor)
-        - Se imprimen tantas filas como caben
-
-    Modo unidades (filas_minimas=int):
-        - Se imprimen AL MENOS filas_minimas filas
-        - El último paño se ajusta exactamente a las filas restantes
-
-    IMPORTANTE: La merma operativa se mide como diferencia de ÁREAS FÍSICAS
-    (material útil del rollo − área real de etiquetas), NO contra el área
-    facturada al cliente (que es un mínimo comercial).
-
-    Retorna dict con parámetros de merma y desglose.
-    """
     gap_m = (gap_panno_cm if gap_panno_cm is not None else GAP_PAÑOS_DEFAULT_CM) / 100.0
     ancho_util = ancho_util_efectivo if ancho_util_efectivo and ancho_util_efectivo > 0 else 1.30
     ancho_r = ancho_real or 1.34
 
-    # Filas máximas que caben en 1 paño (1 m²)
     filas_por_paño_max = int((1.0 / ancho_util) / alto_cell_m) if alto_cell_m > 0 else 0
     if filas_por_paño_max <= 0:
         filas_por_paño_max = 1
@@ -131,8 +181,6 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         area_facturada_real += area_paño
 
         largo_nominal_paño = area_paño / ancho_util if ancho_util > 0 else 0
-        # En el último paño (parcial), redondear hacia arriba porque el cliente
-        # ya está pagando ese paño. En paños completos, floor (caben exactas).
         if area_paño < 1.0 - 0.001:
             filas_paño = math.ceil(largo_nominal_paño / alto_cell_m) if alto_cell_m > 0 else 0
         else:
@@ -146,10 +194,8 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         largo_etiq_paño = filas_paño * alto_cell_m
         aire_paño = max(0.0, largo_nominal_paño - largo_etiq_paño)
         aire_total_paño = aire_paño + sobrante_acumulado
-
         gap_efectivo_paño = max(0.0, gap_m - aire_total_paño)
         sobrante_acumulado = max(0.0, aire_total_paño - gap_m)
-
         largo_avance_paño = largo_etiq_paño + CUT_LARGO_M + gap_efectivo_paño
         material_paño = largo_avance_paño * ancho_r
 
@@ -158,9 +204,7 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         material_total += material_paño
 
         desglose_paños.append({
-            'n': i + 1,
-            'area_m2': round(area_paño, 4),
-            'filas': filas_paño,
+            'n': i + 1, 'area_m2': round(area_paño, 4), 'filas': filas_paño,
             'largo_nominal_m': round(largo_nominal_paño, 4),
             'largo_etiquetas_m': round(largo_etiq_paño, 4),
             'aire_paño_mm': round(aire_paño * 1000, 1),
@@ -177,56 +221,31 @@ def calcular_merma_operativa(area_facturada, ancho_util_efectivo, ancho_real,
         if modo == 'unidades' and filas_totales >= filas_minimas:
             break
 
-    if modo == 'unidades':
-        area_facturada_final = area_facturada_real
-    else:
-        area_facturada_final = area_facturada
-
+    area_facturada_final = area_facturada_real if modo == 'unidades' else area_facturada
     largo_gaps_total = n_paños * gap_m
     largo_cut_total = n_paños * CUT_LARGO_M
     largo_total = material_total / ancho_r if ancho_r > 0 else 0
     largo_sin_aire = largo_etiquetas_total + largo_gaps_total + largo_cut_total
 
-    # ============================================================
-    # CÁLCULO DE MERMA OPERATIVA (CORREGIDO)
-    # ============================================================
-    # Área útil del rollo: la zona imprimible (ancho útil × largo total)
     area_util_rollo_m2 = ancho_util * largo_total
-
-    # Área real de las etiquetas impresas
     area_etiquetas_m2 = filas_totales * alto_cell_m * columnas * ancho_cell_m
-
-    # Merma operativa = material útil del rollo que NO se convirtió en etiqueta
     merma_operativa_m2 = max(0.0, area_util_rollo_m2 - area_etiquetas_m2)
-
-    # Merma por borde del rollo (ancho real − ancho útil, siempre se desperdicia)
     merma_borde_rollo_m2 = max(0.0, (ancho_r - ancho_util) * largo_total)
-
-    # Merma total: operativa + borde
     merma_total_m2 = merma_operativa_m2 + merma_borde_rollo_m2
-
-    # % merma sobre el área útil del rollo (no sobre lo facturado)
     merma_pct = (merma_operativa_m2 / area_util_rollo_m2 * 100) if area_util_rollo_m2 > 0 else 0
 
     return {
-        'modo': modo,
-        'gap_usado_cm': round(gap_m * 100, 2),
-        'gap_m': round(gap_m, 4),
-        'cut_largo_m': CUT_LARGO_M,
-        'n_paños': len(desglose_paños),
-        'largo_gaps_m': round(largo_gaps_total, 4),
-        'largo_cut_m': round(largo_cut_total, 4),
+        'modo': modo, 'gap_usado_cm': round(gap_m * 100, 2), 'gap_m': round(gap_m, 4),
+        'cut_largo_m': CUT_LARGO_M, 'n_paños': len(desglose_paños),
+        'largo_gaps_m': round(largo_gaps_total, 4), 'largo_cut_m': round(largo_cut_total, 4),
         'largo_sin_aire_m': round(largo_sin_aire, 4),
         'largo_nominal_m': round(area_facturada_final / ancho_util, 4),
-        'filas': filas_totales,
-        'filas_por_paño_max': filas_por_paño_max,
-        'columnas': columnas,
-        'n_etiquetas': filas_totales * columnas,
+        'filas': filas_totales, 'filas_por_paño_max': filas_por_paño_max,
+        'columnas': columnas, 'n_etiquetas': filas_totales * columnas,
         'largo_etiquetas_m': round(largo_etiquetas_total, 4),
         'largo_total_m': round(largo_total, 4),
         'area_facturada_m2': round(area_facturada_final, 4),
         'material_consumido_m2': round(material_total, 4),
-        # ===== MERMA CORREGIDA =====
         'area_util_rollo_m2': round(area_util_rollo_m2, 4),
         'area_etiquetas_m2': round(area_etiquetas_m2, 4),
         'merma_operativa_m2': round(merma_operativa_m2, 4),
@@ -251,28 +270,25 @@ def _get_form_context(form_data=None, edit=False, order=None):
     ).order_by(Producto.nombre).all()
     productos_data = [
         {
-            'id': p.id,
-            'nombre': p.nombre,
-            'unidad': p.unidad,
+            'id': p.id, 'nombre': p.nombre, 'unidad': p.unidad,
             'stock': round(p.stock, 2) if p.stock else 0,
             'stock_metros': round(p.stock_metros, 2) if p.stock_metros else 0,
-            'ancho_rollo': p.ancho_rollo,
-            'largo_rollo': p.largo_rollo,
+            'ancho_rollo': p.ancho_rollo, 'largo_rollo': p.largo_rollo,
             'gap_panno_cm': p.gap_panno_cm if p.gap_panno_cm is not None else GAP_PAÑOS_DEFAULT_CM,
             'es_material_impresion': p.es_material_impresion
         }
         for p in productos
     ]
-    context = {
+    return {
         'servicios_disponibles': servicios_disponibles,
         'clients_list': clients_data,
         'todos_usuarios': todos_usuarios,
         'productos': productos_data,
+        'materiales_cartel': MATERIALES_CARTEL,
         'edit': edit,
         'order': order,
         'form_data': form_data if form_data is not None else {}
     }
-    return context
 
 # ==========================================
 # LISTAR ÓRDENES
@@ -287,7 +303,6 @@ def list_orders():
     per_page = 20
 
     query = Order.query
-
     if estado and estado in COLUMNAS_NOMBRES:
         query = query.filter_by(column=estado)
     if search:
@@ -300,9 +315,7 @@ def list_orders():
             )
         )
 
-    paginated = query.order_by(Order.created_at.desc()).paginate(
-        page=page, per_page=per_page, error_out=False
-    )
+    paginated = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
     orders = paginated.items
     total = paginated.total
     total_pages = paginated.pages
@@ -316,19 +329,12 @@ def list_orders():
     nuevas_ordenes_mes = sum(1 for o in all_orders if o.created_at and o.created_at >= inicio_mes)
 
     return render_template('list_ordenes.html',
-                           orders=orders,
-                           columnas_nombres=COLUMNAS_NOMBRES,
-                           total_ordenes=total_ordenes,
-                           pendientes=pendientes,
-                           completadas=completadas,
-                           facturacion_total=facturacion_total,
+                           orders=orders, columnas_nombres=COLUMNAS_NOMBRES,
+                           total_ordenes=total_ordenes, pendientes=pendientes,
+                           completadas=completadas, facturacion_total=facturacion_total,
                            nuevas_ordenes_mes=nuevas_ordenes_mes,
-                           page=page,
-                           per_page=per_page,
-                           total=total,
-                           total_pages=total_pages,
-                           search=search,
-                           estado=estado)
+                           page=page, per_page=per_page, total=total,
+                           total_pages=total_pages, search=search, estado=estado)
 
 # ==========================================
 # DETALLE DE ORDEN
@@ -337,10 +343,7 @@ def list_orders():
 @login_required
 def detalle_order(order_id):
     order = Order.query.get_or_404(order_id)
-    return render_template('detalle_orden.html',
-                           order=order,
-                           now=datetime.now(),
-                           columnas_nombres=COLUMNAS_NOMBRES)
+    return render_template('detalle_orden.html', order=order, now=datetime.now(), columnas_nombres=COLUMNAS_NOMBRES)
 
 # ==========================================
 # GUARDAR ARCHIVO
@@ -373,7 +376,6 @@ def consumir_materiales(orden_id):
         producto = Producto.query.get(item.producto_id)
         if not producto:
             continue
-
         producto.stock = producto.stock or 0.0
         producto.stock_metros = producto.stock_metros or 0.0
         producto.stock_comprometido = producto.stock_comprometido or 0.0
@@ -385,7 +387,7 @@ def consumir_materiales(orden_id):
                 return False, f"Consumo estimado cero para {producto.nombre}"
             consumo_unidades = consumo_metros / producto.largo_rollo
             if producto.stock_metros < consumo_metros:
-                return False, f"Stock insuficiente en metros para {producto.nombre} (disponible: {producto.stock_metros:.2f}, necesario: {consumo_metros:.2f})"
+                return False, f"Stock insuficiente en metros para {producto.nombre}"
             producto.stock_metros -= consumo_metros
             producto.stock_comprometido_metros = max(0.0, producto.stock_comprometido_metros - consumo_metros)
             producto.stock -= consumo_unidades
@@ -395,16 +397,14 @@ def consumir_materiales(orden_id):
             if consumo_unidades <= 0:
                 return False, f"Consumo estimado cero para {producto.nombre}"
             if producto.stock < consumo_unidades:
-                return False, f"Stock insuficiente para {producto.nombre} (disponible: {producto.stock:.2f}, necesario: {consumo_unidades:.2f})"
+                return False, f"Stock insuficiente para {producto.nombre}"
             producto.stock -= consumo_unidades
             producto.stock_comprometido = max(0.0, producto.stock_comprometido - consumo_unidades)
             consumo_metros = 0.0
 
         movimiento = Movimiento(
-            producto_id=producto.id,
-            tipo='consumo',
-            cantidad=consumo_unidades,
-            cantidad_metros=consumo_metros,
+            producto_id=producto.id, tipo='consumo',
+            cantidad=consumo_unidades, cantidad_metros=consumo_metros,
             comentario=f'Consumo para orden {order.order_num or "sin número"}',
             orden_id=order.id,
             usuario_id=current_user.id if hasattr(current_user, 'id') else None
@@ -416,17 +416,13 @@ def consumir_materiales(orden_id):
     return True, "Materiales consumidos correctamente"
 
 # ==========================================
-# PROCESAR LÍNEA DE ETIQUETAS (helper común)
+# PROCESAR LÍNEA DE ETIQUETAS
 # ==========================================
 def _procesar_linea_etiqueta(
     order, producto, ancho_cm, alto_cm, precio, mesa, girar, auto_girar,
     unidad, cantidad_original, ancho_util_override, nombre_visible,
     order_num_para_comentario
 ):
-    """
-    Calcula layout + merma, crea ArchivoAdjunto, OrdenProducto y Movimiento de reserva.
-    Retorna (adjunto, op, mov, error_msg). Si error_msg no es None, no se guardó nada.
-    """
     ancho_real = producto.ancho_rollo or 1.34
     ancho_util_efectivo = ancho_util_override if ancho_util_override else ancho_real
 
@@ -445,14 +441,9 @@ def _procesar_linea_etiqueta(
         cantidad_str_calc = ''
 
     calculo = calcular_datos(
-        ancho_cm=ancho_cm,
-        alto_cm=alto_cm,
-        precio_m2=precio,
-        mesa_activo=mesa,
-        girar_activo=girar,
-        auto_girar_activo=auto_girar,
-        cantidad_str=cantidad_str_calc,
-        area_str=area_str_calc,
+        ancho_cm=ancho_cm, alto_cm=alto_cm, precio_m2=precio,
+        mesa_activo=mesa, girar_activo=girar, auto_girar_activo=auto_girar,
+        cantidad_str=cantidad_str_calc, area_str=area_str_calc,
         ancho_rollo_m=ancho_util_efectivo
     )
     if calculo['error']:
@@ -461,9 +452,6 @@ def _procesar_linea_etiqueta(
     simData = calculo['simData']
     columnas = simData.get('columnas', 1)
 
-    # ═══════════════════════════════════════════════════════════
-    # DETECCIÓN DE ROTACIÓN
-    # ═══════════════════════════════════════════════════════════
     ancho_columna_efectivo = ancho_util_efectivo / columnas if columnas > 0 else 0
     diff_unrotado = abs(ancho_columna_efectivo - (ancho_cm / 100.0))
     diff_rotado = abs(ancho_columna_efectivo - (alto_cm / 100.0))
@@ -478,14 +466,10 @@ def _procesar_linea_etiqueta(
 
     gap_cm = producto.gap_panno_cm if producto.gap_panno_cm is not None else GAP_PAÑOS_DEFAULT_CM
 
-    # ═══════════════════════════════════════════════════════════
-    # CÁLCULO DE FILAS MÍNIMAS (solo en modo unidades)
-    # ═══════════════════════════════════════════════════════════
     filas_minimas = None
     if unidad == 'unidades' and cantidad_original and columnas > 0:
         filas_minimas = math.ceil(cantidad_original / columnas)
 
-    # Área facturada inicial
     area_total_inicial = simData['areaTotal']
 
     merma_data = calcular_merma_operativa(
@@ -509,11 +493,9 @@ def _procesar_linea_etiqueta(
     if consumo_reserva > disponible_metros:
         return None, None, None, (
             f'Stock insuficiente para "{producto.nombre}". '
-            f'Disponible: {disponible_metros:.2f} m lineales, '
-            f'requerido (con cut + gap): {consumo_reserva:.2f} m'
+            f'Disponible: {disponible_metros:.2f} m lineales, requerido: {consumo_reserva:.2f} m'
         )
 
-    # Metadata del layout
     etiquetas_por_m2 = columnas * merma_data['filas']
     metros_completos = 0
     resto_etiquetas = 0
@@ -530,39 +512,26 @@ def _procesar_linea_etiqueta(
         tipo_rollo = f'{ancho_util_efectivo:.2f}'.rstrip('0').rstrip('.') + 'm'
 
     adjunto = ArchivoAdjunto(
-        orden_id=order.id,
-        nombre_original='',
+        orden_id=order.id, nombre_original='',
         nombre_visible=nombre_visible or f'Etiquetas {ancho_cm}x{alto_cm} cm',
-        material=producto.nombre,
-        ruta=None,
+        material=producto.nombre, ruta=None,
         cantidad=cantidad_original if cantidad_original else 0,
-        unidad=unidad,
-        producto_id=producto.id,
+        unidad=unidad, producto_id=producto.id,
         parametros_etiqueta=json.dumps({
-            'ancho': ancho_cm,
-            'alto': alto_cm,
-            'tipo_rollo': tipo_rollo,
-            'modo': unidad,
-            'cantidad': cantidad_original,
-            'precio': precio,
-            'mesa': mesa,
-            'girar': girar,
-            'auto_girar': auto_girar,
-            'es_rotado': es_rotado,
-            'filas_minimas': filas_minimas,
-            'area_m2': area_total,
-            'etiquetas_por_m2': etiquetas_por_m2,
+            'tipo': 'etiqueta',
+            'ancho': ancho_cm, 'alto': alto_cm, 'tipo_rollo': tipo_rollo,
+            'modo': unidad, 'cantidad': cantidad_original,
+            'precio': precio, 'mesa': mesa, 'girar': girar, 'auto_girar': auto_girar,
+            'es_rotado': es_rotado, 'filas_minimas': filas_minimas,
+            'area_m2': area_total, 'etiquetas_por_m2': etiquetas_por_m2,
             'costo_estimado': round(area_total, 2) * precio,
-            'metros_completos': metros_completos,
-            'resto_etiquetas': resto_etiquetas,
-            'columnas': columnas,
-            'filas': merma_data['filas'],
+            'metros_completos': metros_completos, 'resto_etiquetas': resto_etiquetas,
+            'columnas': columnas, 'filas': merma_data['filas'],
             'n_etiquetas': merma_data['n_etiquetas'],
             'consumo_lineal': merma_data['largo_total_m'],
             'consumo_base': merma_data['largo_nominal_m'],
             'ancho_util_usado': ancho_util_efectivo,
             'ancho_real_usado': ancho_real,
-            # ===== MERMA OPERATIVA =====
             'gap_usado_cm': merma_data['gap_usado_cm'],
             'cut_largo_m': merma_data['cut_largo_m'],
             'n_paños': merma_data['n_paños'],
@@ -573,7 +542,6 @@ def _procesar_linea_etiqueta(
             'material_consumido_m2': merma_data['material_consumido_m2'],
             'merma_operativa_m2': merma_data['merma_operativa_m2'],
             'merma_operativa_pct': merma_data['merma_operativa_pct'],
-            # ===== NUEVOS CAMPOS DE MERMA CORREGIDA =====
             'area_util_rollo_m2': merma_data['area_util_rollo_m2'],
             'area_etiquetas_m2': merma_data['area_etiquetas_m2'],
             'merma_borde_rollo_m2': merma_data['merma_borde_rollo_m2'],
@@ -582,7 +550,6 @@ def _procesar_linea_etiqueta(
         })
     )
 
-    # Reserva de stock
     producto.stock_comprometido_metros = (producto.stock_comprometido_metros or 0) + consumo_reserva
     if producto.largo_rollo and producto.largo_rollo > 0:
         unidades_a_reservar = consumo_reserva / producto.largo_rollo
@@ -590,37 +557,151 @@ def _procesar_linea_etiqueta(
         unidades_a_reservar = consumo_reserva
     producto.stock_comprometido = (producto.stock_comprometido or 0) + unidades_a_reservar
 
-    op = OrdenProducto(
-        orden_id=order.id,
-        producto_id=producto.id,
-        cantidad_estimada=consumo_reserva
-    )
+    op = OrdenProducto(orden_id=order.id, producto_id=producto.id, cantidad_estimada=consumo_reserva)
 
     mov = Movimiento(
-        producto_id=producto.id,
-        tipo='reserva',
-        cantidad=unidades_a_reservar,
-        cantidad_metros=consumo_reserva,
+        producto_id=producto.id, tipo='reserva',
+        cantidad=unidades_a_reservar, cantidad_metros=consumo_reserva,
         comentario=(
             f'Reserva para {order_num_para_comentario or "sin número"} — '
             f'{merma_data["n_paños"]} paño(s) · {merma_data["filas"]} filas × {columnas} col '
             f'= {merma_data["n_etiquetas"]} etiq · '
             f'largo etiq {merma_data["largo_etiquetas_m"]:.2f}m + '
-            f'{merma_data["n_paños"]} gaps × {merma_data["gap_usado_cm"]}cm ({merma_data["largo_gaps_m"]:.2f}m) + '
+            f'{merma_data["n_paños"]} gaps × {merma_data["gap_usado_cm"]}cm '
+            f'({merma_data["largo_gaps_m"]:.2f}m) + '
             f'{merma_data["n_paños"]} cuts × 4cm ({merma_data["largo_cut_m"]:.2f}m) '
             f'→ {merma_data["largo_total_m"]:.2f}m · ancho útil {ancho_util_efectivo}m'
         ),
-        orden_id=order.id,
-        usuario_id=current_user.id
+        orden_id=order.id, usuario_id=current_user.id
     )
 
     return adjunto, op, mov, None
 
 # ==========================================
-# LIBERAR RESERVA DE PRODUCTO
+# PROCESAR LÍNEA DE CARTEL (CORREGIDO)
+# ==========================================
+def _procesar_linea_cartel(
+    order, producto, ancho_cm, alto_cm, cantidad_piezas, girar, auto_girar, centrar,
+    ancho_util_override, precio_impresion_m2, precio_merma_m2, tipo_material,
+    nombre_visible, order_num_para_comentario
+):
+    """
+    Calcula layout + merma + costos para CARTELES.
+    - Modo Inteligente: prueba ambas orientaciones, elige la mejor.
+    - El material consumido incluye 6.5 cm de gap final.
+    - La merma facturada al cliente NO incluye el gap (igual que calculadora standalone).
+    """
+    ancho_real = producto.ancho_rollo or 1.34
+    ancho_util_efectivo = ancho_util_override if ancho_util_override else ancho_real
+
+    if ancho_util_efectivo > ancho_real + 0.001:
+        return None, None, None, (
+            f'El ancho útil ({ancho_util_efectivo:.2f} m) no puede ser mayor '
+            f'que el ancho real del rollo ({ancho_real:.2f} m).'
+        )
+
+    cols, filas, alto_impresion_cm, ancho_efectivo_cm, alto_efectivo_cm, orientacion = \
+        calcular_distribucion_carteles(
+            ancho_cm, alto_cm, cantidad_piezas, ancho_util_efectivo * 100,
+            girar=girar, modo_inteligente=auto_girar
+        )
+
+    alto_impresion_m = alto_impresion_cm / 100.0
+    if alto_impresion_m <= 0:
+        return None, None, None, 'Las dimensiones del cartel no caben en el ancho del rollo.'
+
+    # Material real consumido (incluye gap de 6.5cm)
+    alto_total_m = alto_impresion_m + GAP_FINAL_IMPRESION_M
+    material_consumido_m2 = ancho_real * alto_total_m
+
+    # Cálculo de merma para facturación (sin gap)
+    area_rollo_facturacion_m2 = ancho_real * alto_impresion_m
+    area_piezas_m2 = (ancho_cm * alto_cm * cantidad_piezas) / 10000.0
+    
+    merma_operativa_m2 = max(0.0, area_rollo_facturacion_m2 - area_piezas_m2)
+    merma_pct = (merma_operativa_m2 / area_rollo_facturacion_m2 * 100) if area_rollo_facturacion_m2 > 0 else 0
+
+    costo_impresion = area_piezas_m2 * precio_impresion_m2
+    costo_merma = merma_operativa_m2 * precio_merma_m2
+    costo_total = costo_impresion + costo_merma
+
+    consumo_reserva = alto_total_m
+    disponible_metros = producto.get_stock_metros_disponible()
+    if consumo_reserva > disponible_metros:
+        return None, None, None, (
+            f'Stock insuficiente para "{producto.nombre}". '
+            f'Disponible: {disponible_metros:.2f} m lineales, requerido: {consumo_reserva:.2f} m'
+        )
+
+    if ancho_util_efectivo == int(ancho_util_efectivo):
+        tipo_rollo = f'{int(ancho_util_efectivo)}m'
+    else:
+        tipo_rollo = f'{ancho_util_efectivo:.2f}'.rstrip('0').rstrip('.') + 'm'
+
+    adjunto = ArchivoAdjunto(
+        orden_id=order.id, nombre_original='',
+        nombre_visible=nombre_visible or f'Cartel {ancho_cm}x{alto_cm} cm',
+        material=producto.nombre, ruta=None,
+        cantidad=cantidad_piezas, unidad='unidades', producto_id=producto.id,
+        parametros_etiqueta=json.dumps({
+            'tipo': 'cartel',
+            'ancho': ancho_cm, 'alto': alto_cm, 'cantidad': cantidad_piezas,
+            'girar': girar, 'auto_girar': auto_girar, 'centrar': centrar,
+            'orientacion': orientacion,
+            'ancho_efectivo_cm': round(ancho_efectivo_cm, 2),
+            'alto_efectivo_cm': round(alto_efectivo_cm, 2),
+            'cols': cols, 'filas': filas,
+            'alto_impresion_cm': round(alto_impresion_cm, 2),
+            'gap_final_cm': round(GAP_FINAL_IMPRESION_M * 100, 2),
+            'alto_total_cm': round(alto_total_m * 100, 2),
+            'ancho_util_usado': ancho_util_efectivo,
+            'ancho_real_usado': ancho_real,
+            'tipo_rollo': tipo_rollo,
+            'tipo_material': tipo_material,
+            'precio_impresion_m2': precio_impresion_m2,
+            'precio_merma_m2': precio_merma_m2,
+            'area_piezas_m2': round(area_piezas_m2, 4),
+            'area_rollo_m2': round(material_consumido_m2, 4), # Material consumido real (con gap)
+            'area_facturacion_m2': round(area_rollo_facturacion_m2, 4), # Área base para merma
+            'merma_operativa_m2': round(merma_operativa_m2, 4), # Merma facturada (sin gap)
+            'merma_operativa_pct': round(merma_pct, 2),
+            'costo_impresion': round(costo_impresion, 2),
+            'costo_merma': round(costo_merma, 2),
+            'costo_estimado': round(costo_total, 2),
+            'consumo_lineal': round(consumo_reserva, 4),
+            'largo_total_m': round(consumo_reserva, 4),
+            'material_consumido_m2': round(material_consumido_m2, 4),
+            'n_paños': filas,
+        })
+    )
+
+    producto.stock_comprometido_metros = (producto.stock_comprometido_metros or 0) + consumo_reserva
+    if producto.largo_rollo and producto.largo_rollo > 0:
+        unidades_a_reservar = consumo_reserva / producto.largo_rollo
+    else:
+        unidades_a_reservar = consumo_reserva
+    producto.stock_comprometido = (producto.stock_comprometido or 0) + unidades_a_reservar
+
+    op = OrdenProducto(orden_id=order.id, producto_id=producto.id, cantidad_estimada=consumo_reserva)
+
+    mov = Movimiento(
+        producto_id=producto.id, tipo='reserva',
+        cantidad=unidades_a_reservar, cantidad_metros=consumo_reserva,
+        comentario=(
+            f'Reserva para {order_num_para_comentario or "sin número"} — '
+            f'Cartel {cantidad_piezas}×({ancho_cm}x{alto_cm}cm) · '
+            f'{cols}×{filas} · alto impresión {alto_impresion_cm:.1f}cm + gap 6.5cm · '
+            f'merma {merma_operativa_m2:.2f}m² · ancho útil {ancho_util_efectivo}m'
+        ),
+        orden_id=order.id, usuario_id=current_user.id
+    )
+
+    return adjunto, op, mov, None
+
+# ==========================================
+# LIBERAR RESERVA
 # ==========================================
 def _liberar_reserva(producto, cantidad_metros):
-    """Libera la reserva de stock de un producto."""
     if not producto or not cantidad_metros:
         return
     producto.stock_comprometido_metros = max(0, (producto.stock_comprometido_metros or 0) - cantidad_metros)
@@ -645,6 +726,7 @@ def create_order():
         tipo_proyecto = request.form.get('tipo_proyecto')
         priority = request.form.get('priority')
         descripcion = request.form.get('descripcion')
+
         if not client_id or not date:
             flash('Cliente y Fecha son obligatorios.', 'danger')
             context = _get_form_context(form_data=request.form, edit=False, order=None)
@@ -664,17 +746,10 @@ def create_order():
             servicios.append(f'Otros: {otros}')
 
         order = Order(
-            order_num=order_num,
-            date=datetime.strptime(date, '%Y-%m-%d'),
-            client_id=client_id,
-            solicitado=solicitado,
-            proyecto='',
-            tipo_proyecto=tipo_proyecto,
-            priority=priority,
-            descripcion=descripcion,
-            column='pendiente',
-            entrada_ok=False,
-            created_by_id=current_user.id
+            order_num=order_num, date=datetime.strptime(date, '%Y-%m-%d'),
+            client_id=client_id, solicitado=solicitado, proyecto='',
+            tipo_proyecto=tipo_proyecto, priority=priority, descripcion=descripcion,
+            column='pendiente', entrada_ok=False, created_by_id=current_user.id
         )
         order.set_servicios(servicios)
         order.add_history(f'Creada por {current_user.username}')
@@ -686,6 +761,8 @@ def create_order():
         cantidades = request.form.getlist('cantidades[]')
         unidades = request.form.getlist('unidades[]')
         proyectos_linea = request.form.getlist('proyecto_linea[]')
+
+        # Etiquetas
         ancho_etiqueta_list = request.form.getlist('ancho_etiqueta[]')
         alto_etiqueta_list = request.form.getlist('alto_etiqueta[]')
         precio_etiqueta_list = request.form.getlist('precio_etiqueta[]')
@@ -693,6 +770,18 @@ def create_order():
         girar_etiqueta_list = request.form.getlist('girar_etiqueta[]')
         auto_girar_etiqueta_list = request.form.getlist('auto_girar_etiqueta[]')
         ancho_util_override_list = request.form.getlist('ancho_util_override[]')
+
+        # Carteles
+        ancho_cartel_list = request.form.getlist('ancho_cartel[]')
+        alto_cartel_list = request.form.getlist('alto_cartel[]')
+        cantidad_cartel_list = request.form.getlist('cantidad_cartel[]')
+        girar_cartel_list = request.form.getlist('girar_cartel[]')
+        auto_girar_cartel_list = request.form.getlist('auto_girar_cartel[]')
+        centrar_cartel_list = request.form.getlist('centrar_cartel[]')
+        ancho_util_cartel_list = request.form.getlist('ancho_util_override_cartel[]')
+        precio_impresion_cartel_list = request.form.getlist('precio_impresion_cartel[]')
+        precio_merma_cartel_list = request.form.getlist('precio_merma_cartel[]')
+        tipo_material_cartel_list = request.form.getlist('tipo_material_cartel[]')
 
         for i, nombre_visible in enumerate(nombres_visibles):
             if not nombre_visible.strip():
@@ -709,14 +798,14 @@ def create_order():
             proyecto_linea = proyectos_linea[i] if i < len(proyectos_linea) else 'otros'
             producto = Producto.query.get(producto_id) if producto_id else None
 
-            ancho_util_override = None
-            if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
-                try:
-                    ancho_util_override = float(ancho_util_override_list[i].strip())
-                except:
-                    pass
-
             if proyecto_linea == 'etiquetas':
+                ancho_util_override = None
+                if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
+                    try:
+                        ancho_util_override = float(ancho_util_override_list[i].strip())
+                    except:
+                        pass
+
                 if not producto:
                     flash(f'Línea {i+1}: Debes seleccionar un producto del inventario.', 'danger')
                     db.session.rollback()
@@ -736,16 +825,9 @@ def create_order():
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
 
                 adjunto, op, mov, error = _procesar_linea_etiqueta(
-                    order=order,
-                    producto=producto,
-                    ancho_cm=ancho_cm,
-                    alto_cm=alto_cm,
-                    precio=precio,
-                    mesa=mesa,
-                    girar=girar,
-                    auto_girar=auto_girar,
-                    unidad=unidad,
-                    cantidad_original=cantidad_original,
+                    order=order, producto=producto, ancho_cm=ancho_cm, alto_cm=alto_cm,
+                    precio=precio, mesa=mesa, girar=girar, auto_girar=auto_girar,
+                    unidad=unidad, cantidad_original=cantidad_original,
                     ancho_util_override=ancho_util_override,
                     nombre_visible=nombre_visible,
                     order_num_para_comentario=order_num
@@ -758,16 +840,70 @@ def create_order():
                 db.session.add(adjunto)
                 db.session.add(op)
                 db.session.add(mov)
+
+            elif proyecto_linea == 'cartel':
+                if not producto:
+                    flash(f'Línea {i+1}: Debes seleccionar un producto del inventario.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=False, order=None)
+                    return render_template('form_orden.html', **context)
+                if not producto.largo_rollo or producto.largo_rollo <= 0:
+                    flash(f'Línea {i+1}: El producto "{producto.nombre}" no tiene largo de rollo definido.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=False, order=None)
+                    return render_template('form_orden.html', **context)
+
+                ancho_cartel_cm = float(ancho_cartel_list[i]) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
+                alto_cartel_cm = float(alto_cartel_list[i]) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
+                cantidad_cartel_piezas = int(cantidad_cartel_list[i]) if i < len(cantidad_cartel_list) and cantidad_cartel_list[i] else 1
+                girar_cartel = girar_cartel_list[i] == '1' if i < len(girar_cartel_list) else False
+                auto_girar_cartel = auto_girar_cartel_list[i] == '1' if i < len(auto_girar_cartel_list) else True
+                centrar_cartel = centrar_cartel_list[i] == '1' if i < len(centrar_cartel_list) else True
+                ancho_util_cartel = None
+                if i < len(ancho_util_cartel_list) and ancho_util_cartel_list[i].strip():
+                    try:
+                        ancho_util_cartel = float(ancho_util_cartel_list[i].strip())
+                    except:
+                        pass
+                precio_impresion = float(precio_impresion_cartel_list[i]) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
+                precio_merma = float(precio_merma_cartel_list[i]) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
+                tipo_mat = tipo_material_cartel_list[i] if i < len(tipo_material_cartel_list) and tipo_material_cartel_list[i] else 'Vinilo'
+
+                if ancho_cartel_cm <= 0 or alto_cartel_cm <= 0 or cantidad_cartel_piezas < 1:
+                    flash(f'Línea {i+1}: Dimensiones o cantidad inválidas para cartel.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=False, order=None)
+                    return render_template('form_orden.html', **context)
+
+                adjunto, op, mov, error = _procesar_linea_cartel(
+                    order=order, producto=producto,
+                    ancho_cm=ancho_cartel_cm, alto_cm=alto_cartel_cm,
+                    cantidad_piezas=cantidad_cartel_piezas, girar=girar_cartel,
+                    auto_girar=auto_girar_cartel,
+                    centrar=centrar_cartel,
+                    ancho_util_override=ancho_util_cartel,
+                    precio_impresion_m2=precio_impresion,
+                    precio_merma_m2=precio_merma,
+                    tipo_material=tipo_mat,
+                    nombre_visible=nombre_visible,
+                    order_num_para_comentario=order_num
+                )
+                if error:
+                    flash(f'Línea {i+1}: {error}', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=False, order=None)
+                    return render_template('form_orden.html', **context)
+                db.session.add(adjunto)
+                db.session.add(op)
+                db.session.add(mov)
+
             else:
                 adjunto = ArchivoAdjunto(
-                    orden_id=order.id,
-                    nombre_original='',
+                    orden_id=order.id, nombre_original='',
                     nombre_visible=nombre_visible,
                     material=producto.nombre if producto else None,
-                    ruta=None,
-                    cantidad=cantidad_original if cantidad_original else None,
-                    unidad=unidad,
-                    producto_id=producto.id if producto else None
+                    ruta=None, cantidad=cantidad_original if cantidad_original else None,
+                    unidad=unidad, producto_id=producto.id if producto else None
                 )
                 db.session.add(adjunto)
 
@@ -830,6 +966,7 @@ def edit_order(order_id):
         existing_ids = request.form.getlist('archivo_ids[]')
         ids_a_eliminar = request.form.getlist('eliminar_archivos[]')
         ancho_util_override_edit = request.form.getlist('ancho_util_override_edit[]')
+        ancho_util_override_cartel_edit = request.form.getlist('ancho_util_override_cartel_edit[]')
 
         for archivo_id in ids_a_eliminar:
             archivo = ArchivoAdjunto.query.get(int(archivo_id))
@@ -844,7 +981,8 @@ def edit_order(order_id):
                         _liberar_reserva(producto, archivo.cantidad)
                 db.session.delete(archivo)
 
-        override_idx = 0
+        override_etiq_idx = 0
+        override_cartel_idx = 0
         for archivo_id in existing_ids:
             archivo = ArchivoAdjunto.query.get(int(archivo_id))
             if not archivo or archivo.orden_id != order.id:
@@ -864,24 +1002,35 @@ def edit_order(order_id):
                 except ValueError:
                     cantidad_original = None
 
-            ancho_util_override = None
-            if override_idx < len(ancho_util_override_edit) and ancho_util_override_edit[override_idx].strip():
-                try:
-                    ancho_util_override = float(ancho_util_override_edit[override_idx].strip())
-                except:
-                    pass
-            override_idx += 1
+            params = archivo.get_parametros_etiqueta()
+            tipo_params = params.get('tipo') if params else None
+            es_cartel = (tipo_params == 'cartel')
+            es_etiqueta = (params is not None and not es_cartel)
+
+            if es_etiqueta:
+                ancho_util_override = None
+                if override_etiq_idx < len(ancho_util_override_edit) and ancho_util_override_edit[override_etiq_idx].strip():
+                    try:
+                        ancho_util_override = float(ancho_util_override_edit[override_etiq_idx].strip())
+                    except:
+                        pass
+                override_etiq_idx += 1
+            elif es_cartel:
+                ancho_util_override = None
+                if override_cartel_idx < len(ancho_util_override_cartel_edit) and ancho_util_override_cartel_edit[override_cartel_idx].strip():
+                    try:
+                        ancho_util_override = float(ancho_util_override_cartel_edit[override_cartel_idx].strip())
+                    except:
+                        pass
+                override_cartel_idx += 1
+            else:
+                ancho_util_override = None
 
             producto_anterior = archivo.producto
             producto_anterior_id = archivo.producto_id
-            params = archivo.get_parametros_etiqueta()
-            is_etiqueta = params is not None
 
-            if is_etiqueta:
-                cambio_significativo = (
-                    producto_id_nuevo != producto_anterior_id
-                    or cantidad_original != archivo.cantidad
-                )
+            if es_etiqueta:
+                cambio_significativo = (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad)
                 if cambio_significativo:
                     if producto_anterior and archivo.cantidad:
                         op_anterior = OrdenProducto.query.filter_by(orden_id=order.id, producto_id=producto_anterior_id).first()
@@ -890,7 +1039,6 @@ def edit_order(order_id):
                             db.session.delete(op_anterior)
                         else:
                             _liberar_reserva(producto_anterior, archivo.cantidad)
-
                     if not producto_nuevo:
                         db.session.delete(archivo)
                         continue
@@ -903,16 +1051,10 @@ def edit_order(order_id):
                     auto_girar = params.get('auto_girar', False)
 
                     adjunto_tmp, op_nuevo, mov, error = _procesar_linea_etiqueta(
-                        order=order,
-                        producto=producto_nuevo,
-                        ancho_cm=ancho_cm,
-                        alto_cm=alto_cm,
-                        precio=precio,
-                        mesa=mesa,
-                        girar=girar,
-                        auto_girar=auto_girar,
-                        unidad=unidad,
-                        cantidad_original=cantidad_original,
+                        order=order, producto=producto_nuevo,
+                        ancho_cm=ancho_cm, alto_cm=alto_cm,
+                        precio=precio, mesa=mesa, girar=girar, auto_girar=auto_girar,
+                        unidad=unidad, cantidad_original=cantidad_original,
                         ancho_util_override=ancho_util_override,
                         nombre_visible=nombre_visible,
                         order_num_para_comentario=order_num
@@ -934,6 +1076,62 @@ def edit_order(order_id):
                 else:
                     if nombre_visible:
                         archivo.nombre_visible = nombre_visible
+
+            elif es_cartel:
+                cambio_significativo = (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad)
+                if cambio_significativo:
+                    if producto_anterior and archivo.cantidad:
+                        op_anterior = OrdenProducto.query.filter_by(orden_id=order.id, producto_id=producto_anterior_id).first()
+                        if op_anterior:
+                            _liberar_reserva(producto_anterior, op_anterior.cantidad_estimada)
+                            db.session.delete(op_anterior)
+                        else:
+                            _liberar_reserva(producto_anterior, archivo.cantidad)
+                    if not producto_nuevo:
+                        db.session.delete(archivo)
+                        continue
+
+                    ancho_cm = params.get('ancho', 0)
+                    alto_cm = params.get('alto', 0)
+                    cantidad_piezas = int(params.get('cantidad', 1))
+                    girar = params.get('girar', False)
+                    auto_girar = params.get('auto_girar', True)
+                    centrar = params.get('centrar', True)
+                    tipo_material = params.get('tipo_material', 'Vinilo')
+                    precio_impresion = params.get('precio_impresion_m2', 10.0)
+                    precio_merma = params.get('precio_merma_m2', 5.0)
+
+                    adjunto_tmp, op_nuevo, mov, error = _procesar_linea_cartel(
+                        order=order, producto=producto_nuevo,
+                        ancho_cm=ancho_cm, alto_cm=alto_cm,
+                        cantidad_piezas=cantidad_piezas, girar=girar,
+                        auto_girar=auto_girar,
+                        centrar=centrar,
+                        ancho_util_override=ancho_util_override,
+                        precio_impresion_m2=precio_impresion,
+                        precio_merma_m2=precio_merma,
+                        tipo_material=tipo_material,
+                        nombre_visible=nombre_visible,
+                        order_num_para_comentario=order_num
+                    )
+                    if error:
+                        flash(error, 'danger')
+                        db.session.rollback()
+                        context = _get_form_context(form_data=request.form, edit=True, order=order)
+                        return render_template('form_orden.html', **context)
+
+                    archivo.nombre_visible = nombre_visible or archivo.nombre_visible
+                    archivo.producto_id = producto_nuevo.id
+                    archivo.material = producto_nuevo.nombre
+                    archivo.cantidad = cantidad_piezas
+                    archivo.unidad = 'unidades'
+                    archivo.parametros_etiqueta = adjunto_tmp.parametros_etiqueta
+                    db.session.add(op_nuevo)
+                    db.session.add(mov)
+                else:
+                    if nombre_visible:
+                        archivo.nombre_visible = nombre_visible
+
             else:
                 if nombre_visible:
                     archivo.nombre_visible = nombre_visible
@@ -945,11 +1143,13 @@ def edit_order(order_id):
                     archivo.producto_id = producto_nuevo.id
                     archivo.material = producto_nuevo.nombre
 
+        # NUEVAS LÍNEAS
         nombres_visibles = request.form.getlist('nombres_visibles[]')
         productos_ids = request.form.getlist('productos_ids[]')
         cantidades = request.form.getlist('cantidades[]')
         unidades = request.form.getlist('unidades[]')
         proyectos_linea = request.form.getlist('proyecto_linea[]')
+
         ancho_etiqueta_list = request.form.getlist('ancho_etiqueta[]')
         alto_etiqueta_list = request.form.getlist('alto_etiqueta[]')
         precio_etiqueta_list = request.form.getlist('precio_etiqueta[]')
@@ -957,6 +1157,17 @@ def edit_order(order_id):
         girar_etiqueta_list = request.form.getlist('girar_etiqueta[]')
         auto_girar_etiqueta_list = request.form.getlist('auto_girar_etiqueta[]')
         ancho_util_override_list = request.form.getlist('ancho_util_override[]')
+
+        ancho_cartel_list = request.form.getlist('ancho_cartel[]')
+        alto_cartel_list = request.form.getlist('alto_cartel[]')
+        cantidad_cartel_list = request.form.getlist('cantidad_cartel[]')
+        girar_cartel_list = request.form.getlist('girar_cartel[]')
+        auto_girar_cartel_list = request.form.getlist('auto_girar_cartel[]')
+        centrar_cartel_list = request.form.getlist('centrar_cartel[]')
+        ancho_util_cartel_list = request.form.getlist('ancho_util_override_cartel[]')
+        precio_impresion_cartel_list = request.form.getlist('precio_impresion_cartel[]')
+        precio_merma_cartel_list = request.form.getlist('precio_merma_cartel[]')
+        tipo_material_cartel_list = request.form.getlist('tipo_material_cartel[]')
 
         for i, nombre_visible in enumerate(nombres_visibles):
             if not nombre_visible.strip():
@@ -973,14 +1184,13 @@ def edit_order(order_id):
             proyecto_linea = proyectos_linea[i] if i < len(proyectos_linea) else 'otros'
             producto = Producto.query.get(producto_id) if producto_id else None
 
-            ancho_util_override = None
-            if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
-                try:
-                    ancho_util_override = float(ancho_util_override_list[i].strip())
-                except:
-                    pass
-
             if proyecto_linea == 'etiquetas':
+                ancho_util_override = None
+                if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
+                    try:
+                        ancho_util_override = float(ancho_util_override_list[i].strip())
+                    except:
+                        pass
                 if not producto:
                     flash(f'Línea {i+1}: Debes seleccionar un producto del inventario.', 'danger')
                     db.session.rollback()
@@ -1000,16 +1210,9 @@ def edit_order(order_id):
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
 
                 adjunto, op, mov, error = _procesar_linea_etiqueta(
-                    order=order,
-                    producto=producto,
-                    ancho_cm=ancho_cm,
-                    alto_cm=alto_cm,
-                    precio=precio,
-                    mesa=mesa,
-                    girar=girar,
-                    auto_girar=auto_girar,
-                    unidad=unidad,
-                    cantidad_original=cantidad_original,
+                    order=order, producto=producto, ancho_cm=ancho_cm, alto_cm=alto_cm,
+                    precio=precio, mesa=mesa, girar=girar, auto_girar=auto_girar,
+                    unidad=unidad, cantidad_original=cantidad_original,
                     ancho_util_override=ancho_util_override,
                     nombre_visible=nombre_visible,
                     order_num_para_comentario=order_num
@@ -1022,16 +1225,70 @@ def edit_order(order_id):
                 db.session.add(adjunto)
                 db.session.add(op)
                 db.session.add(mov)
+
+            elif proyecto_linea == 'cartel':
+                if not producto:
+                    flash(f'Línea {i+1}: Debes seleccionar un producto del inventario.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=True, order=order)
+                    return render_template('form_orden.html', **context)
+                if not producto.largo_rollo or producto.largo_rollo <= 0:
+                    flash(f'Línea {i+1}: El producto no tiene largo de rollo definido.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=True, order=order)
+                    return render_template('form_orden.html', **context)
+
+                ancho_cartel_cm = float(ancho_cartel_list[i]) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
+                alto_cartel_cm = float(alto_cartel_list[i]) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
+                cantidad_cartel_piezas = int(cantidad_cartel_list[i]) if i < len(cantidad_cartel_list) and cantidad_cartel_list[i] else 1
+                girar_cartel = girar_cartel_list[i] == '1' if i < len(girar_cartel_list) else False
+                auto_girar_cartel = auto_girar_cartel_list[i] == '1' if i < len(auto_girar_cartel_list) else True
+                centrar_cartel = centrar_cartel_list[i] == '1' if i < len(centrar_cartel_list) else True
+                ancho_util_cartel = None
+                if i < len(ancho_util_cartel_list) and ancho_util_cartel_list[i].strip():
+                    try:
+                        ancho_util_cartel = float(ancho_util_cartel_list[i].strip())
+                    except:
+                        pass
+                precio_impresion = float(precio_impresion_cartel_list[i]) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
+                precio_merma = float(precio_merma_cartel_list[i]) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
+                tipo_mat = tipo_material_cartel_list[i] if i < len(tipo_material_cartel_list) and tipo_material_cartel_list[i] else 'Vinilo'
+
+                if ancho_cartel_cm <= 0 or alto_cartel_cm <= 0 or cantidad_cartel_piezas < 1:
+                    flash(f'Línea {i+1}: Dimensiones o cantidad inválidas para cartel.', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=True, order=order)
+                    return render_template('form_orden.html', **context)
+
+                adjunto, op, mov, error = _procesar_linea_cartel(
+                    order=order, producto=producto,
+                    ancho_cm=ancho_cartel_cm, alto_cm=alto_cartel_cm,
+                    cantidad_piezas=cantidad_cartel_piezas, girar=girar_cartel,
+                    auto_girar=auto_girar_cartel,
+                    centrar=centrar_cartel,
+                    ancho_util_override=ancho_util_cartel,
+                    precio_impresion_m2=precio_impresion,
+                    precio_merma_m2=precio_merma,
+                    tipo_material=tipo_mat,
+                    nombre_visible=nombre_visible,
+                    order_num_para_comentario=order_num
+                )
+                if error:
+                    flash(f'Línea {i+1}: {error}', 'danger')
+                    db.session.rollback()
+                    context = _get_form_context(form_data=request.form, edit=True, order=order)
+                    return render_template('form_orden.html', **context)
+                db.session.add(adjunto)
+                db.session.add(op)
+                db.session.add(mov)
+
             else:
                 adjunto = ArchivoAdjunto(
-                    orden_id=order.id,
-                    nombre_original='',
+                    orden_id=order.id, nombre_original='',
                     nombre_visible=nombre_visible,
                     material=producto.nombre if producto else None,
-                    ruta=None,
-                    cantidad=cantidad_original if cantidad_original else None,
-                    unidad=unidad,
-                    producto_id=producto.id if producto else None
+                    ruta=None, cantidad=cantidad_original if cantidad_original else None,
+                    unidad=unidad, producto_id=producto.id if producto else None
                 )
                 db.session.add(adjunto)
 
@@ -1071,7 +1328,7 @@ def edit_order(order_id):
     return render_template('form_orden.html', **context)
 
 # ==========================================
-# CREAR CLIENTE VÍA AJAX
+# CREAR CLIENTE AJAX
 # ==========================================
 @ordenes_bp.route('/crear-cliente-ajax', methods=['POST'])
 @login_required
@@ -1083,15 +1340,96 @@ def crear_cliente_ajax():
         return jsonify({'error': 'El nombre es obligatorio'}), 400
     referencia = f"CLI-{datetime.now().strftime('%Y%m%d%H%M%S')}"
     cliente = Client(
-        referencia=referencia,
-        nombre=nombre,
-        telefono=data.get('telefono', ''),
-        email=data.get('email', ''),
+        referencia=referencia, nombre=nombre,
+        telefono=data.get('telefono', ''), email=data.get('email', ''),
         direccion=data.get('direccion', '')
     )
     db.session.add(cliente)
     db.session.commit()
     return jsonify({'id': cliente.id, 'nombre': cliente.nombre})
+
+# ==========================================
+# CALCULAR CARTEL AJAX (para el form)
+# ==========================================
+@ordenes_bp.route('/calcular-cartel-ajax', methods=['POST'])
+@login_required
+def calcular_cartel_ajax():
+    try:
+        ancho_cm = float(request.form.get('ancho', 0))
+        alto_cm = float(request.form.get('alto', 0))
+        cantidad = int(request.form.get('cantidad', 1))
+        girar = request.form.get('girar') == '1'
+        auto_girar = request.form.get('auto_girar') == '1'
+        centrar = request.form.get('centrar') == '1'
+        ancho_util = request.form.get('ancho_util', '').strip()
+        ancho_util = float(ancho_util) if ancho_util else None
+        precio_impresion = float(request.form.get('precio_impresion', 10))
+        precio_merma = float(request.form.get('precio_merma', 5))
+        tipo_material = request.form.get('tipo_material', 'Vinilo')
+        producto_id = request.form.get('producto_id', type=int)
+
+        if ancho_cm <= 0 or alto_cm <= 0 or cantidad < 1:
+            return jsonify({'error': 'Dimensiones o cantidad inválidas.'})
+
+        producto = Producto.query.get(producto_id) if producto_id else None
+        if not producto:
+            return jsonify({'error': 'Selecciona primero un producto.'})
+
+        ancho_real = producto.ancho_rollo or 1.34
+        ancho_util_efectivo = ancho_util if ancho_util else ancho_real
+        if ancho_util_efectivo > ancho_real + 0.001:
+            return jsonify({'error': f'El ancho útil no puede superar el ancho real ({ancho_real} m).'})
+
+        cols, filas, alto_impresion_cm, ancho_efectivo_cm, alto_efectivo_cm, orientacion = \
+            calcular_distribucion_carteles(
+                ancho_cm, alto_cm, cantidad, ancho_util_efectivo * 100,
+                girar=girar, modo_inteligente=auto_girar
+            )
+
+        alto_impresion_m = alto_impresion_cm / 100.0
+        if alto_impresion_m <= 0:
+            return jsonify({'error': 'Las dimensiones del cartel no caben en el ancho del rollo.'})
+
+        # Material real consumido (incluye gap de 6.5cm)
+        alto_total_m = alto_impresion_m + GAP_FINAL_IMPRESION_M
+        material_consumido_m2 = ancho_real * alto_total_m
+
+        # Cálculo de merma para facturación (sin gap)
+        area_rollo_facturacion_m2 = ancho_real * alto_impresion_m
+        area_piezas_m2 = (ancho_cm * alto_cm * cantidad) / 10000.0
+        
+        merma_operativa_m2 = max(0.0, area_rollo_facturacion_m2 - area_piezas_m2)
+        merma_pct = (merma_operativa_m2 / area_rollo_facturacion_m2 * 100) if area_rollo_facturacion_m2 > 0 else 0
+
+        costo_impresion = area_piezas_m2 * precio_impresion
+        costo_merma = merma_operativa_m2 * precio_merma
+        costo_total = costo_impresion + costo_merma
+
+        return jsonify({
+            'simData': {
+                'ancho_cm': ancho_cm, 'alto_cm': alto_cm, 'cantidad': cantidad,
+                'girar': girar, 'auto_girar': auto_girar, 'centrar': centrar, 'orientacion': orientacion,
+                'cols': cols, 'filas': filas,
+                'ancho_efectivo_cm': round(ancho_efectivo_cm, 2),
+                'alto_efectivo_cm': round(alto_efectivo_cm, 2),
+                'alto_impresion_cm': round(alto_impresion_cm, 2),
+                'gap_final_cm': round(GAP_FINAL_IMPRESION_M * 100, 2),
+                'alto_total_cm': round(alto_total_m * 100, 2),
+                'ancho_util': ancho_util_efectivo, 'ancho_real': ancho_real,
+                'area_piezas_m2': round(area_piezas_m2, 4),
+                'area_rollo_m2': round(material_consumido_m2, 4), # Material consumido real (con gap)
+                'area_facturacion_m2': round(area_rollo_facturacion_m2, 4), # Área base para merma
+                'merma_operativa_m2': round(merma_operativa_m2, 4), # Merma facturada (sin gap)
+                'merma_pct': round(merma_pct, 2),
+                'costo_impresion': round(costo_impresion, 2),
+                'costo_merma': round(costo_merma, 2),
+                'costo_total': round(costo_total, 2),
+                'largo_total_m': round(alto_total_m, 4),
+                'tipo_material': tipo_material,
+            }
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)})
 
 # ==========================================
 # MARCAR ENTRADA
@@ -1173,20 +1511,18 @@ def generar_pdf(order_id):
                      mimetype='application/pdf')
 
 # ==========================================
-# DETALLE JSON (para workflow)
+# DETALLE JSON
 # ==========================================
 @ordenes_bp.route('/detalle_json/<int:order_id>')
 @login_required
 def detalle_json(order_id):
     order = Order.query.get_or_404(order_id)
     data = {
-        'id': order.id,
-        'numero': order.order_num,
+        'id': order.id, 'numero': order.order_num,
         'cliente': order.client.nombre if order.client else 'Sin cliente',
         'cliente_id': order.client.id if order.client else None,
         'telefono_cliente': order.client.telefono if order.client and order.client.telefono else '',
-        'prioridad': order.priority,
-        'tipo': order.tipo_proyecto,
+        'prioridad': order.priority, 'tipo': order.tipo_proyecto,
         'columna': order.column,
         'fecha_creacion': order.created_at.isoformat() if order.created_at else None,
         'historial': order.get_history(),
@@ -1194,14 +1530,12 @@ def detalle_json(order_id):
         'servicios': order.get_servicios() if hasattr(order, 'get_servicios') else [],
         'archivos': [{'nombre': a.nombre_visible, 'ruta': a.ruta} for a in order.archivos],
         'fecha_entregado': order.fecha_entregado.isoformat() if order.fecha_entregado else None,
-        'entrada_ok': order.entrada_ok,
-        'proyecto': order.proyecto,
-        'solicitado': order.solicitado,
+        'entrada_ok': order.entrada_ok, 'proyecto': order.proyecto, 'solicitado': order.solicitado,
     }
     return jsonify(data)
 
 # ==========================================
-# DETALLE PARA MODAL (JSON)
+# DETALLE PARA MODAL
 # ==========================================
 @ordenes_bp.route('/detalle_modal/<int:order_id>')
 @login_required
@@ -1211,17 +1545,10 @@ def detalle_modal(order_id):
         'order_num': order.order_num,
         'client': order.client.nombre if order.client else 'Sin cliente',
         'date': order.date.strftime('%d/%m/%Y') if order.date else '-',
-        'proyecto': order.proyecto,
-        'priority': order.priority,
-        'column': order.column,
-        'entrada_ok': order.entrada_ok,
-        'servicios': order.get_servicios(),
-        'descripcion': order.descripcion,
-        'lineas': [{
-            'nombre_visible': a.nombre_visible,
-            'material': a.material,
-            'cantidad': a.cantidad,
-            'unidad': a.unidad
-        } for a in order.archivos]
+        'proyecto': order.proyecto, 'priority': order.priority,
+        'column': order.column, 'entrada_ok': order.entrada_ok,
+        'servicios': order.get_servicios(), 'descripcion': order.descripcion,
+        'lineas': [{'nombre_visible': a.nombre_visible, 'material': a.material,
+                    'cantidad': a.cantidad, 'unidad': a.unidad} for a in order.archivos]
     }
     return jsonify(data)
