@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Reporte Semanal · {{ semana }}{% endblock %}
-{% block page_title %}📊 Reporte Semanal · {{ semana }}{% endblock %}
+{% block title %}Reporte Semanal · {{ semana_natural or semana }}{% endblock %}
+{% block page_title %}📊 Reporte · {{ semana_natural or semana }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -13,6 +13,8 @@
     .btn-success:hover { background:#059669; }
     .btn-warning { background:#f59e0b; color:white; }
     .btn-warning:hover { background:#d97706; }
+    .btn-danger { background:#dc2626; color:white; }
+    .btn-danger:hover { background:#b91c1c; }
     .btn-sm { padding:4px 12px; font-size:12px; }
 
     .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
@@ -61,13 +63,126 @@
         font-size:13px; color:#1e3a8a; margin-bottom:16px; line-height:1.5;
     }
     .info-box i { color:#3b82f6; margin-top:2px; flex-shrink:0; }
+
+    .acciones-conteo { display:flex; gap:4px; }
+    .acciones-conteo .btn { padding:6px 10px; font-size:12px; border-radius:20px; }
+
+    /* ============================================================
+       BADGE DE SEMANA ISO (subtítulo pequeño bajo el título natural)
+       ============================================================ */
+    .iso-badge {
+        display: inline-block;
+        background: #f0ece8;
+        color: #6b6b7a;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 30px;
+        letter-spacing: 0.3px;
+        font-family: 'JetBrains Mono', monospace;
+        margin-left: 6px;
+        vertical-align: middle;
+    }
+
+    /* ============================================================
+       MODAL DE CONFIRMACIÓN PERSONALIZADO
+       ============================================================ */
+    .cs-confirm-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+    .cs-confirm-overlay.active { display: flex; }
+
+    .cs-confirm-modal {
+        background: white;
+        border-radius: 20px;
+        padding: 26px 28px 22px;
+        max-width: 460px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        animation: csModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        text-align: center;
+        border-top: 5px solid #dc2626;
+    }
+    .cs-confirm-modal.warning { border-top-color: #f59e0b; }
+    .cs-confirm-modal.danger  { border-top-color: #dc2626; }
+
+    @keyframes csModalIn {
+        from { transform: scale(0.94) translateY(10px); opacity: 0; }
+        to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    .cs-confirm-icon {
+        font-size: 40px;
+        margin-bottom: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: #fef2f2;
+        color: #dc2626;
+    }
+    .cs-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
+    .cs-confirm-icon.danger  { background: #fef2f2; color: #dc2626; }
+
+    .cs-confirm-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        line-height: 1.25;
+    }
+
+    .cs-confirm-message {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.55;
+        margin: 0 0 22px 0;
+        white-space: pre-line;
+    }
+
+    .cs-confirm-actions {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .cs-confirm-actions .btn {
+        min-width: 120px;
+        justify-content: center;
+        padding: 10px 22px;
+    }
+
+    @media (max-width: 480px) {
+        .cs-confirm-modal { padding: 22px 20px 18px; border-radius: 16px; }
+        .cs-confirm-icon { width: 54px; height: 54px; font-size: 32px; }
+        .cs-confirm-title { font-size: 18px; }
+        .cs-confirm-message { font-size: 13px; }
+        .cs-confirm-actions { flex-direction: column; }
+        .cs-confirm-actions .btn { width: 100%; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
     <div>
-        <p style="color:#8e8e93; margin:0;">Reporte de la semana del {{ semana }}</p>
+        <p style="color:#8e8e93; margin:0;">
+            Reporte de la {{ (semana_natural or semana)|lower }}
+            <span class="iso-badge">{{ semana }}</span>
+        </p>
     </div>
     <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <select onchange="window.location.href='{{ url_for('inventario.reporte_conteos') }}?semana=' + this.value"
@@ -78,20 +193,29 @@
         </select>
         <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo conteo</a>
         <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        <form method="POST"
+              action="{{ url_for('inventario.eliminar_conteos_semana', semana=semana) }}"
+              class="form-cs-confirm"
+              data-mensaje="¿Eliminar TODOS los conteos de la semana {{ semana_natural or semana }}?&#10;&#10;Esta acción revertirá el stock al estado anterior y no se puede deshacer."
+              data-titulo="Eliminar toda la semana"
+              data-ok-text="Sí, eliminar todo"
+              data-variant="danger"
+              style="display:inline;">
+            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Eliminar toda la semana</button>
+        </form>
     </div>
 </div>
 
-<!-- AYUDA CONTEXTUAL -->
 <div class="info-box">
     <i class="fas fa-info-circle"></i>
     <div>
         <strong>¿Qué estoy viendo?</strong> Este es el resumen del conteo físico que hiciste esta semana.
         Compara <em>lo que el sistema creía tener</em> contra <em>lo que contaste a mano</em>, y separa
         lo que es <strong>desperdicio normal de impresión</strong> de lo que es <strong>pérdida no explicada</strong>.
+        Puedes editar o eliminar cada conteo individual usando los botones de la tabla.
     </div>
 </div>
 
-<!-- KPIs con lenguaje natural -->
 <div class="kpi-grid">
     <div class="kpi-card rojo">
         <div class="value">{{ "%.2f"|format(total_diferencia_m2) }} m²</div>
@@ -110,41 +234,70 @@
     </div>
     <div class="kpi-card">
         <div class="value">{{ conteos|length }}</div>
-        <div class="label">📦 Productos contados esta semana</div>
+        <div class="label">📦 Conteos registrados esta semana</div>
         <div class="hint">Cada uno lo registraste individualmente.</div>
     </div>
 </div>
 
-<!-- Desglose por producto contado -->
-{% if por_producto %}
+<!-- Tabla de conteos individuales -->
+{% if conteos %}
 <div class="card">
-    <h4>📦 Productos contados esta semana</h4>
+    <h4>📋 Conteos individuales de la semana</h4>
     <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
-        Cada fila es un producto que contaste. La columna <strong>“Faltó”</strong> muestra la diferencia entre lo que el sistema creía y lo que contaste.
-        La columna <strong>“Pérdida no explicada”</strong> muestra lo que sobra después de restar el desperdicio normal de impresión.
+        Cada fila es un conteo registrado. Puedes <strong>editar</strong> el stock físico contado o <strong>eliminar</strong> el conteo.
     </p>
-    <table>
-        <thead>
-            <tr>
-                <th>Producto</th>
-                <th>Veces contado</th>
-                <th>Faltó (m²)</th>
-                <th>Desperdicio esperado (m²)</th>
-                <th>Pérdida no explicada (m²)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pid, data in por_producto.items() %}
-            <tr>
-                <td><strong>{{ data.producto.nombre if data.producto else '—' }}</strong></td>
-                <td>{{ data.conteos|length }}</td>
-                <td class="num">{{ "%.2f"|format(data.total_diferencia_m2) }}</td>
-                <td class="num">{{ "%.2f"|format(data.total_merma_operativa_m2) }}</td>
-                <td class="num merma-pos">{{ "%.2f"|format(data.total_merma_imprevista_m2) }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Fecha</th>
+                    <th>Stock sistema (u)</th>
+                    <th>Stock físico (u)</th>
+                    <th>Diferencia (u)</th>
+                    <th>Merma operativa (m²)</th>
+                    <th>Merma imprevista (m²)</th>
+                    <th>Comentario</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in conteos %}
+                <tr>
+                    <td><strong>{{ c.producto.nombre if c.producto else '—' }}</strong></td>
+                    <td class="num">{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else '—' }}</td>
+                    <td class="num">{{ "%.2f"|format(c.stock_sistema_unidades) }}</td>
+                    <td class="num">{{ "%.2f"|format(c.stock_fisico_unidades) }}</td>
+                    <td class="num" style="color:{% if c.diferencia_unidades > 0 %}#dc2626{% elif c.diferencia_unidades < 0 %}#10b981{% else %}#555{% endif %}; font-weight:600;">
+                        {{ "%+.2f"|format(c.diferencia_unidades) }}
+                    </td>
+                    <td class="num">{{ "%.3f"|format(c.merma_operativa_semana_m2 or 0) }}</td>
+                    <td class="num merma-pos">{{ "%.3f"|format(c.merma_imprevista_m2 or 0) }}</td>
+                    <td style="font-size:12px; color:#666;">{{ c.comentario or '—' }}</td>
+                    <td>
+                        <div class="acciones-conteo">
+                            <a href="{{ url_for('inventario.editar_conteo', conteo_id=c.id) }}" class="btn btn-sm btn-warning" title="Editar conteo">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <form method="POST"
+                                  action="{{ url_for('inventario.eliminar_conteo', conteo_id=c.id) }}"
+                                  class="form-cs-confirm"
+                                  data-mensaje="¿Eliminar este conteo?&#10;&#10;El stock se revertirá al estado anterior."
+                                  data-titulo="Eliminar conteo"
+                                  data-ok-text="Sí, eliminar"
+                                  data-variant="warning"
+                                  style="display:inline;">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar conteo">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endif %}
 
@@ -254,7 +407,27 @@
     {% endif %}
 </div>
 
+<!-- ============================================================
+     MODAL DE CONFIRMACIÓN PERSONALIZADO
+     ============================================================ -->
+<div class="cs-confirm-overlay" id="csConfirmOverlay">
+    <div class="cs-confirm-modal danger" id="csConfirmModal">
+        <div class="cs-confirm-icon danger" id="csConfirmIcon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
+        <p class="cs-confirm-message" id="csConfirmMessage">¿Estás seguro?</p>
+        <div class="cs-confirm-actions">
+            <button type="button" class="btn btn-outline" id="csConfirmCancel">Cancelar</button>
+            <button type="button" class="btn btn-danger" id="csConfirmOk">Eliminar</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    // ============================================================
+    // TOGGLE DE PAÑOS
+    // ============================================================
     function togglePaños(btn) {
         const row = btn.closest('tr').nextElementSibling;
         if (row && row.classList.contains('paños-row')) {
@@ -262,5 +435,83 @@
             btn.textContent = row.style.display === 'none' ? 'Ver' : 'Ocultar';
         }
     }
+
+    // ============================================================
+    // MODAL DE CONFIRMACIÓN PERSONALIZADO
+    // ============================================================
+    let csConfirmCallback = null;
+
+    function csConfirm(opts) {
+        const overlay = document.getElementById('csConfirmOverlay');
+        const modal = document.getElementById('csConfirmModal');
+        const iconEl = document.getElementById('csConfirmIcon');
+        const titleEl = document.getElementById('csConfirmTitle');
+        const messageEl = document.getElementById('csConfirmMessage');
+        const okBtn = document.getElementById('csConfirmOk');
+
+        const variant = opts.variant || 'danger';
+        modal.className = 'cs-confirm-modal ' + variant;
+        iconEl.className = 'cs-confirm-icon ' + variant;
+
+        if (variant === 'warning') {
+            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            okBtn.className = 'btn btn-warning';
+        } else {
+            iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            okBtn.className = 'btn btn-danger';
+        }
+
+        titleEl.textContent = opts.title || 'Confirmar acción';
+        messageEl.textContent = opts.message || '¿Estás seguro?';
+        okBtn.textContent = opts.okText || 'Eliminar';
+
+        csConfirmCallback = opts.onConfirm || null;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function csConfirmClose() {
+        document.getElementById('csConfirmOverlay').classList.remove('active');
+        document.body.style.overflow = '';
+        csConfirmCallback = null;
+    }
+
+    document.getElementById('csConfirmOk').addEventListener('click', function() {
+        const cb = csConfirmCallback;
+        csConfirmClose();
+        if (typeof cb === 'function') cb();
+    });
+
+    document.getElementById('csConfirmCancel').addEventListener('click', csConfirmClose);
+
+    document.getElementById('csConfirmOverlay').addEventListener('click', function(e) {
+        if (e.target === this) csConfirmClose();
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') csConfirmClose();
+    });
+
+    // ============================================================
+    // INTERCEPTAR FORMULARIOS CON CONFIRMACIÓN
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('form.form-cs-confirm').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const self = this;
+                csConfirm({
+                    title: self.dataset.titulo || 'Confirmar acción',
+                    message: self.dataset.mensaje || '¿Estás seguro?',
+                    okText: self.dataset.okText || 'Eliminar',
+                    variant: self.dataset.variant || 'danger',
+                    onConfirm: function() {
+                        // form.submit() NO dispara el evento submit de nuevo → sin bucle
+                        self.submit();
+                    }
+                });
+            });
+        });
+    });
 </script>
 {% endblock %}

@@ -144,11 +144,11 @@
                                 <span> | Alineación: {% if params.centrar %}Centrado{% else %}Izquierda{% endif %}</span> <!-- NUEVO -->
                                 <br>
                                 <span>Costo impresión: ${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span>
-                                <span> | Costo merma: ${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span>
+                                <span> | Sobrante facturado: ${{ params.costo_merma|round(2) if params.costo_merma else '—' }} ({{ params.merma_facturada_m2|round(2) if params.merma_facturada_m2 else '0' }} m²)</span>
                                 <span> | <strong>Costo total: ${{ params.costo_estimado|round(2) }}</strong></span>
                                 <br>
                                 <span style="color:#dc2626; font-weight:600;">
-                                    Merma operativa: {{ params.merma_operativa_m2|round(2) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
+                                    Merma operativa (gap): {{ params.merma_operativa_m2|round(3) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
                                 </span>
                             </div>
                         {% else %}

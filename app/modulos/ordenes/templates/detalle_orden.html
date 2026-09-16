@@ -390,10 +390,11 @@
                             <div class="panel-row"><span class="lbl">Alineación</span><span class="val">{% if params.centrar is not defined or params.centrar %}Centrado{% else %}Izquierda{% endif %}</span></div>
                             <div class="panel-row"><span class="lbl">Tipo de material</span><span class="val">{{ params.tipo_material or '—' }}</span></div>
                             <div class="panel-row"><span class="lbl">Precio impresión</span><span class="val">${{ params.precio_impresion_m2|round(2) }}/m²</span></div>
-                            <div class="panel-row"><span class="lbl">Precio merma</span><span class="val">${{ params.precio_merma_m2|round(2) }}/m²</span></div>
+                            <div class="panel-row"><span class="lbl">Precio sobrante</span><span class="val">${{ params.precio_merma_m2|round(2) }}/m²</span></div>
                             <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
                             <div class="panel-row"><span class="lbl">Costo impresión</span><span class="val">${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span></div>
-                            <div class="panel-row"><span class="lbl">Costo merma</span><span class="val merma">${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span></div>
+                            <div class="panel-row"><span class="lbl">Sobrante facturado</span><span class="val merma">${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span></div>
+                            <div class="panel-row"><span class="lbl">↳ Área sobrante</span><span class="val">{{ params.merma_facturada_m2|round(2) if params.merma_facturada_m2 else '—' }} m²</span></div>
                             <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ params.costo_estimado|round(2) }}</span></div>
                         </div>
                     </div>
@@ -410,7 +411,7 @@
                             <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
                             <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.area_rollo_m2|round(2) }} m²</span></div>
                             <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span></div>
-                            <div class="panel-row"><span class="lbl">Merma operativa</span><span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
+                            <div class="panel-row"><span class="lbl">Merma operativa (gap)</span><span class="val merma">{{ params.merma_operativa_m2|round(3) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
                             <div class="panel-row"><span class="lbl">↳ Borde del rollo</span><span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span></div>
                         </div>
                     </div>
@@ -481,10 +482,8 @@ function calcularPañosGrupos(params) {
 
     if (filasTotales <= 0 || n_paños <= 0) return [];
 
-    // Cuántas filas caben en un paño completo
     const filasPorPañoMax = alto_cell > 0 ? Math.floor((1.0 / ancho_util) / alto_cell) : 1;
 
-    // Distribuir: paños completos + último parcial
     const grupos = [];
     const pañosCompletos = Math.floor(filasTotales / filasPorPañoMax);
     const filasRestantes = filasTotales % filasPorPañoMax;
@@ -496,10 +495,8 @@ function calcularPañosGrupos(params) {
         grupos.push({ filas: filasRestantes, count: 1 });
     }
 
-    // Verificar que la cantidad total de paños coincide
     const totalPañosCalc = grupos.reduce((s, g) => s + g.count, 0);
     if (totalPañosCalc !== n_paños) {
-        // Fallback: dividir en n_paños partes iguales (aproximado)
         const grupos2 = [];
         const promedio = Math.floor(filasTotales / n_paños);
         const resto = filasTotales % n_paños;
@@ -752,7 +749,6 @@ function dibujarPreviewCartelDetalle(canvas, params) {
 // INICIALIZAR TODAS LAS VISTAS PREVIAS
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Esperar un frame para asegurar que el DOM está listo
     requestAnimationFrame(() => {
         document.querySelectorAll('canvas[id^="preview-detalle-etiqueta-"]').forEach(canvas => {
             try {

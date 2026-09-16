@@ -40,12 +40,139 @@
     .semana-card .semana-stats .item .val { font-weight:700; color:#1c1c1e; font-size:15px; }
     .semana-card .semana-stats .item .val.rojo { color:#dc2626; }
     .semana-card .semana-stats .item .val.verde { color:#10b981; }
+    .semana-card .semana-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
 
     table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
     th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; }
     td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
     .merma-pos { color:#dc2626; font-weight:600; }
     .merma-neg { color:#10b981; font-weight:600; }
+
+    /* ============================================================
+       MODAL cs-confirm — reemplazo del confirm() nativo
+       ============================================================ */
+    .cs-confirm-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+    .cs-confirm-overlay.active { display: flex; }
+
+    .cs-confirm-modal {
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 460px;
+        padding: 0;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+        animation: csConfirmIn 0.22s ease;
+        overflow: hidden;
+        border-top: 5px solid #dc2626;
+    }
+    @keyframes csConfirmIn {
+        from { transform: scale(0.94) translateY(8px); opacity: 0; }
+        to   { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .cs-confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 20px 24px 10px 24px;
+    }
+    .cs-confirm-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #fde8e5;
+        color: #dc2626;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        flex-shrink: 0;
+    }
+    .cs-confirm-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0;
+        line-height: 1.2;
+    }
+    .cs-confirm-body {
+        padding: 4px 24px 22px 24px;
+        font-size: 14px;
+        color: #4b5563;
+        line-height: 1.5;
+        font-family: 'Inter', sans-serif;
+    }
+    .cs-confirm-body strong { color: #1c1c1e; font-weight: 700; }
+    .cs-confirm-body .cs-confirm-hint {
+        display: block;
+        margin-top: 10px;
+        font-size: 12px;
+        color: #8e8e93;
+        font-style: italic;
+    }
+    .cs-confirm-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        padding: 16px 24px 20px 24px;
+        border-top: 1px solid #f0ece8;
+        background: #fafaf9;
+        flex-wrap: wrap;
+    }
+    .cs-confirm-btn {
+        padding: 10px 22px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
+        text-decoration: none;
+    }
+    .cs-confirm-btn-cancel {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .cs-confirm-btn-cancel:hover {
+        background: #f5f5f5;
+        border-color: #8e8e93;
+    }
+    .cs-confirm-btn-danger {
+        background: #dc2626;
+        color: white;
+    }
+    .cs-confirm-btn-danger:hover {
+        background: #b91c1c;
+        box-shadow: 0 4px 12px rgba(220,38,38,0.25);
+        transform: translateY(-1px);
+    }
+
+    @media (max-width: 480px) {
+        .cs-confirm-modal { border-radius: 16px; }
+        .cs-confirm-header { padding: 16px 18px 8px 18px; }
+        .cs-confirm-icon { width: 40px; height: 40px; font-size: 18px; }
+        .cs-confirm-title { font-size: 17px; }
+        .cs-confirm-body { padding: 4px 18px 18px 18px; font-size: 13px; }
+        .cs-confirm-actions { padding: 12px 18px 16px 18px; flex-direction: column-reverse; }
+        .cs-confirm-btn { width: 100%; justify-content: center; }
+    }
 </style>
 {% endblock %}
 
@@ -125,9 +252,21 @@
                 <span class="val rojo">{{ "%.2f"|format(s.total_merma_imprevista_m2) }} m²</span>
             </div>
         </div>
-        <a href="{{ url_for('inventario.reporte_conteos', semana=s.semana) }}" class="btn btn-sm btn-warning">
-            <i class="fas fa-chart-line"></i> Ver reporte
-        </a>
+        <div class="semana-actions">
+            <a href="{{ url_for('inventario.reporte_conteos', semana=s.semana) }}" class="btn btn-sm btn-warning">
+                <i class="fas fa-chart-line"></i> Ver reporte
+            </a>
+            <form method="POST"
+                  action="{{ url_for('inventario.eliminar_conteos_semana', semana=s.semana) }}"
+                  style="display:inline;"
+                  data-cs-confirm
+                  data-cs-confirm-title="Eliminar semana completa"
+                  data-cs-confirm-message="¿Eliminar <strong>todos los conteos</strong> de la semana <strong>{{ s.semana }}</strong>?<span class='cs-confirm-hint'>El stock de cada producto será revertido al estado anterior a esta semana.</span>"
+                  data-cs-confirm-text="Eliminar semana"
+                  data-cs-confirm-icon="fas fa-calendar-times">
+                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i> Eliminar semana</button>
+            </form>
+        </div>
     </div>
 </div>
 {% else %}
@@ -138,4 +277,102 @@
     </a>
 </div>
 {% endfor %}
+
+<!-- ============================================================
+     MODAL cs-confirm (uno solo por página)
+     ============================================================ -->
+<div class="cs-confirm-overlay" id="csConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="csConfirmTitle">
+    <div class="cs-confirm-modal">
+        <div class="cs-confirm-header">
+            <div class="cs-confirm-icon"><i class="fas fa-exclamation-triangle" id="csConfirmIcon"></i></div>
+            <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
+        </div>
+        <div class="cs-confirm-body" id="csConfirmBody">¿Estás seguro?</div>
+        <div class="cs-confirm-actions">
+            <button type="button" class="cs-confirm-btn cs-confirm-btn-cancel" id="csConfirmCancel">
+                <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button type="button" class="cs-confirm-btn cs-confirm-btn-danger" id="csConfirmAccept">
+                <i class="fas fa-trash-alt"></i> <span id="csConfirmAcceptText">Eliminar</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    // Referencias
+    const overlay     = document.getElementById('csConfirmOverlay');
+    const titleEl     = document.getElementById('csConfirmTitle');
+    const bodyEl      = document.getElementById('csConfirmBody');
+    const iconEl      = document.getElementById('csConfirmIcon');
+    const acceptText  = document.getElementById('csConfirmAcceptText');
+    const btnCancel   = document.getElementById('csConfirmCancel');
+    const btnAccept   = document.getElementById('csConfirmAccept');
+
+    if (!overlay) return;
+
+    let pendingForm = null;   // form a enviar si se confirma
+
+    function openModal(opts) {
+        titleEl.textContent = opts.title || 'Confirmar acción';
+        bodyEl.innerHTML    = opts.message || '¿Estás seguro?';
+        acceptText.textContent = opts.confirmText || 'Eliminar';
+        // El ícono se cambia aquí; si no se especifica, usa triángulo de advertencia
+        if (iconEl) iconEl.className = opts.icon || 'fas fa-exclamation-triangle';
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        pendingForm = null;
+    }
+
+    // Aceptar → enviar el form pendiente
+    btnAccept.addEventListener('click', function() {
+        if (!pendingForm) return closeModal();
+        // Marca el form como confirmado y lo envía sin disparar el submit de nuevo
+        pendingForm.dataset.csConfirmed = '1';
+        const form = pendingForm;
+        closeModal();
+        // Usamos requestSubmit si está disponible (respeta validaciones) o submit directo
+        if (typeof form.requestSubmit === 'function') {
+            form.requestSubmit();
+        } else {
+            form.submit();
+        }
+    });
+
+    btnCancel.addEventListener('click', closeModal);
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closeModal();
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
+    });
+
+    // Interceptar TODOS los formularios con [data-cs-confirm]
+    document.querySelectorAll('form[data-cs-confirm]').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            // Si ya fue confirmado, dejamos pasar el submit
+            if (form.dataset.csConfirmed === '1') {
+                delete form.dataset.csConfirmed;
+                return;
+            }
+            e.preventDefault();
+            pendingForm = form;
+            openModal({
+                title:       form.dataset.csConfirmTitle   || 'Confirmar acción',
+                message:     form.dataset.csConfirmMessage || '¿Estás seguro?',
+                confirmText: form.dataset.csConfirmText    || 'Eliminar',
+                icon:        form.dataset.csConfirmIcon    || 'fas fa-exclamation-triangle'
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}

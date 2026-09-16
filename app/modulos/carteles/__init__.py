@@ -10,21 +10,29 @@ carteles_bp = Blueprint('carteles', __name__, url_prefix='/carteles', template_f
 # ==========================================
 # CONSTANTES Y MATERIALES
 # ==========================================
+# Estos son los valores por defecto que se autocompletan cuando el usuario
+# selecciona un material, pero los precios son EDITABLES en el formulario.
 MATERIALES = {
-    'Vinilo': {'impresion': 10, 'merma': 4, 'nombre': 'Vinilo'},
-    'Lona': {'impresion': 12, 'merma': 5, 'nombre': 'Lona'},
-    'Lienzo': {'impresion': 20, 'merma': 5, 'nombre': 'Lienzo'},
-    'Papel fotográfico': {'impresion': 16, 'merma': 5, 'nombre': 'Papel fotográfico'},
-    'Wallpaper': {'impresion': 12, 'merma': 5, 'nombre': 'Wallpaper'},
+    'Vinilo':             {'impresion': 10, 'merma': 4, 'nombre': 'Vinilo'},
+    'Vinilo transparente':{'impresion': 14, 'merma': 5, 'nombre': 'Vinilo transparente'},
+    'Vinilo backlit':     {'impresion': 15, 'merma': 5, 'nombre': 'Vinilo backlit'},
+    'Lona':               {'impresion': 12, 'merma': 5, 'nombre': 'Lona'},
+    'Lienzo':             {'impresion': 20, 'merma': 5, 'nombre': 'Lienzo'},
+    'Papel fotográfico':  {'impresion': 16, 'merma': 5, 'nombre': 'Papel fotográfico'},
+    'Wallpaper':          {'impresion': 12, 'merma': 5, 'nombre': 'Wallpaper'},
 }
 
 ANCHO_ROLLO_DEFAULT = 134.0
-ANCHO_ROLLO_OPCIONES = [134.0, 100.0]
 
 # ==========================================
 # FUNCIÓN PARA CALCULAR DISTRIBUCIÓN AUTOMÁTICA
 # ==========================================
-def calcular_distribucion(ancho_cm, alto_cm, cantidad, ancho_rollo, girar=False):
+def calcular_distribucion(ancho_cm, alto_cm, cantidad, ancho_rollo_cm, girar=False):
+    """
+    Calcula la distribución óptima de las piezas en el rollo.
+    - ancho_rollo_cm: ancho del rollo en cm (puede ser cualquier valor > 0)
+    Retorna: (cols, filas, alto_total_cm, ancho_efectivo_cm, alto_efectivo_cm, orientacion)
+    """
     if cantidad == 1:
         if girar:
             return (1, 1, alto_cm, alto_cm, ancho_cm, 'girada_manual')
@@ -42,7 +50,11 @@ def calcular_distribucion(ancho_cm, alto_cm, cantidad, ancho_rollo, girar=False)
             ancho_pieza = alto_cm
             alto_pieza = ancho_cm
 
-        max_cols = int(ancho_rollo // ancho_pieza)
+        # Verificar que la pieza cabe a lo ancho
+        if ancho_pieza > ancho_rollo_cm:
+            continue  # No cabe, saltar esta orientación
+
+        max_cols = int(ancho_rollo_cm // ancho_pieza)
         if max_cols == 0:
             max_cols = 1
 
@@ -51,10 +63,10 @@ def calcular_distribucion(ancho_cm, alto_cm, cantidad, ancho_rollo, girar=False)
         for cols in range(max_cols, 0, -1):
             filas = math.ceil(cantidad / cols)
             alto_total = filas * alto_pieza
-            area_rollo = ancho_rollo * alto_total
+            area_rollo = ancho_rollo_cm * alto_total
             area_piezas = cantidad * ancho_pieza * alto_pieza
             merma = area_rollo - area_piezas
-            if alto_total < mejor_alto or (alto_total == mejor_alto and merma < mejor_opcion['merma'] if mejor_opcion else True):
+            if (mejor_opcion is None) or (alto_total < mejor_alto) or (alto_total == mejor_alto and merma < mejor_opcion['merma']):
                 mejor_opcion = {
                     'cols': cols,
                     'filas': filas,
@@ -66,7 +78,12 @@ def calcular_distribucion(ancho_cm, alto_cm, cantidad, ancho_rollo, girar=False)
                 }
                 mejor_alto = alto_total
 
-        opciones.append(mejor_opcion)
+        if mejor_opcion:
+            opciones.append(mejor_opcion)
+
+    if not opciones:
+        # Ninguna orientación cabe — devolver algo para que el frontend muestre error
+        return (0, 0, 0, ancho_cm, alto_cm, 'error')
 
     mejor = min(opciones, key=lambda x: (x['alto_total'], x['merma']))
     return (mejor['cols'], mejor['filas'], mejor['alto_total'],
@@ -85,6 +102,8 @@ def index():
     cantidad = 1
     material = 'Vinilo'
     ancho_rollo = ANCHO_ROLLO_DEFAULT
+    precio_impresion = MATERIALES['Vinilo']['impresion']
+    precio_merma = MATERIALES['Vinilo']['merma']
     girar_checked = ""
     simData = {
         'anchoCm': 0,
@@ -102,7 +121,9 @@ def index():
         'filas': 1,
         'orientacion': 'normal',
         'anchoEfectivo': 0,
-        'altoEfectivo': 0
+        'altoEfectivo': 0,
+        'precioImpresion': MATERIALES['Vinilo']['impresion'],
+        'precioMerma': MATERIALES['Vinilo']['merma'],
     }
 
     if request.method == 'POST':
@@ -111,18 +132,38 @@ def index():
             alto_cm = float(request.form['alto'])
             cantidad = int(request.form.get('cantidad', 1))
             material = request.form.get('material', 'Vinilo')
-            ancho_rollo = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFAULT))
+
+            # --- ancho_rollo editable manualmente ---
+            try:
+                ancho_rollo = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFAULT))
+            except ValueError:
+                raise ValueError("Ancho del rollo inválido.")
+            if ancho_rollo <= 0:
+                raise ValueError("El ancho del rollo debe ser mayor a 0.")
+
+            # --- precios editables manualmente ---
+            try:
+                precio_impresion = float(request.form.get('precio_impresion', MATERIALES.get(material, {}).get('impresion', 10)))
+            except ValueError:
+                precio_impresion = MATERIALES.get(material, {}).get('impresion', 10)
+            try:
+                precio_merma = float(request.form.get('precio_merma', MATERIALES.get(material, {}).get('merma', 4)))
+            except ValueError:
+                precio_merma = MATERIALES.get(material, {}).get('merma', 4)
+
+            if precio_impresion < 0:
+                raise ValueError("El precio de impresión no puede ser negativo.")
+            if precio_merma < 0:
+                raise ValueError("El precio de merma no puede ser negativo.")
+
             girar = request.form.get('girar') == '1'
 
             if ancho_cm <= 0 or alto_cm <= 0:
                 raise ValueError("Las dimensiones deben ser positivas.")
             if cantidad < 1:
                 raise ValueError("La cantidad debe ser al menos 1.")
-            if material not in MATERIALES:
-                raise ValueError("Material no válido.")
-            if ancho_rollo not in ANCHO_ROLLO_OPCIONES:
-                raise ValueError("Ancho de rollo no válido.")
 
+            # Calcular distribución (el ancho del rollo es en cm)
             if cantidad > 1:
                 cols, filas, alto_total, ancho_efectivo, alto_efectivo, orientacion = calcular_distribucion(
                     ancho_cm, alto_cm, cantidad, ancho_rollo, girar
@@ -140,13 +181,19 @@ def index():
                 filas = 1
                 alto_total = alto_efectivo
 
+            if orientacion == 'error':
+                raise ValueError(
+                    f"El cartel de {ancho_cm:.1f}×{alto_cm:.1f} cm no cabe en el rollo "
+                    f"de {ancho_rollo:.1f} cm, ni siquiera girado."
+                )
+
+            # Áreas
             area_pieza_m2 = (ancho_cm * alto_cm) / 10000.0
             area_total_m2 = area_pieza_m2 * cantidad
             area_rollo_m2 = (ancho_rollo * alto_total) / 10000.0
-            merma_m2 = area_rollo_m2 - area_total_m2
+            merma_m2 = max(0.0, area_rollo_m2 - area_total_m2)
 
-            precio_impresion = MATERIALES[material]['impresion']
-            precio_merma = MATERIALES[material]['merma']
+            # Costos
             costo_impresion = area_total_m2 * precio_impresion
             costo_merma = merma_m2 * precio_merma
             costo_total = costo_impresion + costo_merma
@@ -157,8 +204,8 @@ def index():
             <strong>📏 Alto total utilizado:</strong> {alto_total:.1f} cm<br>
             <strong>📏 Área total impresa:</strong> {area_total_m2:.4f} m²<br>
             <strong>🗑️ Merma total:</strong> {merma_m2:.4f} m²<br>
-            <strong>💵 Costo impresión ({material}):</strong> ${costo_impresion:.2f} USD<br>
-            <strong>💵 Costo merma:</strong> ${costo_merma:.2f} USD<br>
+            <strong>💵 Costo impresión ({material}):</strong> ${costo_impresion:.2f} USD (${precio_impresion:.2f}/m²)<br>
+            <strong>💵 Costo merma:</strong> ${costo_merma:.2f} USD (${precio_merma:.2f}/m²)<br>
             <strong>💰 Costo total:</strong> ${costo_total:.2f} USD
             """
 
@@ -182,7 +229,9 @@ def index():
                 'filas': filas,
                 'orientacion': orientacion,
                 'anchoEfectivo': ancho_efectivo,
-                'altoEfectivo': alto_efectivo
+                'altoEfectivo': alto_efectivo,
+                'precioImpresion': precio_impresion,
+                'precioMerma': precio_merma,
             }
 
             guardar_historial(current_user.id, ancho_cm, alto_cm, material, girar, area_total_m2, costo_total, cantidad)
@@ -191,7 +240,22 @@ def index():
             error = f"❌ {e}"
             ancho = request.form.get('ancho', '')
             alto = request.form.get('alto', '')
-            cantidad = int(request.form.get('cantidad', 1))
+            try:
+                cantidad = int(request.form.get('cantidad', 1))
+            except ValueError:
+                cantidad = 1
+            try:
+                ancho_rollo = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFAULT))
+            except ValueError:
+                ancho_rollo = ANCHO_ROLLO_DEFAULT
+            try:
+                precio_impresion = float(request.form.get('precio_impresion', MATERIALES.get(material, {}).get('impresion', 10)))
+            except ValueError:
+                precio_impresion = MATERIALES.get(material, {}).get('impresion', 10)
+            try:
+                precio_merma = float(request.form.get('precio_merma', MATERIALES.get(material, {}).get('merma', 4)))
+            except ValueError:
+                precio_merma = MATERIALES.get(material, {}).get('merma', 4)
             girar_checked = "checked" if request.form.get('girar') == '1' else ""
 
     return render_template('carteles.html',
@@ -202,6 +266,8 @@ def index():
                            cantidad=cantidad,
                            material=material,
                            ancho_rollo=ancho_rollo,
+                           precio_impresion=precio_impresion,
+                           precio_merma=precio_merma,
                            girar_checked=girar_checked,
                            materiales=MATERIALES,
                            simData=simData)
@@ -217,17 +283,34 @@ def calcular_ajax():
         alto_cm = float(request.form.get('alto', 0))
         cantidad = int(request.form.get('cantidad', 1))
         material = request.form.get('material', 'Vinilo')
-        ancho_rollo = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFAULT))
+
+        try:
+            ancho_rollo = float(request.form.get('ancho_rollo', ANCHO_ROLLO_DEFAULT))
+        except ValueError:
+            return jsonify({'error': 'Ancho del rollo inválido.'})
+        if ancho_rollo <= 0:
+            return jsonify({'error': 'El ancho del rollo debe ser mayor a 0.'})
+
+        try:
+            precio_impresion = float(request.form.get('precio_impresion', MATERIALES.get(material, {}).get('impresion', 10)))
+        except ValueError:
+            precio_impresion = MATERIALES.get(material, {}).get('impresion', 10)
+        try:
+            precio_merma = float(request.form.get('precio_merma', MATERIALES.get(material, {}).get('merma', 4)))
+        except ValueError:
+            precio_merma = MATERIALES.get(material, {}).get('merma', 4)
+
+        if precio_impresion < 0:
+            return jsonify({'error': 'El precio de impresión no puede ser negativo.'})
+        if precio_merma < 0:
+            return jsonify({'error': 'El precio de merma no puede ser negativo.'})
+
         girar = request.form.get('girar') == '1'
 
         if ancho_cm <= 0 or alto_cm <= 0:
             return jsonify({'error': 'Las dimensiones deben ser positivas.'})
         if cantidad < 1:
             return jsonify({'error': 'La cantidad debe ser al menos 1.'})
-        if material not in MATERIALES:
-            return jsonify({'error': 'Material no válido.'})
-        if ancho_rollo not in ANCHO_ROLLO_OPCIONES:
-            return jsonify({'error': 'Ancho de rollo no válido.'})
 
         if cantidad > 1:
             cols, filas, alto_total, ancho_efectivo, alto_efectivo, orientacion = calcular_distribucion(
@@ -246,13 +329,14 @@ def calcular_ajax():
             filas = 1
             alto_total = alto_efectivo
 
+        if orientacion == 'error':
+            return jsonify({'error': f'El cartel de {ancho_cm:.1f}×{alto_cm:.1f} cm no cabe en el rollo de {ancho_rollo:.1f} cm, ni siquiera girado.'})
+
         area_pieza_m2 = (ancho_cm * alto_cm) / 10000.0
         area_total_m2 = area_pieza_m2 * cantidad
         area_rollo_m2 = (ancho_rollo * alto_total) / 10000.0
-        merma_m2 = area_rollo_m2 - area_total_m2
+        merma_m2 = max(0.0, area_rollo_m2 - area_total_m2)
 
-        precio_impresion = MATERIALES[material]['impresion']
-        precio_merma = MATERIALES[material]['merma']
         costo_impresion = area_total_m2 * precio_impresion
         costo_merma = merma_m2 * precio_merma
         costo_total = costo_impresion + costo_merma
@@ -280,7 +364,9 @@ def calcular_ajax():
             'filas': filas,
             'orientacion': orientacion,
             'anchoEfectivo': ancho_efectivo,
-            'altoEfectivo': alto_efectivo
+            'altoEfectivo': alto_efectivo,
+            'precioImpresion': precio_impresion,
+            'precioMerma': precio_merma,
         }
 
         guardar_historial(current_user.id, ancho_cm, alto_cm, material, girar, area_total_m2, costo_total, cantidad)

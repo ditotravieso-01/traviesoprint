@@ -138,13 +138,11 @@
     }
     .lineas-table .btn-eliminar:hover { background: #b91c1c; }
 
-    /* Estilo para el guion en cartel */
     .cartel-dash {
         display: none; text-align: center;
         color: #8e8e93; font-weight: bold; font-size: 16px;
     }
 
-    /* ===== ETIQUETAS ===== */
     .etiquetas-params-row { background: #f8f8fc; }
     .etiquetas-params {
         padding: 12px 14px; margin: 4px 0;
@@ -158,7 +156,6 @@
     .etiquetas-params .form-group input,
     .etiquetas-params .form-group select { font-size: 13px; padding: 4px 8px; }
 
-    /* ===== CARTELES ===== */
     .carteles-params-row { background: #f0f9ff; }
     .carteles-params {
         padding: 12px 14px; margin: 4px 0;
@@ -241,7 +238,7 @@
     .cs-alert-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
     .cs-alert-btn { padding: 9px 26px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; background: #1c1c1e; color: white; min-width: 100px; }
     .cs-alert-btn:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
-        /* ===== MODAL DE CONFIRMACIÓN ===== */
+
     .cs-confirm-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 10001; justify-content: center; align-items: center; padding: 16px; animation: csAlertFadeIn 0.2s ease; }
     .cs-confirm-overlay.active { display: flex; }
     .cs-confirm-box { background: white; border-radius: 18px; padding: 24px 22px 20px; max-width: 420px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.2); animation: csAlertPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); font-family: 'Inter', sans-serif; text-align: center; box-sizing: border-box; }
@@ -412,7 +409,7 @@
             <div class="form-grid-2">
                 <div class="form-group">
                     <label for="order_num">Orden</label>
-                    <input type="text" id="order_num" name="order_num" value="{{ form_data.order_num if form_data else '' }}" placeholder="Opcional, se asigna al entrar al sistema">
+                    <input type="text" id="order_num" name="order_num" value="{{ (form_data.order_num or '') if form_data else '' }}" placeholder="Opcional, se asigna al entrar al sistema">
                 </div>
                 <div class="form-group">
                     <label for="date">Fecha de emisión</label>
@@ -423,7 +420,7 @@
                 <div class="form-group">
                     <label for="client_name">Cliente</label>
                     <div class="client-select-wrapper">
-                        <input type="hidden" id="client_id" name="client_id" value="{{ form_data.client_id if form_data else '' }}">
+                        <input type="hidden" id="client_id" name="client_id" value="{{ (form_data.client_id or '') if form_data else '' }}">
                         <input type="text" id="client_name" name="client_name" value="{{ form_data.client_nombre if form_data else '' }}" placeholder="Buscar o escribir nombre..." required autocomplete="off" list="clientesList">
                         <datalist id="clientesList">
                             {% for c in clients_list %}
@@ -631,7 +628,6 @@
                                                 <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
                                                 <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
                                                 <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
-                                                <label><input type="checkbox" class="mostrar_preview_etiqueta_edit" name="mostrar_preview_etiqueta_edit[]" value="1" checked>Mostrar vista previa</label>
                                             </div>
 
                                             <div class="form-group">
@@ -708,10 +704,9 @@
                                                 <label><input type="checkbox" class="girar_cartel_edit" name="girar_cartel_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
                                                 <label><input type="checkbox" class="auto_girar_cartel_edit" name="auto_girar_cartel_edit[]" value="1" {% if not params or params.auto_girar is not defined or params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
                                                 <label><input type="checkbox" class="centrar_cartel_edit" name="centrar_cartel_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
-                                                <label><input type="checkbox" class="mostrar_preview_cartel_edit" name="mostrar_preview_cartel_edit[]" value="1" checked>Mostrar vista previa</label>
                                             </div>
 
-                                            <div class="form-group preview-block-cartel">
+                                            <div class="form-group">
                                                 <label>Vista previa</label>
                                                 <div class="preview-canvas-wrap">
                                                     <canvas id="preview-cartel-{{ paramsId }}" width="500" height="220"></canvas>
@@ -728,9 +723,9 @@
                                                 <div class="item"><span class="label">Área piezas</span><span class="value area_piezas_cartel_display_edit">{{ params.area_piezas_m2|round(2) if params else '—' }} m²</span></div>
                                                 <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_cartel_display_edit">{{ params.area_rollo_m2|round(2) if params else '—' }} m²</span><span class="hint largo_total_cartel_display_edit">{{ params.largo_total_m|round(2) if params else '—' }} m</span></div>
                                                 <div class="item"><span class="label">Costo impresión</span><span class="value costo_impresion_cartel_display_edit">${{ params.costo_impresion|round(2) if params else '—' }}</span></div>
-                                                <div class="item"><span class="label">Costo merma</span><span class="value costo_merma_cartel_display_edit merma">${{ params.costo_merma|round(2) if params else '—' }}</span></div>
+                                                <div class="item"><span class="label">Sobrante facturado</span><span class="value costo_merma_cartel_display_edit merma">${{ params.costo_merma|round(2) if params else '—' }}</span><span class="hint sobrante_m2_cartel_display_edit">{{ params.merma_facturada_m2|round(2) if params else '—' }} m²</span></div>
                                                 <div class="item"><span class="label">Costo total</span><span class="value costo_total_cartel_display_edit">${{ params.costo_estimado|round(2) if params else '—' }}</span></div>
-                                                <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_cartel_display_edit merma">{{ params.merma_operativa_pct|round(1) if params else '—' }}%</span><span class="hint merma_m2_cartel_display_edit">{{ params.merma_operativa_m2|round(2) if params else '—' }} m²</span></div>
+                                                <div class="item"><span class="label">Merma operativa (gap)</span><span class="value merma_pct_cartel_display_edit merma">{{ params.merma_operativa_pct|round(1) if params else '—' }}%</span><span class="hint merma_m2_cartel_display_edit">{{ params.merma_operativa_m2|round(3) if params else '—' }} m²</span></div>
                                             </div>
                                             <div style="margin-top:4px;">
                                                 <button type="button" class="btn btn-sm btn-outline ocultar-carteles" data-params-id="{{ paramsId }}">Ocultar</button>
@@ -863,6 +858,12 @@ function csAlertClose() {
     const overlay = document.getElementById('csAlertOverlay');
     if (overlay) overlay.classList.remove('active');
 }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') csAlertClose(); });
+document.addEventListener('click', e => {
+    const overlay = document.getElementById('csAlertOverlay');
+    if (overlay && e.target === overlay) csAlertClose();
+});
+
 // =============================================
 // CONFIRMACIÓN PERSONALIZADA
 // =============================================
@@ -900,11 +901,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (e.target === this) csConfirmClose();
         });
     }
-});
-document.addEventListener('keydown', e => { if (e.key === 'Escape') csAlertClose(); });
-document.addEventListener('click', e => {
-    const overlay = document.getElementById('csAlertOverlay');
-    if (overlay && e.target === overlay) csAlertClose();
 });
 
 // =============================================
@@ -1064,7 +1060,7 @@ function actualizarPlaceholderCantidad(unidadSelect) {
 }
 
 // =============================================
-// DIBUJAR PREVIEW ETIQUETAS (POR PAÑOS)
+// DIBUJAR PREVIEW ETIQUETAS
 // =============================================
 function dibujarPreviewEtiquetas(canvasId, data) {
     const canvas = document.getElementById(canvasId);
@@ -1109,14 +1105,12 @@ function dibujarPreviewEtiquetas(canvasId, data) {
         const offsetX = pad + g * (cell_w + gapBetween) + (cell_w - paño_w_px) / 2;
         const offsetY = pad + topReserve + (avail_h - paño_h_px) / 2;
 
-        // Fondo rollo (borde)
         ctx.fillStyle = 'rgba(0,0,0,0.06)';
         ctx.fillRect(offsetX, offsetY, paño_w_px, paño_h_px);
         ctx.strokeStyle = '#8e8e93';
         ctx.lineWidth = 1;
         ctx.strokeRect(offsetX, offsetY, paño_w_px, paño_h_px);
 
-        // Área útil y medidas
         const ancho_util_px = data.ancho_util * scale;
         const impresion_h_px = filasGrupo * data.alto_cell * scale;
         const gap_px = data.gap * scale;
@@ -1131,7 +1125,6 @@ function dibujarPreviewEtiquetas(canvasId, data) {
             offsetX_piezas = offsetX + (ancho_util_px - total_pieces_w_px) / 2;
         }
 
-        // Dibujar la cuadrícula de etiquetas del paño
         for (let f = 0; f < filasGrupo; f++) {
             for (let c = 0; c < cols; c++) {
                 const x = offsetX_piezas + c * ancho_cell_px;
@@ -1144,7 +1137,6 @@ function dibujarPreviewEtiquetas(canvasId, data) {
             }
         }
 
-        // Gap / cut mark
         if (gap_px > 0.5) {
             ctx.fillStyle = 'rgba(245,158,11,0.35)';
             ctx.fillRect(offsetX, offsetY + impresion_h_px, paño_w_px, gap_px);
@@ -1154,30 +1146,26 @@ function dibujarPreviewEtiquetas(canvasId, data) {
             ctx.setLineDash([]);
         }
 
-        // Etiqueta superior: ×N o Paño N
         ctx.fillStyle = '#1c1c1e';
         ctx.font = 'bold 11px Inter, sans-serif';
         ctx.textAlign = 'center';
         const label = grupo.count > 1 ? `×${grupo.count}` : `Paño ${g + 1}`;
         ctx.fillText(label, offsetX + paño_w_px / 2, offsetY - 6);
 
-        // Info interna del paño
         ctx.fillStyle = '#1c1c1e';
         ctx.font = 'bold 9px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`${cols}×${filasGrupo}`, offsetX_piezas + 4, offsetY + 11);
 
-        // Ancho del rollo
         ctx.fillStyle = '#8e8e93';
         ctx.font = '8px Inter, sans-serif';
         ctx.textAlign = 'right';
         ctx.fillText(`${data.ancho_real.toFixed(2)} m`, offsetX + paño_w_px - 3, offsetY + 10);
     });
-}1
-
+}
 
 // =============================================
-// DIBUJAR PREVIEW CARTEL (CORREGIDO)
+// DIBUJAR PREVIEW CARTEL
 // =============================================
 function dibujarPreviewCartel(canvasId, simData) {
     const canvas = document.getElementById(canvasId);
@@ -1215,28 +1203,25 @@ function dibujarPreviewCartel(canvasId, simData) {
     const offsetX = (W - roll_w_px) / 2;
     const offsetY = (H - roll_h_px) / 2;
 
-    // Fondo del rollo (borde)
     ctx.fillStyle = 'rgba(0,0,0,0.06)';
     ctx.fillRect(offsetX, offsetY, roll_w_px, roll_h_px);
     ctx.strokeStyle = '#8e8e93';
     ctx.lineWidth = 1;
     ctx.strokeRect(offsetX, offsetY, roll_w_px, roll_h_px);
 
-    // Zona imprimible
     const ancho_util_px = ancho_util_m * scale;
     const impresion_h_px = impresion_h_m * scale;
 
-    // Piezas (grid)
     const cols = simData.cols || 1;
     const filas = simData.filas || 1;
     const cantidad = simData.cantidad || 0;
-    
+
     const piece_w_m = (simData.ancho_efectivo_cm || simData.ancho_cm) / 100.0;
     const piece_h_m = (simData.alto_efectivo_cm || simData.alto_cm) / 100.0;
-    
+
     const ancho_pieza_px = piece_w_m * scale;
     const alto_pieza_px = piece_h_m * scale;
-    
+
     const total_pieces_width_px = cols * ancho_pieza_px;
     let offsetX_piezas = offsetX;
     if (centrar) {
@@ -1259,7 +1244,6 @@ function dibujarPreviewCartel(canvasId, simData) {
         if (count >= cantidad) break;
     }
 
-    // Gap final (6.5 cm)
     const gap_px = gap_m * scale;
     ctx.fillStyle = 'rgba(245,158,11,0.35)';
     ctx.fillRect(offsetX, offsetY + impresion_h_px, roll_w_px, gap_px);
@@ -1268,7 +1252,6 @@ function dibujarPreviewCartel(canvasId, simData) {
     ctx.strokeRect(offsetX, offsetY + impresion_h_px, roll_w_px, gap_px);
     ctx.setLineDash([]);
 
-    // Etiquetas informativas
     ctx.fillStyle = '#1c1c1e';
     ctx.font = 'bold 10px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -1280,7 +1263,6 @@ function dibujarPreviewCartel(canvasId, simData) {
         ctx.fillText('Gap 6.5cm', offsetX + 4, offsetY + impresion_h_px + gap_px - 3);
     }
 
-    // Indicadores de ancho
     ctx.fillStyle = '#8e8e93';
     ctx.font = '9px Inter, sans-serif';
     ctx.textAlign = 'right';
@@ -1398,7 +1380,6 @@ function agregarLinea() {
     `;
     tbody.appendChild(row);
 
-    // Bloque ETIQUETAS
     const paramsRow = document.createElement('tr');
     paramsRow.className = 'etiquetas-params-row';
     paramsRow.dataset.paramsId = paramsId;
@@ -1468,7 +1449,6 @@ function agregarLinea() {
     `;
     tbody.appendChild(paramsRow);
 
-    // Bloque CARTELES
     const cartelesRow = document.createElement('tr');
     cartelesRow.className = 'carteles-params-row';
     cartelesRow.dataset.paramsId = paramsId;
@@ -1522,10 +1502,9 @@ function agregarLinea() {
                     <label><input type="checkbox" class="girar_cartel" name="girar_cartel[]" value="1"> Girar 90° (manual)</label>
                     <label><input type="checkbox" class="auto_girar_cartel" name="auto_girar_cartel[]" value="1" checked>Modo Inteligente</label>
                     <label><input type="checkbox" class="centrar_cartel" name="centrar_cartel[]" value="1" checked>Centrar en el rollo</label>
-                    <label><input type="checkbox" class="mostrar_preview_cartel" name="mostrar_preview_cartel[]" value="1" checked>Mostrar vista previa</label>
                 </div>
 
-                <div class="form-group preview-block-cartel">
+                <div class="form-group">
                     <label>Vista previa</label>
                     <div class="preview-canvas-wrap">
                         <canvas id="preview-cartel-${paramsId}" width="500" height="220"></canvas>
@@ -1542,9 +1521,9 @@ function agregarLinea() {
                     <div class="item"><span class="label">Área piezas</span><span class="value area_piezas_cartel_display">—</span></div>
                     <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_cartel_display">—</span><span class="hint largo_total_cartel_display">—</span></div>
                     <div class="item"><span class="label">Costo impresión</span><span class="value costo_impresion_cartel_display">—</span></div>
-                    <div class="item"><span class="label">Costo merma</span><span class="value costo_merma_cartel_display merma">—</span></div>
+                    <div class="item"><span class="label">Costo merma</span><span class="value costo_merma_cartel_display merma">—</span><span class="hint sobrante_m2_cartel_display">—</span></div>
                     <div class="item"><span class="label">Costo total</span><span class="value costo_total_cartel_display">—</span></div>
-                    <div class="item"><span class="label">Merma operativa</span><span class="value merma_pct_cartel_display merma">—</span><span class="hint merma_m2_cartel_display">—</span></div>
+                    <div class="item"><span class="label">Merma operativa (gap)</span><span class="value merma_pct_cartel_display merma">—</span><span class="hint merma_m2_cartel_display">—</span></div>
                 </div>
                 <div style="margin-top:4px;">
                     <button type="button" class="btn btn-sm btn-outline ocultar-carteles" data-params-id="${paramsId}">Ocultar</button>
@@ -1554,9 +1533,6 @@ function agregarLinea() {
     `;
     tbody.appendChild(cartelesRow);
 
-    // ============================
-    // SETUP EVENTOS
-    // ============================
     const proyectoSelect = row.querySelector('.proyecto-linea');
     const cantidadInput = row.querySelector('input[name="cantidades[]"]');
     const unidadSelect = row.querySelector('.unidad-select');
@@ -1569,7 +1545,6 @@ function agregarLinea() {
     const dashCantidad = tdCantidad.querySelector('.cartel-dash');
     const dashUnidad = tdUnidad.querySelector('.cartel-dash');
 
-    // Etiquetas refs
     const anchoInput = paramsDiv.querySelector('.ancho_etiqueta');
     const altoInput = paramsDiv.querySelector('.alto_etiqueta');
     const precioInput = paramsDiv.querySelector('.precio_etiqueta');
@@ -1577,10 +1552,8 @@ function agregarLinea() {
     const mesaCheck = paramsDiv.querySelector('.mesa_etiqueta');
     const girarCheck = paramsDiv.querySelector('.girar_etiqueta');
     const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta');
-    const mostrarPreviewEtiqCheck = paramsDiv.querySelector('.mostrar_preview_etiqueta');
-    const previewBlockEtiq = paramsDiv.querySelector('.preview-block-etiqueta');
+    const centrarEtiqCheck = paramsDiv.querySelector('.centrar_etiqueta');
 
-    // Cartel refs
     const anchoCartel = cartelParamsDiv.querySelector('.ancho_cartel');
     const altoCartel = cartelParamsDiv.querySelector('.alto_cartel');
     const cantidadCartel = cartelParamsDiv.querySelector('.cantidad_cartel');
@@ -1591,8 +1564,6 @@ function agregarLinea() {
     const girarCartel = cartelParamsDiv.querySelector('.girar_cartel');
     const autoGirarCartel = cartelParamsDiv.querySelector('.auto_girar_cartel');
     const centrarCartel = cartelParamsDiv.querySelector('.centrar_cartel');
-    const mostrarPreviewCartelCheck = cartelParamsDiv.querySelector('.mostrar_preview_cartel');
-    const previewBlockCartel = cartelParamsDiv.querySelector('.preview-block-cartel');
 
     function triggerCalculo() {
         if (proyectoSelect.value === 'etiquetas' && paramsRow.style.display !== 'none') {
@@ -1605,7 +1576,6 @@ function agregarLinea() {
         }
     }
 
-    // Etiquetas events
     [cantidadInput, anchoInput, altoInput, precioInput].forEach(el => {
         el.addEventListener('input', triggerCalculo);
         el.addEventListener('change', triggerCalculo);
@@ -1620,18 +1590,10 @@ function agregarLinea() {
         triggerCartel();
     });
     [mesaCheck, girarCheck, autoGirarCheck].forEach(el => el.addEventListener('change', triggerCalculo));
-    const centrarEtiqCheck = paramsDiv.querySelector('.centrar_etiqueta');
     if (centrarEtiqCheck) centrarEtiqCheck.addEventListener('change', triggerCalculo);
     anchoUtilOverride.addEventListener('input', function() { validarAnchoUtil(this); triggerCalculo(); });
     anchoUtilOverride.addEventListener('change', function() { validarAnchoUtil(this); triggerCalculo(); });
-    if (mostrarPreviewEtiqCheck && previewBlockEtiq) {
-        mostrarPreviewEtiqCheck.addEventListener('change', function() {
-            previewBlockEtiq.style.display = this.checked ? 'block' : 'none';
-        });
-        previewBlockEtiq.style.display = mostrarPreviewEtiqCheck.checked ? 'block' : 'none';
-    }
 
-    // Cartel events
     [anchoCartel, altoCartel, cantidadCartel, anchoUtilCartel, precioImpresionCartel, precioMermaCartel].forEach(el => {
         el.addEventListener('input', triggerCartel);
         el.addEventListener('change', triggerCartel);
@@ -1645,12 +1607,6 @@ function agregarLinea() {
         triggerCartel();
     });
     if (centrarCartel) centrarCartel.addEventListener('change', triggerCartel);
-    if (mostrarPreviewCartelCheck && previewBlockCartel) {
-        mostrarPreviewCartelCheck.addEventListener('change', function() {
-            previewBlockCartel.style.display = this.checked ? 'block' : 'none';
-        });
-        previewBlockCartel.style.display = mostrarPreviewCartelCheck.checked ? 'block' : 'none';
-    }
 
     if (tipoMaterialCartel) {
         tipoMaterialCartel.addEventListener('change', function() {
@@ -1663,7 +1619,6 @@ function agregarLinea() {
         });
     }
 
-    // Ocultar bloques
     paramsRow.querySelector('.ocultar-etiquetas').addEventListener('click', e => {
         e.preventDefault(); e.stopPropagation();
         paramsRow.style.display = 'none';
@@ -1679,7 +1634,6 @@ function agregarLinea() {
         toggleBtn.textContent = 'Ver';
     });
 
-    // Mostrar / ocultar
     function mostrarEtiquetas() {
         paramsRow.style.display = 'table-row';
         paramsDiv.classList.add('visible');
@@ -1794,7 +1748,6 @@ function marcarEliminarLinea(archivoId) {
 // DELEGACIÓN + INICIALIZACIÓN (edit lines)
 // =============================================
 document.addEventListener('DOMContentLoaded', function() {
-    // Click handlers
     document.getElementById('cuerpoLineas').addEventListener('click', function(e) {
         const toggleBtn = e.target.closest('.toggle-etiquetas');
         if (toggleBtn) {
@@ -1916,8 +1869,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const autoGirarCheck = paramsDiv.querySelector('.auto_girar_etiqueta_edit');
         const anchoUtilOverride = paramsDiv.querySelector('.ancho_util_override_edit');
         const centrarCheck = paramsDiv.querySelector('.centrar_etiqueta_edit');
-        const mostrarPreviewCheck = paramsDiv.querySelector('.mostrar_preview_etiqueta_edit');
-        const previewBlock = paramsDiv.querySelector('.preview-block-etiqueta');
 
         const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
         if (!archivoId) return;
@@ -1933,7 +1884,7 @@ document.addEventListener('DOMContentLoaded', function() {
         [anchoInput, altoInput, precioInput].forEach(el => {
             if (el) { el.addEventListener('input', triggerCalculoEdit); el.addEventListener('change', triggerCalculoEdit); }
         });
-        if (centrarCheck) centrarCheck.addEventListener('change', triggerCalculoEdit);
+        [mesaCheck, girarCheck, autoGirarCheck].forEach(el => el && el.addEventListener('change', triggerCalculoEdit));
         if (centrarCheck) centrarCheck.addEventListener('change', triggerCalculoEdit);
         if (productoSelect) productoSelect.addEventListener('change', triggerCalculoEdit);
         if (cantidadInput) { cantidadInput.addEventListener('input', triggerCalculoEdit); cantidadInput.addEventListener('change', triggerCalculoEdit); }
@@ -1948,12 +1899,6 @@ document.addEventListener('DOMContentLoaded', function() {
             anchoUtilOverride.addEventListener('change', function() { validarAnchoUtilEdit(this); triggerCalculoEdit(); });
         }
         if (unidadSelect) actualizarPlaceholderCantidad(unidadSelect);
-        if (mostrarPreviewCheck && previewBlock) {
-            mostrarPreviewCheck.addEventListener('change', function() {
-                previewBlock.style.display = this.checked ? 'block' : 'none';
-            });
-            previewBlock.style.display = mostrarPreviewCheck.checked ? 'block' : 'none';
-        }
         if (paramsRow.style.display !== 'none') setTimeout(triggerCalculoEdit, 200);
     });
 
@@ -1975,8 +1920,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const girarInput = cartelDiv.querySelector('.girar_cartel_edit');
         const autoGirarInput = cartelDiv.querySelector('.auto_girar_cartel_edit');
         const centrarInput = cartelDiv.querySelector('.centrar_cartel_edit');
-        const mostrarPreviewCheck = cartelDiv.querySelector('.mostrar_preview_cartel_edit');
-        const previewBlock = cartelDiv.querySelector('.preview-block-cartel');
 
         function triggerCartelEdit() { calcularLineaCartel(cartelesRow); }
 
@@ -1992,12 +1935,6 @@ document.addEventListener('DOMContentLoaded', function() {
             triggerCartelEdit();
         });
         if (centrarInput) centrarInput.addEventListener('change', triggerCartelEdit);
-        if (mostrarPreviewCheck && previewBlock) {
-            mostrarPreviewCheck.addEventListener('change', function() {
-                previewBlock.style.display = this.checked ? 'block' : 'none';
-            });
-            previewBlock.style.display = mostrarPreviewCheck.checked ? 'block' : 'none';
-        }
 
         if (tipoMatSelect) {
             tipoMatSelect.addEventListener('change', function() {
@@ -2249,7 +2186,6 @@ function calcularLinea(paramsRow) {
             if (esAutogenerado) nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
 
-        // Agrupar paños idénticos consecutivos
         const pañosGrupos = [];
         for (const f of filasPorPaño) {
             const last = pañosGrupos[pañosGrupos.length - 1];
@@ -2260,7 +2196,6 @@ function calcularLinea(paramsRow) {
             }
         }
 
-        // Dibujar vista previa de etiquetas (por paños)
         dibujarPreviewEtiquetas('preview-etiqueta-' + paramsId, {
             ancho_real: anchoRollo,
             ancho_util: anchoUtilEfectivo,
@@ -2349,11 +2284,9 @@ function calcularLineaCartel(cartelesRow) {
                 if (el) el.textContent = '⚠️';
                 const dist = cartelDiv.querySelector(`.distribucion_cartel_display${prefix}`);
                 if (dist) dist.textContent = data.error;
-                
-                // Limpiar otros campos
-                ['area_piezas_cartel_display', 'material_consumido_cartel_display', 'largo_total_cartel_display', 
-                 'costo_impresion_cartel_display', 'costo_merma_cartel_display', 'costo_total_cartel_display', 
-                 'merma_pct_cartel_display', 'merma_m2_cartel_display'].forEach(cls => {
+                ['area_piezas_cartel_display', 'material_consumido_cartel_display', 'largo_total_cartel_display',
+                 'costo_impresion_cartel_display', 'costo_merma_cartel_display', 'costo_total_cartel_display',
+                 'merma_pct_cartel_display', 'merma_m2_cartel_display', 'sobrante_m2_cartel_display'].forEach(cls => {
                     const el = cartelDiv.querySelector('.' + cls + prefix);
                     if (el) el.textContent = '—';
                 });
@@ -2372,9 +2305,10 @@ function calcularLineaCartel(cartelesRow) {
             set('largo_total_cartel_display', `${s.largo_total_m.toFixed(2)} m × ${s.ancho_real.toFixed(2)} m`);
             set('costo_impresion_cartel_display', '$' + s.costo_impresion.toFixed(2));
             set('costo_merma_cartel_display', '$' + s.costo_merma.toFixed(2));
+            set('sobrante_m2_cartel_display', (s.merma_facturada_m2 || 0).toFixed(2) + ' m²');
             set('costo_total_cartel_display', '$' + s.costo_total.toFixed(2));
-            set('merma_pct_cartel_display', s.merma_pct.toFixed(1) + '%');
-            set('merma_m2_cartel_display', s.merma_operativa_m2.toFixed(2) + ' m²');
+            set('merma_pct_cartel_display', s.merma_operativa_pct.toFixed(1) + '%');
+            set('merma_m2_cartel_display', s.merma_operativa_m2.toFixed(3) + ' m²');
 
             const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');
             if (nombreInput) {
@@ -2383,7 +2317,6 @@ function calcularLineaCartel(cartelesRow) {
                 if (esAutogenerado) nombreInput.value = `Cartel ${ancho}x${alto} cm`;
             }
 
-            // Dibujar preview cartel (ID único)
             dibujarPreviewCartel('preview-cartel-' + paramsId, s);
         })
         .catch(err => {

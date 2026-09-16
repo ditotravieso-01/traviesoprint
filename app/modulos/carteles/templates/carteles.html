@@ -76,6 +76,30 @@
         background: white;
         box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
     }
+    .form-group small {
+        display: block;
+        font-size: 11px;
+        color: #8e8e93;
+        margin-top: 3px;
+        font-style: italic;
+    }
+    .input-suffix {
+        position: relative;
+    }
+    .input-suffix input {
+        padding-right: 60px;
+    }
+    .input-suffix::after {
+        content: attr(data-suffix);
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #8e8e93;
+        font-size: 13px;
+        font-weight: 500;
+        pointer-events: none;
+    }
     .checkbox-group {
         display: flex;
         flex-wrap: wrap;
@@ -116,41 +140,14 @@
         font-size: 15px;
         font-family: 'Inter', sans-serif;
     }
-    .btn-primary {
-        background: #1c1c1e;
-        color: white;
-    }
-    .btn-primary:hover {
-        background: #333;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-    }
-    .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
-    .btn-success {
-        background: #10b981;
-        color: white;
-    }
-    .btn-success:hover {
-        background: #059669;
-        box-shadow: 0 4px 12px rgba(16,185,129,0.2);
-    }
-    .btn-danger {
-        background: #dc2626;
-        color: white;
-    }
-    .btn-danger:hover {
-        background: #b91c1c;
-    }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+    .btn-danger { background: #dc2626; color: white; }
+    .btn-danger:hover { background: #b91c1c; }
     .result-box {
         background: rgba(255,255,255,0.7);
         backdrop-filter: blur(10px);
@@ -194,140 +191,68 @@
         border-color: #1a1a1a;
         background: rgba(255,255,255,0.8);
     }
-    .file-upload-area input[type="file"] {
-        display: none;
-    }
-    .file-name {
-        font-size: 13px;
-        color: #8e8e93;
-        font-style: italic;
-    }
+    .file-upload-area input[type="file"] { display: none; }
+    .file-name { font-size: 13px; color: #8e8e93; font-style: italic; }
     .history-panel {
-        position: fixed;
-        top: 0;
-        right: -420px;
-        width: 400px;
-        height: 100%;
-        background: rgba(255,255,255,0.98);
-        backdrop-filter: blur(12px);
+        position: fixed; top: 0; right: -420px; width: 400px; height: 100%;
+        background: rgba(255,255,255,0.98); backdrop-filter: blur(12px);
         box-shadow: -4px 0 30px rgba(0,0,0,0.06);
-        padding: 30px 24px;
-        transition: right 0.3s ease;
-        z-index: 1000;
-        overflow-y: auto;
-        border-left: 1px solid rgba(0,0,0,0.04);
+        padding: 30px 24px; transition: right 0.3s ease;
+        z-index: 1000; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.04);
     }
     .history-panel.open { right: 0; }
     .history-panel h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 16px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        color: #1c1c1e;
+        font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px;
+        display: flex; justify-content: space-between; align-items: center; color: #1c1c1e;
     }
     .history-panel .close-btn {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #8e8e93;
-        padding: 0 4px;
-        transition: color 0.2s;
+        background: none; border: none; font-size: 24px; cursor: pointer;
+        color: #8e8e93; padding: 0 4px; transition: color 0.2s;
     }
     .history-panel .close-btn:hover { color: #1c1c1e; }
     .history-item {
-        border-bottom: 1px solid #f0ece8;
-        padding: 12px 0;
-        font-size: 14px;
-        cursor: pointer;
-        transition: background 0.2s;
-        border-radius: 8px;
-        padding-left: 8px;
+        border-bottom: 1px solid #f0ece8; padding: 12px 8px; font-size: 14px;
+        cursor: pointer; transition: background 0.2s; border-radius: 8px;
     }
     .history-item:hover { background: rgba(0,0,0,0.02); }
-    .history-item .date {
-        color: #8e8e93;
-        font-size: 12px;
-    }
-    .history-item .result {
-        font-weight: 600;
-        color: #1c1c1e;
-    }
-
+    .history-item .date { color: #8e8e93; font-size: 12px; }
+    .history-item .result { font-weight: 600; color: #1c1c1e; }
     .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.25);
-        backdrop-filter: blur(6px);
-        display: none;
-        justify-content: center;
-        align-items: center;
-        z-index: 2000;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.25); backdrop-filter: blur(6px);
+        display: none; justify-content: center; align-items: center; z-index: 2000;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
-        background: white;
-        border-radius: 20px;
-        padding: 30px 35px;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease;
-        border: 1px solid rgba(0,0,0,0.04);
+        background: white; border-radius: 20px; padding: 30px 35px;
+        max-width: 500px; width: 90%; box-shadow: 0 30px 80px rgba(0,0,0,0.08);
+        animation: modalIn 0.3s ease; border: 1px solid rgba(0,0,0,0.04);
     }
     @keyframes modalIn {
         from { transform: scale(0.95) translateY(12px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
     .modal-box h3 {
-        font-family: 'Playfair Display', serif;
-        margin-bottom: 8px;
-        color: #1c1c1e;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
+        font-family: 'Playfair Display', serif; margin-bottom: 8px; color: #1c1c1e;
+        display: flex; justify-content: space-between; align-items: center;
     }
     .modal-box .close-modal {
-        background: none;
-        border: none;
-        font-size: 24px;
-        cursor: pointer;
-        color: #8e8e93;
-        transition: color 0.2s;
+        background: none; border: none; font-size: 24px; cursor: pointer;
+        color: #8e8e93; transition: color 0.2s;
     }
     .modal-box .close-modal:hover { color: #1c1c1e; }
     .modal-box input {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 10px;
-        font-size: 15px;
-        margin: 12px 0;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-        transition: border-color 0.2s;
+        width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7;
+        border-radius: 10px; font-size: 15px; margin: 12px 0;
+        font-family: 'Inter', sans-serif; color: #1c1c1e; transition: border-color 0.2s;
     }
     .modal-box input:focus {
-        outline: none;
-        border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+        outline: none; border-color: #1a1a1a; box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
     }
-
     .badge {
-        background: #1c1c1e;
-        color: white;
-        border-radius: 30px;
-        padding: 2px 10px;
-        font-size: 11px;
-        font-weight: 600;
-        display: inline-block;
+        background: #1c1c1e; color: white; border-radius: 30px;
+        padding: 2px 10px; font-size: 11px; font-weight: 600; display: inline-block;
     }
-
     @media (max-width: 768px) {
         .calc-container { flex-direction: column; }
         .form-grid-2 { grid-template-columns: 1fr; }
@@ -346,7 +271,7 @@
         </div>
     </div>
 
-    <!-- Variables para simulación -->
+    <!-- Variables para simulación inicial (solo si venimos de un POST) -->
     <div id="simData" style="display:none;"
         data-ancho="{{ simData.anchoCm }}"
         data-alto="{{ simData.altoCm }}"
@@ -359,7 +284,9 @@
         data-ancho-rollo="{{ simData.anchoRollo }}"
         data-cols="{{ simData.cols }}"
         data-filas="{{ simData.filas }}"
-        data-orientacion="{{ simData.orientacion }}">
+        data-orientacion="{{ simData.orientacion }}"
+        data-ancho-efectivo="{{ simData.anchoEfectivo }}"
+        data-alto-efectivo="{{ simData.altoEfectivo }}">
     </div>
 
     <div class="calc-container">
@@ -382,26 +309,47 @@
                         <label for="cantidad">Cantidad de piezas</label>
                         <input type="number" id="cantidad" name="cantidad" value="{{ cantidad or 1 }}" min="1" step="1" oninput="calcularEnVivo()">
                     </div>
+
                     <div class="form-group">
-                        <label for="ancho_rollo">Ancho del rollo</label>
-                        <select id="ancho_rollo" name="ancho_rollo" onchange="calcularEnVivo()">
-                            <option value="134.0" {% if ancho_rollo == 134.0 %}selected{% endif %}>134 cm</option>
-                            <option value="100.0" {% if ancho_rollo == 100.0 %}selected{% endif %}>100 cm</option>
-                        </select>
+                        <label for="ancho_rollo">Ancho del rollo (cm)</label>
+                        <input type="number" step="0.1" id="ancho_rollo" name="ancho_rollo"
+                               value="{{ ancho_rollo or 134.0 }}" min="1" placeholder="ej. 134"
+                               oninput="calcularEnVivo()">
+                        <small>Puedes introducir cualquier ancho. Por defecto: 134 cm (o 100 cm).</small>
                     </div>
+
                     <div class="form-group">
                         <label for="material">Material</label>
-                        <select id="material" name="material" onchange="calcularEnVivo()">
+                        <select id="material" name="material" onchange="onMaterialChange()">
                             {% for key, mat in materiales.items() %}
-                                <option value="{{ key }}" {% if material == key %}selected{% endif %}>{{ mat.nombre }} (impresión: ${{ mat.impresion }}/m², merma: ${{ mat.merma }}/m²)</option>
+                                <option value="{{ key }}" data-impresion="{{ mat.impresion }}" data-merma="{{ mat.merma }}" {% if material == key %}selected{% endif %}>{{ mat.nombre }}</option>
                             {% endfor %}
                         </select>
                     </div>
+
+                    <div class="form-grid-2">
+                        <div class="form-group">
+                            <label for="precio_impresion">Precio impresión ($/m²)</label>
+                            <div class="input-suffix" data-suffix="$/m²">
+                                <input type="number" step="0.01" min="0" id="precio_impresion" name="precio_impresion"
+                                       value="{{ precio_impresion if precio_impresion is not none else 10 }}"
+                                       oninput="calcularEnVivo()">
+                            </div>
+                            <small>Se autocompleta al elegir material. Editable.</small>
+                        </div>
+                        <div class="form-group">
+                            <label for="precio_merma">Precio merma ($/m²)</label>
+                            <div class="input-suffix" data-suffix="$/m²">
+                                <input type="number" step="0.01" min="0" id="precio_merma" name="precio_merma"
+                                       value="{{ precio_merma if precio_merma is not none else 4 }}"
+                                       oninput="calcularEnVivo()">
+                            </div>
+                            <small>Se autocompleta al elegir material. Editable.</small>
+                        </div>
+                    </div>
+
                     <div class="checkbox-group">
                         <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (intercambiar ancho/alto)</label>
-                        <span style="font-size:13px; color:#8e8e93; margin-left:8px;">
-                            <i class="fas fa-info-circle"></i> Para varias piezas, se distribuyen automáticamente en el rollo.
-                        </span>
                     </div>
                     <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
                         <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#8e8e93;"></i>
@@ -496,12 +444,45 @@
     let historyIdCounter = history.length ? Math.max(...history.map(h => h.id)) + 1 : 1;
     let favoriteIdCounter = favorites.length ? Math.max(...favorites.map(f => f.id)) + 1 : 1;
 
+    // Defaults de precios por material (vienen del backend)
+    const MATERIALES_DEFAULTS = {{ materiales|tojson }};
+
+    // ==========================================
+    // AUTOCOMPLETAR PRECIOS AL CAMBIAR MATERIAL
+    // ==========================================
+    function onMaterialChange() {
+        const select = document.getElementById('material');
+        const opt = select.options[select.selectedIndex];
+        if (opt && opt.dataset.impresion) {
+            document.getElementById('precio_impresion').value = parseFloat(opt.dataset.impresion).toFixed(2);
+            document.getElementById('precio_merma').value = parseFloat(opt.dataset.merma).toFixed(2);
+        }
+        calcularEnVivo();
+    }
+
     // ==========================================
     // CÁLCULO EN VIVO (AJAX)
     // ==========================================
     function calcularEnVivo() {
         const form = document.getElementById('calcForm');
         const formData = new FormData(form);
+
+        // Validación mínima antes de llamar
+        const ancho = parseFloat(document.getElementById('ancho').value);
+        const alto = parseFloat(document.getElementById('alto').value);
+        const ancho_rollo = parseFloat(document.getElementById('ancho_rollo').value);
+
+        if (!ancho || !alto || ancho <= 0 || alto <= 0) {
+            document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce ancho y alto válidos para ver el resultado.</p>';
+            document.getElementById('errorDisplay').style.display = 'none';
+            drawSimulation(null);
+            return;
+        }
+        if (!ancho_rollo || ancho_rollo <= 0) {
+            document.getElementById('errorDisplay').style.display = 'block';
+            document.getElementById('errorDisplay').textContent = '❌ El ancho del rollo debe ser mayor a 0.';
+            return;
+        }
 
         fetch("{{ url_for('carteles.calcular_ajax') }}", {
             method: 'POST',
@@ -513,19 +494,21 @@
                 document.getElementById('errorDisplay').style.display = 'block';
                 document.getElementById('errorDisplay').textContent = '❌ ' + data.error;
                 document.getElementById('resultDisplay').innerHTML = '';
+                drawSimulation(null);
             } else {
                 document.getElementById('errorDisplay').style.display = 'none';
                 document.getElementById('resultDisplay').innerHTML = data.resultado;
-                // Actualizar simData y canvas
                 const simData = data.simData;
                 drawSimulation(simData);
-                // Guardar historial
+
                 const config = {
                     ancho: document.getElementById('ancho').value,
                     alto: document.getElementById('alto').value,
                     cantidad: document.getElementById('cantidad').value,
                     material: document.getElementById('material').value,
                     ancho_rollo: document.getElementById('ancho_rollo').value,
+                    precio_impresion: document.getElementById('precio_impresion').value,
+                    precio_merma: document.getElementById('precio_merma').value,
                     girar: document.getElementById('girar').checked ? '1' : '0'
                 };
                 const resultText = data.resultado.replace(/<[^>]*>/g, '').substring(0, 60) + '...';
@@ -566,10 +549,10 @@
         const altoCm = simData.altoEfectivo || simData.altoCm;
         const anchoRollo = simData.anchoRollo || 134;
 
-        // Escala
+        // Escala proporcional
         const maxAnchoPx = w * 0.9;
         const maxAltoPx = h * 0.9;
-        const anchoPx = anchoCm * 3; // factor de escala
+        const anchoPx = anchoCm * 3;
         const altoPx = altoCm * 3;
         const escalaX = Math.min(1, maxAnchoPx / (cols * anchoPx));
         const escalaY = Math.min(1, maxAltoPx / (filas * altoPx));
@@ -582,47 +565,66 @@
         const offsetX = (w - totalAncho) / 2;
         const offsetY = (h - totalAlto) / 2;
 
+        // Fondo rollo
+        const anchoRolloPx = Math.min(w * 0.95, anchoRollo * 3 * escala);
+        const offsetRolloX = (w - anchoRolloPx) / 2;
+        ctx.fillStyle = 'rgba(0,0,0,0.03)';
+        ctx.fillRect(offsetRolloX, offsetY - 10, anchoRolloPx, totalAlto + 20);
+        ctx.strokeStyle = '#d2d2d7';
+        ctx.setLineDash([4, 3]);
+        ctx.strokeRect(offsetRolloX, offsetY - 10, anchoRolloPx, totalAlto + 20);
+        ctx.setLineDash([]);
+
+        // Piezas
         for (let r = 0; r < filas; r++) {
             for (let c = 0; c < cols; c++) {
                 const x = offsetX + c * anchoFinal;
                 const y = offsetY + r * altoFinal;
-                ctx.fillStyle = '#e8e0d8';
+                ctx.fillStyle = '#bae6fd';
                 ctx.fillRect(x, y, anchoFinal, altoFinal);
-                ctx.strokeStyle = '#8e8e93';
+                ctx.strokeStyle = '#0ea5e9';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(x, y, anchoFinal, altoFinal);
-                ctx.fillStyle = '#8e8e93';
+                ctx.fillStyle = '#1c1c1e';
                 ctx.font = '10px Inter, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillText(`${c+1}×${r+1}`, x + anchoFinal/2, y + altoFinal/2 + 4);
             }
         }
 
-        ctx.strokeStyle = '#1c1c1e';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(offsetX, offsetY, totalAncho, totalAlto);
-
+        // Etiquetas
         ctx.fillStyle = '#1c1c1e';
-        ctx.font = '12px Inter, sans-serif';
+        ctx.font = 'bold 12px Inter, sans-serif';
         ctx.textAlign = 'left';
-        ctx.fillText(`Distribución: ${cols}×${filas}`, 10, 20);
-        ctx.fillText(`Tamaño: ${anchoCm}×${altoCm} cm`, 10, 38);
+        ctx.fillText(`Distribución: ${cols}×${filas}`, 12, 22);
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText(`Pieza: ${anchoCm}×${altoCm} cm`, 12, 40);
+        ctx.fillText(`Rollo: ${anchoRollo} cm`, 12, 56);
+
+        // Gap / merma
+        const altoGapPx = 6.5 * 3 * escala;
+        if (altoGapPx > 2) {
+            ctx.fillStyle = 'rgba(245,158,11,0.35)';
+            ctx.fillRect(offsetX, offsetY + totalAlto, totalAncho, altoGapPx);
+            ctx.strokeStyle = '#f59e0b';
+            ctx.setLineDash([3, 2]);
+            ctx.strokeRect(offsetX, offsetY + totalAlto, totalAncho, altoGapPx);
+            ctx.setLineDash([]);
+        }
     }
 
     // ==========================================
-    // SUBIR ARCHIVO (imagen/PDF)
+    // SUBIR ARCHIVO
     // ==========================================
     function handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
         document.getElementById('fileName').textContent = file.name;
-        // Simulación de extracción de medidas (solo para demo)
-        // En una implementación real, se extraerían las dimensiones de la imagen/PDF
         alert('Las medidas se extraerán automáticamente en la versión completa.\nPor ahora, ajusta los valores manualmente.');
     }
 
     // ==========================================
-    // EXPORTAR PDF (con pdfmake)
+    // EXPORTAR PDF
     // ==========================================
     function exportPDF() {
         const resultDiv = document.getElementById('resultDisplay');
@@ -653,6 +655,10 @@
         document.getElementById('cantidad').value = '1';
         document.getElementById('ancho_rollo').value = '134.0';
         document.getElementById('material').value = 'Vinilo';
+        // Reset precios a los defaults de Vinilo
+        const vinilo = MATERIALES_DEFAULTS['Vinilo'];
+        document.getElementById('precio_impresion').value = vinilo.impresion.toFixed(2);
+        document.getElementById('precio_merma').value = vinilo.merma.toFixed(2);
         document.getElementById('girar').checked = false;
         document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce las dimensiones y haz clic en "Calcular".</p>';
         document.getElementById('errorDisplay').style.display = 'none';
@@ -700,6 +706,8 @@
             document.getElementById('cantidad').value = c.cantidad || '1';
             document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
             document.getElementById('material').value = c.material || 'Vinilo';
+            if (c.precio_impresion) document.getElementById('precio_impresion').value = c.precio_impresion;
+            if (c.precio_merma) document.getElementById('precio_merma').value = c.precio_merma;
             document.getElementById('girar').checked = c.girar === '1';
             calcularEnVivo();
             toggleHistory();
@@ -754,6 +762,8 @@
             cantidad: document.getElementById('cantidad').value,
             material: document.getElementById('material').value,
             ancho_rollo: document.getElementById('ancho_rollo').value,
+            precio_impresion: document.getElementById('precio_impresion').value,
+            precio_merma: document.getElementById('precio_merma').value,
             girar: document.getElementById('girar').checked ? '1' : '0'
         };
         const entry = {
@@ -794,6 +804,8 @@
             document.getElementById('cantidad').value = c.cantidad || '1';
             document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
             document.getElementById('material').value = c.material || 'Vinilo';
+            if (c.precio_impresion) document.getElementById('precio_impresion').value = c.precio_impresion;
+            if (c.precio_merma) document.getElementById('precio_merma').value = c.precio_merma;
             document.getElementById('girar').checked = c.girar === '1';
             calcularEnVivo();
             toggleFavoritos();
@@ -813,20 +825,25 @@
     document.addEventListener('DOMContentLoaded', function() {
         actualizarHistorialUI();
         actualizarContadorHistorial();
-        // Dibujar simulación inicial si hay datos
+
+        // Dibujar simulación inicial si hay datos del POST
         const simDataEl = document.getElementById('simData');
         if (simDataEl) {
-            const data = {
-                anchoCm: parseFloat(simDataEl.dataset.ancho) || 0,
-                altoCm: parseFloat(simDataEl.dataset.alto) || 0,
-                cols: parseInt(simDataEl.dataset.cols) || 1,
-                filas: parseInt(simDataEl.dataset.filas) || 1,
-                anchoEfectivo: parseFloat(simDataEl.dataset.anchoEfectivo) || 0,
-                altoEfectivo: parseFloat(simDataEl.dataset.altoEfectivo) || 0,
-                anchoRollo: parseFloat(simDataEl.dataset.anchoRollo) || 134,
-                orientacion: simDataEl.dataset.orientacion || 'normal'
-            };
-            drawSimulation(data);
+            const anchoCm = parseFloat(simDataEl.dataset.ancho) || 0;
+            const altoCm = parseFloat(simDataEl.dataset.alto) || 0;
+            if (anchoCm > 0 && altoCm > 0) {
+                const data = {
+                    anchoCm: anchoCm,
+                    altoCm: altoCm,
+                    cols: parseInt(simDataEl.dataset.cols) || 1,
+                    filas: parseInt(simDataEl.dataset.filas) || 1,
+                    anchoEfectivo: parseFloat(simDataEl.dataset.anchoEfectivo) || anchoCm,
+                    altoEfectivo: parseFloat(simDataEl.dataset.altoEfectivo) || altoCm,
+                    anchoRollo: parseFloat(simDataEl.dataset.anchoRollo) || 134,
+                    orientacion: simDataEl.dataset.orientacion || 'normal'
+                };
+                drawSimulation(data);
+            }
         }
     });
 </script>

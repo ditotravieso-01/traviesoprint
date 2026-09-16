@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
-{% block title %}Nuevo Conteo Semanal · Inventario{% endblock %}
-{% block page_title %}📅 Nuevo Conteo Semanal{% endblock %}
+{% block title %}{{ 'Editar' if conteo else 'Nuevo' }} Conteo Semanal · Inventario{% endblock %}
+{% block page_title %}{{ '✏️ Editar' if conteo else '📅 Nuevo' }} Conteo Semanal{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -14,6 +14,7 @@
     .form-group input, .form-group select, .form-group textarea { width:100%; padding:12px 16px; border:1.5px solid #e0dcd8; border-radius:10px; font-size:15px; background:#fafaf9; transition:border-color 0.2s; font-family:'Inter',sans-serif; }
     .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:#a8854f; background:white; box-shadow:0 0 0 4px rgba(168,133,79,0.08); }
     .form-group small { display:block; color:#8e8e93; font-size:12px; margin-top:4px; }
+    .form-group select:disabled { background:#f0ece8; cursor:not-allowed; }
     .btn-group { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; padding-top:16px; border-top:1px solid #f0ece8; }
     .btn { padding:10px 28px; border-radius:30px; border:none; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:14px; font-family:'Inter',sans-serif; }
     .btn-success { background:#10b981; color:white; }
@@ -42,19 +43,27 @@
 {% block content %}
 <div class="form-container">
     <div class="form-section">
-        <h4><i class="fas fa-clipboard-check"></i> Registrar conteo semanal</h4>
+        <h4><i class="fas fa-clipboard-check"></i> {{ 'Editar conteo semanal' if conteo else 'Registrar conteo semanal' }}</h4>
 
+        {% if not conteo %}
         <div class="info-box">
             <i class="fas fa-info-circle"></i>
             <strong>Conteo semanal:</strong> Ingresa los rollos/unidades que contaste físicamente.
             El sistema convierte automáticamente a <strong>metros lineales</strong> y <strong>m²</strong> usando
             el largo y ancho del rollo, y calcula la <strong>merma imprevista</strong>.
         </div>
+        {% else %}
+        <div class="info-box" style="background:#fef3c7; border-left-color:#f59e0b; color:#78350f;">
+            <i class="fas fa-edit" style="color:#f59e0b;"></i>
+            <strong>Editando conteo existente:</strong> Modifica el stock físico contado o el comentario.
+            El sistema recalculará automáticamente las diferencias y ajustará el stock.
+        </div>
+        {% endif %}
 
-        <form method="POST" id="formConteo">
+        <form method="POST" id="formConteo" action="{{ url_for('inventario.editar_conteo', conteo_id=conteo.id) if conteo else url_for('inventario.nuevo_conteo') }}">
             <div class="form-group">
                 <label>Producto *</label>
-                <select name="producto_id" id="productoSelect" required>
+                <select name="producto_id" id="productoSelect" required {% if conteo %}disabled{% endif %}>
                     <option value="">— Seleccionar —</option>
                     {% for p in productos %}
                         <option value="{{ p.id }}"
@@ -62,11 +71,15 @@
                                 data-ancho="{{ p.ancho_rollo or 1.34 }}"
                                 data-stock-metros="{{ p.stock_metros or 0 }}"
                                 data-stock-unidades="{{ p.stock or 0 }}"
-                                data-nombre="{{ p.nombre }}">
+                                data-nombre="{{ p.nombre }}"
+                                {% if conteo and conteo.producto_id == p.id %}selected{% endif %}>
                             {{ p.nombre }} (stock: {{ "%.2f"|format(p.stock or 0) }} rollos)
                         </option>
                     {% endfor %}
                 </select>
+                {% if conteo %}
+                <input type="hidden" name="producto_id" value="{{ conteo.producto_id }}">
+                {% endif %}
             </div>
 
             <div class="form-group">
@@ -77,13 +90,13 @@
 
             <div class="form-group">
                 <label>Stock físico contado (unidades / rollos) *</label>
-                <input type="number" step="0.01" min="0" name="stock_fisico_unidades" id="stockFisico" required placeholder="Ej. 2.5">
+                <input type="number" step="0.01" min="0" name="stock_fisico_unidades" id="stockFisico" required placeholder="Ej. 2.5" value="{{ conteo.stock_fisico_unidades if conteo else '' }}">
                 <small>Suma total de todos los rollos (abiertos + completos) de este producto.</small>
             </div>
 
             <div class="form-group">
                 <label>Comentario</label>
-                <textarea name="comentario" rows="2" placeholder="Ej. Conteo semanal, se detectó rollo dañado..."></textarea>
+                <textarea name="comentario" rows="2" placeholder="Ej. Conteo semanal, se detectó rollo dañado...">{{ conteo.comentario if conteo else '' }}</textarea>
             </div>
 
             <div id="previewBox" class="preview-box" style="display:none;">
@@ -106,7 +119,7 @@
             </div>
 
             <div class="btn-group">
-                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Guardar conteo</button>
+                <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> {{ 'Actualizar conteo' if conteo else 'Guardar conteo' }}</button>
                 <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
             </div>
         </form>
@@ -132,27 +145,22 @@
         const sisM = parseFloat(opt.dataset.stockMetros) || 0;
         const fisU = parseFloat(stockFisico.value) || 0;
 
-        // Conversiones
         const fisM = fisU * largo;
         const fisM2 = fisM * ancho;
         const sisM2 = sisM * ancho;
 
-        // Diferencias
         const difU = sisU - fisU;
         const difM = sisM - fisM;
         const difM2 = sisM2 - fisM2;
 
-        // Sistema
         document.getElementById('prevSisU').textContent = fmt(sisU) + ' rollos';
         document.getElementById('prevSisM').textContent = fmt(sisM) + ' m';
         document.getElementById('prevSisM2').textContent = fmt(sisM2) + ' m²';
 
-        // Físico
         document.getElementById('prevFisU').textContent = fmt(fisU) + ' rollos';
         document.getElementById('prevFisM').textContent = fmt(fisM) + ' m';
         document.getElementById('prevFisM2').textContent = fmt(fisM2) + ' m²';
 
-        // Diferencia con color
         const setColor = (elId, val, suffix) => {
             const el = document.getElementById(elId);
             el.textContent = (val >= 0 ? '+' : '') + fmt(val) + ' ' + suffix;
@@ -167,5 +175,12 @@
 
     productoSelect.addEventListener('change', actualizarPreview);
     stockFisico.addEventListener('input', actualizarPreview);
+
+    // Disparar preview al cargar si hay datos precargados (edición)
+    document.addEventListener('DOMContentLoaded', function() {
+        if (productoSelect.value) {
+            actualizarPreview();
+        }
+    });
 </script>
 {% endblock %}
