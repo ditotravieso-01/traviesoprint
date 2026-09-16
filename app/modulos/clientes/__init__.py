@@ -668,8 +668,8 @@ def crear_cliente():
 
         db.session.add(cliente)
         db.session.commit()
-        flash(f'Cliente "{nombre}" creado. Ahora puedes añadir sus etiquetas favoritas.', 'success')
-        return redirect(url_for('clientes.editar_cliente', cliente_id=cliente.id))
+        flash(f'Cliente "{nombre}" creado correctamente.', 'success')
+        return redirect(url_for('clientes.editar_cliente', cliente_id=cliente.id) + '#favoritos')
 
     return render_template('form_cliente.html',
         cliente=None, total_ordenes=0, total_metros=0,
@@ -724,8 +724,8 @@ def editar_cliente(cliente_id):
                 return render_template('form_cliente.html', cliente=cliente, **_get_form_cliente_ctx(cliente))
 
         db.session.commit()
-        flash(f'Cliente "{cliente.nombre}" actualizado.', 'success')
-        return redirect(url_for('clientes.editar_cliente', cliente_id=cliente.id) + '#favoritos')
+        flash(f'Cliente "{cliente.nombre}" actualizado correctamente.', 'success')
+        return redirect(url_for('clientes.listar_clientes'))
 
     return render_template('form_cliente.html', cliente=cliente, **_get_form_cliente_ctx(cliente))
 

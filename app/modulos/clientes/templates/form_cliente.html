@@ -94,7 +94,6 @@
     .btn-gold:hover { background: #8c7040; }
     .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
 
-    /* Botón grande para "Crear primera etiqueta" */
     .btn-gold-lg {
         background: #a8854f; color: white;
         padding: 10px 22px; font-size: 14px; border-radius: 30px;
@@ -282,7 +281,9 @@
         </div>
     </div>
 
-    <!-- ===== FORMULARIO PRINCIPAL ===== -->
+    <!-- ============================================================
+         FORMULARIO DEL CLIENTE (se cierra antes de favoritos)
+         ============================================================ -->
     <form method="POST" id="clienteForm">
         <div class="form-card">
             <div class="card-title"><span class="title-txt"><i class="fas fa-id-card"></i> Datos personales</span></div>
@@ -387,115 +388,121 @@
                 <small>Etiquetas separadas por comas.</small>
             </div>
         </div>
+    </form>
+    <!-- ===== FIN DEL FORMULARIO DEL CLIENTE ===== -->
 
-        <!-- ===== ETIQUETAS FAVORITAS (solo en edición) — ANTES DE LOS BOTONES ===== -->
-        {% if cliente %}
-        <div class="form-card" id="favoritos">
-            <div class="card-title">
-                <span class="title-txt">
-                    <i class="fas fa-star"></i> Etiquetas favoritas
-                    <span style="font-size:12px; color:#8e8e93; font-weight:400; margin-left:6px;">
-                        ({{ total_favoritos }} guardada{{ 's' if total_favoritos != 1 else '' }})
-                    </span>
+    <!-- ============================================================
+         ETIQUETAS FAVORITAS — FUERA del form del cliente
+         (sus <form> de eliminar funcionan correctamente)
+         ============================================================ -->
+    {% if cliente %}
+    <div class="form-card" id="favoritos">
+        <div class="card-title">
+            <span class="title-txt">
+                <i class="fas fa-star"></i> Etiquetas favoritas
+                <span style="font-size:12px; color:#8e8e93; font-weight:400; margin-left:6px;">
+                    ({{ total_favoritos }} guardada{{ 's' if total_favoritos != 1 else '' }})
                 </span>
-                <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalFavorito()">
-                    <i class="fas fa-plus"></i> Añadir etiqueta
-                </button>
-            </div>
-
-            <p style="color:#8e8e93; font-size:13px; margin: 0 0 16px 0;">
-                Guarda aquí las medidas que el cliente pide normalmente. Aparecerán en el formulario de órdenes
-                para reutilizarlas con un clic.
-            </p>
-
-            {% if etiquetas_favoritas %}
-            <div class="fav-grid">
-                {% for f in etiquetas_favoritas %}
-                <div class="fav-card">
-                    {% if f.archivo_ruta %}
-                        {% if f.es_imagen() %}
-                            <a href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
-                                <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
-                            </a>
-                        {% elif f.es_pdf() %}
-                            <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
-                                <span class="pdf-ico">📄</span>
-                                <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
-                                <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
-                            </a>
-                        {% endif %}
-                    {% endif %}
-
-                    <div>
-                        <div class="fav-nombre">{{ f.nombre }}</div>
-                        <div class="fav-dim">{{ f.medidas_str }}</div>
-                    </div>
-
-                    {% if f.notas %}<div class="fav-notas">{{ f.notas }}</div>{% endif %}
-
-                    <div class="fav-acciones">
-                        <button type="button" class="btn btn-sm btn-outline"
-                                onclick='abrirModalFavorito({
-                                    id: {{ f.id }},
-                                    nombre: {{ f.nombre|tojson }},
-                                    ancho_cm: {{ f.ancho_cm }},
-                                    alto_cm: {{ f.alto_cm }},
-                                    notas: {{ (f.notas or '')|tojson }},
-                                    archivo_nombre: {{ (f.archivo_nombre or '')|tojson }},
-                                    archivo_url: {{ (url_for('clientes.ver_archivo_favorito', fav_id=f.id) if f.archivo_ruta else '')|tojson }},
-                                    archivo_tipo: {{ (f.archivo_tipo or '')|tojson }}
-                                })'>
-                            <i class="fas fa-edit"></i> Editar
-                        </button>
-                        <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar la etiqueta favorita &quot;{{ f.nombre }}&quot;?')">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <div class="fav-empty">
-                <div class="fav-empty-ico">⭐</div>
-                <h4>Aún no tiene etiquetas favoritas guardadas</h4>
-                <p>Guarda las medidas que este cliente pide normalmente para reutilizarlas con un clic.</p>
-                <button type="button" class="btn-gold-lg" onclick="abrirModalFavorito()">
-                    <i class="fas fa-plus"></i> Crear primera etiqueta
-                </button>
-            </div>
-            {% endif %}
+            </span>
+            <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalFavorito()">
+                <i class="fas fa-plus"></i> Añadir etiqueta
+            </button>
         </div>
-        {% endif %}
 
-        <!-- ===== BOTONES (ahora después de los favoritos) ===== -->
-        <div class="btn-group">
-            <div class="left-buttons">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> {{ 'Actualizar cliente' if cliente else 'Crear cliente' }}
-                </button>
-                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-            </div>
-            <div class="right-buttons">
-                {% if cliente %}
-                    <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline">
-                        <i class="fas fa-eye"></i> Ver detalle
-                    </a>
-                    <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nueva orden
-                    </a>
-                    {% if current_user.role == 'admin' %}
-                        <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?')">
-                            <button type="submit" class="btn btn-danger">
-                                <i class="fas fa-trash-alt"></i> Eliminar
-                            </button>
-                        </form>
+        <p style="color:#8e8e93; font-size:13px; margin: 0 0 16px 0;">
+            Guarda aquí las medidas que el cliente pide normalmente. Aparecerán en el formulario de órdenes
+            para reutilizarlas con un clic.
+        </p>
+
+        {% if etiquetas_favoritas %}
+        <div class="fav-grid">
+            {% for f in etiquetas_favoritas %}
+            <div class="fav-card">
+                {% if f.archivo_ruta %}
+                    {% if f.es_imagen() %}
+                        <a href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                            <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
+                        </a>
+                    {% elif f.es_pdf() %}
+                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                            <span class="pdf-ico">📄</span>
+                            <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
+                            <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
+                        </a>
                     {% endif %}
                 {% endif %}
+
+                <div>
+                    <div class="fav-nombre">{{ f.nombre }}</div>
+                    <div class="fav-dim">{{ f.medidas_str }}</div>
+                </div>
+
+                {% if f.notas %}<div class="fav-notas">{{ f.notas }}</div>{% endif %}
+
+                <div class="fav-acciones">
+                    <button type="button" class="btn btn-sm btn-outline"
+                            onclick='abrirModalFavorito({
+                                id: {{ f.id }},
+                                nombre: {{ f.nombre|tojson }},
+                                ancho_cm: {{ f.ancho_cm }},
+                                alto_cm: {{ f.alto_cm }},
+                                notas: {{ (f.notas or '')|tojson }},
+                                archivo_nombre: {{ (f.archivo_nombre or '')|tojson }},
+                                archivo_url: {{ (url_for('clientes.ver_archivo_favorito', fav_id=f.id) if f.archivo_ruta else '')|tojson }},
+                                archivo_tipo: {{ (f.archivo_tipo or '')|tojson }}
+                            })'>
+                        <i class="fas fa-edit"></i> Editar
+                    </button>
+                    <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar la etiqueta favorita &quot;{{ f.nombre }}&quot;?');">
+                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                    </form>
+                </div>
             </div>
+            {% endfor %}
         </div>
-    </form>
+        {% else %}
+        <div class="fav-empty">
+            <div class="fav-empty-ico">⭐</div>
+            <h4>Aún no tiene etiquetas favoritas guardadas</h4>
+            <p>Guarda las medidas que este cliente pide normalmente para reutilizarlas con un clic.</p>
+            <button type="button" class="btn-gold-lg" onclick="abrirModalFavorito()">
+                <i class="fas fa-plus"></i> Crear primera etiqueta
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- ============================================================
+         BOTONES — FUERA del form, usan form="clienteForm"
+         ============================================================ -->
+    <div class="btn-group">
+        <div class="left-buttons">
+            <button type="submit" form="clienteForm" class="btn btn-success">
+                <i class="fas fa-save"></i> {{ 'Actualizar cliente' if cliente else 'Crear cliente' }}
+            </button>
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+                <i class="fas fa-times"></i> Cancelar
+            </a>
+        </div>
+        <div class="right-buttons">
+            {% if cliente %}
+                <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline">
+                    <i class="fas fa-eye"></i> Ver detalle
+                </a>
+                <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nueva orden
+                </a>
+                {% if current_user.role == 'admin' %}
+                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?');">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt"></i> Eliminar
+                        </button>
+                    </form>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
 
 </div>
 
@@ -641,12 +648,10 @@
             archivoInput.addEventListener('change', function() {
                 const file = this.files[0];
                 if (!file) return;
-                // Auto-nombre
                 const nombreInput = document.getElementById('favNombre');
                 if (!nombreInput.value.trim()) {
                     nombreInput.value = file.name.replace(/\.[^.]+$/, '').slice(0, 150);
                 }
-                // Auto-medidas (solo imágenes - leemos con el File API)
                 if (file.type.startsWith('image/')) {
                     const anchoInput = document.getElementById('favAncho');
                     const altoInput = document.getElementById('favAlto');
@@ -660,7 +665,6 @@
                     };
                     img.src = url;
                 }
-                // Para PDFs: el backend extrae las medidas al guardar.
             });
         }
     });
