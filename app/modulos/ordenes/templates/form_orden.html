@@ -241,6 +241,19 @@
     .cs-alert-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
     .cs-alert-btn { padding: 9px 26px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; background: #1c1c1e; color: white; min-width: 100px; }
     .cs-alert-btn:hover { background: #333; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        /* ===== MODAL DE CONFIRMACIÓN ===== */
+    .cs-confirm-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.35); backdrop-filter: blur(4px); z-index: 10001; justify-content: center; align-items: center; padding: 16px; animation: csAlertFadeIn 0.2s ease; }
+    .cs-confirm-overlay.active { display: flex; }
+    .cs-confirm-box { background: white; border-radius: 18px; padding: 24px 22px 20px; max-width: 420px; width: 100%; box-shadow: 0 24px 60px rgba(0,0,0,0.2); animation: csAlertPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); font-family: 'Inter', sans-serif; text-align: center; box-sizing: border-box; }
+    .cs-confirm-icon { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 26px; background: #fde8e5; color: #dc2626; }
+    .cs-confirm-title { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 700; color: #1c1c1e; margin-bottom: 6px; }
+    .cs-confirm-message { font-size: 14px; color: #555; line-height: 1.5; margin-bottom: 18px; }
+    .cs-confirm-actions { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .cs-confirm-btn { padding: 9px 26px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.15s; font-family: 'Inter', sans-serif; min-width: 100px; }
+    .cs-confirm-btn.danger { background: #dc2626; color: white; }
+    .cs-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
+    .cs-confirm-btn.cancel { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .cs-confirm-btn.cancel:hover { border-color: #8e8e93; background: #f5f5f5; }
 
     @media (max-width: 575.98px) {
         .form-container { padding: 0 10px; }
@@ -807,6 +820,19 @@
     </div>
 </div>
 
+<!-- MODAL DE CONFIRMACIÓN -->
+<div class="cs-confirm-overlay" id="csConfirmOverlay">
+    <div class="cs-confirm-box">
+        <div class="cs-confirm-icon">🗑️</div>
+        <div class="cs-confirm-title">Confirmar acción</div>
+        <div class="cs-confirm-message" id="csConfirmMessage"></div>
+        <div class="cs-confirm-actions">
+            <button type="button" class="cs-confirm-btn cancel" onclick="csConfirmClose()">Cancelar</button>
+            <button type="button" class="cs-confirm-btn danger" id="csConfirmOkBtn">Eliminar</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const MARGEN_MESA_M = 0.002;
 const CUT_LARGO_M = 0.04;
@@ -837,6 +863,44 @@ function csAlertClose() {
     const overlay = document.getElementById('csAlertOverlay');
     if (overlay) overlay.classList.remove('active');
 }
+// =============================================
+// CONFIRMACIÓN PERSONALIZADA
+// =============================================
+let csConfirmCallback = null;
+function csConfirm(message, callback, btnLabel = 'Eliminar') {
+    document.getElementById('csConfirmMessage').textContent = message;
+    const okBtn = document.getElementById('csConfirmOkBtn');
+    okBtn.textContent = btnLabel;
+    csConfirmCallback = callback;
+    document.getElementById('csConfirmOverlay').classList.add('active');
+    setTimeout(() => okBtn.focus(), 100);
+}
+function csConfirmClose() {
+    const overlay = document.getElementById('csConfirmOverlay');
+    if (overlay) overlay.classList.remove('active');
+    csConfirmCallback = null;
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') csConfirmClose(); });
+document.addEventListener('DOMContentLoaded', function() {
+    const okBtn = document.getElementById('csConfirmOkBtn');
+    if (okBtn) {
+        okBtn.addEventListener('click', function() {
+            if (csConfirmCallback) {
+                const cb = csConfirmCallback;
+                csConfirmClose();
+                cb();
+            } else {
+                csConfirmClose();
+            }
+        });
+    }
+    const overlay = document.getElementById('csConfirmOverlay');
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) csConfirmClose();
+        });
+    }
+});
 document.addEventListener('keydown', e => { if (e.key === 'Escape') csAlertClose(); });
 document.addEventListener('click', e => {
     const overlay = document.getElementById('csAlertOverlay');
@@ -1000,7 +1064,7 @@ function actualizarPlaceholderCantidad(unidadSelect) {
 }
 
 // =============================================
-// DIBUJAR PREVIEW ETIQUETAS
+// DIBUJAR PREVIEW ETIQUETAS (POR PAÑOS)
 // =============================================
 function dibujarPreviewEtiquetas(canvasId, data) {
     const canvas = document.getElementById(canvasId);
@@ -1013,89 +1077,103 @@ function dibujarPreviewEtiquetas(canvasId, data) {
     ctx.fillStyle = '#f8f6f4';
     ctx.fillRect(0, 0, W, H);
 
-    if (!data || data.error || !data.filas || !data.ancho_real) {
+    if (!data || !data.pañosGrupos || data.pañosGrupos.length === 0) {
         ctx.fillStyle = '#8e8e93';
         ctx.font = '13px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(data && data.error ? '⚠️ No cabe en el rollo' : 'Vista previa', W/2, H/2);
+        ctx.fillText('Vista previa', W/2, H/2);
         return;
     }
 
-    const roll_w_m = data.ancho_real;
-    const ancho_util_m = data.ancho_util;
-    const total_h_m = (data.filas * data.alto_cell) + data.gap;
-    const centrar = data.centrar !== false;
+    const grupos = data.pañosGrupos;
+    const nGrupos = grupos.length;
+    const pad = 12;
+    const gapBetween = 22;
+    const topReserve = 20;
+    const avail_w = W - 2 * pad - (nGrupos - 1) * gapBetween;
+    const avail_h = H - 2 * pad - topReserve;
+    const cell_w = avail_w / nGrupos;
 
-    const pad = 14;
-    const avail_w = W - 2 * pad;
-    const avail_h = H - 2 * pad;
-    const scale = Math.min(avail_w / roll_w_m, avail_h / total_h_m);
+    grupos.forEach((grupo, g) => {
+        const filasGrupo = grupo.filas;
+        if (filasGrupo <= 0) return;
 
-    const roll_w_px = roll_w_m * scale;
-    const roll_h_px = total_h_m * scale;
-    const offsetX = (W - roll_w_px) / 2;
-    const offsetY = (H - roll_h_px) / 2;
+        const paño_h_m = filasGrupo * data.alto_cell + data.gap;
+        const paño_w_m = data.ancho_real;
 
-    ctx.fillStyle = 'rgba(0,0,0,0.06)';
-    ctx.fillRect(offsetX, offsetY, roll_w_px, roll_h_px);
-    ctx.strokeStyle = '#8e8e93';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(offsetX, offsetY, roll_w_px, roll_h_px);
+        const scale = Math.min(cell_w / paño_w_m, avail_h / paño_h_m);
 
-    const ancho_util_px = ancho_util_m * scale;
-    const imprimible_h_px = (data.filas * data.alto_cell) * scale;
+        const paño_w_px = paño_w_m * scale;
+        const paño_h_px = paño_h_m * scale;
 
-    const cols = data.cols || 1;
-    const filas = data.filas || 1;
-    const ancho_pieza_px = data.ancho_cell * scale;
-    const alto_pieza_px = data.alto_cell * scale;
+        const offsetX = pad + g * (cell_w + gapBetween) + (cell_w - paño_w_px) / 2;
+        const offsetY = pad + topReserve + (avail_h - paño_h_px) / 2;
 
-    const total_pieces_width_px = cols * ancho_pieza_px;
-    let offsetX_piezas = offsetX;
-    if (centrar) {
-        offsetX_piezas = offsetX + (ancho_util_px - total_pieces_width_px) / 2;
-    }
+        // Fondo rollo (borde)
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fillRect(offsetX, offsetY, paño_w_px, paño_h_px);
+        ctx.strokeStyle = '#8e8e93';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(offsetX, offsetY, paño_w_px, paño_h_px);
 
-    let count = 0;
-    for (let f = 0; f < filas; f++) {
-        for (let c = 0; c < cols; c++) {
-            if (count >= data.n_etiquetas) break;
-            const x = offsetX_piezas + c * ancho_pieza_px;
-            const y = offsetY + f * alto_pieza_px;
-            ctx.fillStyle = '#fef3c7';
-            ctx.fillRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
-            ctx.strokeStyle = '#f59e0b';
-            ctx.lineWidth = 0.5;
-            ctx.strokeRect(x + 0.5, y + 0.5, ancho_pieza_px - 1, alto_pieza_px - 1);
-            count++;
+        // Área útil y medidas
+        const ancho_util_px = data.ancho_util * scale;
+        const impresion_h_px = filasGrupo * data.alto_cell * scale;
+        const gap_px = data.gap * scale;
+
+        const cols = data.cols || 1;
+        const ancho_cell_px = data.ancho_cell * scale;
+        const alto_cell_px = data.alto_cell * scale;
+
+        const total_pieces_w_px = cols * ancho_cell_px;
+        let offsetX_piezas = offsetX;
+        if (data.centrar) {
+            offsetX_piezas = offsetX + (ancho_util_px - total_pieces_w_px) / 2;
         }
-        if (count >= data.n_etiquetas) break;
-    }
 
-    const gap_px = data.gap * scale;
-    ctx.fillStyle = 'rgba(245,158,11,0.35)';
-    ctx.fillRect(offsetX, offsetY + imprimible_h_px, roll_w_px, gap_px);
-    ctx.strokeStyle = '#f59e0b';
-    ctx.setLineDash([4, 3]);
-    ctx.strokeRect(offsetX, offsetY + imprimible_h_px, roll_w_px, gap_px);
-    ctx.setLineDash([]);
+        // Dibujar la cuadrícula de etiquetas del paño
+        for (let f = 0; f < filasGrupo; f++) {
+            for (let c = 0; c < cols; c++) {
+                const x = offsetX_piezas + c * ancho_cell_px;
+                const y = offsetY + f * alto_cell_px;
+                ctx.fillStyle = '#fef3c7';
+                ctx.fillRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                ctx.strokeStyle = '#f59e0b';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+            }
+        }
 
-    ctx.fillStyle = '#1c1c1e';
-    ctx.font = 'bold 10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText(`${cols}×${filas} · ${data.n_etiquetas} etiq`, offsetX_piezas + 4, offsetY + 12);
+        // Gap / cut mark
+        if (gap_px > 0.5) {
+            ctx.fillStyle = 'rgba(245,158,11,0.35)';
+            ctx.fillRect(offsetX, offsetY + impresion_h_px, paño_w_px, gap_px);
+            ctx.strokeStyle = '#f59e0b';
+            ctx.setLineDash([3, 2]);
+            ctx.strokeRect(offsetX, offsetY + impresion_h_px, paño_w_px, gap_px);
+            ctx.setLineDash([]);
+        }
 
-    if (gap_px > 8) {
-        ctx.fillStyle = '#78350f';
+        // Etiqueta superior: ×N o Paño N
+        ctx.fillStyle = '#1c1c1e';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        const label = grupo.count > 1 ? `×${grupo.count}` : `Paño ${g + 1}`;
+        ctx.fillText(label, offsetX + paño_w_px / 2, offsetY - 6);
+
+        // Info interna del paño
+        ctx.fillStyle = '#1c1c1e';
         ctx.font = 'bold 9px Inter, sans-serif';
-        ctx.fillText('Gap/Cut', offsetX + 4, offsetY + imprimible_h_px + gap_px - 3);
-    }
+        ctx.textAlign = 'left';
+        ctx.fillText(`${cols}×${filasGrupo}`, offsetX_piezas + 4, offsetY + 11);
 
-    ctx.fillStyle = '#8e8e93';
-    ctx.font = '9px Inter, sans-serif';
-    ctx.textAlign = 'right';
-    ctx.fillText(`${roll_w_m.toFixed(2)} m`, W - pad, offsetY + 10);
-}
+        // Ancho del rollo
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '8px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`${data.ancho_real.toFixed(2)} m`, offsetX + paño_w_px - 3, offsetY + 10);
+    });
+}1
 
 
 // =============================================
@@ -1694,21 +1772,22 @@ function eliminarLinea(btn) {
     }
 }
 function marcarEliminarLinea(archivoId) {
-    if (!confirm('¿Eliminar esta línea permanentemente?')) return;
-    const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
-    const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-id="${archivoId}"]`);
-    const cartelesRow = document.querySelector(`tr.carteles-params-row[data-id="${archivoId}"]`);
-    if (mainRow) {
-        mainRow.style.display = 'none';
-        mainRow.dataset.eliminado = 'true';
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'eliminar_archivos[]';
-        input.value = archivoId;
-        mainRow.appendChild(input);
-    }
-    if (paramsRow) paramsRow.style.display = 'none';
-    if (cartelesRow) cartelesRow.style.display = 'none';
+    csConfirm('¿Eliminar esta línea permanentemente? Esta acción no se puede deshacer.', function() {
+        const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
+        const paramsRow = document.querySelector(`tr.etiquetas-params-row[data-id="${archivoId}"]`);
+        const cartelesRow = document.querySelector(`tr.carteles-params-row[data-id="${archivoId}"]`);
+        if (mainRow) {
+            mainRow.style.display = 'none';
+            mainRow.dataset.eliminado = 'true';
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'eliminar_archivos[]';
+            input.value = archivoId;
+            mainRow.appendChild(input);
+        }
+        if (paramsRow) paramsRow.style.display = 'none';
+        if (cartelesRow) cartelesRow.style.display = 'none';
+    });
 }
 
 // =============================================
@@ -2091,6 +2170,7 @@ function calcularLinea(paramsRow) {
         let areaFacturadaReal = 0;
         let sobranteAcumulado = 0;
         let areaRestanteM2 = areaFacturada;
+        const filasPorPaño = [];
 
         for (let i = 0; i < nPaños; i++) {
             let areaPaño;
@@ -2122,6 +2202,7 @@ function calcularLinea(paramsRow) {
             const largoAvancePaño = largoEtiqPaño + CUT_LARGO_M + gapEfectivoPaño;
             const materialPaño = anchoRollo * largoAvancePaño;
             filasTotales += filasPaño;
+            filasPorPaño.push(filasPaño);
             largoEtiquetasTotal += largoEtiqPaño;
             materialTotal += materialPaño;
             if (esUnidades && filasMinimas !== null && filasTotales >= filasMinimas) break;
@@ -2168,16 +2249,26 @@ function calcularLinea(paramsRow) {
             if (esAutogenerado) nombreInput.value = `Etiquetas ${ancho}x${alto} cm`;
         }
 
-        // Dibujar vista previa de etiquetas (ID único)
+        // Agrupar paños idénticos consecutivos
+        const pañosGrupos = [];
+        for (const f of filasPorPaño) {
+            const last = pañosGrupos[pañosGrupos.length - 1];
+            if (last && last.filas === f) {
+                last.count++;
+            } else {
+                pañosGrupos.push({ filas: f, count: 1 });
+            }
+        }
+
+        // Dibujar vista previa de etiquetas (por paños)
         dibujarPreviewEtiquetas('preview-etiqueta-' + paramsId, {
             ancho_real: anchoRollo,
             ancho_util: anchoUtilEfectivo,
             cols: columnas,
-            filas: filasTotales,
             ancho_cell: anchoCellM,
             alto_cell: altoCellM,
             gap: gapM,
-            n_etiquetas: nEtiquetas,
+            pañosGrupos: pañosGrupos,
             centrar: centrar === '1'
         });
     })
