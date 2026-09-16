@@ -161,4 +161,12 @@ def create_app():
         if not instalado:
             return redirect(url_for('setup.paso1'))
 
+    # ============================================
+    # LÍMITE DE TAMAÑO DE SUBIDA (importante para favoritos)
+    # ============================================
+    # El admin puede subir hasta 200 MB. Los usuarios normales
+    # están limitados a 50 MB por la validación en clientes/__init__.py
+    # (esto es solo la barrera global de Flask).
+    app.config['MAX_CONTENT_LENGTH'] = 200 * 1024 * 1024  # 200 MB
+
     return app

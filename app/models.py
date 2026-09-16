@@ -842,3 +842,66 @@ class ConteoSemanal(db.Model):
         f = fecha or datetime.utcnow()
         iso = f.isocalendar()
         return f"{iso[0]}-W{iso[1]:02d}"
+    
+
+# ==============================================================
+# Clase etiquetas favoritas de cada cliente - modulo clientes
+# ==============================================================
+class EtiquetaFavorita(db.Model):
+    """
+    Etiqueta favorita de un cliente: medidas + archivo de referencia.
+    Sirve como atajo al crear órdenes: el comercial ve las etiquetas
+    guardadas del cliente y elige una sin tener que pedir medidas otra vez.
+    """
+    __tablename__ = 'etiquetas_favoritas'
+    id = db.Column(db.Integer, primary_key=True)
+    client_id = db.Column(db.Integer, db.ForeignKey('clients.id'), nullable=False, index=True)
+
+    nombre = db.Column(db.String(150), nullable=False)
+    ancho_cm = db.Column(db.Float, nullable=False)
+    alto_cm = db.Column(db.Float, nullable=False)
+    notas = db.Column(db.Text, nullable=True)
+
+    # Archivo adjunto opcional (imagen o PDF)
+    archivo_nombre = db.Column(db.String(255), nullable=True)
+    archivo_ruta = db.Column(db.String(500), nullable=True)  # relativa a UPLOAD_FOLDER
+    archivo_tipo = db.Column(db.String(80), nullable=True)   # mime
+    archivo_tamano = db.Column(db.Integer, nullable=True)    # bytes
+
+    # Métricas de uso
+    veces_usado = db.Column(db.Integer, default=0, nullable=False)
+    ultima_vez_usado = db.Column(db.DateTime, nullable=True)
+
+    activo = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now)
+    updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
+    created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+
+    client = db.relationship(
+        'Client',
+        backref=db.backref(
+            'etiquetas_favoritas',
+            lazy='dynamic',
+            cascade='all, delete-orphan'
+        )
+    )
+    created_by = db.relationship('User', foreign_keys=[created_by_id])
+
+    def __repr__(self):
+        return f'<EtiquetaFavorita {self.nombre} ({self.ancho_cm}×{self.alto_cm}cm)>'
+
+    def es_imagen(self):
+        return bool(self.archivo_tipo and self.archivo_tipo.startswith('image/'))
+
+    def es_pdf(self):
+        return self.archivo_tipo == 'application/pdf'
+
+    @property
+    def archivo_tamano_mb(self):
+        if not self.archivo_tamano:
+            return None
+        return round(self.archivo_tamano / (1024 * 1024), 2)
+
+    @property
+    def medidas_str(self):
+        return f'{self.ancho_cm:g}×{self.alto_cm:g} cm'

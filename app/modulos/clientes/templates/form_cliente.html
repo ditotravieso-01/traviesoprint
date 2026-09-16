@@ -2,190 +2,87 @@
 
 {% block title %}{% if cliente %}Editar {{ cliente.nombre }}{% else %}Nuevo Cliente{% endif %} · CairoStudio{% endblock %}
 
-{# Ocultamos el título de página #}
 {% block page_title %}{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== CONTENEDOR ===== */
-    .form-container {
-        max-width: 900px;
-        margin: 0 auto;
-        padding: 0 20px;
-    }
+    .form-container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
 
-    /* ===== CABECERA ===== */
     .form-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 28px;
-        padding: 20px 24px;
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        border: 1px solid rgba(0,0,0,0.04);
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding: 20px 24px;
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+        border-radius: 20px; border: 1px solid rgba(0,0,0,0.04);
         box-shadow: 0 2px 12px rgba(0,0,0,0.02);
     }
-    .form-header .info {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
+    .form-header .info { display: flex; align-items: center; gap: 16px; }
     .form-header .avatar {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: #f0ece8;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 24px;
-        color: #a8854f;
-        flex-shrink: 0;
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #f0ece8; display: flex; align-items: center;
+        justify-content: center; font-size: 24px; color: #a8854f; flex-shrink: 0;
     }
     .form-header .name-group h1 {
-        font-family: 'Playfair Display', serif;
-        font-size: 24px;
-        font-weight: 700;
-        color: #1c1c1e;
-        margin: 0 0 2px 0;
+        font-family: 'Playfair Display', serif; font-size: 24px;
+        font-weight: 700; color: #1c1c1e; margin: 0 0 2px 0;
     }
     .form-header .name-group .sub {
-        font-size: 14px;
-        color: #8e8e93;
-        font-weight: 400;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
-    .form-header .name-group .sub .ref {
-        font-weight: 500;
-        color: #1c1c1e;
+        font-size: 14px; color: #8e8e93; display: flex;
+        align-items: center; gap: 8px; flex-wrap: wrap;
     }
     .badge-nivel-personalizado {
-        display: inline-block;
-        padding: 2px 12px;
-        border-radius: 30px;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        border: 1px solid rgba(0,0,0,0.1);
+        display: inline-block; padding: 2px 12px; border-radius: 30px;
+        font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.3px; border: 1px solid rgba(0,0,0,0.1);
     }
-    .form-header .actions {
-        display: flex;
-        gap: 8px;
-        flex-wrap: wrap;
-    }
+    .form-header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-    /* ===== TARJETA DEL FORMULARIO ===== */
     .form-card {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 28px 32px;
+        background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
+        border-radius: 20px; padding: 28px 32px;
         border: 1px solid rgba(0,0,0,0.04);
         box-shadow: 0 4px 20px rgba(0,0,0,0.02);
         margin-bottom: 24px;
     }
     .form-card .card-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        font-weight: 700;
-        color: #1c1c1e;
-        margin: 0 0 20px 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border-bottom: 1px solid #f0ece8;
-        padding-bottom: 12px;
+        font-family: 'Playfair Display', serif; font-size: 20px;
+        font-weight: 700; color: #1c1c1e; margin: 0 0 20px 0;
+        display: flex; align-items: center; gap: 10px;
+        border-bottom: 1px solid #f0ece8; padding-bottom: 12px;
+        justify-content: space-between;
     }
-    .form-card .card-title i {
-        color: #a8854f;
-        font-size: 20px;
-    }
+    .form-card .card-title .title-txt { display: flex; align-items: center; gap: 10px; }
+    .form-card .card-title i { color: #a8854f; font-size: 20px; }
 
-    /* ===== CAMPOS ===== */
-    .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 20px;
-    }
-    .form-group {
-        margin-bottom: 18px;
-    }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .form-group { margin-bottom: 18px; }
     .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 13px;
-        color: #333;
-        margin-bottom: 4px;
-        font-family: 'Inter', sans-serif;
+        display: block; font-weight: 600; font-size: 13px;
+        color: #333; margin-bottom: 4px; font-family: 'Inter', sans-serif;
     }
-    .form-group label .required {
-        color: #dc2626;
-        margin-left: 2px;
-    }
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1.5px solid #e0dcd8;
-        border-radius: 10px;
-        font-size: 14px;
-        background: #fafaf9;
+    .form-group label .required { color: #dc2626; margin-left: 2px; }
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%; padding: 10px 14px; border: 1.5px solid #e0dcd8;
+        border-radius: 10px; font-size: 14px; background: #fafaf9;
         transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
+        font-family: 'Inter', sans-serif; color: #1c1c1e; box-sizing: border-box;
     }
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #a8854f;
-        background: white;
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none; border-color: #a8854f; background: white;
         box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
-    .form-group textarea {
-        resize: vertical;
-        min-height: 60px;
-    }
-    .form-group small {
-        display: block;
-        color: #8e8e93;
-        font-size: 12px;
-        margin-top: 4px;
-    }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
 
-    /* ===== BOTONES ===== */
     .btn {
-        padding: 8px 20px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        font-family: 'Inter', sans-serif;
-        text-decoration: none;
-        background: #1c1c1e;
-        color: white;
+        padding: 8px 20px; border-radius: 30px; border: none;
+        font-weight: 600; font-size: 13px; cursor: pointer;
+        transition: all 0.2s; display: inline-flex; align-items: center;
+        gap: 6px; font-family: 'Inter', sans-serif;
+        text-decoration: none; background: #1c1c1e; color: white;
         white-space: nowrap;
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline {
-        background: transparent;
-        border: 1px solid #d2d2d7;
-        color: #1c1c1e;
-    }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
     .btn-success { background: #10b981; color: white; }
     .btn-success:hover { background: #059669; }
@@ -193,26 +90,145 @@
     .btn-warning:hover { background: #d97706; }
     .btn-danger { background: #dc2626; color: white; }
     .btn-danger:hover { background: #b91c1c; }
-    .btn-primary { background: #1c1c1e; color: white; }
-    .btn-primary:hover { background: #333; }
+    .btn-gold { background: #a8854f; color: white; }
+    .btn-gold:hover { background: #8c7040; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
+
+    /* Botón grande para "Crear primera etiqueta" */
+    .btn-gold-lg {
+        background: #a8854f; color: white;
+        padding: 10px 22px; font-size: 14px; border-radius: 30px;
+        font-weight: 600; border: none; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 8px;
+        transition: all 0.2s; font-family: 'Inter', sans-serif;
+    }
+    .btn-gold-lg:hover { background: #8c7040; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(168,133,79,0.3); }
 
     .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-        padding-top: 20px;
-        border-top: 1px solid #f0ece8;
+        display: flex; gap: 12px; flex-wrap: wrap;
+        margin-top: 8px; padding-top: 20px;
         justify-content: space-between;
     }
     .btn-group .left-buttons,
-    .btn-group .right-buttons {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
+    .btn-group .right-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ===== ETIQUETAS FAVORITAS ===== */
+    .fav-grid {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 14px;
+    }
+    .fav-card {
+        background: white; border: 1px solid #f0ece8;
+        border-radius: 14px; padding: 14px;
+        display: flex; flex-direction: column; gap: 8px;
+        transition: all 0.2s ease;
+    }
+    .fav-card:hover {
+        border-color: rgba(168,133,79,0.3);
+        box-shadow: 0 6px 22px rgba(168,133,79,0.10);
+        transform: translateY(-2px);
+    }
+    .fav-thumb {
+        width: 100%; height: 90px; border-radius: 8px;
+        border: 1px solid #f0ece8; object-fit: cover;
+        background: #fafaf9; display: block;
+    }
+    .fav-pdf-thumb {
+        width: 100%; height: 90px; border-radius: 8px;
+        border: 1px dashed #d2d2d7; background: #fafaf9;
+        display: flex; flex-direction: column; align-items: center;
+        justify-content: center; gap: 4px; color: #dc2626;
+        font-size: 11px; font-weight: 700; text-decoration: none;
+        transition: 0.15s;
+    }
+    .fav-pdf-thumb:hover { background: #fef2f2; border-color: #dc2626; }
+    .fav-pdf-thumb .pdf-ico { font-size: 28px; }
+    .fav-pdf-thumb .pdf-name {
+        color: #6b6b7a; font-weight: 500; max-width: 90%;
+        overflow: hidden; text-overflow: ellipsis;
+        white-space: nowrap; font-size: 10px;
+    }
+    .fav-nombre {
+        font-family: 'Playfair Display', serif; font-size: 15px;
+        font-weight: 700; color: #1c1c1e; line-height: 1.25;
+    }
+    .fav-dim {
+        font-size: 13px; color: #a8854f; font-weight: 700; margin-top: 2px;
+    }
+    .fav-notas {
+        font-size: 11px; color: #8e8e93; font-style: italic;
+        border-left: 2px solid #f0ece8; padding-left: 8px; margin-top: 4px;
+    }
+    .fav-acciones {
+        display: flex; gap: 6px; flex-wrap: wrap;
+        margin-top: auto; padding-top: 8px; border-top: 1px solid #f0ece8;
+    }
+    .fav-empty {
+        grid-column: 1 / -1; text-align: center;
+        padding: 40px 20px; color: #8e8e93;
+    }
+    .fav-empty .fav-empty-ico { font-size: 40px; opacity: 0.35; margin-bottom: 8px; }
+    .fav-empty h4 {
+        font-family: 'Playfair Display', serif;
+        color: #1c1c1e; margin: 0 0 4px 0; font-size: 17px;
+    }
+    .fav-empty p { margin: 0 0 16px 0; font-size: 13px; }
+
+    /* ===== MODAL ===== */
+    .modal-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+        z-index: 9999; justify-content: center; align-items: center;
+        padding: 16px; animation: csFade 0.18s ease;
+    }
+    .modal-overlay.active { display: flex; }
+    @keyframes csFade { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes csPop {
+        from { transform: scale(0.95) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal {
+        background: white; border-radius: 20px;
+        padding: 24px 26px 20px; width: 100%; max-width: 520px;
+        max-height: 92vh; overflow-y: auto;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        animation: csPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        margin-bottom: 16px; padding-bottom: 12px;
+        border-bottom: 1px solid #f0ece8;
+    }
+    .modal-header h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 19px; font-weight: 700; color: #1c1c1e; margin: 0;
+    }
+    .modal-close {
+        background: none; border: none; font-size: 26px;
+        line-height: 1; cursor: pointer; color: #8e8e93; padding: 0 4px;
+    }
+    .modal-close:hover { color: #1c1c1e; }
+    .modal-actions {
+        display: flex; justify-content: flex-end; gap: 10px;
+        margin-top: 16px; padding-top: 14px;
+        border-top: 1px solid #f0ece8;
+    }
+    .archivo-info-box {
+        background: #f5efe4; border-left: 3px solid #a8854f;
+        padding: 8px 12px; border-radius: 6px;
+        font-size: 12px; color: #78350f;
+        display: flex; align-items: center;
+        justify-content: space-between; gap: 8px; margin-top: 6px;
+    }
+    .archivo-info-box .fav-link {
+        color: #78350f; font-weight: 700;
+        text-decoration: underline; font-size: 12px;
+    }
+    .file-input-hint {
+        font-size: 11px; color: #8e8e93; margin-top: 4px;
+        display: flex; justify-content: space-between; gap: 8px;
     }
 
-    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; gap: 0; }
         .form-container { padding: 0 12px; }
@@ -223,6 +239,7 @@
         .btn-group .left-buttons,
         .btn-group .right-buttons { justify-content: center; }
         .btn { justify-content: center; }
+        .fav-grid { grid-template-columns: 1fr; }
     }
     @media (max-width: 480px) {
         .form-header .name-group h1 { font-size: 20px; }
@@ -265,10 +282,10 @@
         </div>
     </div>
 
-    <!-- ===== FORMULARIO ===== -->
+    <!-- ===== FORMULARIO PRINCIPAL ===== -->
     <form method="POST" id="clienteForm">
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-id-card"></i> Datos personales</div>
+            <div class="card-title"><span class="title-txt"><i class="fas fa-id-card"></i> Datos personales</span></div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Nombre <span class="required">*</span></label>
@@ -297,7 +314,7 @@
         </div>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-briefcase"></i> Información comercial</div>
+            <div class="card-title"><span class="title-txt"><i class="fas fa-briefcase"></i> Información comercial</span></div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Comercial asignado</label>
@@ -335,20 +352,15 @@
                 <label>Frecuencia de Pedido</label>
                 <select name="frecuencia_pedido">
                     <option value="">-- Seleccionar --</option>
-                    <option value="diario" {% if cliente and cliente.frecuencia_pedido == 'diario' %}selected{% endif %}>Diario</option>
-                    <option value="semanal" {% if cliente and cliente.frecuencia_pedido == 'semanal' %}selected{% endif %}>Semanal</option>
-                    <option value="quincenal" {% if cliente and cliente.frecuencia_pedido == 'quincenal' %}selected{% endif %}>Quincenal</option>
-                    <option value="mensual" {% if cliente and cliente.frecuencia_pedido == 'mensual' %}selected{% endif %}>Mensual</option>
-                    <option value="trimestral" {% if cliente and cliente.frecuencia_pedido == 'trimestral' %}selected{% endif %}>Trimestral</option>
-                    <option value="anual" {% if cliente and cliente.frecuencia_pedido == 'anual' %}selected{% endif %}>Anual</option>
-                    <option value="eventual" {% if cliente and cliente.frecuencia_pedido == 'eventual' %}selected{% endif %}>Eventual</option>
+                    {% for opt in ['diario','semanal','quincenal','mensual','trimestral','anual','eventual'] %}
+                        <option value="{{ opt }}" {% if cliente and cliente.frecuencia_pedido == opt %}selected{% endif %}>{{ opt|capitalize }}</option>
+                    {% endfor %}
                 </select>
-                <small>Frecuencia estimada de pedidos del cliente.</small>
             </div>
         </div>
 
         <div class="form-card">
-            <div class="card-title"><i class="fas fa-notes-medical"></i> Información adicional</div>
+            <div class="card-title"><span class="title-txt"><i class="fas fa-notes-medical"></i> Información adicional</span></div>
             <div class="form-grid-2">
                 <div class="form-group">
                     <label>Notas</label>
@@ -376,38 +388,286 @@
             </div>
         </div>
 
-        <!-- ===== BOTONES ===== -->
-        <div class="form-card" style="border: none; box-shadow: none; padding: 0 0 20px 0; background: transparent;">
-            <div class="btn-group">
-                <div class="left-buttons">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save"></i> {{ 'Actualizar' if cliente else 'Crear cliente' }}
-                    </button>
-                    <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
-                        <i class="fas fa-times"></i> Cancelar
-                    </a>
-                </div>
-                <div class="right-buttons">
-                    {% if cliente %}
-                        <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> Ver detalle
-                        </a>
-                        <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
-                            <i class="fas fa-plus"></i> Nueva orden
-                        </a>
-                        {% if current_user.role == 'admin' %}
-                            <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?')">
-                                <button type="submit" class="btn btn-danger">
-                                    <i class="fas fa-trash-alt"></i> Eliminar
-                                </button>
-                            </form>
+        <!-- ===== ETIQUETAS FAVORITAS (solo en edición) — ANTES DE LOS BOTONES ===== -->
+        {% if cliente %}
+        <div class="form-card" id="favoritos">
+            <div class="card-title">
+                <span class="title-txt">
+                    <i class="fas fa-star"></i> Etiquetas favoritas
+                    <span style="font-size:12px; color:#8e8e93; font-weight:400; margin-left:6px;">
+                        ({{ total_favoritos }} guardada{{ 's' if total_favoritos != 1 else '' }})
+                    </span>
+                </span>
+                <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalFavorito()">
+                    <i class="fas fa-plus"></i> Añadir etiqueta
+                </button>
+            </div>
+
+            <p style="color:#8e8e93; font-size:13px; margin: 0 0 16px 0;">
+                Guarda aquí las medidas que el cliente pide normalmente. Aparecerán en el formulario de órdenes
+                para reutilizarlas con un clic.
+            </p>
+
+            {% if etiquetas_favoritas %}
+            <div class="fav-grid">
+                {% for f in etiquetas_favoritas %}
+                <div class="fav-card">
+                    {% if f.archivo_ruta %}
+                        {% if f.es_imagen() %}
+                            <a href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                                <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
+                            </a>
+                        {% elif f.es_pdf() %}
+                            <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                                <span class="pdf-ico">📄</span>
+                                <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
+                                <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
+                            </a>
                         {% endif %}
                     {% endif %}
+
+                    <div>
+                        <div class="fav-nombre">{{ f.nombre }}</div>
+                        <div class="fav-dim">{{ f.medidas_str }}</div>
+                    </div>
+
+                    {% if f.notas %}<div class="fav-notas">{{ f.notas }}</div>{% endif %}
+
+                    <div class="fav-acciones">
+                        <button type="button" class="btn btn-sm btn-outline"
+                                onclick='abrirModalFavorito({
+                                    id: {{ f.id }},
+                                    nombre: {{ f.nombre|tojson }},
+                                    ancho_cm: {{ f.ancho_cm }},
+                                    alto_cm: {{ f.alto_cm }},
+                                    notas: {{ (f.notas or '')|tojson }},
+                                    archivo_nombre: {{ (f.archivo_nombre or '')|tojson }},
+                                    archivo_url: {{ (url_for('clientes.ver_archivo_favorito', fav_id=f.id) if f.archivo_ruta else '')|tojson }},
+                                    archivo_tipo: {{ (f.archivo_tipo or '')|tojson }}
+                                })'>
+                            <i class="fas fa-edit"></i> Editar
+                        </button>
+                        <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar la etiqueta favorita &quot;{{ f.nombre }}&quot;?')">
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                        </form>
+                    </div>
                 </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="fav-empty">
+                <div class="fav-empty-ico">⭐</div>
+                <h4>Aún no tiene etiquetas favoritas guardadas</h4>
+                <p>Guarda las medidas que este cliente pide normalmente para reutilizarlas con un clic.</p>
+                <button type="button" class="btn-gold-lg" onclick="abrirModalFavorito()">
+                    <i class="fas fa-plus"></i> Crear primera etiqueta
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- ===== BOTONES (ahora después de los favoritos) ===== -->
+        <div class="btn-group">
+            <div class="left-buttons">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-save"></i> {{ 'Actualizar cliente' if cliente else 'Crear cliente' }}
+                </button>
+                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+                    <i class="fas fa-times"></i> Cancelar
+                </a>
+            </div>
+            <div class="right-buttons">
+                {% if cliente %}
+                    <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline">
+                        <i class="fas fa-eye"></i> Ver detalle
+                    </a>
+                    <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nueva orden
+                    </a>
+                    {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?')">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-trash-alt"></i> Eliminar
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
-
     </form>
 
 </div>
+
+<!-- ============================================================
+     MODAL: NUEVA / EDITAR ETIQUETA FAVORITA
+     ============================================================ -->
+{% if cliente %}
+<div class="modal-overlay" id="modalFavorito">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="favModalTitle">Nueva etiqueta favorita</h3>
+            <button type="button" class="modal-close" onclick="cerrarModalFavorito()">&times;</button>
+        </div>
+
+        <form method="POST" action="{{ url_for('clientes.crear_favorito', cliente_id=cliente.id) }}"
+              enctype="multipart/form-data" id="favForm">
+            <input type="hidden" name="fav_id" id="favId" value="">
+
+            <div class="form-group">
+                <label>Nombre <span class="required">*</span></label>
+                <input type="text" name="nombre" id="favNombre" required maxlength="150"
+                       placeholder="Ej. Etiqueta 5×3 Vinilo Brillante">
+                <small>Si dejas vacío y adjuntas un archivo, tomaremos el nombre del archivo.</small>
+            </div>
+
+            <div class="form-grid-2">
+                <div class="form-group">
+                    <label>Ancho (cm) <span class="required">*</span></label>
+                    <input type="number" name="ancho_cm" id="favAncho" step="0.01" min="0.01" required placeholder="Ej. 5">
+                </div>
+                <div class="form-group">
+                    <label>Alto (cm) <span class="required">*</span></label>
+                    <input type="number" name="alto_cm" id="favAlto" step="0.01" min="0.01" required placeholder="Ej. 3">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Archivo adjunto (PDF o imagen, opcional)</label>
+                <input type="file" name="archivo" id="favArchivo" accept="image/*,application/pdf">
+                <div class="file-input-hint">
+                    <span>Al seleccionar un archivo, intentamos extraer las medidas automáticamente.</span>
+                    <span>Máx. {{ favoritos_max_mb|round(0)|int }} MB{% if puede_subir_grande %} (admin: sin límite){% endif %}</span>
+                </div>
+                <div class="archivo-info-box" id="favArchivoInfo" style="display:none;">
+                    <div id="favArchivoInfoTxt"></div>
+                    <label style="font-size:11px; color:#78350f; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                        <input type="checkbox" name="eliminar_archivo" id="favEliminarArchivo"> Quitar
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Notas</label>
+                <textarea name="notas" id="favNotas" rows="2"
+                          placeholder="Ej. Esquinas redondeadas, Pantone 300C..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="cerrarModalFavorito()">Cancelar</button>
+                <button type="submit" class="btn btn-success" id="favSubmitBtn">
+                    <i class="fas fa-save"></i> <span id="favSubmitTxt">Guardar</span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+{% if cliente %}
+<script>
+    const URL_CREAR = "{{ url_for('clientes.crear_favorito', cliente_id=cliente.id) }}";
+    const URL_EDITAR_BASE = "{{ url_for('clientes.editar_favorito', fav_id=0) }}";
+
+    function setFormActionEditar(id) {
+        document.getElementById('favForm').action = URL_EDITAR_BASE.replace('/0/', '/' + id + '/');
+    }
+    function setFormActionCrear() {
+        document.getElementById('favForm').action = URL_CREAR;
+    }
+
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function abrirModalFavorito(data) {
+        const modal = document.getElementById('modalFavorito');
+        if (!modal) return;
+        const isEdit = data && data.id;
+
+        document.getElementById('favForm').reset();
+        document.getElementById('favArchivoInfo').style.display = 'none';
+        document.getElementById('favArchivoInfoTxt').innerHTML = '';
+        document.getElementById('favEliminarArchivo').checked = false;
+
+        if (isEdit) {
+            document.getElementById('favModalTitle').textContent = 'Editar etiqueta favorita';
+            document.getElementById('favSubmitTxt').textContent = 'Actualizar';
+            document.getElementById('favId').value = data.id;
+            setFormActionEditar(data.id);
+
+            document.getElementById('favNombre').value = data.nombre || '';
+            document.getElementById('favAncho').value = data.ancho_cm || '';
+            document.getElementById('favAlto').value = data.alto_cm || '';
+            document.getElementById('favNotas').value = data.notas || '';
+
+            if (data.archivo_nombre) {
+                const box = document.getElementById('favArchivoInfo');
+                const t = document.getElementById('favArchivoInfoTxt');
+                t.innerHTML = '📎 Archivo actual: <a class="fav-link" target="_blank" href="' + (data.archivo_url || '#') + '">' + escapeHtml(data.archivo_nombre) + '</a>';
+                box.style.display = 'flex';
+            }
+        } else {
+            document.getElementById('favModalTitle').textContent = 'Nueva etiqueta favorita';
+            document.getElementById('favSubmitTxt').textContent = 'Guardar';
+            document.getElementById('favId').value = '';
+            setFormActionCrear();
+        }
+
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function cerrarModalFavorito() {
+        const modal = document.getElementById('modalFavorito');
+        if (!modal) return;
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('modalFavorito');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) cerrarModalFavorito();
+            });
+        }
+
+        const archivoInput = document.getElementById('favArchivo');
+        if (archivoInput) {
+            archivoInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+                // Auto-nombre
+                const nombreInput = document.getElementById('favNombre');
+                if (!nombreInput.value.trim()) {
+                    nombreInput.value = file.name.replace(/\.[^.]+$/, '').slice(0, 150);
+                }
+                // Auto-medidas (solo imágenes - leemos con el File API)
+                if (file.type.startsWith('image/')) {
+                    const anchoInput = document.getElementById('favAncho');
+                    const altoInput = document.getElementById('favAlto');
+                    const url = URL.createObjectURL(file);
+                    const img = new Image();
+                    img.onload = function() {
+                        URL.revokeObjectURL(url);
+                        const DPI = 300;
+                        if (!anchoInput.value) anchoInput.value = (img.width / DPI * 2.54).toFixed(2);
+                        if (!altoInput.value) altoInput.value = (img.height / DPI * 2.54).toFixed(2);
+                    };
+                    img.src = url;
+                }
+                // Para PDFs: el backend extrae las medidas al guardar.
+            });
+        }
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') cerrarModalFavorito();
+    });
+</script>
+{% endif %}
 {% endblock %}
