@@ -592,11 +592,11 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.ancho if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.get('ancho', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Alto (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.alto if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.get('alto', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                             </div>
 
@@ -614,20 +614,20 @@
                                                 <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(por defecto 1.30, máx. ancho real del rollo)</span></label>
                                                 <input type="number" step="0.01" min="0.01" class="ancho_util_override_edit"
                                                        name="ancho_util_override_edit[]"
-                                                       value="{{ params.ancho_util_usado or '' }}"
+                                                       value="{{ params.get('ancho_util_usado') or '' if params else '' }}"
                                                        placeholder="Ej. 1.30"
                                                        data-ancho-rollo="{{ archivo.producto.ancho_rollo if archivo.producto else '' }}"
                                                        oninput="validarAnchoUtilEdit(this)">
                                             </div>
                                             <div class="form-group">
                                                 <label>Precio (USD/m²)</label>
-                                                <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.precio if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.get('precio', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                             <div class="checkbox-grid">
-                                                <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.mesa %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
-                                                <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
-                                                <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if params and params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
-                                                <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                                <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.get('mesa') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
+                                                <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.get('girar') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
+                                                <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if not params or params.get('auto_girar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
+                                                <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit[]" value="1" {% if not params or params.get('centrar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
                                             </div>
 
                                             <div class="form-group">
@@ -664,27 +664,27 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="ancho_cartel_edit" name="ancho_cartel_edit[]" value="{{ params.ancho if params else 100 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_cartel_edit" name="ancho_cartel_edit[]" value="{{ params.get('ancho', 100) if params else 100 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Alto (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="alto_cartel_edit" name="alto_cartel_edit[]" value="{{ params.alto if params else 200 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="alto_cartel_edit" name="alto_cartel_edit[]" value="{{ params.get('alto', 200) if params else 200 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                             </div>
                                             <div class="form-group">
                                                 <label>Cantidad de piezas</label>
-                                                <input type="number" min="1" step="1" class="cantidad_cartel_edit" name="cantidad_cartel_edit[]" value="{{ params.cantidad if params else 1 }}" data-archivo-id="{{ archivo.id }}">
+                                                <input type="number" min="1" step="1" class="cantidad_cartel_edit" name="cantidad_cartel_edit[]" value="{{ params.get('cantidad', 1) if params else 1 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho útil (m) <span style="font-weight:400; color:#8e8e93;">(default = ancho real)</span></label>
-                                                    <input type="number" step="0.01" min="0.01" class="ancho_util_override_cartel_edit" name="ancho_util_override_cartel_edit[]" value="{{ params.ancho_util_usado or '' }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_util_override_cartel_edit" name="ancho_util_override_cartel_edit[]" value="{{ params.get('ancho_util_usado') or '' if params else '' }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Tipo de material <span style="font-weight:400; color:#8e8e93;">(precios sugeridos)</span></label>
                                                     <select class="tipo_material_cartel_edit" name="tipo_material_cartel_edit[]" data-archivo-id="{{ archivo.id }}">
                                                         {% for key, mat in materiales_cartel.items() %}
-                                                        <option value="{{ key }}" data-impresion="{{ mat.impresion }}" data-merma="{{ mat.merma }}" {% if params and params.tipo_material == key %}selected{% endif %}>{{ key }}</option>
+                                                        <option value="{{ key }}" data-impresion="{{ mat.impresion }}" data-merma="{{ mat.merma }}" {% if params and params.get('tipo_material') == key %}selected{% endif %}>{{ key }}</option>
                                                         {% endfor %}
                                                     </select>
                                                 </div>
@@ -692,18 +692,18 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Precio impresión ($/m²)</label>
-                                                    <input type="number" step="0.01" min="0" class="precio_impresion_cartel_edit" name="precio_impresion_cartel_edit[]" value="{{ params.precio_impresion_m2 if params else 10.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0" class="precio_impresion_cartel_edit" name="precio_impresion_cartel_edit[]" value="{{ params.get('precio_impresion_m2', 10.00) if params else 10.00 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Precio merma ($/m²)</label>
-                                                    <input type="number" step="0.01" min="0" class="precio_merma_cartel_edit" name="precio_merma_cartel_edit[]" value="{{ params.precio_merma_m2 if params else 4.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0" class="precio_merma_cartel_edit" name="precio_merma_cartel_edit[]" value="{{ params.get('precio_merma_m2', 4.00) if params else 4.00 }}" data-archivo-id="{{ archivo.id }}">
                                                     <span class="precio-hint">💡 La merma se cobra al cliente a este precio</span>
                                                 </div>
                                             </div>
                                             <div class="checkbox-grid">
-                                                <label><input type="checkbox" class="girar_cartel_edit" name="girar_cartel_edit[]" value="1" {% if params and params.girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
-                                                <label><input type="checkbox" class="auto_girar_cartel_edit" name="auto_girar_cartel_edit[]" value="1" {% if not params or params.auto_girar is not defined or params.auto_girar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
-                                                <label><input type="checkbox" class="centrar_cartel_edit" name="centrar_cartel_edit[]" value="1" {% if not params or params.centrar is not defined or params.centrar %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                                <label><input type="checkbox" class="girar_cartel_edit" name="girar_cartel_edit[]" value="1" {% if params and params.get('girar') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
+                                                <label><input type="checkbox" class="auto_girar_cartel_edit" name="auto_girar_cartel_edit[]" value="1" {% if not params or params.get('auto_girar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
+                                                <label><input type="checkbox" class="centrar_cartel_edit" name="centrar_cartel_edit[]" value="1" {% if not params or params.get('centrar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
                                             </div>
 
                                             <div class="form-group">
@@ -719,13 +719,38 @@
                                             </div>
 
                                             <div class="calc-result-linea">
-                                                <div class="item"><span class="label">Piezas</span><span class="value piezas_cartel_display_edit">{{ params.cantidad or 0 }}</span><span class="hint distribucion_cartel_display_edit">{{ params.filas or 0 }} filas × {{ params.cols or 0 }} cols</span></div>
-                                                <div class="item"><span class="label">Área piezas</span><span class="value area_piezas_cartel_display_edit">{{ params.area_piezas_m2|round(2) if params else '—' }} m²</span></div>
-                                                <div class="item"><span class="label">Material consumido</span><span class="value material_consumido_cartel_display_edit">{{ params.area_rollo_m2|round(2) if params else '—' }} m²</span><span class="hint largo_total_cartel_display_edit">{{ params.largo_total_m|round(2) if params else '—' }} m</span></div>
-                                                <div class="item"><span class="label">Costo impresión</span><span class="value costo_impresion_cartel_display_edit">${{ params.costo_impresion|round(2) if params else '—' }}</span></div>
-                                                <div class="item"><span class="label">Sobrante facturado</span><span class="value costo_merma_cartel_display_edit merma">${{ params.costo_merma|round(2) if params else '—' }}</span><span class="hint sobrante_m2_cartel_display_edit">{{ params.merma_facturada_m2|round(2) if params else '—' }} m²</span></div>
-                                                <div class="item"><span class="label">Costo total</span><span class="value costo_total_cartel_display_edit">${{ params.costo_estimado|round(2) if params else '—' }}</span></div>
-                                                <div class="item"><span class="label">Merma operativa (gap)</span><span class="value merma_pct_cartel_display_edit merma">{{ params.merma_operativa_pct|round(1) if params else '—' }}%</span><span class="hint merma_m2_cartel_display_edit">{{ params.merma_operativa_m2|round(3) if params else '—' }} m²</span></div>
+                                                <div class="item">
+                                                    <span class="label">Piezas</span>
+                                                    <span class="value piezas_cartel_display_edit">{{ params.get('cantidad', 0) if params else 0 }}</span>
+                                                    <span class="hint distribucion_cartel_display_edit">{{ params.get('filas', 0) if params else 0 }} filas × {{ params.get('cols', 0) if params else 0 }} cols</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Área piezas</span>
+                                                    <span class="value area_piezas_cartel_display_edit">{{ (params.get('area_piezas_m2', 0))|round(2) if params else '—' }} m²</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Material consumido</span>
+                                                    <span class="value material_consumido_cartel_display_edit">{{ (params.get('area_rollo_m2', 0))|round(2) if params else '—' }} m²</span>
+                                                    <span class="hint largo_total_cartel_display_edit">{{ (params.get('largo_total_m', 0))|round(2) if params else '—' }} m</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Costo impresión</span>
+                                                    <span class="value costo_impresion_cartel_display_edit">${{ (params.get('costo_impresion', 0))|round(2) if params else '—' }}</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Sobrante facturado</span>
+                                                    <span class="value costo_merma_cartel_display_edit merma">${{ (params.get('costo_merma', 0))|round(2) if params else '—' }}</span>
+                                                    <span class="hint sobrante_m2_cartel_display_edit">{{ (params.get('merma_facturada_m2', 0))|round(2) if params else '—' }} m²</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Costo total</span>
+                                                    <span class="value costo_total_cartel_display_edit">${{ (params.get('costo_estimado', 0))|round(2) if params else '—' }}</span>
+                                                </div>
+                                                <div class="item">
+                                                    <span class="label">Merma operativa (gap)</span>
+                                                    <span class="value merma_pct_cartel_display_edit merma">{{ (params.get('merma_operativa_pct', 0))|round(1) if params else '—' }}%</span>
+                                                    <span class="hint merma_m2_cartel_display_edit">{{ (params.get('merma_operativa_m2', 0))|round(3) if params else '—' }} m²</span>
+                                                </div>
                                             </div>
                                             <div style="margin-top:4px;">
                                                 <button type="button" class="btn btn-sm btn-outline ocultar-carteles" data-params-id="{{ paramsId }}">Ocultar</button>
