@@ -228,6 +228,91 @@
         display: flex; justify-content: space-between; gap: 8px;
     }
 
+    /* ============================================================
+       MODAL DE CONFIRMACIÓN PERSONALIZADO
+       ============================================================ */
+    .cs-confirm-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+        z-index: 10000;
+        justify-content: center; align-items: center;
+        padding: 16px; animation: csFade 0.18s ease;
+    }
+    .cs-confirm-overlay.active { display: flex; }
+
+    .cs-confirm-box {
+        background: white; border-radius: 20px;
+        padding: 26px 28px 22px; max-width: 460px; width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        animation: csPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center;
+        border-top: 5px solid #dc2626;
+        box-sizing: border-box;
+    }
+    .cs-confirm-box.warning { border-top-color: #f59e0b; }
+    .cs-confirm-box.danger  { border-top-color: #dc2626; }
+    .cs-confirm-box.success { border-top-color: #10b981; }
+    .cs-confirm-box.info    { border-top-color: #3b82f6; }
+
+    .cs-confirm-icon {
+        width: 64px; height: 64px; border-radius: 50%;
+        margin: 0 auto 14px; display: flex;
+        align-items: center; justify-content: center;
+        font-size: 30px;
+        background: #fef2f2; color: #dc2626;
+    }
+    .cs-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
+    .cs-confirm-icon.danger  { background: #fef2f2; color: #dc2626; }
+    .cs-confirm-icon.success { background: #ecfdf5; color: #10b981; }
+    .cs-confirm-icon.info    { background: #eff6ff; color: #3b82f6; }
+
+    .cs-confirm-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 20px; font-weight: 700;
+        color: #1c1c1e; margin: 0 0 8px 0; line-height: 1.25;
+    }
+    .cs-confirm-message {
+        font-size: 14px; color: #555;
+        line-height: 1.55; margin: 0 0 22px 0;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+    .cs-confirm-actions {
+        display: flex; justify-content: center;
+        gap: 12px; flex-wrap: wrap;
+    }
+    .cs-confirm-btn {
+        padding: 10px 24px; border-radius: 30px; border: none;
+        font-weight: 600; font-size: 14px; cursor: pointer;
+        transition: all 0.15s; font-family: 'Inter', sans-serif;
+        min-width: 120px;
+        display: inline-flex; align-items: center;
+        justify-content: center; gap: 6px;
+    }
+    .cs-confirm-btn.danger {
+        background: #dc2626; color: white;
+    }
+    .cs-confirm-btn.danger:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220,38,38,0.3);
+    }
+    .cs-confirm-btn.warning {
+        background: #f59e0b; color: white;
+    }
+    .cs-confirm-btn.warning:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(245,158,11,0.3);
+    }
+    .cs-confirm-btn.cancel {
+        background: transparent;
+        border: 1.5px solid #d2d2d7; color: #1c1c1e;
+    }
+    .cs-confirm-btn.cancel:hover {
+        border-color: #8e8e93; background: #f5f5f5;
+    }
+
     @media (max-width: 768px) {
         .form-grid-2 { grid-template-columns: 1fr; gap: 0; }
         .form-container { padding: 0 12px; }
@@ -239,6 +324,13 @@
         .btn-group .right-buttons { justify-content: center; }
         .btn { justify-content: center; }
         .fav-grid { grid-template-columns: 1fr; }
+
+        .cs-confirm-box { padding: 22px 20px 18px; border-radius: 16px; }
+        .cs-confirm-icon { width: 54px; height: 54px; font-size: 26px; }
+        .cs-confirm-title { font-size: 18px; }
+        .cs-confirm-message { font-size: 13px; }
+        .cs-confirm-actions { flex-direction: column; }
+        .cs-confirm-btn { width: 100%; }
     }
     @media (max-width: 480px) {
         .form-header .name-group h1 { font-size: 20px; }
@@ -393,7 +485,6 @@
 
     <!-- ============================================================
          ETIQUETAS FAVORITAS — FUERA del form del cliente
-         (sus <form> de eliminar funcionan correctamente)
          ============================================================ -->
     {% if cliente %}
     <div class="form-card" id="favoritos">
@@ -453,8 +544,16 @@
                             })'>
                         <i class="fas fa-edit"></i> Editar
                     </button>
-                    <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar la etiqueta favorita &quot;{{ f.nombre }}&quot;?');">
-                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
+                    <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}"
+                          class="form-cs-confirm"
+                          data-confirm-title="Eliminar etiqueta favorita"
+                          data-confirm-message="¿Eliminar la etiqueta favorita &quot;{{ f.nombre }}&quot;?&#10;&#10;Esta acción no se puede deshacer."
+                          data-confirm-ok="Sí, eliminar"
+                          data-confirm-variant="warning"
+                          style="display:inline;">
+                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar etiqueta">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -494,7 +593,13 @@
                     <i class="fas fa-plus"></i> Nueva orden
                 </a>
                 {% if current_user.role == 'admin' %}
-                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este cliente permanentemente?');">
+                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}"
+                          class="form-cs-confirm"
+                          data-confirm-title="Eliminar cliente"
+                          data-confirm-message="¿Eliminar el cliente &quot;{{ cliente.nombre }}&quot; permanentemente?&#10;&#10;También se eliminarán sus etiquetas favoritas. Esta acción no se puede deshacer."
+                          data-confirm-ok="Sí, eliminar cliente"
+                          data-confirm-variant="danger"
+                          style="display:inline;">
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash-alt"></i> Eliminar
                         </button>
@@ -570,11 +675,121 @@
     </div>
 </div>
 {% endif %}
+
+<!-- ============================================================
+     MODAL DE CONFIRMACIÓN PERSONALIZADO
+     ============================================================ -->
+<div class="cs-confirm-overlay" id="csConfirmOverlay">
+    <div class="cs-confirm-box" id="csConfirmBox">
+        <div class="cs-confirm-icon" id="csConfirmIcon">
+            <i class="fas fa-trash-alt"></i>
+        </div>
+        <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
+        <p class="cs-confirm-message" id="csConfirmMessage">¿Estás seguro?</p>
+        <div class="cs-confirm-actions">
+            <button type="button" class="cs-confirm-btn cancel" id="csConfirmCancel">Cancelar</button>
+            <button type="button" class="cs-confirm-btn danger" id="csConfirmOk">Eliminar</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
-{% if cliente %}
 <script>
+    // ============================================================
+    // MODAL DE CONFIRMACIÓN PERSONALIZADO
+    // ============================================================
+    let csConfirmCallback = null;
+
+    function csConfirm(opts) {
+        const overlay = document.getElementById('csConfirmOverlay');
+        const box = document.getElementById('csConfirmBox');
+        const iconEl = document.getElementById('csConfirmIcon');
+        const titleEl = document.getElementById('csConfirmTitle');
+        const messageEl = document.getElementById('csConfirmMessage');
+        const okBtn = document.getElementById('csConfirmOk');
+
+        const variant = opts.variant || 'danger';
+        box.className = 'cs-confirm-box ' + variant;
+        iconEl.className = 'cs-confirm-icon ' + variant;
+
+        if (variant === 'warning') {
+            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            okBtn.className = 'cs-confirm-btn warning';
+        } else if (variant === 'success') {
+            iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
+            okBtn.className = 'cs-confirm-btn danger';
+        } else if (variant === 'info') {
+            iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
+            okBtn.className = 'cs-confirm-btn danger';
+        } else {
+            iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
+            okBtn.className = 'cs-confirm-btn danger';
+        }
+
+        titleEl.textContent = opts.title || 'Confirmar acción';
+        messageEl.textContent = opts.message || '¿Estás seguro?';
+        okBtn.textContent = opts.okText || 'Eliminar';
+
+        csConfirmCallback = opts.onConfirm || null;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function csConfirmClose() {
+        const overlay = document.getElementById('csConfirmOverlay');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+        csConfirmCallback = null;
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const okBtn = document.getElementById('csConfirmOk');
+        const cancelBtn = document.getElementById('csConfirmCancel');
+        const overlay = document.getElementById('csConfirmOverlay');
+
+        if (okBtn) {
+            okBtn.addEventListener('click', function() {
+                const cb = csConfirmCallback;
+                csConfirmClose();
+                if (typeof cb === 'function') cb();
+            });
+        }
+        if (cancelBtn) cancelBtn.addEventListener('click', csConfirmClose);
+        if (overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) csConfirmClose();
+            });
+        }
+
+        // Interceptar todos los forms con class="form-cs-confirm"
+        document.querySelectorAll('form.form-cs-confirm').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const self = this;
+                csConfirm({
+                    title: self.dataset.confirmTitle || 'Confirmar acción',
+                    message: self.dataset.confirmMessage || '¿Estás seguro?',
+                    okText: self.dataset.confirmOk || 'Eliminar',
+                    variant: self.dataset.confirmVariant || 'danger',
+                    onConfirm: function() {
+                        // form.submit() NO dispara 'submit' de nuevo → sin bucle
+                        self.submit();
+                    }
+                });
+            });
+        });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') csConfirmClose();
+    });
+
+    // ============================================================
+    // MODAL DE FAVORITO (solo si existe)
+    // ============================================================
+    {% if cliente %}
     const URL_CREAR = "{{ url_for('clientes.crear_favorito', cliente_id=cliente.id) }}";
     const URL_EDITAR_BASE = "{{ url_for('clientes.editar_favorito', fav_id=0) }}";
 
@@ -672,6 +887,6 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') cerrarModalFavorito();
     });
+    {% endif %}
 </script>
-{% endif %}
 {% endblock %}
