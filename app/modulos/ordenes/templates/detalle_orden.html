@@ -1,4 +1,3 @@
-<!-- app/modulos/ordenes/templates/detalle_orden.html -->
 {% extends "base.html" %}
 
 {% block title %}Orden de Trabajo {{ order.order_num }} · CairoStudio{% endblock %}
@@ -359,7 +358,8 @@
                     </div>
                     <div class="preview-canvas-wrap">
                         <canvas id="preview-detalle-etiqueta-{{ archivo.id }}" width="900" height="280"
-                                data-params='{{ params|tojson if params else "{}" }}'></canvas>
+                                data-params='{{ params|tojson if params else "{}" }}'
+                                data-fav-id="{{ params.fav_id if params and params.fav_id else '' }}"></canvas>
                     </div>
                     <div class="preview-legend">
                         <span class="item"><span class="swatch" style="background:#fef3c7;border:1px solid #f59e0b;"></span> Etiqueta</span>
@@ -472,28 +472,57 @@
 })();
 
 // =============================================
+// CACHÉ DE IMÁGENES DE FAVORITOS (detalle)
+// clave: canvasId  →  valor: HTMLImageElement | HTMLCanvasElement
+// =============================================
+const imagenesFavoritasDetalle = new Map();
+
+// ============================================================
+// Renderiza la primera página de un PDF a un canvas offscreen.
+// ============================================================
+async function renderizarPdfACanvasDetalle(url, targetWidth = 800) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js no disponible');
+    const loadingTask = pdfjsLib.getDocument(url);
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.0 });
+    const scale = targetWidth / viewport.width;
+    const scaled = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(scaled.width);
+    canvas.height = Math.round(scaled.height);
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport: scaled }).promise;
+    return canvas;
+}
+
+// =============================================
 // DIBUJAR VISTA PREVIA DE ETIQUETAS (POR PAÑOS)
 // =============================================
 function calcularPañosGrupos(params) {
-    const n_paños = params.n_paños || 1;
-    const filasTotales = params.filas || 0;
-    const alto_cell = params.alto_cell_usado_m || 0.05;
-    const ancho_util = params.ancho_util_usado || 1.30;
+    if (!params) return [];
+    const n_paños = parseInt(params.n_paños) || 1;
+    const alto_cell = parseFloat(params.alto_cell_usado_m) || 0.05;
+    const ancho_util = parseFloat(params.ancho_util_usado) || 1.30;
+
+    // Fallback: si no hay 'filas', intentar inferirlas desde n_etiquetas/columnas
+    let filasTotales = parseInt(params.filas);
+    if (!filasTotales && params.n_etiquetas && params.columnas) {
+        filasTotales = Math.ceil(parseInt(params.n_etiquetas) / parseInt(params.columnas));
+    }
+    filasTotales = filasTotales || 0;
 
     if (filasTotales <= 0 || n_paños <= 0) return [];
 
     const filasPorPañoMax = alto_cell > 0 ? Math.floor((1.0 / ancho_util) / alto_cell) : 1;
+    if (filasPorPañoMax <= 0) return [{ filas: filasTotales, count: 1 }];
 
     const grupos = [];
     const pañosCompletos = Math.floor(filasTotales / filasPorPañoMax);
     const filasRestantes = filasTotales % filasPorPañoMax;
 
-    if (pañosCompletos > 0) {
-        grupos.push({ filas: filasPorPañoMax, count: pañosCompletos });
-    }
-    if (filasRestantes > 0) {
-        grupos.push({ filas: filasRestantes, count: 1 });
-    }
+    if (pañosCompletos > 0) grupos.push({ filas: filasPorPañoMax, count: pañosCompletos });
+    if (filasRestantes > 0) grupos.push({ filas: filasRestantes, count: 1 });
 
     const totalPañosCalc = grupos.reduce((s, g) => s + g.count, 0);
     if (totalPañosCalc !== n_paños) {
@@ -516,6 +545,7 @@ function calcularPañosGrupos(params) {
 function dibujarPreviewEtiquetasDetalle(canvas, params) {
     if (!canvas || !params) return;
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     const W = canvas.width;
     const H = canvas.height;
 
@@ -547,6 +577,14 @@ function dibujarPreviewEtiquetasDetalle(canvas, params) {
     const columnas = params.columnas || 1;
     const gap_m = (params.gap_usado_cm || 6.5) / 100.0;
     const centrar = params.centrar === undefined ? true : !!params.centrar;
+    const esRotado = params.es_rotado === true;
+
+    // ⭐ Imagen del favorito (si existe en caché)
+    const fuente = imagenesFavoritasDetalle.get(canvas.id) || null;
+    const fuenteLista = fuente && (
+        (fuente instanceof HTMLImageElement && fuente.complete && fuente.naturalWidth > 0) ||
+        (fuente instanceof HTMLCanvasElement && fuente.width > 0 && fuente.height > 0)
+    );
 
     grupos.forEach((grupo, g) => {
         const filasGrupo = grupo.filas;
@@ -587,11 +625,53 @@ function dibujarPreviewEtiquetasDetalle(canvas, params) {
             for (let c = 0; c < columnas; c++) {
                 const x = offsetX_piezas + c * ancho_cell_px;
                 const y = offsetY + f * alto_cell_px;
-                ctx.fillStyle = '#fef3c7';
-                ctx.fillRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
-                ctx.strokeStyle = '#f59e0b';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+
+                if (fuenteLista && ancho_cell_px > 8 && alto_cell_px > 8) {
+                    // --- Dibujar imagen del favorito dentro de la celda ---
+                    const natW = fuente.naturalWidth || fuente.width;
+                    const natH = fuente.naturalHeight || fuente.height;
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                    ctx.clip();
+
+                    if (esRotado) {
+                        const cx = x + ancho_cell_px / 2;
+                        const cy = y + alto_cell_px / 2;
+                        ctx.translate(cx, cy);
+                        ctx.rotate(-Math.PI / 2);
+                        const w = alto_cell_px - 2;
+                        const h = ancho_cell_px - 2;
+                        const cellRatio = w / h;
+                        const imgRatio = natW / natH;
+                        let dw, dh;
+                        if (imgRatio > cellRatio) { dw = w; dh = w / imgRatio; }
+                        else { dh = h; dw = h * imgRatio; }
+                        ctx.drawImage(fuente, -dw / 2, -dh / 2, dw, dh);
+                    } else {
+                        const cellRatio = (ancho_cell_px - 2) / (alto_cell_px - 2);
+                        const imgRatio = natW / natH;
+                        let dw, dh;
+                        if (imgRatio > cellRatio) { dw = ancho_cell_px - 2; dh = dw / imgRatio; }
+                        else { dh = alto_cell_px - 2; dw = dh * imgRatio; }
+                        const dx = x + 1 + ((ancho_cell_px - 2) - dw) / 2;
+                        const dy = y + 1 + ((alto_cell_px - 2) - dh) / 2;
+                        ctx.drawImage(fuente, dx, dy, dw, dh);
+                    }
+                    ctx.restore();
+
+                    // Borde de la celda encima de la imagen
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                } else {
+                    ctx.fillStyle = '#fef3c7';
+                    ctx.fillRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                }
             }
         }
 
@@ -632,6 +712,7 @@ function dibujarPreviewEtiquetasDetalle(canvas, params) {
 function dibujarPreviewCartelDetalle(canvas, params) {
     if (!canvas || !params) return;
     const ctx = canvas.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     const W = canvas.width;
     const H = canvas.height;
 
@@ -745,29 +826,214 @@ function dibujarPreviewCartelDetalle(canvas, params) {
     ctx.fillText(`${ancho_real.toFixed(2)} m`, W - pad, offsetY + 11);
 }
 
-// =============================================
-// INICIALIZAR TODAS LAS VISTAS PREVIAS
-// =============================================
-document.addEventListener('DOMContentLoaded', function() {
-    requestAnimationFrame(() => {
-        document.querySelectorAll('canvas[id^="preview-detalle-etiqueta-"]').forEach(canvas => {
-            try {
-                const params = JSON.parse(canvas.dataset.params || '{}');
-                dibujarPreviewEtiquetasDetalle(canvas, params);
-            } catch(e) {
-                console.error('Error dibujando preview etiquetas:', e);
-            }
-        });
+// ============================================
+// INICIALIZACIÓN ROBUSTA DE CANVASES (DETALLE)
+// ============================================
+function dibujarPlaceholder(canvas, texto) {
+    try {
+        const ctx = canvas.getContext('2d');
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#f8f6f4';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#8e8e93';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(texto, canvas.width / 2, canvas.height / 2);
+    } catch (_) {}
+}
 
-        document.querySelectorAll('canvas[id^="preview-detalle-cartel-"]').forEach(canvas => {
-            try {
-                const params = JSON.parse(canvas.dataset.params || '{}');
-                dibujarPreviewCartelDetalle(canvas, params);
-            } catch(e) {
-                console.error('Error dibujando preview cartel:', e);
+function inicializarCanvasesDetalle() {
+    let dibujados = 0, saltados = 0, errores = 0;
+
+    // ---- ETIQUETAS ----
+    document.querySelectorAll('canvas[id^="preview-detalle-etiqueta-"]').forEach(canvas => {
+        try {
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            const raw = canvas.dataset.params || '';
+            if (!raw || raw === '{}') {
+                saltados++;
+                console.warn('[detalle] sin params para', canvas.id);
+                dibujarPlaceholder(canvas, 'Sin datos de configuración');
+                return;
             }
-        });
+            let params;
+            try {
+                params = JSON.parse(raw);
+            } catch (e) {
+                errores++;
+                console.error('[detalle] JSON inválido en', canvas.id, e, raw.slice(0, 200));
+                dibujarPlaceholder(canvas, 'Datos inválidos');
+                return;
+            }
+            if (!params || Object.keys(params).length === 0) {
+                saltados++;
+                dibujarPlaceholder(canvas, 'Sin datos de configuración');
+                return;
+            }
+            dibujarPreviewEtiquetasDetalle(canvas, params);
+            dibujados++;
+        } catch (e) {
+            errores++;
+            console.error('[detalle] error dibujando etiqueta:', canvas.id, e);
+            dibujarPlaceholder(canvas, 'Error al dibujar');
+        }
     });
+
+    // ---- CARTELES ----
+    document.querySelectorAll('canvas[id^="preview-detalle-cartel-"]').forEach(canvas => {
+        try {
+            const ctx = canvas.getContext('2d');
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+            const raw = canvas.dataset.params || '';
+            if (!raw || raw === '{}') {
+                saltados++;
+                dibujarPlaceholder(canvas, 'Sin datos de configuración');
+                return;
+            }
+            let params;
+            try {
+                params = JSON.parse(raw);
+            } catch (e) {
+                errores++;
+                console.error('[detalle] JSON inválido en', canvas.id, e, raw.slice(0, 200));
+                dibujarPlaceholder(canvas, 'Datos inválidos');
+                return;
+            }
+            if (!params || Object.keys(params).length === 0) {
+                saltados++;
+                dibujarPlaceholder(canvas, 'Sin datos de configuración');
+                return;
+            }
+            dibujarPreviewCartelDetalle(canvas, params);
+            dibujados++;
+        } catch (e) {
+            errores++;
+            console.error('[detalle] error dibujando cartel:', canvas.id, e);
+            dibujarPlaceholder(canvas, 'Error al dibujar');
+        }
+    });
+
+    console.log(`[detalle] canvases → dibujados: ${dibujados}, saltados: ${saltados}, errores: ${errores}`);
+
+    // ⭐ Después de pintar la cuadrícula, cargar las imágenes de favoritos
+    // y repintar los canvas que las tengan.
+    precargarImagenesFavoritasDetalle();
+}
+
+// ============================================================
+// PRECARGA DE IMÁGENES DE FAVORITOS (detalle)
+// Lee data-fav-id de cada canvas, trae el archivo vía API y,
+// al terminar de cargarlo, repinta el canvas con la imagen dentro.
+// ============================================================
+function precargarImagenesFavoritasDetalle() {
+    const canvases = document.querySelectorAll(
+        'canvas[id^="preview-detalle-etiqueta-"]'
+    );
+
+    canvases.forEach(canvas => {
+        const favId = canvas.dataset.favId;
+        if (!favId) return; // esta línea no tiene favorito aplicado
+
+        // Evitar pedir dos veces el mismo fav
+        if (canvas.dataset.favCargado === '1') return;
+        canvas.dataset.favCargado = '1';
+
+        fetch(`/ordenes/api/favorito/${favId}`)
+            .then(r => r.json())
+            .then(fav => {
+                if (!fav || !fav.archivo_url) {
+                    return;
+                }
+
+                if (fav.es_imagen) {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = function() {
+                        imagenesFavoritasDetalle.set(canvas.id, img);
+                        // Repintar este canvas con la imagen ya cargada
+                        try {
+                            const raw = canvas.dataset.params || '{}';
+                            const params = JSON.parse(raw);
+                            dibujarPreviewEtiquetasDetalle(canvas, params);
+                        } catch (e) {
+                            console.error('[detalle] error repintando con imagen:', canvas.id, e);
+                        }
+                    };
+                    img.onerror = function() {
+                        console.warn('[detalle] no se pudo cargar imagen de favorito', fav.archivo_url);
+                    };
+                    img.src = fav.archivo_url;
+
+                } else if (fav.es_pdf) {
+                    if (typeof renderizarPdfACanvasDetalle !== 'function') {
+                        console.warn('[detalle] pdf.js no disponible');
+                        return;
+                    }
+                    renderizarPdfACanvasDetalle(fav.archivo_url, 800)
+                        .then(pdfCanvas => {
+                            imagenesFavoritasDetalle.set(canvas.id, pdfCanvas);
+                            try {
+                                const raw = canvas.dataset.params || '{}';
+                                const params = JSON.parse(raw);
+                                dibujarPreviewEtiquetasDetalle(canvas, params);
+                            } catch (e) {
+                                console.error('[detalle] error repintando con PDF:', canvas.id, e);
+                            }
+                        })
+                        .catch(err => {
+                            console.warn('[detalle] no se pudo renderizar PDF de favorito', err);
+                        });
+                }
+            })
+            .catch(err => {
+                console.warn('[detalle] fetch falló para fav_id', favId, err);
+            });
+    });
+}
+
+// Ejecuta en múltiples momentos para cubrir todos los timings posibles
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializarCanvasesDetalle);
+} else {
+    requestAnimationFrame(inicializarCanvasesDetalle);
+}
+window.addEventListener('load', inicializarCanvasesDetalle);
+setTimeout(inicializarCanvasesDetalle, 300);
+setTimeout(inicializarCanvasesDetalle, 1000);
+
+// Si el panel de detalle general se abre/cierra, redibujar por si acaso
+document.addEventListener('click', function(e) {
+    if (e.target.closest('#toggleDetalleB')) {
+        setTimeout(inicializarCanvasesDetalle, 80);
+    }
+});
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+}
+
+// Si en el primer intento pdf.js no estaba listo, reintentar la precarga
+// de imágenes de favoritos (para PDFs) tras window.load.
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        if (typeof precargarImagenesFavoritasDetalle === 'function') {
+            // Resetear el flag 'favCargado' para permitir reintento
+            document.querySelectorAll('canvas[id^="preview-detalle-etiqueta-"]').forEach(c => {
+                c.dataset.favCargado = '';
+            });
+            precargarImagenesFavoritasDetalle();
+        }
+    }, 900);
 });
 </script>
 {% endblock %}

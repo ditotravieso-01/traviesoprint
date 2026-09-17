@@ -1,12 +1,59 @@
-venv/
-*.log
+# ============================================================
+# Python
+# ============================================================
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
 venv/
-*.log
-__pycache__/
+env/
+ENV/
+.venv/
+
+# ============================================================
+# Flask / Instance
+# ============================================================
 instance/
 *.db
-app/traviesoprint.db
-app/traviesoprint.db
-*.db
-instance/
+*.sqlite
+*.sqlite3
+
+# ============================================================
+# Variables de entorno
+# ============================================================
+.env
+.env.local
+.env.*.local
+
+# ============================================================
+# IDE / OS
+# ============================================================
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ============================================================
+# Logs y temporales
+# ============================================================
+*.log
+logs/
+tmp/
+temp/
+*.tmp
+
+# ============================================================
+# Uploads generados en runtime — NO versionar
+# ============================================================
+# Favoritos: ignorar todo menos el .gitkeep y su carpeta _blobs
+app/static/uploads/favoritos/*
+!app/static/uploads/favoritos/.gitkeep
+!app/static/uploads/favoritos/_blobs/
+app/static/uploads/favoritos/_blobs/*
+!app/static/uploads/favoritos/_blobs/.gitkeep
+
+# Órdenes: ignorar todo menos el .gitkeep
+app/static/uploads/ordenes/*
+!app/static/uploads/ordenes/.gitkeep

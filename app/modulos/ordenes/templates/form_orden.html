@@ -1,4 +1,3 @@
-<!-- app/modulos/ordenes/templates/form_orden.html -->
 {% extends "base.html" %}
 
 {% block title %}{{ 'Editar' if edit else 'Nueva' }} Orden de Trabajo · CairoStudio{% endblock %}
@@ -176,7 +175,7 @@
         padding: 6px; display: flex; justify-content: center;
     }
     .preview-canvas-wrap canvas {
-            .preview-canvas-wrap canvas {
+        display: block; width: 100%; height: auto; max-height: 220px;
         cursor: grab;
         user-select: none;
         touch-action: none;
@@ -769,6 +768,9 @@
                             <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false" data-tipo="{{ tipo_archivo }}">
                                 <td data-label="Nombre visible">
                                     <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
+                                    {% if is_etiqueta and params and params.fav_id %}
+                                        <input type="hidden" name="fav_id_{{ archivo.id }}" value="{{ params.fav_id }}">
+                                    {% endif %}
                                     <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
                                 </td>
                                 <td data-label="Material (Producto)">
@@ -809,7 +811,7 @@
                             </tr>
 
                             {% if is_etiqueta %}
-                                <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
+                                <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-fav-id="{{ params.fav_id if params and params.fav_id else '' }}">
                                     <td colspan="6">
                                         <div class="etiquetas-params visible" style="display:block;">
                                             <div class="fav-picker-bar" style="display:none;">
@@ -1363,15 +1365,15 @@ function dibujarPreviewEtiquetas(canvasId, data) {
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
+    // Cache: si llega data nueva, guardarla. Luego siempre leer del cache.
+    if (data) canvasDataCache.set(canvasId, data);
+    data = canvasDataCache.get(canvasId);
+
+    // Reset transform, limpiar y pintar fondo
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#f8f6f4';
     ctx.fillRect(0, 0, W, H);
-
-    if (data) canvasDataCache.set(canvasId, data);
-    data = canvasDataCache.get(canvasId);
-    if (!data) return;
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     if (!data || !data.pañosGrupos || data.pañosGrupos.length === 0) {
         ctx.fillStyle = '#8e8e93';
@@ -1381,6 +1383,15 @@ function dibujarPreviewEtiquetas(canvasId, data) {
         return;
     }
 
+    // ============================================================
+    // APLICAR ZOOM / PAN  (todo lo que sigue se dibuja en este sistema)
+    // ============================================================
+    const _viewState = getCanvasViewState(canvasId);
+    ctx.save();
+    ctx.translate(W/2 + _viewState.offsetX, H/2 + _viewState.offsetY);
+    ctx.scale(_viewState.scale, _viewState.scale);
+    ctx.translate(-W/2, -H/2);
+
     const grupos = data.pañosGrupos;
     const nGrupos = grupos.length;
     const pad = 12, gapBetween = 22, topReserve = 20;
@@ -1388,7 +1399,6 @@ function dibujarPreviewEtiquetas(canvasId, data) {
     const avail_h = H - 2 * pad - topReserve;
     const cell_w = avail_w / nGrupos;
 
-    // Fuente: HTMLImageElement o HTMLCanvasElement (para PDF renderizado)
     const fuente = data.imagen && data.imagen.img ? data.imagen.img : null;
     const esRotado = data.imagen && data.imagen.esRotado === true;
     const fuenteLista = fuente && (
@@ -1409,7 +1419,6 @@ function dibujarPreviewEtiquetas(canvasId, data) {
         const offsetX = pad + g * (cell_w + gapBetween) + (cell_w - paño_w_px) / 2;
         const offsetY = pad + topReserve + (avail_h - paño_h_px) / 2;
 
-        // Fondo rollo (borde)
         ctx.fillStyle = 'rgba(0,0,0,0.06)';
         ctx.fillRect(offsetX, offsetY, paño_w_px, paño_h_px);
         ctx.strokeStyle = '#8e8e93';
@@ -1442,8 +1451,6 @@ function dibujarPreviewEtiquetas(canvasId, data) {
                     ctx.clip();
 
                     if (esRotado) {
-                        // Rotamos 90° sobre el centro de la celda.
-                        // El espacio útil pasa a ser (alto_cell × ancho_cell).
                         const cx = x + ancho_cell_px / 2;
                         const cy = y + alto_cell_px / 2;
                         ctx.translate(cx, cy);
@@ -1506,6 +1513,8 @@ function dibujarPreviewEtiquetas(canvasId, data) {
         ctx.textAlign = 'right';
         ctx.fillText(`${data.ancho_real.toFixed(2)} m`, offsetX + paño_w_px - 3, offsetY + 10);
     });
+
+    ctx.restore();
 }
 
 // =============================================
@@ -1515,9 +1524,12 @@ function dibujarPreviewCartel(canvasId, simData) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = canvas.width, H = canvas.height;
 
+    if (simData) canvasDataCache.set(canvasId, simData);
+    simData = canvasDataCache.get(canvasId);
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#f8f6f4';
     ctx.fillRect(0, 0, W, H);
@@ -1529,6 +1541,15 @@ function dibujarPreviewCartel(canvasId, simData) {
         ctx.fillText(simData && simData.error ? '⚠️ No cabe en el rollo' : 'Vista previa', W/2, H/2);
         return;
     }
+
+    // ============================================================
+    // APLICAR ZOOM / PAN
+    // ============================================================
+    const _viewState = getCanvasViewState(canvasId);
+    ctx.save();
+    ctx.translate(W/2 + _viewState.offsetX, H/2 + _viewState.offsetY);
+    ctx.scale(_viewState.scale, _viewState.scale);
+    ctx.translate(-W/2, -H/2);
 
     const roll_w_m = simData.ancho_real;
     const ancho_util_m = simData.ancho_util;
@@ -1568,9 +1589,7 @@ function dibujarPreviewCartel(canvasId, simData) {
 
     const total_pieces_width_px = cols * ancho_pieza_px;
     let offsetX_piezas = offsetX;
-    if (centrar) {
-        offsetX_piezas = offsetX + (ancho_util_px - total_pieces_width_px) / 2;
-    }
+    if (centrar) offsetX_piezas = offsetX + (ancho_util_px - total_pieces_width_px) / 2;
 
     let count = 0;
     for (let f = 0; f < filas; f++) {
@@ -1611,6 +1630,8 @@ function dibujarPreviewCartel(canvasId, simData) {
     ctx.font = '9px Inter, sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText(`${roll_w_m.toFixed(2)} m`, W - pad, offsetY + 10);
+
+    ctx.restore();
 }
 
 // =============================================
@@ -1893,6 +1914,34 @@ function cerrarFavPreview() {
     // No tocamos favoritosTargetRow: el picker sigue abierto debajo si aplica
 }
 
+function registrarFavIdUsado(targetRow, favId) {
+    const paramsId = targetRow.dataset.paramsId;
+    const isEdit = paramsId && paramsId.startsWith('edit-');
+    const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+    if (!mainRow) return;
+
+    let hidden;
+    if (isEdit) {
+        const archivoId = paramsId.replace('edit-', '');
+        hidden = mainRow.querySelector(`input[name="fav_id_${archivoId}"]`);
+        if (!hidden) {
+            hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = `fav_id_${archivoId}`;
+            mainRow.appendChild(hidden);
+        }
+    } else {
+        hidden = mainRow.querySelector('input[name="fav_ids_new[]"]');
+        if (!hidden) {
+            hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'fav_ids_new[]';
+            mainRow.appendChild(hidden);
+        }
+    }
+    hidden.value = favId;
+}
+
 function aplicarFavorito(favId) {
     const fav = favoritosCliente.find(x => x.id === favId);
     if (!fav || !favoritosTargetRow) { cerrarFavPicker(); return; }
@@ -1949,11 +1998,10 @@ function aplicarFavorito(favId) {
     }
 
     // Incrementar uso (best-effort)
-    fetch(`/clientes/favorito/${fav.id}/incrementar-uso`, { method: 'POST' })
-        .then(r => r.json())
-        .then(d => { if (d && d.success) fav.veces_usado = d.veces_usado; })
-        .catch(() => {});
-    fav.veces_usado = (fav.veces_usado || 0) + 1;
+    // Registrar fav_id en un hidden input para que el backend lo guarde
+    // en los parametros del archivo. Solo se incrementará cuando la orden
+    // llegue a "listo" o "entregado" (lo maneja el backend).
+    registrarFavIdUsado(targetRow, fav.id);
 
     cerrarFavPicker();
     csAlert(`Aplicado: ${fav.nombre} · ${fav.ancho_cm}×${fav.alto_cm} cm`, 'success', '⭐ Etiqueta cargada');
@@ -2088,7 +2136,10 @@ function agregarLinea() {
     }
 
     row.innerHTML = `
-        <td data-label="Nombre visible"><input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required></td>
+        <td data-label="Nombre visible">
+            <input type="hidden" name="fav_ids_new[]" value="">
+            <input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required>
+        </td>
         <td data-label="Material (Producto)"><select name="productos_ids[]" class="producto-select" required>${prodOptions}</select></td>
         <td data-label="Cantidad" class="col-cantidad">
             <span class="cartel-dash" style="display:none;">-</span>
@@ -2602,8 +2653,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ETIQUETAS EDIT
-    document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(paramsRow) {
+    // ETIQUETAS EDIT — init con reintentos
+    const _editEtiquetasInited = new WeakSet();
+    function initEtiquetaEditRow(paramsRow) {
+        if (_editEtiquetasInited.has(paramsRow)) return;
+        _editEtiquetasInited.add(paramsRow);
+
         const paramsDiv = paramsRow.querySelector('.etiquetas-params');
         if (!paramsDiv) return;
 
@@ -2618,9 +2673,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const archivoId = anchoInput ? anchoInput.dataset.archivoId : null;
         if (!archivoId) return;
-
         const mainRow = document.querySelector(`tr.linea-fila[data-id="${archivoId}"]`);
         if (!mainRow) return;
+
         const productoSelect = mainRow.querySelector('.producto-select-edit');
         const cantidadInput = mainRow.querySelector('.cantidad-edit');
         const unidadSelect = mainRow.querySelector('.unidad-edit');
@@ -2645,11 +2700,26 @@ document.addEventListener('DOMContentLoaded', function() {
             anchoUtilOverride.addEventListener('change', function() { validarAnchoUtilEdit(this); triggerCalculoEdit(); });
         }
         if (unidadSelect) actualizarPlaceholderCantidad(unidadSelect);
-        if (paramsRow.style.display !== 'none') setTimeout(triggerCalculoEdit, 200);
-    });
+    }
 
-    // CARTELES EDIT
-    document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(cartelesRow) {
+    function initTodasEtiquetasEdit() {
+        document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(paramsRow) {
+            initEtiquetaEditRow(paramsRow);
+            // Disparar cálculo (con pequeños reintentos por si el DOM/tabla aún no asentó)
+            [0, 150, 400, 900].forEach((delay, idx) => {
+                setTimeout(() => {
+                    try { calcularLinea(paramsRow); } catch(e) { console.warn('calc edit retry', idx, e); }
+                }, delay);
+            });
+        });
+    }
+
+    // CARTELES EDIT — init con reintentos
+    const _editCartelesInited = new WeakSet();
+    function initCartelEditRow(cartelesRow) {
+        if (_editCartelesInited.has(cartelesRow)) return;
+        _editCartelesInited.add(cartelesRow);
+
         const cartelDiv = cartelesRow.querySelector('.carteles-params');
         if (!cartelDiv) return;
         const archivoId = cartelesRow.dataset.id;
@@ -2692,9 +2762,90 @@ document.addEventListener('DOMContentLoaded', function() {
                 triggerCartelEdit();
             });
         }
+    }
 
-        if (cartelesRow.style.display !== 'none') setTimeout(triggerCartelEdit, 300);
-    });
+    function initTodosCartelesEdit() {
+        document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(cartelesRow) {
+            initCartelEditRow(cartelesRow);
+            [0, 150, 400, 900].forEach((delay, idx) => {
+                setTimeout(() => {
+                    try { calcularLineaCartel(cartelesRow); } catch(e) { console.warn('calc cartel edit retry', idx, e); }
+                }, delay);
+            });
+        });
+    }
+
+    // ✅ ETIQUETAS EDIT — inicializar listeners + primer cálculo con reintentos
+    initTodasEtiquetasEdit();
+
+    // ✅ CARTELES EDIT — inicializar listeners + primer cálculo con reintentos
+    initTodosCartelesEdit();
+    
+    // ============================================================
+    // PRECARGA DE IMÁGENES DE FAVORITOS (modo edición)
+    // Lee data-fav-id de cada fila y carga su imagen para que el
+    // canvas muestre la etiqueta real dentro de cada celda.
+    // ============================================================
+    function precargarImagenesFavoritasIniciales() {
+        const rows = document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]');
+        rows.forEach(row => {
+            const favId = row.dataset.favId;
+            if (!favId) return;
+            const paramsId = row.dataset.paramsId;
+
+            fetch(`/ordenes/api/favorito/${favId}`)
+                .then(r => r.json())
+                .then(fav => {
+                    if (!fav.archivo_url) {
+                        // Sin archivo: solo recalcular
+                        setTimeout(() => {
+                            try { calcularLinea(row); } catch(e) {}
+                        }, 30);
+                        return;
+                    }
+                    if (fav.es_imagen) {
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.onload = function() {
+                            imagenesFavoritas.set(paramsId, img);
+                            setTimeout(() => {
+                                try { calcularLinea(row); } catch(e) {}
+                            }, 30);
+                        };
+                        img.onerror = function() {
+                            console.warn('[fav] no se pudo cargar imagen', fav.archivo_url);
+                            setTimeout(() => { try { calcularLinea(row); } catch(e) {} }, 30);
+                        };
+                        img.src = fav.archivo_url;
+                    } else if (fav.es_pdf) {
+                        if (typeof renderizarPdfACanvas !== 'function') {
+                            console.warn('[fav] renderizarPdfACanvas no disponible aún');
+                            return;
+                        }
+                        renderizarPdfACanvas(fav.archivo_url, 800)
+                            .then(canvas => {
+                                imagenesFavoritas.set(paramsId, canvas);
+                                setTimeout(() => {
+                                    try { calcularLinea(row); } catch(e) {}
+                                }, 30);
+                            })
+                            .catch(err => {
+                                console.warn('[fav] no se pudo renderizar PDF', err);
+                                setTimeout(() => { try { calcularLinea(row); } catch(e) {} }, 30);
+                            });
+                    } else {
+                        setTimeout(() => { try { calcularLinea(row); } catch(e) {} }, 30);
+                    }
+                })
+                .catch(err => {
+                    console.warn('[fav] fetch falló para fav_id', favId, err);
+                });
+        });
+    }
+
+    // Disparar tras la inicialización (con un pequeño delay para que
+    // primero corra el cálculo de dimensiones, y luego llegue la imagen).
+    setTimeout(precargarImagenesFavoritasIniciales, 200);
 });
 
 // =============================================
@@ -3090,6 +3241,18 @@ function deseleccionarTodos() {
     for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
 }
 </script>
+
+// Red de seguridad: si la primera pasada falló por timing, reintenta tras load
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(row) {
+            try { calcularLinea(row); } catch(e) { console.warn('load-retry etiqueta', e); }
+        });
+        document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(row) {
+            try { calcularLineaCartel(row); } catch(e) { console.warn('load-retry cartel', e); }
+        });
+    }, 600);
+});
 {% endblock %}
 
 {% block extra_js %}
@@ -3098,5 +3261,22 @@ function deseleccionarTodos() {
 if (typeof pdfjsLib !== 'undefined') {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 }
+
+// Red de seguridad: reintenta el cálculo tras load (por timing del fetch)
+window.addEventListener('load', function() {
+    setTimeout(function() {
+        document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(row) {
+            try { calcularLinea(row); } catch(e) { console.warn('[form] load-retry etiqueta', e); }
+        });
+        document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(row) {
+            try { calcularLineaCartel(row); } catch(e) { console.warn('[form] load-retry cartel', e); }
+        });
+        // Segundo pase de precarga de favoritos (por si pdfjsLib
+        // no estaba listo en el primer intento)
+        if (typeof precargarImagenesFavoritasIniciales === 'function') {
+            precargarImagenesFavoritasIniciales();
+        }
+    }, 900);
+});
 </script>
 {% endblock %}

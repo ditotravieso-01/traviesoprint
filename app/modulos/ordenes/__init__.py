@@ -1,5 +1,3 @@
-# app/modulos/ordenes/__init__.py
-
 from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Order, User, ArchivoAdjunto, Client, Producto, Movimiento, OrdenProducto, Categoria
@@ -35,13 +33,8 @@ COLUMNAS_NOMBRES = {
 MARGEN_MESA_M = 0.002
 CUT_LARGO_M = 0.04
 GAP_PAÑOS_DEFAULT_CM = 6.5
-
-# Gap final que consume la impresora al terminar cada trabajo (6.5 cm)
 GAP_FINAL_IMPRESION_M = 0.065
 
-# Precios por defecto para CARTELES (personalizables por línea en el form)
-# impresion: $/m² para el área impresa (lo que ve el cliente)
-# merma: $/m² para el desperdicio, cobrado aparte a precio más económico
 MATERIALES_CARTEL = {
     'Vinilo':              {'impresion': 10.0, 'merma': 4.0},
     'Vinilo transparente': {'impresion': 14.0, 'merma': 5.0},
@@ -59,13 +52,6 @@ def _sanitize_order_num(value):
     """
     Normaliza el número de orden para evitar la cadena literal 'None'
     que rompe el UNIQUE constraint de orders.order_num.
-
-    Reglas:
-    - None            → None
-    - ''              → None
-    - '   '           → None
-    - 'None'/'none'/'NONE' (cualquier case) → None
-    - Cualquier otro  → string limpio (sin espacios)
     """
     if value is None:
         return None
@@ -73,6 +59,17 @@ def _sanitize_order_num(value):
     if not s or s.lower() == 'none':
         return None
     return s
+
+
+def _extraer_fav_id(form_data, key, default=None):
+    """Helper defensivo para leer un fav_id del form."""
+    raw = (form_data or '').strip() if isinstance(form_data, str) else ''
+    if not raw:
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        return default
 
 # ==========================================
 # DECORADORES DE PERMISOS
@@ -101,48 +98,32 @@ def view_orders_or_admin_comercial_required(func):
 # CÁLCULO DE DISTRIBUCIÓN DE CARTELES
 # ==========================================
 def calcular_distribucion_carteles(ancho_cm, alto_cm, cantidad, ancho_util_cm, girar=False, modo_inteligente=True):
-    """
-    Calcula la distribución óptima de carteles en el rollo.
-    Retorna: (cols, filas, alto_impresion_cm, ancho_efectivo_cm, alto_efectivo_cm, orientacion)
-    """
     if ancho_cm <= 0 or alto_cm <= 0 or cantidad < 1:
         return 1, 1, alto_cm, ancho_cm, alto_cm, 'normal'
 
     def _calcular_base(w, h):
-        # Si la pieza es más ancha que el área útil, no cabe.
         if w > ancho_util_cm:
             return 0, 0, 0, w, h, float('inf')
-        
         cols = max(1, int(ancho_util_cm // w))
         if cols > cantidad:
             cols = cantidad
         filas = math.ceil(cantidad / cols)
         alto_imp = filas * h
-        # Área total consumida incluyendo el gap de 6.5 cm (para comparar eficiencia)
         area_total = ancho_util_cm * (alto_imp + GAP_FINAL_IMPRESION_M * 100)
         return cols, filas, alto_imp, w, h, area_total
 
     if modo_inteligente:
-        # Probar orientación normal
         cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, area_n = _calcular_base(ancho_cm, alto_cm)
-        # Probar orientación girada
         cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, area_g = _calcular_base(alto_cm, ancho_cm)
-
-        # Si ninguna cabe, devolver error
         if area_g == float('inf') and area_n == float('inf'):
             return 0, 0, 0, ancho_cm, alto_cm, 'error'
-        
-        # Si solo una cabe, elegir esa
         if area_g == float('inf'):
             return cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, 'normal'
         if area_n == float('inf'):
             return cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, 'girada'
-        
-        # Si ambas caben, elegir la que menos área consuma
         if area_g < area_n:
             return cols_g, filas_g, alto_imp_g, ancho_ef_g, alto_ef_g, 'girada'
-        else:
-            return cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, 'normal'
+        return cols_n, filas_n, alto_imp_n, ancho_ef_n, alto_ef_n, 'normal'
     else:
         if girar:
             cols, filas, alto_imp, ancho_ef, alto_ef, _ = _calcular_base(alto_cm, ancho_cm)
@@ -445,7 +426,7 @@ def consumir_materiales(orden_id):
 def _procesar_linea_etiqueta(
     order, producto, ancho_cm, alto_cm, precio, mesa, girar, auto_girar,
     unidad, cantidad_original, ancho_util_override, nombre_visible,
-    order_num_para_comentario
+    order_num_para_comentario, fav_id=None
 ):
     ancho_real = producto.ancho_rollo or 1.34
     ancho_util_efectivo = ancho_util_override if ancho_util_override else ancho_real
@@ -572,6 +553,7 @@ def _procesar_linea_etiqueta(
             'merma_total_m2': merma_data['merma_total_m2'],
             'ancho_cell_usado_m': ancho_cell_m,
             'alto_cell_usado_m': alto_cell_m,
+            'fav_id': fav_id,
         })
     )
 
@@ -608,18 +590,8 @@ def _procesar_linea_etiqueta(
 def _procesar_linea_cartel(
     order, producto, ancho_cm, alto_cm, cantidad_piezas, girar, auto_girar, centrar,
     ancho_util_override, precio_impresion_m2, precio_merma_m2, tipo_material,
-    nombre_visible, order_num_para_comentario
+    nombre_visible, order_num_para_comentario, fav_id=None
 ):
-    """
-    Calcula layout + costos para CARTELES.
-
-    IMPORTANTE — diferencia clave con etiquetas:
-    - En carteles NO hay 'merma operativa' en el sentido de etiquetas.
-    - El 'sobrante' (área de rollo que queda sin imprimir contenido) se cobra
-      al cliente a precio de merma (más barato). Eso es la MERMA FACTURADA.
-    - La única pérdida real que nadie paga es el GAP de 6.5 cm al final de la
-      impresión. Eso es la MERMA OPERATIVA REAL (el propio gap).
-    """
     ancho_real = producto.ancho_rollo or 1.34
     ancho_util_efectivo = ancho_util_override if ancho_util_override else ancho_real
 
@@ -639,34 +611,20 @@ def _procesar_linea_cartel(
     if alto_impresion_m <= 0:
         return None, None, None, 'Las dimensiones del cartel no caben en el ancho del rollo.'
 
-    # Área de las piezas (contenido real que el cliente quiere)
     area_piezas_m2 = (ancho_cm * alto_cm * cantidad_piezas) / 10000.0
-
-    # Zona imprimible del rollo (sin gap)
     area_rollo_facturacion_m2 = ancho_real * alto_impresion_m
-
-    # Material consumido real (incluye el gap de 6.5 cm)
     alto_total_m = alto_impresion_m + GAP_FINAL_IMPRESION_M
     material_consumido_m2 = ancho_real * alto_total_m
     area_util_rollo_m2 = ancho_util_efectivo * alto_total_m
-
-    # MERMA FACTURADA al cliente = sobrante en la zona imprimible (sin gap).
-    # El cliente la paga a precio_merma_m2 (más barato).
     merma_facturada_m2 = max(0.0, area_rollo_facturacion_m2 - area_piezas_m2)
-
-    # MERMA OPERATIVA REAL = solo el gap (nadie lo paga, es pérdida real)
     merma_operativa_m2 = ancho_real * GAP_FINAL_IMPRESION_M
     merma_operativa_pct = (merma_operativa_m2 / material_consumido_m2 * 100) if material_consumido_m2 > 0 else 0
-
-    # Borde del rollo (si el ancho útil < ancho real) — tampoco se factura
     area_borde_rollo_m2 = max(0.0, (ancho_real - ancho_util_efectivo) * alto_total_m)
 
-    # Costos
     costo_impresion = area_piezas_m2 * precio_impresion_m2
     costo_merma = merma_facturada_m2 * precio_merma_m2
     costo_total = costo_impresion + costo_merma
 
-    # Stock
     consumo_reserva = alto_total_m
     disponible_metros = producto.get_stock_metros_disponible()
     if consumo_reserva > disponible_metros:
@@ -708,7 +666,7 @@ def _procesar_linea_cartel(
             'area_util_rollo_m2': round(area_util_rollo_m2, 4),
             'area_borde_rollo_m2': round(area_borde_rollo_m2, 4),
             'merma_facturada_m2': round(merma_facturada_m2, 4),
-            'merma_operativa_m2': round(merma_operativa_m2, 4),  # = gap
+            'merma_operativa_m2': round(merma_operativa_m2, 4),
             'merma_operativa_pct': round(merma_operativa_pct, 2),
             'costo_impresion': round(costo_impresion, 2),
             'costo_merma': round(costo_merma, 2),
@@ -717,6 +675,7 @@ def _procesar_linea_cartel(
             'largo_total_m': round(consumo_reserva, 4),
             'material_consumido_m2': round(material_consumido_m2, 4),
             'n_paños': filas,
+            'fav_id': fav_id,
         })
     )
 
@@ -757,6 +716,26 @@ def _liberar_reserva(producto, cantidad_metros):
     producto.stock_comprometido = max(0, (producto.stock_comprometido or 0) - unidades_a_liberar)
 
 # ==========================================
+# ACTUALIZAR FAV_ID EN PARÁMETROS EXISTENTES
+# (sin recalcular ni tocar stock)
+# ==========================================
+def _actualizar_fav_id_en_archivo(archivo, fav_id):
+    """
+    Actualiza SOLO el campo fav_id dentro de parametros_etiqueta,
+    sin recalcular reservas ni stock. Se usa cuando una línea existente
+    no cambió de dimensiones/material pero sí de etiqueta favorita.
+    """
+    if fav_id is None:
+        return
+    params = archivo.get_parametros_etiqueta()
+    if params is None:
+        return
+    if params.get('fav_id') == fav_id:
+        return
+    params['fav_id'] = fav_id
+    archivo.parametros_etiqueta = json.dumps(params)
+
+# ==========================================
 # CREAR ORDEN
 # ==========================================
 @ordenes_bp.route('/crear', methods=['GET', 'POST'])
@@ -764,7 +743,6 @@ def _liberar_reserva(producto, cantidad_metros):
 @comercial_or_admin_required
 def create_order():
     if request.method == 'POST':
-        # ✅ FIX: sanitizar el número de orden para nunca guardar 'None' como string
         order_num = _sanitize_order_num(request.form.get('order_num'))
         date = request.form.get('date')
         client_id = request.form.get('client_id')
@@ -807,6 +785,7 @@ def create_order():
         cantidades = request.form.getlist('cantidades[]')
         unidades = request.form.getlist('unidades[]')
         proyectos_linea = request.form.getlist('proyecto_linea[]')
+        fav_ids_new = request.form.getlist('fav_ids_new[]')
 
         # Etiquetas
         ancho_etiqueta_list = request.form.getlist('ancho_etiqueta[]')
@@ -845,6 +824,14 @@ def create_order():
             proyecto_linea = proyectos_linea[i] if i < len(proyectos_linea) else 'otros'
             producto = Producto.query.get(producto_id) if producto_id else None
 
+            # ⭐ Leer fav_id correspondiente a esta línea nueva
+            fav_id = None
+            if i < len(fav_ids_new) and fav_ids_new[i].strip():
+                try:
+                    fav_id = int(fav_ids_new[i].strip())
+                except (ValueError, TypeError):
+                    fav_id = None
+
             if proyecto_linea == 'etiquetas':
                 ancho_util_override = None
                 if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
@@ -878,7 +865,8 @@ def create_order():
                     unidad=unidad, cantidad_original=cantidad_original,
                     ancho_util_override=ancho_util_override,
                     nombre_visible=nombre_visible,
-                    order_num_para_comentario=order_num
+                    order_num_para_comentario=order_num,
+                    fav_id=fav_id
                 )
                 if error:
                     flash(f'Línea {i+1}: {error}', 'danger')
@@ -934,7 +922,8 @@ def create_order():
                     precio_merma_m2=precio_merma,
                     tipo_material=tipo_mat,
                     nombre_visible=nombre_visible,
-                    order_num_para_comentario=order_num
+                    order_num_para_comentario=order_num,
+                    fav_id=fav_id
                 )
                 if error:
                     flash(f'Línea {i+1}: {error}', 'danger')
@@ -986,11 +975,6 @@ def create_order():
 def edit_order(order_id):
     order = Order.query.get_or_404(order_id)
     if request.method == 'POST':
-        # ============================================================
-        # ✅ FIX CRÍTICO: sanitizar order_num y validar unicidad
-        # Antes: order_num = request.form.get('order_num', '').strip() or None
-        # Eso guardaba la cadena 'None' cuando el input tenía value="None".
-        # ============================================================
         nuevo_order_num = _sanitize_order_num(request.form.get('order_num'))
         if nuevo_order_num and nuevo_order_num != order.order_num:
             existente = Order.query.filter(
@@ -1065,6 +1049,15 @@ def edit_order(order_id):
                 except ValueError:
                     cantidad_original = None
 
+            # ⭐ Leer fav_id del hidden input que el JS pone en la fila
+            fav_id_raw = request.form.get(f'fav_id_{archivo_id}', '').strip()
+            fav_id_edit = None
+            if fav_id_raw:
+                try:
+                    fav_id_edit = int(fav_id_raw)
+                except (ValueError, TypeError):
+                    fav_id_edit = None
+
             params = archivo.get_parametros_etiqueta()
             tipo_params = params.get('tipo') if params else None
             es_cartel = (tipo_params == 'cartel')
@@ -1121,7 +1114,8 @@ def edit_order(order_id):
                         unidad=unidad, cantidad_original=cantidad_original,
                         ancho_util_override=ancho_util_override,
                         nombre_visible=nombre_visible,
-                        order_num_para_comentario=nuevo_order_num
+                        order_num_para_comentario=nuevo_order_num,
+                        fav_id=fav_id_edit
                     )
                     if error:
                         flash(error, 'danger')
@@ -1138,8 +1132,10 @@ def edit_order(order_id):
                     db.session.add(op_nuevo)
                     db.session.add(mov)
                 else:
+                    # No cambió dimensiones/material: solo actualizar nombre y fav_id
                     if nombre_visible:
                         archivo.nombre_visible = nombre_visible
+                    _actualizar_fav_id_en_archivo(archivo, fav_id_edit)
 
             elif es_cartel:
                 cambio_significativo = (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad)
@@ -1176,7 +1172,8 @@ def edit_order(order_id):
                         precio_merma_m2=precio_merma,
                         tipo_material=tipo_material,
                         nombre_visible=nombre_visible,
-                        order_num_para_comentario=nuevo_order_num
+                        order_num_para_comentario=nuevo_order_num,
+                        fav_id=fav_id_edit
                     )
                     if error:
                         flash(error, 'danger')
@@ -1195,6 +1192,7 @@ def edit_order(order_id):
                 else:
                     if nombre_visible:
                         archivo.nombre_visible = nombre_visible
+                    _actualizar_fav_id_en_archivo(archivo, fav_id_edit)
 
             else:
                 if nombre_visible:
@@ -1213,6 +1211,7 @@ def edit_order(order_id):
         cantidades = request.form.getlist('cantidades[]')
         unidades = request.form.getlist('unidades[]')
         proyectos_linea = request.form.getlist('proyecto_linea[]')
+        fav_ids_new = request.form.getlist('fav_ids_new[]')
 
         ancho_etiqueta_list = request.form.getlist('ancho_etiqueta[]')
         alto_etiqueta_list = request.form.getlist('alto_etiqueta[]')
@@ -1249,6 +1248,13 @@ def edit_order(order_id):
             proyecto_linea = proyectos_linea[i] if i < len(proyectos_linea) else 'otros'
             producto = Producto.query.get(producto_id) if producto_id else None
 
+            fav_id = None
+            if i < len(fav_ids_new) and fav_ids_new[i].strip():
+                try:
+                    fav_id = int(fav_ids_new[i].strip())
+                except (ValueError, TypeError):
+                    fav_id = None
+
             if proyecto_linea == 'etiquetas':
                 ancho_util_override = None
                 if i < len(ancho_util_override_list) and ancho_util_override_list[i].strip():
@@ -1281,7 +1287,8 @@ def edit_order(order_id):
                     unidad=unidad, cantidad_original=cantidad_original,
                     ancho_util_override=ancho_util_override,
                     nombre_visible=nombre_visible,
-                    order_num_para_comentario=nuevo_order_num
+                    order_num_para_comentario=nuevo_order_num,
+                    fav_id=fav_id
                 )
                 if error:
                     flash(f'Línea {i+1}: {error}', 'danger')
@@ -1337,7 +1344,8 @@ def edit_order(order_id):
                     precio_merma_m2=precio_merma,
                     tipo_material=tipo_mat,
                     nombre_visible=nombre_visible,
-                    order_num_para_comentario=nuevo_order_num
+                    order_num_para_comentario=nuevo_order_num,
+                    fav_id=fav_id
                 )
                 if error:
                     flash(f'Línea {i+1}: {error}', 'danger')
@@ -1379,7 +1387,6 @@ def edit_order(order_id):
         flash('Orden actualizada correctamente.', 'success')
         return redirect(url_for('ordenes.edit_order', order_id=order.id))
 
-    # ✅ FIX: normalizar order_num a '' para que Jinja no renderice "None"
     form_data = {
         'order_num': order.order_num or '',
         'date': order.date.strftime('%Y-%m-%d') if order.date else '',
@@ -1395,7 +1402,7 @@ def edit_order(order_id):
     return render_template('form_orden.html', **context)
 
 # ==========================================
-# CREAR CLIENTE AJAX
+# RESTO DE ENDPOINTS (sin cambios)
 # ==========================================
 @ordenes_bp.route('/crear-cliente-ajax', methods=['POST'])
 @login_required
@@ -1415,9 +1422,6 @@ def crear_cliente_ajax():
     db.session.commit()
     return jsonify({'id': cliente.id, 'nombre': cliente.nombre})
 
-# ==========================================
-# CALCULAR CARTEL AJAX (para el form)
-# ==========================================
 @ordenes_bp.route('/calcular-cartel-ajax', methods=['POST'])
 @login_required
 def calcular_cartel_ajax():
@@ -1457,23 +1461,16 @@ def calcular_cartel_ajax():
         if alto_impresion_m <= 0:
             return jsonify({'error': 'Las dimensiones del cartel no caben en el ancho del rollo.'})
 
-        # Áreas
         area_piezas_m2 = (ancho_cm * alto_cm * cantidad) / 10000.0
         area_rollo_facturacion_m2 = ancho_real * alto_impresion_m
         alto_total_m = alto_impresion_m + GAP_FINAL_IMPRESION_M
         material_consumido_m2 = ancho_real * alto_total_m
         area_util_rollo_m2 = ancho_util_efectivo * alto_total_m
-
-        # Merma facturada al cliente (sobrante en zona imprimible, sin gap)
         merma_facturada_m2 = max(0.0, area_rollo_facturacion_m2 - area_piezas_m2)
-
-        # Merma operativa real = solo el gap
         merma_operativa_m2 = ancho_real * GAP_FINAL_IMPRESION_M
         merma_operativa_pct = (merma_operativa_m2 / material_consumido_m2 * 100) if material_consumido_m2 > 0 else 0
-
         area_borde_rollo_m2 = max(0.0, (ancho_real - ancho_util_efectivo) * alto_total_m)
 
-        # Costos
         costo_impresion = area_piezas_m2 * precio_impresion
         costo_merma = merma_facturada_m2 * precio_merma
         costo_total = costo_impresion + costo_merma
@@ -1507,9 +1504,6 @@ def calcular_cartel_ajax():
     except Exception as e:
         return jsonify({'error': str(e)})
 
-# ==========================================
-# MARCAR ENTRADA
-# ==========================================
 @ordenes_bp.route('/marcar-entrada/<int:order_id>', methods=['POST'])
 @login_required
 def marcar_entrada(order_id):
@@ -1520,7 +1514,6 @@ def marcar_entrada(order_id):
     if order.entrada_ok:
         flash('Esta orden ya tiene entrada marcada.', 'info')
         return redirect(url_for('ordenes.list_orders'))
-    # ✅ FIX: sanitizar para evitar 'None' string
     odoo_order_num = _sanitize_order_num(request.form.get('odoo_order_num'))
     if not odoo_order_num:
         flash('Debes ingresar un número de orden válido (no puede estar vacío ni ser "None").', 'danger')
@@ -1543,9 +1536,6 @@ def marcar_entrada(order_id):
     flash(f'Orden {odoo_order_num} marcada como entrada al sistema.', 'success')
     return redirect(url_for('ordenes.list_orders'))
 
-# ==========================================
-# ELIMINAR ORDEN
-# ==========================================
 @ordenes_bp.route('/eliminar/<int:order_id>', methods=['POST'])
 @login_required
 def delete_order(order_id):
@@ -1570,9 +1560,6 @@ def delete_order(order_id):
     flash('Orden eliminada permanentemente.', 'success')
     return redirect(url_for('ordenes.list_orders'))
 
-# ==========================================
-# GENERAR PDF
-# ==========================================
 @ordenes_bp.route('/pdf/<int:order_id>')
 @login_required
 def generar_pdf(order_id):
@@ -1587,9 +1574,6 @@ def generar_pdf(order_id):
                      download_name=f'Orden_{order.order_num or "sin_numero"}.pdf',
                      mimetype='application/pdf')
 
-# ==========================================
-# DETALLE JSON
-# ==========================================
 @ordenes_bp.route('/detalle_json/<int:order_id>')
 @login_required
 def detalle_json(order_id):
@@ -1611,9 +1595,6 @@ def detalle_json(order_id):
     }
     return jsonify(data)
 
-# ==========================================
-# DETALLE PARA MODAL
-# ==========================================
 @ordenes_bp.route('/detalle_modal/<int:order_id>')
 @login_required
 def detalle_modal(order_id):
@@ -1630,13 +1611,9 @@ def detalle_modal(order_id):
     }
     return jsonify(data)
 
-# ==========================================
-# API FAVORITOS POR CLIENTE (para el form de órdenes)
-# ==========================================
 @ordenes_bp.route('/api/favoritos-cliente/<int:client_id>')
 @login_required
 def api_favoritos_cliente(client_id):
-    """Devuelve las etiquetas favoritas activas de un cliente."""
     from app.models import EtiquetaFavorita
     Client.query.get_or_404(client_id)
     favs = EtiquetaFavorita.query.filter_by(
@@ -1658,3 +1635,68 @@ def api_favoritos_cliente(client_id):
             'es_pdf': f.es_pdf(),
         } for f in favs]
     })
+
+@ordenes_bp.route('/api/favorito/<int:fav_id>')
+@login_required
+def api_favorito(fav_id):
+    """Devuelve UN favorito por ID (para precargar su imagen en edit)."""
+    from app.models import EtiquetaFavorita
+    fav = EtiquetaFavorita.query.get_or_404(fav_id)
+    return jsonify({
+        'id': fav.id,
+        'nombre': fav.nombre,
+        'ancho_cm': fav.ancho_cm,
+        'alto_cm': fav.alto_cm,
+        'notas': fav.notas or '',
+        'archivo_url': url_for('clientes.ver_archivo_favorito', fav_id=fav.id) if fav.archivo_ruta else None,
+        'es_imagen': fav.es_imagen(),
+        'es_pdf': fav.es_pdf(),
+    })
+
+# ==========================================
+# INCREMENTO DE USO DE FAVORITOS
+# Solo se llama desde workflow cuando la orden pasa a 'listo' o 'entregados'.
+# ==========================================
+def incrementar_uso_favoritos_de_orden(order):
+    """
+    Recorre los archivos de la orden buscando params.fav_id.
+    Si la orden está en 'listo' o 'entregado' y no se ha contado aún,
+    incrementa veces_usado de cada favorito y marca la orden como contada.
+    Idempotente: usa el historial de la orden para no contar dos veces.
+    """
+    if not order:
+        return 0
+    if order.column not in ('listo', 'entregados'):
+        return 0
+
+    historial = order.get_history()
+    for h in historial:
+        msg = h.get('mensaje', '') if isinstance(h, dict) else str(h)
+        if 'Favoritos contados' in msg:
+            return 0
+
+    from app.models import EtiquetaFavorita
+    from datetime import datetime as _dt
+
+    contados = 0
+    vistos = set()
+    for a in order.archivos:
+        params = a.get_parametros_etiqueta()
+        if not params:
+            continue
+        fav_id = params.get('fav_id')
+        if not fav_id or fav_id in vistos:
+            continue
+        vistos.add(fav_id)
+        fav = EtiquetaFavorita.query.get(fav_id)
+        if not fav:
+            continue
+        fav.veces_usado = (fav.veces_usado or 0) + 1
+        fav.ultima_vez_usado = _dt.now()
+        contados += 1
+
+    if contados > 0:
+        order.add_history(f'Favoritos contados: {contados} uso(s) registrado(s) al pasar a "{order.column}"')
+
+    db.session.commit()
+    return contados
