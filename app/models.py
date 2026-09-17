@@ -905,3 +905,5 @@ class EtiquetaFavorita(db.Model):
     @property
     def medidas_str(self):
         return f'{self.ancho_cm:g}×{self.alto_cm:g} cm'
+    
+    hash_archivo = db.Column(db.String(64), nullable=True, index=True)

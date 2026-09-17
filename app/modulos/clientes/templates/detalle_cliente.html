@@ -196,6 +196,12 @@
         justify-content: center; gap: 4px; color: #dc2626;
         font-size: 11px; font-weight: 700; text-decoration: none;
     }
+    .fav-pdf-thumb img {
+        width: 100%; height: 100%;
+        object-fit: contain;
+        background: white;
+        border-radius: 7px;
+    }
     .fav-pdf-thumb:hover { background: #fef2f2; border-color: #dc2626; }
     .fav-pdf-thumb .pdf-ico { font-size: 28px; }
     .fav-pdf-thumb .pdf-name {
@@ -417,7 +423,8 @@
                             <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
                         </a>
                     {% elif f.es_pdf() %}
-                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank"
+                        data-fav-pdf-url="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}">
                             <span class="pdf-ico">📄</span>
                             <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
                             <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
@@ -490,6 +497,7 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -508,6 +516,41 @@
                 }
             }
         });
+    });
+
+    // ============================================================
+    // RENDERIZADO DE THUMBNAILS DE PDFs EN FAVORITOS
+    // ============================================================
+    async function renderizarThumbnailsPdfDetalle() {
+        if (typeof pdfjsLib === 'undefined') return;
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        const thumbs = document.querySelectorAll('.fav-pdf-thumb[data-fav-pdf-url]:not([data-pdf-rendered])');
+        for (const el of thumbs) {
+            el.dataset.pdfRendered = '1';
+            const url = el.dataset.favPdfUrl;
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                const targetW = 320;
+                const scale = targetW / viewport.width;
+                const scaled = page.getViewport({ scale });
+                const off = document.createElement('canvas');
+                off.width = Math.round(scaled.width);
+                off.height = Math.round(scaled.height);
+                await page.render({ canvasContext: off.getContext('2d'), viewport: scaled }).promise;
+                const dataUrl = off.toDataURL('image/jpeg', 0.85);
+                el.innerHTML = `<img src="${dataUrl}" alt="PDF" style="width:100%;height:100%;object-fit:contain;background:white;">`;
+            } catch (err) {
+                console.error('Error renderizando PDF:', url, err);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(renderizarThumbnailsPdfDetalle, 100);
     });
 </script>
 {% endblock %}

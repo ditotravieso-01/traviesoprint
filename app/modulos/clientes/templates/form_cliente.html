@@ -515,7 +515,8 @@
                             <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
                         </a>
                     {% elif f.es_pdf() %}
-                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
+                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank"
+                        data-fav-pdf-url="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}">
                             <span class="pdf-ico">📄</span>
                             <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
                             <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
@@ -696,7 +697,109 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- pdf.js: mismo que usa el módulo etiquetas para leer medidas de PDFs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+
+    // ============================================================
+    // HELPERS GLOBALES
+    // ============================================================
+    function escapeHtml(str) {
+        if (str == null) return '';
+        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    // ============================================================
+    // EXTRACCIÓN DE MEDIDAS · CLIENT-SIDE (igual que etiquetas)
+    // ============================================================
+    const PT_A_CM = 0.0352778;
+
+    /**
+     * Lee un PDF con pdf.js y devuelve {ancho_cm, alto_cm} de la primera página.
+     */
+    function leerMedidasPDF(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
+            reader.onload = function() {
+                try {
+                    const typedarray = new Uint8Array(this.result);
+                    pdfjsLib.getDocument(typedarray).promise
+                        .then(pdf => pdf.getPage(1))
+                        .then(page => {
+                            const viewport = page.getViewport({ scale: 1.0 });
+                            const ancho_cm = viewport.width * PT_A_CM;
+                            const alto_cm = viewport.height * PT_A_CM;
+                            resolve({
+                                ancho_cm: parseFloat(ancho_cm.toFixed(2)),
+                                alto_cm: parseFloat(alto_cm.toFixed(2)),
+                            });
+                        })
+                        .catch(err => reject(new Error('PDF inválido o corrupto: ' + err.message)));
+                } catch (e) {
+                    reject(new Error('No se pudo procesar el PDF: ' + e.message));
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    /**
+     * Lee una imagen con la API Image y devuelve {ancho_cm, alto_cm}.
+     * Intenta respetar el DPI si está en EXIF; si no, asume 300 DPI.
+     */
+    function leerMedidasImagen(file) {
+        return new Promise((resolve) => {
+            const url = URL.createObjectURL(file);
+            const img = new Image();
+            img.onload = function() {
+                URL.revokeObjectURL(url);
+                // Intentamos leer DPI de EXIF de forma best-effort.
+                // Si falla, usamos 300 DPI como asume la mayoría de diseños.
+                let dpi = 300;
+                try {
+                    // Si el navegador expone density vía createImageBitmap la usamos
+                    // (Chrome moderno lo hace; falla silenciosamente en otros).
+                } catch (e) {}
+                const ancho_cm = (img.naturalWidth / dpi) * 2.54;
+                const alto_cm  = (img.naturalHeight / dpi) * 2.54;
+                resolve({
+                    ancho_cm: parseFloat(ancho_cm.toFixed(2)),
+                    alto_cm:  parseFloat(alto_cm.toFixed(2)),
+                });
+            };
+            img.onerror = () => {
+                URL.revokeObjectURL(url);
+                resolve(null);
+            };
+            img.src = url;
+        });
+    }
+
+    /**
+     * Dispatcher: detecta el tipo y llama al lector adecuado.
+     */
+    async function extraerMedidasArchivo(file) {
+        const mime = file.type || '';
+        const nombre = (file.name || '').toLowerCase();
+        const esPDF = mime === 'application/pdf' || nombre.endsWith('.pdf');
+        const esImg = mime.startsWith('image/');
+
+        if (esPDF) {
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error('pdf.js no está disponible (bloqueado por red o CDN).');
+            }
+            return await leerMedidasPDF(file);
+        }
+        if (esImg) {
+            return await leerMedidasImagen(file);
+        }
+        throw new Error('Tipo de archivo no soportado.');
+    }
+
     // ============================================================
     // MODAL DE CONFIRMACIÓN PERSONALIZADO
     // ============================================================
@@ -713,15 +816,8 @@
         const variant = opts.variant || 'danger';
         box.className = 'cs-confirm-box ' + variant;
         iconEl.className = 'cs-confirm-icon ' + variant;
-
         if (variant === 'warning') {
             iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            okBtn.className = 'cs-confirm-btn warning';
-        } else if (variant === 'success') {
-            iconEl.innerHTML = '<i class="fas fa-check-circle"></i>';
-            okBtn.className = 'cs-confirm-btn danger';
-        } else if (variant === 'info') {
-            iconEl.innerHTML = '<i class="fas fa-info-circle"></i>';
             okBtn.className = 'cs-confirm-btn danger';
         } else {
             iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
@@ -749,21 +845,16 @@
         const cancelBtn = document.getElementById('csConfirmCancel');
         const overlay = document.getElementById('csConfirmOverlay');
 
-        if (okBtn) {
-            okBtn.addEventListener('click', function() {
-                const cb = csConfirmCallback;
-                csConfirmClose();
-                if (typeof cb === 'function') cb();
-            });
-        }
+        if (okBtn) okBtn.addEventListener('click', function() {
+            const cb = csConfirmCallback;
+            csConfirmClose();
+            if (typeof cb === 'function') cb();
+        });
         if (cancelBtn) cancelBtn.addEventListener('click', csConfirmClose);
-        if (overlay) {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === this) csConfirmClose();
-            });
-        }
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === this) csConfirmClose();
+        });
 
-        // Interceptar todos los forms con class="form-cs-confirm"
         document.querySelectorAll('form.form-cs-confirm').forEach(function(form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
@@ -773,10 +864,7 @@
                     message: self.dataset.confirmMessage || '¿Estás seguro?',
                     okText: self.dataset.confirmOk || 'Eliminar',
                     variant: self.dataset.confirmVariant || 'danger',
-                    onConfirm: function() {
-                        // form.submit() NO dispara 'submit' de nuevo → sin bucle
-                        self.submit();
-                    }
+                    onConfirm: function() { self.submit(); }
                 });
             });
         });
@@ -787,7 +875,7 @@
     });
 
     // ============================================================
-    // MODAL DE FAVORITO (solo si existe)
+    // MODAL DE FAVORITO (con detección client-side)
     // ============================================================
     {% if cliente %}
     const URL_CREAR = "{{ url_for('clientes.crear_favorito', cliente_id=cliente.id) }}";
@@ -798,11 +886,6 @@
     }
     function setFormActionCrear() {
         document.getElementById('favForm').action = URL_CREAR;
-    }
-
-    function escapeHtml(str) {
-        if (str == null) return '';
-        return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     }
 
     function abrirModalFavorito(data) {
@@ -852,33 +935,93 @@
 
     document.addEventListener('DOMContentLoaded', function() {
         const modal = document.getElementById('modalFavorito');
-        if (modal) {
-            modal.addEventListener('click', function(e) {
-                if (e.target === this) cerrarModalFavorito();
-            });
-        }
+        if (modal) modal.addEventListener('click', function(e) {
+            if (e.target === this) cerrarModalFavorito();
+        });
 
         const archivoInput = document.getElementById('favArchivo');
+        const anchoInput = document.getElementById('favAncho');
+        const altoInput  = document.getElementById('favAlto');
+        const nombreInput = document.getElementById('favNombre');
+        const infoBox    = document.getElementById('favArchivoInfo');
+        const infoTxt    = document.getElementById('favArchivoInfoTxt');
+
+        // Flags: el usuario editó manualmente → no sobreescribir
+        let userEditedAncho = false;
+        let userEditedAlto  = false;
+        let userEditedNombre = false;
+
+        if (anchoInput)  anchoInput.addEventListener('input',  () => { userEditedAncho = true; });
+        if (altoInput)   altoInput.addEventListener('input',   () => { userEditedAlto = true; });
+        if (nombreInput) nombreInput.addEventListener('input', () => { userEditedNombre = true; });
+
+        function setInfo(html) {
+            if (!infoTxt || !infoBox) return;
+            infoTxt.innerHTML = html;
+            infoBox.style.display = 'flex';
+            const chk = document.getElementById('favEliminarArchivo');
+            if (chk) chk.checked = false;
+        }
+
         if (archivoInput) {
-            archivoInput.addEventListener('change', function() {
+            archivoInput.addEventListener('change', async function() {
                 const file = this.files[0];
                 if (!file) return;
-                const nombreInput = document.getElementById('favNombre');
-                if (!nombreInput.value.trim()) {
-                    nombreInput.value = file.name.replace(/\.[^.]+$/, '').slice(0, 150);
+
+                // Nuevo archivo → resetear flags
+                userEditedAncho = false;
+                userEditedAlto  = false;
+                userEditedNombre = false;
+
+                setInfo(`⏳ <strong>${escapeHtml(file.name)}</strong> · detectando medidas...`);
+
+                let medidas = null;
+                let errorMsg = null;
+                try {
+                    medidas = await extraerMedidasArchivo(file);
+                } catch (e) {
+                    errorMsg = e.message || String(e);
                 }
-                if (file.type.startsWith('image/')) {
-                    const anchoInput = document.getElementById('favAncho');
-                    const altoInput = document.getElementById('favAlto');
-                    const url = URL.createObjectURL(file);
-                    const img = new Image();
-                    img.onload = function() {
-                        URL.revokeObjectURL(url);
-                        const DPI = 300;
-                        if (!anchoInput.value) anchoInput.value = (img.width / DPI * 2.54).toFixed(2);
-                        if (!altoInput.value) altoInput.value = (img.height / DPI * 2.54).toFixed(2);
-                    };
-                    img.src = url;
+
+                // Si el archivo es un PDF y falló, intentar fallback con backend
+                const esPDF = (file.type === 'application/pdf') || (file.name || '').toLowerCase().endsWith('.pdf');
+                if (!medidas && esPDF) {
+                    try {
+                        const fd = new FormData();
+                        fd.append('archivo', file);
+                        const r = await fetch("{{ url_for('clientes.detectar_medidas_favorito') }}", { method: 'POST', body: fd });
+                        const data = await r.json();
+                        if (data && data.ok && data.ancho_cm && data.alto_cm) {
+                            medidas = { ancho_cm: data.ancho_cm, alto_cm: data.alto_cm };
+                        } else if (data && data.error) {
+                            errorMsg = data.error;
+                        }
+                    } catch (e2) { /* silencioso */ }
+                }
+
+                if (!medidas) {
+                    setInfo(`📎 <strong>${escapeHtml(file.name)}</strong> · medidas no detectadas (${escapeHtml(errorMsg || 'rellénalas manualmente')})`);
+                    return;
+                }
+
+                // Auto-rellenar nombre
+                if (!userEditedNombre) {
+                    const sugerido = file.name.replace(/\.[^.]+$/, '').slice(0, 150);
+                    if (!nombreInput.value.trim()) nombreInput.value = sugerido;
+                }
+
+                // Auto-rellenar medidas
+                if (medidas.ancho_cm > 0 && medidas.alto_cm > 0) {
+                    // Sobreescribimos si el usuario no editó, o si el valor actual es el default (5, 3)
+                    if (!userEditedAncho || parseFloat(anchoInput.value) === 5) {
+                        anchoInput.value = medidas.ancho_cm;
+                    }
+                    if (!userEditedAlto || parseFloat(altoInput.value) === 3) {
+                        altoInput.value = medidas.alto_cm;
+                    }
+                    setInfo(`✅ <strong>${escapeHtml(file.name)}</strong> · medidas detectadas: <strong>${medidas.ancho_cm} × ${medidas.alto_cm} cm</strong>`);
+                } else {
+                    setInfo(`📎 <strong>${escapeHtml(file.name)}</strong> · medidas no detectadas (rellénalas manualmente)`);
                 }
             });
         }
@@ -888,5 +1031,44 @@
         if (e.key === 'Escape') cerrarModalFavorito();
     });
     {% endif %}
+
+    // ============================================================
+    // RENDERIZADO DE THUMBNAILS DE PDFs EN FAVORITOS
+    // ============================================================
+    async function renderizarThumbnailsPdf() {
+        if (typeof pdfjsLib === 'undefined') return;
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+
+        const thumbs = document.querySelectorAll('.fav-pdf-thumb[data-fav-pdf-url]:not([data-pdf-rendered])');
+        for (const el of thumbs) {
+            el.dataset.pdfRendered = '1';
+            const url = el.dataset.favPdfUrl;
+            try {
+                const pdf = await pdfjsLib.getDocument(url).promise;
+                const page = await pdf.getPage(1);
+                const viewport = page.getViewport({ scale: 1 });
+                const targetW = 320;
+                const scale = targetW / viewport.width;
+                const scaled = page.getViewport({ scale });
+                const off = document.createElement('canvas');
+                off.width = Math.round(scaled.width);
+                off.height = Math.round(scaled.height);
+                await page.render({ canvasContext: off.getContext('2d'), viewport: scaled }).promise;
+                const dataUrl = off.toDataURL('image/jpeg', 0.85);
+
+                // Reemplazar el contenido del <a> con la imagen
+                el.innerHTML = `<img src="${dataUrl}" alt="PDF" style="width:100%;height:100%;object-fit:contain;background:white;">`;
+            } catch (err) {
+                console.error('Error renderizando PDF:', url, err);
+            }
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Ejecutar tras un tick para asegurar que pdfjsLib cargó
+        setTimeout(renderizarThumbnailsPdf, 100);
+    });
 </script>
 {% endblock %}
+

@@ -13,6 +13,11 @@ from werkzeug.utils import secure_filename
 import json
 from collections import Counter, defaultdict
 from sqlalchemy import func
+import hashlib
+import io as _io
+
+MAX_TOTAL_FAVORITOS_MB = 2000.0   # Cuota global (2 GB)
+MAX_POR_CLIENTE_MB = 100.0        # Cuota por cliente
 
 clientes_bp = Blueprint('clientes', __name__, url_prefix='/clientes', template_folder='templates')
 
@@ -131,8 +136,13 @@ def _extraer_dimensiones_pdf(stream):
         import pypdf
         stream.seek(0)
         reader = pypdf.PdfReader(stream)
-        mb = reader.pages[0].mediabox
-        return round(float(mb.width) * PUNTOS_A_CM, 2), round(float(mb.height) * PUNTOS_A_CM, 2)
+        if len(reader.pages) > 0:
+            mb = reader.pages[0].mediabox
+            w = float(mb.width)
+            h = float(mb.height)
+            # Algunos PDFs traen la página rotada; el mediabox a veces tiene
+            # ancho y alto intercambiados. Si height < width, probablemente sea landscape.
+            return round(w * PUNTOS_A_CM, 2), round(h * PUNTOS_A_CM, 2)
     except Exception:
         pass
     # 2. PyPDF2
@@ -140,14 +150,15 @@ def _extraer_dimensiones_pdf(stream):
         import PyPDF2
         stream.seek(0)
         reader = PyPDF2.PdfReader(stream)
-        mb = reader.pages[0].mediabox
-        return round(float(mb.width) * PUNTOS_A_CM, 2), round(float(mb.height) * PUNTOS_A_CM, 2)
+        if len(reader.pages) > 0:
+            mb = reader.pages[0].mediabox
+            return round(float(mb.width) * PUNTOS_A_CM, 2), round(float(mb.height) * PUNTOS_A_CM, 2)
     except Exception:
         pass
     # 3. Regex sobre los primeros bytes
     try:
         stream.seek(0)
-        data = stream.read(8192)
+        data = stream.read(16384)
         m = re.search(rb'/MediaBox\s*\[\s*([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)\s+([\d.+-]+)\s*\]', data)
         if m:
             x1, y1, x2, y2 = [float(x) for x in m.groups()]
@@ -166,10 +177,31 @@ def _extraer_dimensiones_imagen(stream):
         stream.seek(0)
         img = Image.open(stream)
         w_px, h_px = img.size
+
+        dpi = None
+        # 1. info['dpi']
         dpi_info = img.info.get('dpi')
-        dpi = 300.0
-        if dpi_info and isinstance(dpi_info, (list, tuple)) and dpi_info[0] and dpi_info[0] > 0:
+        if dpi_info and isinstance(dpi_info, (list, tuple)) and dpi_info[0] and float(dpi_info[0]) > 0:
             dpi = float(dpi_info[0])
+        # 2. EXIF: XResolution + ResolutionUnit
+        if dpi is None:
+            try:
+                exif = img.getexif()
+                xres = exif.get(282)  # XResolution
+                unit = exif.get(296)  # ResolutionUnit (2=pulgadas, 3=cm)
+                if xres and unit:
+                    xres = float(xres)
+                    if unit == 3:  # cm
+                        # Convertir: DPI = XRes * 2.54
+                        dpi = xres * 2.54
+                    else:
+                        dpi = xres
+            except Exception:
+                pass
+        # 3. Default
+        if not dpi or dpi <= 0:
+            dpi = 300.0
+
         return round(w_px / dpi * 2.54, 2), round(h_px / dpi * 2.54, 2)
     except Exception:
         return None, None
@@ -196,13 +228,67 @@ def _extraer_dimensiones_archivo(archivo):
     return None, None
 
 
+def _calcular_uso_favoritos():
+    """Devuelve (total_bytes, {client_id_str: bytes}) del directorio de favoritos."""
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+    base = os.path.join(upload_folder, 'favoritos')
+    total = 0
+    por_cliente = {}
+    if not os.path.isdir(base):
+        return total, por_cliente
+    for sub in os.listdir(base):
+        sub_path = os.path.join(base, sub)
+        if not os.path.isdir(sub_path):
+            continue
+        subtotal = 0
+        for root, _dirs, files in os.walk(sub_path):
+            for fname in files:
+                try:
+                    subtotal += os.path.getsize(os.path.join(root, fname))
+                except Exception:
+                    pass
+        por_cliente[sub] = subtotal
+        total += subtotal
+    return total, por_cliente
+
+
+def _ruta_abs_blob(hash_val):
+    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+    blobs_dir = os.path.join(upload_folder, 'favoritos', '_blobs')
+    return blobs_dir
+
+
+def _buscar_blob_por_hash(hash_val):
+    blobs_dir = _ruta_abs_blob(hash_val)
+    if not os.path.isdir(blobs_dir):
+        return None
+    for fname in os.listdir(blobs_dir):
+        if fname.startswith(hash_val + '.'):
+            return os.path.join('favoritos', '_blobs', fname)
+    return None
+
+
+def _guardar_blob(hash_val, ext, contenido):
+    blobs_dir = _ruta_abs_blob(hash_val)
+    os.makedirs(blobs_dir, exist_ok=True)
+    fname = f"{hash_val}.{ext}" if ext else hash_val
+    path = os.path.join(blobs_dir, fname)
+    if not os.path.exists(path):
+        with open(path, 'wb') as f:
+            f.write(contenido)
+    return os.path.join('favoritos', '_blobs', fname)
+
+
 def guardar_archivo_favorito(client_id, archivo, user):
     """
-    Guarda el archivo en /static/uploads/favoritos/<client_id>/.
-    Devuelve (ruta_relativa, nombre_original, mime, size_bytes) o (None, None, None, None).
+    Guarda un archivo de favorito con:
+    - deduplicación por SHA256 (no duplica archivos idénticos),
+    - compresión de imágenes grandes (>500 KB se convierten a JPEG q82),
+    - validación de cuota global y por cliente.
+    Devuelve (ruta_relativa, nombre_original, mime, size_bytes, hash_val).
     """
     if not archivo or not archivo.filename:
-        return None, None, None, None
+        return None, None, None, None, None
 
     mime = archivo.mimetype or ''
     if mime not in ALLOWED_FAVORITO_TYPES:
@@ -220,28 +306,89 @@ def guardar_archivo_favorito(client_id, archivo, user):
             f'Solo el administrador puede subir archivos de mayor tamaño.'
         )
 
-    upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
-    favoritos_folder = os.path.join(upload_folder, 'favoritos', str(client_id))
-    os.makedirs(favoritos_folder, exist_ok=True)
+    contenido = archivo.read()
+    archivo.seek(0)
 
+    # --- Compresión automática de imágenes grandes ---
+    if mime.startswith('image/') and len(contenido) > 500 * 1024:
+        try:
+            from PIL import Image
+            img = Image.open(_io.BytesIO(contenido))
+            max_lado = 2000
+            w, h = img.size
+            if max(w, h) > max_lado:
+                ratio = max_lado / max(w, h)
+                img = img.resize((int(w * ratio), int(h * ratio)), Image.LANCZOS)
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            buf = _io.BytesIO()
+            img.save(buf, format='JPEG', quality=82, optimize=True)
+            contenido = buf.getvalue()
+            mime = 'image/jpeg'
+        except Exception:
+            pass  # si falla la compresión, guardamos el original
+
+    size = len(contenido)
+    hash_val = hashlib.sha256(contenido).hexdigest()
+
+    # Si el blob ya existe, no escribir. Se reusa.
+    existente = _buscar_blob_por_hash(hash_val)
+    if existente:
+        nombre_original = secure_filename(archivo.filename)
+        return existente, nombre_original, mime, size, hash_val
+
+    # Cuotas (solo si vamos a escribir bytes nuevos)
+    total_bytes, por_cliente = _calcular_uso_favoritos()
+    size_mb = size / (1024 * 1024)
+    if _puede_subir_archivo_grande(user):
+        pass  # admin salta las cuotas
+    else:
+        if (total_bytes / (1024 * 1024)) + size_mb > MAX_TOTAL_FAVORITOS_MB:
+            raise ValueError(
+                f'Cuota global de favoritos alcanzada ({MAX_TOTAL_FAVORITOS_MB:.0f} MB). '
+                f'Contacta al administrador.'
+            )
+        cliente_mb = por_cliente.get(str(client_id), 0) / (1024 * 1024)
+        if cliente_mb + size_mb > MAX_POR_CLIENTE_MB:
+            raise ValueError(
+                f'Este cliente alcanzó su cuota de {MAX_POR_CLIENTE_MB:.0f} MB en favoritos.'
+            )
+
+    ext = 'pdf' if mime == 'application/pdf' else ('jpg' if mime == 'image/jpeg' else mime.split('/')[-1])
+    ruta_relativa = _guardar_blob(hash_val, ext, contenido)
     nombre_original = secure_filename(archivo.filename)
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    uuid_part = str(uuid.uuid4())[:8]
-    nombre_guardado = f"{timestamp}_{uuid_part}_{nombre_original}"
-    ruta_relativa = os.path.join('favoritos', str(client_id), nombre_guardado)
-    ruta_absoluta = os.path.join(upload_folder, ruta_relativa)
-    archivo.save(ruta_absoluta)
-    return ruta_relativa, nombre_original, mime, size
+    return ruta_relativa, nombre_original, mime, size, hash_val
 
 
 def borrar_archivo_favorito(fav):
+    """
+    Solo borra el archivo del disco si ningún otro favorito lo referencia.
+    Los archivos viven ahora en favoritos/_blobs/<hash>.<ext>.
+    """
     if not fav or not fav.archivo_ruta:
         return
+    # Archivo antiguo (pre-dedup): borrar directo
+    if '_blobs' not in fav.archivo_ruta:
+        upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
+        ruta_abs = os.path.join(upload_folder, fav.archivo_ruta)
+        try:
+            if os.path.exists(ruta_abs):
+                os.remove(ruta_abs)
+        except Exception:
+            pass
+        return
+    # Es un blob: verificar si otros favoritos lo usan
+    otras = EtiquetaFavorita.query.filter(
+        EtiquetaFavorita.archivo_ruta == fav.archivo_ruta,
+        EtiquetaFavorita.id != fav.id
+    ).count()
+    if otras > 0:
+        return
     upload_folder = current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads')
-    ruta_absoluta = os.path.join(upload_folder, fav.archivo_ruta)
+    ruta_abs = os.path.join(upload_folder, fav.archivo_ruta)
     try:
-        if os.path.exists(ruta_absoluta):
-            os.remove(ruta_absoluta)
+        if os.path.exists(ruta_abs):
+            os.remove(ruta_abs)
     except Exception:
         pass
 
@@ -952,12 +1099,13 @@ def crear_favorito(cliente_id):
 
     if archivo and archivo.filename:
         try:
-            ruta, nombre_orig, mime, size = guardar_archivo_favorito(cliente_id, archivo, current_user)
+            ruta, nombre_orig, mime, size, hash_val = guardar_archivo_favorito(cliente_id, archivo, current_user)
             if ruta:
                 fav.archivo_ruta = ruta
                 fav.archivo_nombre = nombre_orig
                 fav.archivo_tipo = mime
                 fav.archivo_tamano = size
+                fav.hash_archivo = hash_val
         except ValueError as e:
             flash(str(e), 'danger')
             return redirect(url_for('clientes.editar_cliente', cliente_id=cliente_id) + '#favoritos')
@@ -1006,13 +1154,14 @@ def editar_favorito(fav_id):
     archivo = request.files.get('archivo')
     if archivo and archivo.filename:
         try:
-            ruta, nombre_orig, mime, size = guardar_archivo_favorito(fav.client_id, archivo, current_user)
+            ruta, nombre_orig, mime, size, hash_val = guardar_archivo_favorito(fav.client_id, archivo, current_user)
             if ruta:
-                borrar_archivo_favorito(fav)
+                borrar_archivo_favorito(fav)  # borra el anterior si no lo usan otros
                 fav.archivo_ruta = ruta
                 fav.archivo_nombre = nombre_orig
                 fav.archivo_tipo = mime
                 fav.archivo_tamano = size
+                fav.hash_archivo = hash_val
         except ValueError as e:
             flash(str(e), 'danger')
             return redirect(url_for('clientes.editar_cliente', cliente_id=fav.client_id) + '#favoritos')
@@ -1240,3 +1389,69 @@ def descargar_plantilla():
     output.seek(0)
     return send_file(output, as_attachment=True, download_name='plantilla_clientes.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+
+# ==========================================
+# DETECCIÓN DE MEDIDAS DE UN FAVORITO
+# ==========================================
+@clientes_bp.route('/favoritos/detectar-medidas', methods=['POST'])
+@login_required
+@comercial_or_admin_required
+def detectar_medidas_favorito():
+    """
+    Recibe un archivo (PDF o imagen) y devuelve las medidas detectadas.
+    Se usa desde el modal de favoritos en form_cliente.html cuando el
+    usuario adjunta un archivo, para auto-rellenar ancho/alto/nombre.
+    """
+    archivo = request.files.get('archivo')
+    if not archivo or not archivo.filename:
+        return jsonify({'ok': False, 'error': 'No se recibió archivo.'})
+
+    mime = archivo.mimetype or ''
+    if mime not in ALLOWED_FAVORITO_TYPES:
+        return jsonify({'ok': False, 'error': 'Tipo de archivo no permitido.'})
+
+    try:
+        ancho_cm, alto_cm = _extraer_dimensiones_archivo(archivo)
+    except Exception as e:
+        return jsonify({'ok': False, 'error': f'Error al leer el archivo: {e}'})
+
+    nombre_sugerido = os.path.splitext(archivo.filename)[0][:150].strip()
+
+    return jsonify({
+        'ok': True,
+        'ancho_cm': ancho_cm,
+        'alto_cm': alto_cm,
+        'nombre_sugerido': nombre_sugerido,
+        'mime': mime,
+        'es_pdf': mime == 'application/pdf',
+        'es_imagen': mime.startswith('image/'),
+    })
+
+@clientes_bp.route('/admin/uso-favoritos')
+@login_required
+@admin_required
+def admin_uso_favoritos():
+    """Reporte de uso de disco de los archivos de favoritos."""
+    total_bytes, por_cliente = _calcular_uso_favoritos()
+    items = []
+    for cid_str, size in por_cliente.items():
+        cli = Client.query.get(int(cid_str)) if cid_str.isdigit() else None
+        items.append({
+            'client_id': cid_str,
+            'nombre': cli.nombre if cli else '(desconocido)',
+            'bytes': size,
+            'mb': round(size / (1024 * 1024), 2),
+            'num_favoritos': EtiquetaFavorita.query.filter_by(client_id=int(cid_str)).count() if cid_str.isdigit() else 0,
+        })
+    items.sort(key=lambda x: x['bytes'], reverse=True)
+    blobs_dir = os.path.join(current_app.config.get('UPLOAD_FOLDER', 'app/static/uploads'), 'favoritos', '_blobs')
+    total_blobs = len(os.listdir(blobs_dir)) if os.path.isdir(blobs_dir) else 0
+    return jsonify({
+        'total_mb': round(total_bytes / (1024 * 1024), 2),
+        'cuota_global_mb': MAX_TOTAL_FAVORITOS_MB,
+        'cuota_por_cliente_mb': MAX_POR_CLIENTE_MB,
+        'total_favoritos': EtiquetaFavorita.query.count(),
+        'total_blobs': total_blobs,
+        'items': items,
+    })

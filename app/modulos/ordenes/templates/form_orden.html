@@ -176,6 +176,36 @@
         padding: 6px; display: flex; justify-content: center;
     }
     .preview-canvas-wrap canvas {
+            .preview-canvas-wrap canvas {
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
+    }
+    .preview-canvas-wrap canvas:active { cursor: grabbing; }
+
+    .preview-zoom-controls {
+        display: flex; align-items: center; gap: 6px;
+        margin-top: 6px; flex-wrap: wrap;
+    }
+    .preview-zoom-controls button {
+        background: white; border: 1px solid #d2d2d7;
+        border-radius: 30px; padding: 4px 12px;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        font-family: inherit; color: #1c1c1e;
+        transition: all 0.15s; line-height: 1;
+        display: inline-flex; align-items: center; gap: 4px;
+    }
+    .preview-zoom-controls button:hover {
+        border-color: #8e8e93; background: #f5f5f5;
+    }
+    .preview-zoom-controls .zoom-label {
+        font-size: 11px; color: #8e8e93; font-weight: 600;
+        min-width: 42px; text-align: center;
+        font-family: 'JetBrains Mono', monospace;
+    }
+    .preview-zoom-hint {
+        font-size: 10px; color: #8e8e93; margin-left: 4px;
+    }
         display: block; width: 100%; height: auto; max-height: 220px;
     }
     .preview-legend {
@@ -251,6 +281,199 @@
     .cs-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.3); }
     .cs-confirm-btn.cancel { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
     .cs-confirm-btn.cancel:hover { border-color: #8e8e93; background: #f5f5f5; }
+
+    /* ============================================================
+    FAVORITOS DE CLIENTE (selector en el form de orden)
+    ============================================================ */
+    .fav-picker-bar {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 10px; padding: 8px 12px;
+        background: linear-gradient(135deg, #fef3c7 0%, #fde8e5 100%);
+        border-radius: 8px; border: 1px solid #fcd34d;
+        margin-bottom: 10px;
+    }
+    .fav-picker-info { font-size: 12px; color: #78350f; display: flex; align-items: center; gap: 6px; }
+    .fav-picker-info i { color: #a8854f; }
+    .fav-picker-info strong { font-weight: 700; }
+    .btn-fav-picker {
+        background: #a8854f; color: white; border: none;
+        padding: 6px 14px; border-radius: 30px;
+        font-size: 12px; font-weight: 600; cursor: pointer;
+        display: inline-flex; align-items: center; gap: 6px;
+        font-family: inherit; white-space: nowrap;
+    }
+    .btn-fav-picker:hover { background: #8c7040; }
+
+    .fav-picker-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+        z-index: 10002; justify-content: center; align-items: center;
+        padding: 16px; animation: csAlertFadeIn 0.18s ease;
+    }
+    .fav-picker-overlay.active { display: flex; }
+    .fav-picker-modal {
+        background: white; border-radius: 20px;
+        width: 100%; max-width: 760px; max-height: 88vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        overflow: hidden;
+        animation: csAlertPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fav-picker-header {
+        padding: 16px 22px; border-bottom: 1px solid #f0ece8;
+        display: flex; justify-content: space-between; align-items: center;
+        background: #fafaf9; flex-shrink: 0;
+    }
+    .fav-picker-header h3 {
+        font-family: 'Playfair Display', serif; font-size: 18px;
+        margin: 0; color: #1c1c1e; display: flex; align-items: center; gap: 8px;
+    }
+    .fav-picker-close {
+        background: none; border: none; font-size: 26px;
+        color: #8e8e93; cursor: pointer; line-height: 1; padding: 0 4px;
+    }
+    .fav-picker-close:hover { color: #1c1c1e; }
+    .fav-picker-body {
+        padding: 16px 22px 22px; overflow-y: auto;
+        display: grid; gap: 12px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    }
+    .fav-pick-card {
+        background: white; border: 1.5px solid #f0ece8;
+        border-radius: 14px; padding: 12px;
+        cursor: pointer; transition: all 0.15s ease;
+        display: flex; flex-direction: column; gap: 8px;
+    }
+    .fav-pick-card:hover {
+        border-color: #a8854f; transform: translateY(-2px);
+        box-shadow: 0 6px 22px rgba(168,133,79,0.15);
+    }
+    .fav-pick-thumb {
+        width: 100%; height: 80px; border-radius: 8px;
+        background: #fafaf9; border: 1px solid #f0ece8;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; font-size: 32px; color: #a8854f;
+    }
+    .fav-pick-pdf-loading {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        color: #8e8e93; font-size: 22px;
+    }
+    .fav-pick-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .fav-pick-thumb .pdf-ico { color: #dc2626; font-size: 32px; }
+    .fav-pick-name {
+        font-family: 'Playfair Display', serif; font-size: 14px;
+        font-weight: 700; color: #1c1c1e; line-height: 1.25;
+    }
+    .fav-pick-dim { font-size: 12px; color: #a8854f; font-weight: 700; }
+    .fav-pick-uso {
+        font-size: 11px; color: #8e8e93;
+        padding-top: 6px; border-top: 1px dashed #f0ece8;
+    }
+    .fav-pick-actions {
+        display: flex; gap: 6px; padding-top: 8px;
+        border-top: 1px solid #f0ece8;
+    }
+    .fav-pick-btn {
+        flex: 1; padding: 8px 12px; border-radius: 30px;
+        font-size: 12px; font-weight: 700; cursor: pointer;
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 6px; font-family: inherit; transition: all 0.15s;
+        border: none; white-space: nowrap;
+    }
+    .fav-pick-btn.primary {
+        background: #a8854f; color: white;
+        box-shadow: 0 2px 6px rgba(168,133,79,0.25);
+    }
+    .fav-pick-btn.primary:hover {
+        background: #8c7040; transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(168,133,79,0.35);
+    }
+    .fav-pick-btn.ghost {
+        background: white; color: #1c1c1e; border: 1.5px solid #d2d2d7;
+        flex: 0 0 auto; padding: 8px 14px;
+    }
+    .fav-pick-btn.ghost:hover {
+        border-color: #8e8e93; background: #f5f5f5;
+    }
+
+    /* ============================================================
+       MODAL DE VISTA PREVIA (imagen / PDF grande)
+       ============================================================ */
+    .fav-preview-overlay {
+        display: none; position: fixed; inset: 0;
+        background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
+        z-index: 10003; justify-content: center; align-items: center;
+        padding: 16px; animation: csAlertFadeIn 0.18s ease;
+    }
+    .fav-preview-overlay.active { display: flex; }
+    .fav-preview-modal {
+        background: white; border-radius: 20px;
+        width: 100%; max-width: 900px; max-height: 92vh;
+        display: flex; flex-direction: column;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+        overflow: hidden;
+        animation: csAlertPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .fav-preview-header {
+        padding: 14px 22px; border-bottom: 1px solid #f0ece8;
+        display: flex; justify-content: space-between; align-items: center;
+        background: #fafaf9; flex-shrink: 0; gap: 12px;
+    }
+    .fav-preview-header h3 {
+        font-family: 'Playfair Display', serif; font-size: 17px;
+        margin: 0; color: #1c1c1e;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .fav-preview-close {
+        background: none; border: none; font-size: 26px;
+        color: #8e8e93; cursor: pointer; line-height: 1; padding: 0 4px;
+        flex-shrink: 0;
+    }
+    .fav-preview-close:hover { color: #1c1c1e; }
+    .fav-preview-body {
+        flex: 1; min-height: 200px;
+        background: #f0ece8; display: flex;
+        align-items: center; justify-content: center;
+        padding: 16px; overflow: auto;
+    }
+    .fav-preview-img {
+        max-width: 100%; max-height: 70vh;
+        object-fit: contain; border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        background: white;
+    }
+    .fav-preview-pdf {
+        width: 100%; height: 70vh;
+        border: 0; border-radius: 8px;
+        background: white;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    .fav-preview-empty {
+        text-align: center; color: #8e8e93; padding: 40px 20px;
+    }
+    .fav-preview-empty i { font-size: 48px; margin-bottom: 12px; display: block; opacity: 0.4; }
+    .fav-preview-empty a {
+        color: #a8854f; font-weight: 700; text-decoration: underline;
+        margin-top: 8px; display: inline-block;
+    }
+    .fav-preview-footer {
+        padding: 14px 22px; border-top: 1px solid #f0ece8;
+        display: flex; justify-content: flex-end; gap: 10px;
+        background: white; flex-shrink: 0; flex-wrap: wrap;
+    }
+    .fav-preview-footer .fav-pick-btn { min-width: 140px; }
+
+    @media (max-width: 480px) {
+        .fav-picker-body { grid-template-columns: 1fr; padding: 12px 14px 16px; }
+        .fav-picker-modal { border-radius: 16px; max-height: 92vh; }
+        .fav-picker-header { padding: 14px 16px; }
+
+        .fav-preview-modal { border-radius: 14px; max-height: 96vh; }
+        .fav-preview-pdf { height: 55vh; }
+        .fav-preview-footer { flex-direction: column-reverse; }
+        .fav-preview-footer .fav-pick-btn { width: 100%; }
+    }
 
     @media (max-width: 575.98px) {
         .form-container { padding: 0 10px; }
@@ -589,6 +812,15 @@
                                 <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                                     <td colspan="6">
                                         <div class="etiquetas-params visible" style="display:block;">
+                                            <div class="fav-picker-bar" style="display:none;">
+                                                <span class="fav-picker-info">
+                                                    <i class="fas fa-star"></i>
+                                                    <strong>Favoritos de <span class="fav-client-name">cliente</span></strong>
+                                                </span>
+                                                <button type="button" class="btn-fav-picker" onclick="abrirFavoritosPicker(this)">
+                                                    <i class="fas fa-list"></i> Elegir favorito
+                                                </button>
+                                            </div>
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
@@ -635,6 +867,13 @@
                                                 <div class="preview-canvas-wrap">
                                                     <canvas id="preview-etiqueta-{{ paramsId }}" width="500" height="220"></canvas>
                                                 </div>
+                                                <div class="preview-zoom-controls">
+                                                    <button type="button" onclick="zoomCanvasBtn(this, 1.25)" title="Acercar">🔍+</button>
+                                                    <button type="button" onclick="zoomCanvasBtn(this, 0.8)" title="Alejar">🔍−</button>
+                                                    <button type="button" onclick="resetCanvasZoomBtn(this)" title="Restablecer zoom">⟲</button>
+                                                    <span class="zoom-label">1.0x</span>
+                                                    <span class="preview-zoom-hint">rueda: zoom · arrastra: mover</span>
+                                                </div>                                                
                                                 <div class="preview-legend">
                                                     <span class="item"><span class="swatch" style="background:#fef3c7;border:1px solid #f59e0b;"></span> Etiqueta</span>
                                                     <span class="item"><span class="swatch" style="background:rgba(0,0,0,0.06);"></span> Borde rollo</span>
@@ -836,6 +1075,40 @@
         <div class="cs-alert-message" id="csAlertMessage"></div>
         <div class="cs-alert-actions">
             <button type="button" class="cs-alert-btn" onclick="csAlertClose()">Entendido</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SELECTOR DE ETIQUETA FAVORITA DEL CLIENTE
+     ============================================================ -->
+<div class="fav-picker-overlay" id="favPickerOverlay">
+    <div class="fav-picker-modal">
+        <div class="fav-picker-header">
+            <h3><i class="fas fa-star" style="color:#a8854f;"></i> Elegir etiqueta favorita</h3>
+            <button type="button" class="fav-picker-close" onclick="cerrarFavPicker()">&times;</button>
+        </div>
+        <div class="fav-picker-body" id="favPickerBody"></div>
+    </div>
+</div>
+
+<!-- ============================================================
+     MODAL: VISTA PREVIA DEL FAVORITO (imagen / PDF grande)
+     ============================================================ -->
+<div class="fav-preview-overlay" id="favPreviewOverlay">
+    <div class="fav-preview-modal">
+        <div class="fav-preview-header">
+            <h3 id="favPreviewTitle">Vista previa</h3>
+            <button type="button" class="fav-preview-close" onclick="cerrarFavPreview()">&times;</button>
+        </div>
+        <div class="fav-preview-body" id="favPreviewBody"></div>
+        <div class="fav-preview-footer">
+            <button type="button" class="fav-pick-btn ghost" onclick="cerrarFavPreview()">
+                <i class="fas fa-times"></i> Cerrar
+            </button>
+            <button type="button" class="fav-pick-btn primary" id="favPreviewSelectBtn">
+                <i class="fas fa-check"></i> Seleccionar esta etiqueta
+            </button>
         </div>
     </div>
 </div>
@@ -1084,19 +1357,21 @@ function actualizarPlaceholderCantidad(unidadSelect) {
     }
 }
 
-// =============================================
-// DIBUJAR PREVIEW ETIQUETAS
-// =============================================
 function dibujarPreviewEtiquetas(canvasId, data) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = canvas.width, H = canvas.height;
 
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = '#f8f6f4';
     ctx.fillRect(0, 0, W, H);
+
+    if (data) canvasDataCache.set(canvasId, data);
+    data = canvasDataCache.get(canvasId);
+    if (!data) return;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
 
     if (!data || !data.pañosGrupos || data.pañosGrupos.length === 0) {
         ctx.fillStyle = '#8e8e93';
@@ -1108,12 +1383,18 @@ function dibujarPreviewEtiquetas(canvasId, data) {
 
     const grupos = data.pañosGrupos;
     const nGrupos = grupos.length;
-    const pad = 12;
-    const gapBetween = 22;
-    const topReserve = 20;
+    const pad = 12, gapBetween = 22, topReserve = 20;
     const avail_w = W - 2 * pad - (nGrupos - 1) * gapBetween;
     const avail_h = H - 2 * pad - topReserve;
     const cell_w = avail_w / nGrupos;
+
+    // Fuente: HTMLImageElement o HTMLCanvasElement (para PDF renderizado)
+    const fuente = data.imagen && data.imagen.img ? data.imagen.img : null;
+    const esRotado = data.imagen && data.imagen.esRotado === true;
+    const fuenteLista = fuente && (
+        (fuente instanceof HTMLImageElement && fuente.complete && fuente.naturalWidth > 0) ||
+        (fuente instanceof HTMLCanvasElement && fuente.width > 0 && fuente.height > 0)
+    );
 
     grupos.forEach((grupo, g) => {
         const filasGrupo = grupo.filas;
@@ -1121,15 +1402,14 @@ function dibujarPreviewEtiquetas(canvasId, data) {
 
         const paño_h_m = filasGrupo * data.alto_cell + data.gap;
         const paño_w_m = data.ancho_real;
-
         const scale = Math.min(cell_w / paño_w_m, avail_h / paño_h_m);
 
         const paño_w_px = paño_w_m * scale;
         const paño_h_px = paño_h_m * scale;
-
         const offsetX = pad + g * (cell_w + gapBetween) + (cell_w - paño_w_px) / 2;
         const offsetY = pad + topReserve + (avail_h - paño_h_px) / 2;
 
+        // Fondo rollo (borde)
         ctx.fillStyle = 'rgba(0,0,0,0.06)';
         ctx.fillRect(offsetX, offsetY, paño_w_px, paño_h_px);
         ctx.strokeStyle = '#8e8e93';
@@ -1146,19 +1426,58 @@ function dibujarPreviewEtiquetas(canvasId, data) {
 
         const total_pieces_w_px = cols * ancho_cell_px;
         let offsetX_piezas = offsetX;
-        if (data.centrar) {
-            offsetX_piezas = offsetX + (ancho_util_px - total_pieces_w_px) / 2;
-        }
+        if (data.centrar) offsetX_piezas = offsetX + (ancho_util_px - total_pieces_w_px) / 2;
 
         for (let f = 0; f < filasGrupo; f++) {
             for (let c = 0; c < cols; c++) {
                 const x = offsetX_piezas + c * ancho_cell_px;
                 const y = offsetY + f * alto_cell_px;
-                ctx.fillStyle = '#fef3c7';
-                ctx.fillRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
-                ctx.strokeStyle = '#f59e0b';
-                ctx.lineWidth = 0.5;
-                ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+
+                if (fuenteLista && ancho_cell_px > 8 && alto_cell_px > 8) {
+                    const natW = fuente.naturalWidth || fuente.width;
+                    const natH = fuente.naturalHeight || fuente.height;
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.rect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                    ctx.clip();
+
+                    if (esRotado) {
+                        // Rotamos 90° sobre el centro de la celda.
+                        // El espacio útil pasa a ser (alto_cell × ancho_cell).
+                        const cx = x + ancho_cell_px / 2;
+                        const cy = y + alto_cell_px / 2;
+                        ctx.translate(cx, cy);
+                        ctx.rotate(-Math.PI / 2);
+                        const w = alto_cell_px - 2;
+                        const h = ancho_cell_px - 2;
+                        const cellRatio = w / h;
+                        const imgRatio = natW / natH;
+                        let dw, dh;
+                        if (imgRatio > cellRatio) { dw = w; dh = w / imgRatio; }
+                        else { dh = h; dw = h * imgRatio; }
+                        ctx.drawImage(fuente, -dw / 2, -dh / 2, dw, dh);
+                    } else {
+                        const cellRatio = (ancho_cell_px - 2) / (alto_cell_px - 2);
+                        const imgRatio = natW / natH;
+                        let dw, dh;
+                        if (imgRatio > cellRatio) { dw = ancho_cell_px - 2; dh = dw / imgRatio; }
+                        else { dh = alto_cell_px - 2; dw = dh * imgRatio; }
+                        const dx = x + 1 + ((ancho_cell_px - 2) - dw) / 2;
+                        const dy = y + 1 + ((alto_cell_px - 2) - dh) / 2;
+                        ctx.drawImage(fuente, dx, dy, dw, dh);
+                    }
+                    ctx.restore();
+
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                } else {
+                    ctx.fillStyle = '#fef3c7';
+                    ctx.fillRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                    ctx.strokeStyle = '#f59e0b';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x + 0.5, y + 0.5, ancho_cell_px - 1, alto_cell_px - 1);
+                }
             }
         }
 
@@ -1295,12 +1614,364 @@ function dibujarPreviewCartel(canvasId, simData) {
 }
 
 // =============================================
-// CLIENTE
+// CLIENTE + FAVORITOS
 // =============================================
+let favoritosCliente = [];
+let favoritosTargetRow = null;
+// Cache de imágenes de favoritos ya cargadas: paramsId -> HTMLImageElement | HTMLCanvasElement
+const imagenesFavoritas = new Map();
+// Cache de miniaturas (dataURL) de PDFs: favId -> string dataURL
+const thumbnailsFavoritos = new Map();
+
+// ============================================================
+// Renderiza la primera página de un PDF a un canvas offscreen.
+// Sirve tanto para el thumbnail del picker como para el canvas.
+// ============================================================
+async function renderizarPdfACanvas(url, targetWidth = 600) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js no disponible');
+    const loadingTask = pdfjsLib.getDocument(url);
+    const pdf = await loadingTask.promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.0 });
+    const scale = targetWidth / viewport.width;
+    const scaled = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(scaled.width);
+    canvas.height = Math.round(scaled.height);
+    const ctx = canvas.getContext('2d');
+    await page.render({ canvasContext: ctx, viewport: scaled }).promise;
+    return canvas;
+}
+
+// ============================================================
+// ZOOM + PAN DE CANVASES DE VISTA PREVIA
+// ============================================================
+const canvasViewState = new Map();   // canvasId -> {scale, offsetX, offsetY}
+const canvasDataCache = new Map();   // canvasId -> data (para redibujar)
+
+function getCanvasViewState(canvasId) {
+    if (!canvasViewState.has(canvasId)) {
+        canvasViewState.set(canvasId, { scale: 1, offsetX: 0, offsetY: 0 });
+    }
+    return canvasViewState.get(canvasId);
+}
+
+function actualizarZoomLabel(canvasId) {
+    const state = getCanvasViewState(canvasId);
+    const wrap = document.querySelector(`canvas[id="${canvasId}"]`);
+    if (!wrap) return;
+    const formGroup = wrap.closest('.form-group');
+    if (!formGroup) return;
+    const label = formGroup.querySelector('.preview-zoom-controls .zoom-label');
+    if (label) label.textContent = state.scale.toFixed(1) + 'x';
+}
+
+function redibujarCanvas(canvasId) {
+    const data = canvasDataCache.get(canvasId);
+    if (!data) return;
+    if (canvasId.startsWith('preview-etiqueta-')) {
+        dibujarPreviewEtiquetas(canvasId, data);
+    } else if (canvasId.startsWith('preview-cartel-')) {
+        dibujarPreviewCartel(canvasId, data);
+    }
+}
+
+function zoomCanvasBtn(btn, factor) {
+    const wrap = btn.closest('.form-group')?.querySelector('.preview-canvas-wrap canvas');
+    if (!wrap) return;
+    const state = getCanvasViewState(wrap.id);
+    state.scale = Math.max(0.2, Math.min(10, state.scale * factor));
+    actualizarZoomLabel(wrap.id);
+    redibujarCanvas(wrap.id);
+}
+
+function resetCanvasZoomBtn(btn) {
+    const wrap = btn.closest('.form-group')?.querySelector('.preview-canvas-wrap canvas');
+    if (!wrap) return;
+    const state = getCanvasViewState(wrap.id);
+    state.scale = 1; state.offsetX = 0; state.offsetY = 0;
+    actualizarZoomLabel(wrap.id);
+    redibujarCanvas(wrap.id);
+}
+
+// Delegación global: rueda = zoom, arrastrar = pan
+let _draggingCanvas = null;
+let _dragStartX = 0, _dragStartY = 0;
+
+document.addEventListener('wheel', (e) => {
+    const canvas = e.target.closest('canvas[id^="preview-etiqueta-"], canvas[id^="preview-cartel-"]');
+    if (!canvas) return;
+    e.preventDefault();
+    const state = getCanvasViewState(canvas.id);
+    if (e.deltaY < 0) state.scale = Math.min(state.scale * 1.15, 10);
+    else state.scale = Math.max(state.scale / 1.15, 0.2);
+    actualizarZoomLabel(canvas.id);
+    redibujarCanvas(canvas.id);
+}, { passive: false });
+
+document.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    const canvas = e.target.closest('canvas[id^="preview-etiqueta-"], canvas[id^="preview-cartel-"]');
+    if (!canvas) return;
+    e.preventDefault();
+    _draggingCanvas = canvas;
+    const state = getCanvasViewState(canvas.id);
+    _dragStartX = e.clientX - state.offsetX;
+    _dragStartY = e.clientY - state.offsetY;
+    canvas.style.cursor = 'grabbing';
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (!_draggingCanvas) return;
+    const state = getCanvasViewState(_draggingCanvas.id);
+    state.offsetX = e.clientX - _dragStartX;
+    state.offsetY = e.clientY - _dragStartY;
+    redibujarCanvas(_draggingCanvas.id);
+});
+
+document.addEventListener('mouseup', () => {
+    if (_draggingCanvas) {
+        _draggingCanvas.style.cursor = '';
+        _draggingCanvas = null;
+    }
+});
+
+function cargarFavoritosCliente(clientId) {
+    if (!clientId) {
+        favoritosCliente = [];
+        actualizarFavBars();
+        return;
+    }
+    fetch(`/ordenes/api/favoritos-cliente/${clientId}`)
+        .then(r => r.json())
+        .then(data => {
+            favoritosCliente = data.favoritos || [];
+            actualizarFavBars();
+        })
+        .catch(err => {
+            console.error('Error cargando favoritos:', err);
+            favoritosCliente = [];
+            actualizarFavBars();
+        });
+}
+
+function actualizarFavBars() {
+    const clientNameEl = document.getElementById('client_name');
+    const clientName = clientNameEl ? clientNameEl.value.trim() : '';
+    document.querySelectorAll('.fav-picker-bar').forEach(bar => {
+        if (favoritosCliente.length > 0) {
+            bar.style.display = 'flex';
+            const nameSpan = bar.querySelector('.fav-client-name');
+            if (nameSpan) nameSpan.textContent = clientName || 'cliente';
+        } else {
+            bar.style.display = 'none';
+        }
+    });
+}
+
+function escapeFavHtml(str) {
+    if (str == null) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function abrirFavoritosPicker(btn) {
+    if (favoritosCliente.length === 0) {
+        csAlert('Este cliente no tiene etiquetas favoritas guardadas.', 'info');
+        return;
+    }
+    favoritosTargetRow = btn.closest('tr.etiquetas-params-row');
+    if (!favoritosTargetRow) return;
+
+    const body = document.getElementById('favPickerBody');
+    body.innerHTML = favoritosCliente.map(f => {
+        const usoHtml = f.veces_usado > 0
+            ? `<div class="fav-pick-uso">🖨️ ${f.veces_usado} ${f.veces_usado === 1 ? 'vez' : 'veces'} impresa</div>`
+            : '';
+
+        // Miniatura: imagen directa, PDF con placeholder para pdf.js, o estrella
+        let thumbHtml;
+        if (f.archivo_url && f.es_imagen) {
+            thumbHtml = `<img src="${f.archivo_url}" alt="" loading="lazy">`;
+        } else if (f.archivo_url && f.es_pdf) {
+            thumbHtml = `<div class="fav-pick-pdf-loading" data-pdf-url="${f.archivo_url}" data-pdf-id="${f.id}">
+                            <i class="fas fa-spinner fa-spin"></i>
+                         </div>`;
+        } else {
+            thumbHtml = '<span style="color:#a8854f; font-size:32px;">⭐</span>';
+        }
+
+        return `
+            <div class="fav-pick-card" onclick="aplicarFavorito(${f.id})">
+                <div class="fav-pick-thumb">${thumbHtml}</div>
+                <div class="fav-pick-name">${escapeFavHtml(f.nombre)}</div>
+                <div class="fav-pick-dim">${f.ancho_cm}×${f.alto_cm} cm</div>
+                ${usoHtml}
+                <div class="fav-pick-actions">
+                    <button type="button" class="fav-pick-btn primary"
+                            onclick="event.stopPropagation(); aplicarFavorito(${f.id})">
+                        <i class="fas fa-check"></i> Seleccionar
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    document.getElementById('favPickerOverlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    // Renderizar previews de PDFs con pdf.js (en paralelo)
+    body.querySelectorAll('.fav-pick-pdf-loading').forEach(async (el) => {
+        const url = el.dataset.pdfUrl;
+        const favId = el.dataset.pdfId;
+        try {
+            if (thumbnailsFavoritos.has(favId)) {
+                el.outerHTML = `<img src="${thumbnailsFavoritos.get(favId)}" alt="" style="width:100%;height:100%;object-fit:contain;">`;
+                return;
+            }
+            const canvas = await renderizarPdfACanvas(url, 400);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+            thumbnailsFavoritos.set(favId, dataUrl);
+            el.outerHTML = `<img src="${dataUrl}" alt="" style="width:100%;height:100%;object-fit:contain;">`;
+        } catch (e) {
+            console.error('Error renderizando preview PDF:', e);
+            el.outerHTML = '<span class="pdf-ico" style="color:#dc2626;font-size:32px;">📄</span>';
+        }
+    });
+}
+
+// ============================================================
+// VISTA PREVIA DEL FAVORITO (imagen / PDF grande)
+// ============================================================
+function verFavoritoPreview(favId) {
+    const fav = favoritosCliente.find(x => x.id === favId);
+    if (!fav) return;
+
+    const titleEl = document.getElementById('favPreviewTitle');
+    const bodyEl  = document.getElementById('favPreviewBody');
+    const selBtn  = document.getElementById('favPreviewSelectBtn');
+
+    titleEl.textContent = `${fav.nombre} · ${fav.ancho_cm}×${fav.alto_cm} cm`;
+
+    // Render según tipo de archivo
+    if (!fav.archivo_url) {
+        bodyEl.innerHTML = `
+            <div class="fav-preview-empty">
+                <i class="fas fa-file-slash"></i>
+                <p>Esta etiqueta no tiene archivo adjunto.</p>
+            </div>`;
+    } else if (fav.es_imagen) {
+        bodyEl.innerHTML = `<img src="${fav.archivo_url}" alt="${escapeFavHtml(fav.nombre)}" class="fav-preview-img">`;
+    } else if (fav.es_pdf) {
+        bodyEl.innerHTML = `
+            <iframe src="${fav.archivo_url}" class="fav-preview-pdf" title="Vista previa PDF"></iframe>
+        `;
+    } else {
+        bodyEl.innerHTML = `
+            <div class="fav-preview-empty">
+                <i class="fas fa-file"></i>
+                <p>Tipo de archivo no soportado para vista previa.</p>
+                <a href="${fav.archivo_url}" target="_blank">Descargar archivo</a>
+            </div>`;
+    }
+
+    // El botón "Seleccionar" del preview aplica el favorito
+    selBtn.onclick = () => {
+        cerrarFavPreview();
+        aplicarFavorito(favId);
+    };
+
+    document.getElementById('favPreviewOverlay').classList.add('active');
+}
+
+function cerrarFavPreview() {
+    const overlay = document.getElementById('favPreviewOverlay');
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    // Limpiar el body para liberar recursos (iframe de PDF, imágenes grandes)
+    const bodyEl = document.getElementById('favPreviewBody');
+    if (bodyEl) bodyEl.innerHTML = '';
+    // No tocamos favoritosTargetRow: el picker sigue abierto debajo si aplica
+}
+
+function aplicarFavorito(favId) {
+    const fav = favoritosCliente.find(x => x.id === favId);
+    if (!fav || !favoritosTargetRow) { cerrarFavPicker(); return; }
+
+    const targetRow = favoritosTargetRow;
+    const paramsId = targetRow.dataset.paramsId;
+    const isEdit = paramsId && paramsId.startsWith('edit-');
+    const prefix = isEdit ? '_edit' : '';
+    const paramsDiv = targetRow.querySelector('.etiquetas-params');
+    if (!paramsDiv) { cerrarFavPicker(); return; }
+
+    // Rellenar ancho/alto/nombre
+    const anchoInput = paramsDiv.querySelector(`.ancho_etiqueta${prefix}`);
+    const altoInput = paramsDiv.querySelector(`.alto_etiqueta${prefix}`);
+    if (anchoInput) anchoInput.value = fav.ancho_cm;
+    if (altoInput) altoInput.value = fav.alto_cm;
+
+    const mainRow = document.querySelector(`tr.linea-fila[data-params-id="${paramsId}"]`);
+    if (mainRow) {
+        let nombreInput = isEdit
+            ? mainRow.querySelector(`input[name="nombre_visible_${paramsId.replace('edit-','')}"]`)
+            : mainRow.querySelector('input[name="nombres_visibles[]"]');
+        if (nombreInput) nombreInput.value = fav.nombre;
+    }
+
+    // ============================================================
+    // Cargar imagen (o renderizar PDF) y guardar en cache
+    // ============================================================
+    const recalcular = () => setTimeout(() => {
+        try { if (typeof calcularLinea === 'function') calcularLinea(targetRow); }
+        catch(e) { console.error(e); }
+    }, 30);
+
+    if (fav.es_imagen && fav.archivo_url) {
+        targetRow.dataset.favImageTipo = 'image';
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() { imagenesFavoritas.set(paramsId, img); recalcular(); };
+        img.onerror = function() { imagenesFavoritas.delete(paramsId); targetRow.dataset.favImageTipo = ''; recalcular(); };
+        img.src = fav.archivo_url;
+    } else if (fav.es_pdf && fav.archivo_url) {
+        targetRow.dataset.favImageTipo = 'pdf';
+        renderizarPdfACanvas(fav.archivo_url, 800)
+            .then(canvas => { imagenesFavoritas.set(paramsId, canvas); recalcular(); })
+            .catch(err => {
+                console.warn('No se pudo renderizar PDF como imagen:', err);
+                imagenesFavoritas.delete(paramsId);
+                recalcular();
+            });
+    } else {
+        imagenesFavoritas.delete(paramsId);
+        targetRow.dataset.favImageTipo = '';
+        recalcular();
+    }
+
+    // Incrementar uso (best-effort)
+    fetch(`/clientes/favorito/${fav.id}/incrementar-uso`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => { if (d && d.success) fav.veces_usado = d.veces_usado; })
+        .catch(() => {});
+    fav.veces_usado = (fav.veces_usado || 0) + 1;
+
+    cerrarFavPicker();
+    csAlert(`Aplicado: ${fav.nombre} · ${fav.ancho_cm}×${fav.alto_cm} cm`, 'success', '⭐ Etiqueta cargada');
+}
+
+function cerrarFavPicker() {
+    const overlay = document.getElementById('favPickerOverlay');
+    if (overlay) overlay.classList.remove('active');
+    document.body.style.overflow = '';
+    favoritosTargetRow = null;
+}
+
+// Listeners del cliente
 document.addEventListener('DOMContentLoaded', function() {
     const clientNameInput = document.getElementById('client_name');
     const clientIdInput = document.getElementById('client_id');
     const datalist = document.getElementById('clientesList');
+
     if (clientNameInput) {
         clientNameInput.addEventListener('input', function() {
             const value = this.value.trim();
@@ -1309,6 +1980,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (option.value === value) { clientIdInput.value = option.dataset.id; found = true; break; }
             }
             if (!found) clientIdInput.value = '';
+            cargarFavoritosCliente(clientIdInput.value || null);
         });
         clientNameInput.addEventListener('blur', function() {
             const value = this.value.trim();
@@ -1317,8 +1989,41 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (option.value === value) { clientIdInput.value = option.dataset.id; found = true; break; }
             }
             if (!found && value !== '') clientIdInput.value = '';
+            cargarFavoritosCliente(clientIdInput.value || null);
         });
     }
+
+    // Cargar favoritos al inicio si ya hay cliente (modo edición)
+    if (clientIdInput && clientIdInput.value) {
+        cargarFavoritosCliente(clientIdInput.value);
+    }
+
+    // Picker: cerrar con Escape y click en overlay
+    const pickerOverlay = document.getElementById('favPickerOverlay');
+    if (pickerOverlay) {
+        pickerOverlay.addEventListener('click', function(e) {
+            if (e.target === this) cerrarFavPicker();
+        });
+    }
+
+    const previewOverlay = document.getElementById('favPreviewOverlay');
+    if (previewOverlay) {
+        previewOverlay.addEventListener('click', function(e) {
+            if (e.target === this) cerrarFavPreview();
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            // Si el preview está abierto, ciérralo primero; si no, cierra el picker
+            const preview = document.getElementById('favPreviewOverlay');
+            if (preview && preview.classList.contains('active')) {
+                cerrarFavPreview();
+            } else {
+                cerrarFavPicker();
+            }
+        }
+    });
 });
 
 function abrirModalCliente() { document.getElementById('modalCliente').style.display = 'block'; }
@@ -1347,6 +2052,9 @@ function guardarNuevoCliente() {
         datalist.appendChild(option);
         document.getElementById('client_name').value = data.nombre;
         document.getElementById('client_id').value = data.id;
+        if (typeof cargarFavoritosCliente === 'function') {
+            cargarFavoritosCliente(data.id);
+        }
         cerrarModalCliente();
     })
     .catch(error => csAlert('Error al crear el cliente: ' + error, 'error'));
@@ -1413,6 +2121,15 @@ function agregarLinea() {
     paramsRow.innerHTML = `
         <td colspan="6">
             <div class="etiquetas-params" id="etiquetas-params-${paramsId}">
+                <div class="fav-picker-bar" style="display:none;">
+                    <span class="fav-picker-info">
+                        <i class="fas fa-star"></i>
+                        <strong>Favoritos de <span class="fav-client-name">cliente</span></strong>
+                    </span>
+                    <button type="button" class="btn-fav-picker" onclick="abrirFavoritosPicker(this)">
+                        <i class="fas fa-list"></i> Elegir favorito
+                    </button>
+                </div>
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>Ancho (cm)</label>
@@ -1737,6 +2454,10 @@ function agregarLinea() {
             }
         }
     });
+    // Actualizar visibilidad de la barra de favoritos según el cliente actual
+    if (typeof actualizarFavBars === 'function') {
+        setTimeout(actualizarFavBars, 20);
+    }
 }
 
 function eliminarLinea(btn) {
@@ -2221,6 +2942,14 @@ function calcularLinea(paramsRow) {
             }
         }
 
+        // Determinar imagen/PDF del favorito aplicado a esta fila
+        const imgFav = imagenesFavoritas.get(paramsId);
+        let imagen = null;
+        if (imgFav) {
+            imagen = { img: imgFav, esRotado: esRotado };
+        }
+
+        // ✅ Dibujar el canvas con (o sin) la imagen del favorito
         dibujarPreviewEtiquetas('preview-etiqueta-' + paramsId, {
             ancho_real: anchoRollo,
             ancho_util: anchoUtilEfectivo,
@@ -2229,7 +2958,8 @@ function calcularLinea(paramsRow) {
             alto_cell: altoCellM,
             gap: gapM,
             pañosGrupos: pañosGrupos,
-            centrar: centrar === '1'
+            centrar: centrar === '1',
+            imagen: imagen
         });
     })
     .catch(err => {
@@ -2358,6 +3088,15 @@ function seleccionarTodos() {
 function deseleccionarTodos() {
     const select = document.getElementById('usuarios_notificar');
     for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
+}
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+<script>
+if (typeof pdfjsLib !== 'undefined') {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 }
 </script>
 {% endblock %}

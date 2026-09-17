@@ -1629,3 +1629,32 @@ def detalle_modal(order_id):
                     'cantidad': a.cantidad, 'unidad': a.unidad} for a in order.archivos]
     }
     return jsonify(data)
+
+# ==========================================
+# API FAVORITOS POR CLIENTE (para el form de órdenes)
+# ==========================================
+@ordenes_bp.route('/api/favoritos-cliente/<int:client_id>')
+@login_required
+def api_favoritos_cliente(client_id):
+    """Devuelve las etiquetas favoritas activas de un cliente."""
+    from app.models import EtiquetaFavorita
+    Client.query.get_or_404(client_id)
+    favs = EtiquetaFavorita.query.filter_by(
+        client_id=client_id, activo=True
+    ).order_by(
+        EtiquetaFavorita.veces_usado.desc(),
+        EtiquetaFavorita.nombre.asc()
+    ).all()
+    return jsonify({
+        'favoritos': [{
+            'id': f.id,
+            'nombre': f.nombre,
+            'ancho_cm': f.ancho_cm,
+            'alto_cm': f.alto_cm,
+            'notas': f.notas or '',
+            'veces_usado': f.veces_usado or 0,
+            'archivo_url': url_for('clientes.ver_archivo_favorito', fav_id=f.id) if f.archivo_ruta else None,
+            'es_imagen': f.es_imagen(),
+            'es_pdf': f.es_pdf(),
+        } for f in favs]
+    })
