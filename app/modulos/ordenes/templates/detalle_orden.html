@@ -38,7 +38,8 @@
     .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; }
     .btn-warning { background: #f59e0b; color: white; }
-    .btn-pdf { background: #dc2626; color: white; }
+    .btn-pdf { background: transparent; border: 1px solid #6366f1; color: #6366f1; }
+    .btn-pdf:hover { background: #eef2ff; }
 
     .resumen-badges { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
     .badge-dato { background: #f5f2ef; padding: 6px 16px; border-radius: 30px; font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; gap: 8px; color: #1c1c1e; border: 1px solid #e8e0da; }
@@ -194,10 +195,28 @@
                 <span class="badge-status {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
                 <div class="actions-bar">
                     {% if current_user.role in ['comercial', 'admin'] %}
-                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning" title="Editar orden">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Editar
+                        </a>
+                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank" title="Exportar PDF">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            PDF
+                        </a>
                     {% endif %}
-                    <a href="{{ url_for('ordenes.list_orders') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+                    <a href="{{ url_for('ordenes.list_orders') }}" class="btn btn-outline" title="Volver al listado">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="19" y1="12" x2="5" y2="12"></line>
+                            <polyline points="12 19 5 12 12 5"></polyline>
+                        </svg>
+                        Volver
+                    </a>
                 </div>
             </div>
         </div>
@@ -206,11 +225,38 @@
     <div class="card">
         <h4 class="serif" style="font-size:18px; margin-bottom:8px;">Datos Generales</h4>
         <div class="resumen-badges">
-            <span class="badge-dato"><i class="fas fa-hashtag"></i> N°: <span class="valor">{{ order.order_num or 'Sin número' }}</span></span>
-            <span class="badge-dato"><i class="fas fa-calendar-alt"></i> <span class="valor">{{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}</span></span>
-            <span class="badge-dato"><i class="fas fa-user"></i> <span class="valor">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></span>
-            <span class="badge-dato"><i class="fas fa-flag"></i> Prioridad: <span class="valor">{{ order.priority or 'normal' }}</span></span>
-            <span class="badge-dato"><i class="fas fa-check-circle"></i> Entrada: <span class="valor">{% if order.entrada_ok %}OK{% else %}Pendiente{% endif %}</span></span>
+            <span class="badge-dato">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                </svg>
+                N°: <span class="valor">{{ order.order_num or 'Sin número' }}</span>
+            </span>
+            <span class="badge-dato">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <span class="valor">{{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}</span>
+            </span>
+            <span class="badge-dato">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                <span class="valor">{{ order.client.nombre if order.client else 'Sin cliente' }}</span>
+            </span>
+            <span class="badge-dato">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"></path>
+                    <line x1="4" y1="22" x2="4" y2="15"></line>
+                </svg>
+                Prioridad: <span class="valor">{{ order.priority or 'normal' }}</span>
+            </span>
         </div>
         <div class="detalle-colapsable">
             <button class="btn-toggle-detalle" id="toggleDetalleB"><i class="fas fa-chevron-down"></i> Ver más detalles</button>
@@ -303,7 +349,25 @@
 
             <div class="tarjeta-linea {% if is_cartel %}cartel{% endif %}">
                 <div class="cabecera-linea">
-                    <div class="icono-grande"><i class="fas {{ icono }}"></i></div>
+                    <div class="icono-grande">
+                        {% if is_etiqueta %}
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                            </svg>
+                        {% elif is_cartel %}
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                <polyline points="21 15 16 10 5 21"></polyline>
+                            </svg>
+                        {% else %}
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                <polyline points="13 2 13 9 20 9"></polyline>
+                            </svg>
+                        {% endif %}
+                    </div>
                     <div style="flex:1;">
                         <div class="nombre-linea">{{ archivo.nombre_visible or 'Sin nombre' }}</div>
                         <div style="font-size:12px; color:#8e8e93; margin-top:2px;">

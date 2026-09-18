@@ -240,6 +240,48 @@ class Order(db.Model):
     def __repr__(self):
         return f'<Order {self.order_num}>'
 
+    def get_tipos_archivos(self):
+        """Devuelve lista única y ordenada de tipos de archivos: etiqueta, cartel, otro."""
+        from collections import Counter
+        tipos = []
+        for a in self.archivos:
+            params = a.get_parametros_etiqueta()
+            if params is None:
+                t = 'otro'
+            else:
+                t = params.get('tipo', 'etiqueta')  # params legacy sin 'tipo' = etiqueta
+            tipos.append(t)
+        c = Counter(tipos)
+        orden_prioridad = ['etiqueta', 'cartel', 'otro']
+        return [t for t in orden_prioridad if t in c]
+
+    def get_proyecto_resumen(self):
+        """Texto legible para la columna 'Proyecto': 'Etiquetas', 'Cartel', 'Etiquetas + Cartel'..."""
+        tipos = self.get_tipos_archivos()
+        if not tipos:
+            return self.proyecto or '—'
+        nombres = {'etiqueta': 'Etiquetas', 'cartel': 'Cartel', 'otro': 'Otros'}
+        return ' + '.join(nombres[t] for t in tipos)
+
+    def get_tipos_archivos(self):
+        """Devuelve lista única y ordenada de tipos: ['etiqueta'], ['cartel', 'otro'], etc."""
+        from collections import Counter
+        tipos = []
+        for a in self.archivos:
+            params = a.get_parametros_etiqueta()
+            t = 'otro' if params is None else params.get('tipo', 'etiqueta')
+            tipos.append(t)
+        c = Counter(tipos)
+        return [t for t in ['etiqueta', 'cartel', 'otro'] if t in c]
+
+    def get_proyecto_resumen(self):
+        """Texto para el Kanban: 'Etiquetas', 'Cartel', 'Etiquetas + Cartel'."""
+        tipos = self.get_tipos_archivos()
+        if not tipos:
+            return self.proyecto or '—'
+        nombres = {'etiqueta': 'Etiquetas', 'cartel': 'Cartel', 'otro': 'Otros'}
+        return ' + '.join(nombres[t] for t in tipos)
+
 # ==========================================
 # MODELO DE ARCHIVO ADJUNTO
 # ==========================================

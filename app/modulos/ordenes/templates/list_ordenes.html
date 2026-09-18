@@ -266,6 +266,69 @@
     .badge { font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
     .badge-ok { background: #10b981; color: white; }
     .badge-pendiente { background: #f59e0b; color: white; }
+    /* ===== BADGES DE TIPO DE PROYECTO ===== */
+    .tipo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: 'Inter', sans-serif;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+        border: 1px solid transparent;
+    }
+    .tipo-badge i { font-size: 10px; }
+    .tipo-badge.etiqueta {
+        background: #fef3c7;
+        color: #78350f;
+        border-color: #fcd34d;
+    }
+    .tipo-badge.etiqueta i { color: #b8860b; }
+    .tipo-badge.cartel {
+        background: #e0f2fe;
+        color: #075985;
+        border-color: #7dd3fc;
+    }
+    .tipo-badge.cartel i { color: #0ea5e9; }
+    .tipo-badge.otro {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #d1d5db;
+    }
+    .tipo-badge.otro i { color: #6b7280; }
+    .tipo-badge.vacio {
+        background: transparent;
+        color: #8e8e93;
+        border: 1px dashed #d2d2d7;
+    }
+    .tipo-badges-wrap {
+        display: inline-flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    /* ===== BADGE DE ENTRADA (Kanban, estilo como el detalle) ===== */
+    .entrada-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 12px;
+        border-radius: 30px;
+        font-size: 11px;
+        font-weight: 600;
+        font-family: 'inter', sans-serif;
+        letter-spacing: 0.3px;
+        border: 1px solid;
+        white-space: nowrap;
+    }
+    .entrada-badge i{ font-size: 10px; }
+    .entrada-badge.ok { background: #ecfdf5; color:#065f46; border-color:#6ee7b7;}
+    .entrada-badge.ok i { color: #10b981;}
+    .entrada-badge.espera { background: #fffbeb;color: #78350f; border-color: #fcd34d;}
+    .entrada-badge.espera i { color: #f59e0b; }
 
     /* ===== KANBAN ===== */
     .kanban-grid {
@@ -288,19 +351,11 @@
     }
     .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
     .kanban-card .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .kanban-card .order-num { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #1c1c1e; }
-    .kanban-card .client { font-size: 14px; color: #1c1c1e; font-weight: 500; }
+    .kanban-card .order-num { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.2px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kanban-card .client { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #444; letter-spacing: 0.1px; line-height: 1.3; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
     .kanban-card .sub { font-size: 12px; color: #8e8e93; }
     .kanban-card .sub .highlight { font-weight: 600; color: #1c1c1e; }
-    .kanban-card .badge-prioridad {
-        font-size: 9px;
-        font-weight: 700;
-        padding: 2px 8px;
-        border-radius: 30px;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
-        flex-shrink: 0;
-    }
+    .kanban-card .badge-prioridad { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; }
     .badge-prioridad.urgente { background: #fee2e2; color: #991b1b; }
     .badge-prioridad.normal { background: #d1fae5; color: #065f46; }
     .badge-prioridad.critica { background: #fef3c7; color: #78350f; }
@@ -326,14 +381,14 @@
         color: #1c1c1e;
         text-decoration: none;
         display: inline-flex;
-        align-items: center;
-        gap: 3px;
-    }
+        align-items: center; gap: 3px; }
     .kanban-card .actions .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
     .kanban-card .actions .btn-warning { border-color: #f59e0b; color: #d97706; }
     .kanban-card .actions .btn-warning:hover { background: #fef3c7; }
-    .kanban-card .actions .btn-pdf { border-color: #dc2626; color: #dc2626; }
-    .kanban-card .actions .btn-pdf:hover { background: #fee2e2; }
+    .kanban-card .actions .btn-pdf { border-color: #6366f1; color: #6366f1; }
+    .kanban-card .actions .btn-pdf:hover { background: #eef2ff; }
+    .kanban-card .actions .btn-danger { border-color: #dc2626; color: #dc2626; }
+    .kanban-card .actions .btn-danger:hover { background: #fef2f2; }
     .kanban-card .actions .btn-success { border-color: #10b981; color: #065f46; }
     .kanban-card .actions .btn-success:hover { background: #d1fae5; }
     .kanban-card .actions .btn-outline { border-color: #d2d2d7; color: #1c1c1e; }
@@ -446,6 +501,62 @@
         .view-toggle .view-btn .label { display: none; }
         .page-title { flex-direction: column; align-items: flex-start; gap: 4px; }
     }
+    /* ===== SVG que reemplazan <i class="fas"> ===== */
+    .kpi-icon { color: #a8854f; opacity: 0.4; }
+    .kpi-icon svg { display: block; }
+
+    .filter-icon { color: #8e8e93; display: inline-flex; align-items: center; }
+
+    /* Los botones que contienen SVG deben alinear bien */
+    /* ===== SVG que reemplazan <i class="fas"> ===== */
+    .kpi-icon { color: #a8854f; opacity: 0.4; }
+    .kpi-icon svg { display: block; }
+
+    .filter-icon { color: #8e8e93; display: inline-flex; align-items: center; }
+
+    /* Alineación de SVG dentro de botones */
+    /* ===== SVG que reemplazan <i class="fas"> ===== */
+    .kpi-icon { color: #a8854f; opacity: 0.4; }
+    .kpi-icon svg { display: block; }
+
+    .filter-icon { color: #8e8e93; display: inline-flex; align-items: center; }
+
+    /* Alineación de SVG dentro de botones */
+    .btn svg, .view-btn svg, .btn-limpiar svg {
+        flex-shrink: 0;
+        vertical-align: middle;
+    }
+
+    /* ===== COLORES GLOBALES DE ACCIONES ===== */
+    /* Estos se aplican a TODAS las vistas: tabla y kanban */
+
+    /* PDF: indigo — outline, NO rojo (rojo = eliminar) */
+    .btn-pdf {
+        background: transparent;
+        border: 1px solid #6366f1;
+        color: #6366f1;
+    }
+    .btn-pdf:hover {
+        background: #eef2ff;
+        border-color: #4f46e5;
+        color: #4f46e5;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Eliminar: rojo outline (destructivo, no sólido) */
+    .btn-danger {
+        background: transparent;
+        border: 1px solid #dc2626;
+        color: #dc2626;
+    }
+    .btn-danger:hover {
+        background: #fef2f2;
+        border-color: #b91c1c;
+        color: #b91c1c;
+        transform: none;
+        box-shadow: none;
+    }
 </style>
 {% endblock %}
 
@@ -481,35 +592,56 @@
                 <span class="kpi-value">{{ total_ordenes }}</span>
                 <span class="kpi-label">Total</span>
             </div>
-            <i class="fas fa-file-alt kpi-icon"></i>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
         </div>
         <div class="kpi-card pendiente">
             <div class="kpi-info">
                 <span class="kpi-value">{{ pendientes }}</span>
                 <span class="kpi-label">Pendientes</span>
             </div>
-            <i class="fas fa-clock kpi-icon"></i>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
         </div>
         <div class="kpi-card finalizada">
             <div class="kpi-info">
                 <span class="kpi-value">{{ completadas }}</span>
                 <span class="kpi-label">Finalizadas</span>
             </div>
-            <i class="fas fa-check-circle kpi-icon"></i>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
         </div>
         <div class="kpi-card nuevas">
             <div class="kpi-info">
                 <span class="kpi-value">{{ nuevas_ordenes_mes }}</span>
                 <span class="kpi-label">Nuevas (mes)</span>
             </div>
-            <i class="fas fa-calendar-plus kpi-icon"></i>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="16" y1="2" x2="16" y2="6"></line>
+                <line x1="8" y1="2" x2="8" y2="6"></line>
+                <line x1="3" y1="10" x2="21" y2="10"></line>
+                <line x1="12" y1="14" x2="12" y2="18"></line>
+                <line x1="10" y1="16" x2="14" y2="16"></line>
+            </svg>
         </div>
         <div class="kpi-card facturacion">
             <div class="kpi-info">
                 <span class="kpi-value">${{ facturacion_total|round(2) }}</span>
                 <span class="kpi-label">Facturación</span>
             </div>
-            <i class="fas fa-dollar-sign kpi-icon"></i>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
         </div>
     </div>
 
@@ -518,14 +650,21 @@
         <div class="left-group">
             {% if current_user.role in ['comercial', 'admin'] %}
                 <a href="{{ url_for('ordenes.create_order') }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva orden
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nueva orden
                 </a>
             {% endif %}
         </div>
 
         <div class="center-group">
             <form method="GET" action="{{ url_for('ordenes.list_orders') }}" id="filterForm" class="filters-group">
-                <i class="fas fa-search filter-icon"></i>
+                <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
                 <input type="text" name="search" id="searchInput" value="{{ search }}" placeholder="Buscar orden o cliente..." autocomplete="off">
                 <select name="estado" id="estadoSelect">
                     <option value="">Todos los estados</option>
@@ -536,7 +675,11 @@
                 <button type="submit" style="display:none;"></button>
                 {% if search or estado %}
                     <a href="{{ url_for('ordenes.list_orders') }}" class="btn-limpiar" title="Limpiar filtros">
-                        <i class="fas fa-times-circle"></i>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
                     </a>
                 {% endif %}
             </form>
@@ -545,11 +688,23 @@
         <div class="right-group">
             <div class="view-toggle" id="viewToggle">
                 <button class="view-btn active" data-view="kanban" onclick="cambiarVista('kanban')">
-                    <i class="fas fa-th"></i>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
                     <span class="label">Kanban</span>
                 </button>
                 <button class="view-btn" data-view="lista" onclick="cambiarVista('lista')">
-                    <i class="fas fa-list"></i>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
                     <span class="label">Lista</span>
                 </button>
             </div>
@@ -576,15 +731,68 @@
                     <tr>
                         <td class="order-num">{{ order.order_num or 'Sin número' }}</td>
                         <td class="client-name">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
-                        <td>{{ order.proyecto or '-' }}</td>
-                        <td>{{ order.archivos|length }}</td>
+
+                        {# --- COLUMNA PROYECTO (badges de tipos) --- #}
                         <td>
-                            {% if order.entrada_ok %}
-                                <span class="badge badge-ok">✅ OK</span>
+                            {% set tipos = order.get_tipos_archivos() %}
+                            {% if tipos %}
+                                <div class="tipo-badges-wrap">
+                                    {% for t in tipos %}
+                                        {% if t == 'etiqueta' %}
+                                            <span class="tipo-badge etiqueta">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                                    <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                                </svg>
+                                                Etiquetas
+                                            </span>
+                                        {% elif t == 'cartel' %}
+                                            <span class="tipo-badge cartel">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                                </svg>
+                                                Cartel
+                                            </span>
+                                        {% else %}
+                                            <span class="tipo-badge otro">
+                                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                                    <polyline points="13 2 13 9 20 9"></polyline>
+                                                </svg>
+                                                Otros
+                                            </span>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
                             {% else %}
-                                <span class="badge badge-pendiente">⏳ Pendiente</span>
+                                <span class="tipo-badge vacio">—</span>
                             {% endif %}
                         </td>
+
+                        <td>{{ order.archivos|length }}</td>
+
+                        {# --- COLUMNA ENTRADA (OK / En espera) --- #}
+                        <td>
+                            {% if order.entrada_ok %}
+                                <span class="entrada-badge ok">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Entrada
+                                </span>
+                            {% else %}
+                                <span class="entrada-badge espera">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                    En espera
+                                </span>
+                            {% endif %}
+                        </td>
+
                         <td>
                             {% set columna = order.column or 'pendiente' %}
                             {% set estado_nombre = columnas_nombres.get(columna, columna) %}
@@ -592,20 +800,45 @@
                             <span class="status-badge {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
                         </td>
                         <td>
-                            <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                            <div style="display:flex; gap:4px; flex-wrap:wrap; align-items:center;">
                                 {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin', 'economico'] %}
-                                    <button class="btn btn-success btn-sm" onclick="abrirModalEntrada({{ order.id }})">
+                                    <button class="btn btn-success btn-sm" onclick="abrirModalEntrada({{ order.id }})" title="Marcar entrada al sistema">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                        </svg>
                                         Entrada
                                     </button>
                                 {% endif %}
-                                <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm"><i class="fas fa-eye"></i></a>
+                                <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline btn-sm" title="Ver detalle">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </a>
                                 {% if current_user.role in ['comercial', 'admin'] %}
-                                    <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i></a>
-                                    <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank"><i class="fas fa-file-pdf"></i></a>
+                                    <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning btn-sm" title="Editar">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
+                                    </a>
+                                    <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf btn-sm" target="_blank" title="Exportar PDF">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                        </svg>
+                                    </a>
                                 {% endif %}
                                 {% if current_user.role == 'admin' %}
-                                    <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?')">
-                                        <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash-alt"></i></button>
+                                    <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente esta orden?');">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                                            </svg>
+                                        </button>
                                     </form>
                                 {% endif %}
                             </div>
@@ -636,10 +869,59 @@
                     <span class="badge-prioridad {{ order.priority or 'normal' }}">{{ order.priority or 'normal' }}</span>
                 </div>
                 <div class="sub">
-                    <span class="highlight">{{ order.archivos|length }}</span> líneas ·
-                    {% if order.entrada_ok %}<span style="color:#10b981;">✅ Entrada OK</span>{% else %}<span style="color:#f59e0b;">⏳ Pendiente</span>{% endif %}
+                    <span class="highlight">{{ order.archivos|length }}</span> líneas
+                    {% set tipos = order.get_tipos_archivos() %}
+                    {% if tipos %}
+                        ·
+                        <span class="tipo-badges-wrap">
+                        {% for t in tipos %}
+                            {% if t == 'etiqueta' %}
+                                <span class="tipo-badge etiqueta">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+                                        <line x1="7" y1="7" x2="7.01" y2="7"></line>
+                                    </svg>
+                                    Etiquetas
+                                </span>
+                            {% elif t == 'cartel' %}
+                                <span class="tipo-badge cartel">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                        <polyline points="21 15 16 10 5 21"></polyline>
+                                    </svg>
+                                    Cartel
+                                </span>
+                            {% else %}
+                                <span class="tipo-badge otro">
+                                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                                        <polyline points="13 2 13 9 20 9"></polyline>
+                                    </svg>
+                                    Otros
+                                </span>
+                            {% endif %}
+                        {% endfor %}
+                        </span>
+                    {% endif %}
                     <br>
-                    {{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}
+                    {% if order.entrada_ok %}
+                        <span class="entrada-badge ok">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Entrada
+                        </span>
+                    {% else %}
+                        <span class="entrada-badge espera">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            En espera
+                        </span>
+                    {% endif %}
+                    · {{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}
                 </div>
                 <div style="margin: 4px 0;">
                     {% set estado_nombre = columnas_nombres.get(columna, columna) %}
@@ -647,13 +929,49 @@
                     <span class="status-badge {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
                 </div>
                 <div class="actions">
-                    <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline"><i class="fas fa-eye"></i> Ver</a>
+                    <a href="{{ url_for('ordenes.detalle_order', order_id=order.id) }}" class="btn btn-outline" title="Ver detalle">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Ver
+                    </a>
                     {% if current_user.role in ['comercial', 'admin'] %}
-                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank"><i class="fas fa-file-pdf"></i> PDF</a>
+                        <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning" title="Editar orden">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Editar
+                        </a>
+                        <a href="{{ url_for('ordenes.generar_pdf', order_id=order.id) }}" class="btn btn-pdf" target="_blank" title="Exportar PDF">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            PDF
+                        </a>
                     {% endif %}
                     {% if not order.entrada_ok and current_user.role in ['comercial', 'odalys', 'admin', 'economico'] %}
-                        <button class="btn btn-success" onclick="abrirModalEntrada({{ order.id }})">Entrada</button>
+                        <button class="btn btn-success" onclick="abrirModalEntrada({{ order.id }})" title="Marcar entrada al sistema">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Entrada
+                        </button>
+                    {% endif %}
+                    {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('ordenes.delete_order', order_id=order.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar permanentemente la orden {{ order.order_num|e }}?\n\nEsta acción no se puede deshacer.');">
+                            <button type="submit" class="btn btn-danger" title="Eliminar orden">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                                Eliminar
+                            </button>
+                        </form>
                     {% endif %}
                 </div>
             </div>
@@ -671,7 +989,7 @@
     <div class="modal-overlay" id="modalEntrada">
         <div class="modal">
             <button class="modal-close" onclick="cerrarModalEntrada()">&times;</button>
-            <h2><i class="fas fa-check-circle" style="color:#10b981;"></i> Marcar entrada al sistema</h2>
+            <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Marcar entrada al sistema</h2>
             <form method="POST" id="formEntrada">
                 <div class="form-group">
                     <label>Número de orden de Odoo *</label>
@@ -680,7 +998,7 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="cerrarModalEntrada()">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-save"></i> Marcar entrada</button>
+                    <button type="submit" class="btn btn-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Marcar entrada</button>
                 </div>
             </form>
         </div>
