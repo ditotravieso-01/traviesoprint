@@ -205,8 +205,6 @@
     .preview-zoom-hint {
         font-size: 10px; color: #8e8e93; margin-left: 4px;
     }
-        display: block; width: 100%; height: auto; max-height: 220px;
-    }
     .preview-legend {
         display: flex; gap: 14px; margin-top: 6px; flex-wrap: wrap;
         font-size: 11px; color: #555;
@@ -3241,18 +3239,6 @@ function deseleccionarTodos() {
     for (let i = 0; i < select.options.length; i++) select.options[i].selected = false;
 }
 </script>
-
-// Red de seguridad: si la primera pasada falló por timing, reintenta tras load
-window.addEventListener('load', function() {
-    setTimeout(function() {
-        document.querySelectorAll('tr.etiquetas-params-row[data-params-id^="edit-"]').forEach(function(row) {
-            try { calcularLinea(row); } catch(e) { console.warn('load-retry etiqueta', e); }
-        });
-        document.querySelectorAll('tr.carteles-params-row[data-params-id^="edit-"]').forEach(function(row) {
-            try { calcularLineaCartel(row); } catch(e) { console.warn('load-retry cartel', e); }
-        });
-    }, 600);
-});
 {% endblock %}
 
 {% block extra_js %}
