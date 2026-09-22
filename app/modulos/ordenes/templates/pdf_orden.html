@@ -4,52 +4,310 @@
     <meta charset="UTF-8">
     <title>Orden de Trabajo {{ order.order_num }}</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Montserrat:wght@300;400;600;700&family=Roboto:wght@300;400;500&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@400;600;700;800&display=swap');
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif; background: #ffffff; color: #1a1a1a; padding: 30px 40px; line-height: 1.5; }
-        .header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #a8854f; padding-bottom: 12px; margin-bottom: 20px; }
-        .header-left .brand { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1a1a1a; letter-spacing: 1px; }
-        .header-left .brand-sub { font-family: 'Montserrat', sans-serif; font-size: 12px; font-weight: 300; color: #666; letter-spacing: 3px; margin-top: -2px; }
+
+        body {
+            font-family: 'Inter', 'Helvetica', 'Arial', sans-serif;
+            background: #ffffff;
+            color: #1c1c1e;
+            padding: 26px 34px;
+            line-height: 1.5;
+            font-size: 12px;
+        }
+
+        /* ============================================================
+           HEADER
+           ============================================================ */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-bottom: 3px solid #a8854f;
+            padding-bottom: 14px;
+            margin-bottom: 22px;
+        }
+        .header-left .brand {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: #1c1c1e;
+            letter-spacing: 1px;
+            line-height: 1.1;
+        }
+        .header-left .brand-sub {
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #8e8e93;
+            letter-spacing: 3.5px;
+            margin-top: 2px;
+            text-transform: uppercase;
+        }
         .header-right { text-align: right; }
-        .header-right .doc-title { font-family: 'Playfair Display', serif; font-size: 24px; font-weight: 700; color: #a8854f; letter-spacing: 2px; }
-        .header-right .doc-sub { font-size: 11px; color: #888; font-weight: 300; }
-        .data-card { background: #f9f7f5; border-radius: 6px; padding: 14px 20px; margin-bottom: 18px; border-left: 4px solid #a8854f; }
-        .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 30px; }
-        .data-item { display: flex; padding: 2px 0; border-bottom: 1px solid #f0ece8; }
-        .data-item .label { font-weight: 600; color: #333; width: 110px; flex-shrink: 0; font-size: 12px; }
-        .data-item .value { font-weight: 400; color: #1a1a1a; font-size: 13px; }
-        .section { margin-bottom: 16px; }
-        .section-title { font-family: 'Montserrat', sans-serif; font-size: 14px; font-weight: 700; color: #2c2c2c; border-bottom: 2px solid #e8e0d8; padding-bottom: 4px; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
-        .section-title .icon { font-size: 16px; }
-        .servicios-list { display: flex; flex-wrap: wrap; gap: 6px 12px; padding: 2px 0; }
-        .servicio-tag { background: #f0ece8; padding: 3px 14px; border-radius: 16px; font-size: 12px; color: #333; font-weight: 500; }
-        .desc-text { background: #fcfaf8; padding: 8px 14px; border-radius: 4px; border: 1px solid #e8e0da; font-size: 13px; color: #333; line-height: 1.6; }
-        .lineas-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 4px; }
-        .lineas-table th { background: #f0ece8; text-align: left; padding: 6px 10px; font-weight: 700; font-size: 10px; color: #333; border-bottom: 2px solid #d8d0c8; text-transform: uppercase; letter-spacing: 0.5px; }
-        .lineas-table td { padding: 6px 10px; border-bottom: 1px solid #e8e0da; vertical-align: top; }
-        .lineas-table .nombre-linea { font-weight: 600; color: #1a1a1a; }
-        .lineas-table .material-linea { color: #555; font-size: 10px; }
-        .lineas-table .cantidad-linea { font-weight: 500; color: #1a1a1a; }
-        .lineas-table .unidad-linea { color: #555; }
-        .lineas-table .tipo-linea { font-size: 10px; background: #f0ece8; padding: 1px 6px; border-radius: 12px; }
-        .lineas-table .detalle-etiqueta { font-size: 9px; color: #777; line-height: 1.4; }
-        .lineas-table .detalle-cartel { font-size: 9px; color: #777; line-height: 1.4; }
-        .footer { margin-top: 20px; border-top: 2px solid #e8e0d8; padding-top: 12px; display: flex; justify-content: space-between; font-size: 10px; color: #999; }
+        .header-right .doc-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
+            color: #a8854f;
+            letter-spacing: 2px;
+            line-height: 1.1;
+        }
+        .header-right .doc-sub {
+            font-family: 'Montserrat', sans-serif;
+            font-size: 12px;
+            color: #4a4a4a;
+            font-weight: 600;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+
+        /* ============================================================
+           DATA CARD (Datos Generales)
+           ============================================================ */
+        .data-card {
+            background: #fafaf9;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 18px;
+            border: 1px solid #f0ece8;
+            border-left: 4px solid #a8854f;
+        }
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 30px;
+        }
+        .data-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 4px 0;
+        }
+        .data-item .label {
+            font-family: 'Inter', sans-serif;
+            font-size: 9.5px;
+            font-weight: 700;
+            color: #8e8e93;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+        }
+        .data-item .value {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            color: #1c1c1e;
+            line-height: 1.3;
+        }
+        .data-item .value.mono {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+        }
+
+        /* ============================================================
+           SECTION
+           ============================================================ */
+        .section { margin-bottom: 18px; }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 15px;
+            font-weight: 700;
+            color: #1c1c1e;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #e8e0d8;
+            letter-spacing: -0.2px;
+            line-height: 1.2;
+        }
+
+        /* ============================================================
+           SERVICIOS — chips
+           ============================================================ */
+        .servicios-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px 8px;
+            padding: 2px 0;
+        }
+        .servicio-tag {
+            font-family: 'Inter', sans-serif;
+            background: #faf6f0;
+            border: 1px solid #e5d4b8;
+            color: #78350f;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.2px;
+        }
+        .servicios-vacio {
+            color: #8e8e93;
+            font-style: italic;
+            font-size: 12px;
+        }
+
+        /* ============================================================
+           TENER EN CUENTA — nota pastel
+           ============================================================ */
+        .desc-text {
+            background: #fffdf8;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid #f0e8d8;
+            border-left: 4px solid #d9a950;
+            font-family: 'Inter', sans-serif;
+            font-size: 12.5px;
+            color: #2c2c2c;
+            line-height: 1.65;
+            font-weight: 500;
+            white-space: pre-wrap;
+        }
+
+        /* ============================================================
+           TABLA DE LÍNEAS
+           ============================================================ */
+        .lineas-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+        .lineas-table thead th {
+            background: #faf6f0;
+            text-align: left;
+            padding: 9px 10px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 9.5px;
+            color: #6b6b7a;
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            border-bottom: 2px solid #e5d4b8;
+        }
+        .lineas-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0ece8;
+            vertical-align: top;
+            font-size: 11px;
+            color: #1c1c1e;
+        }
+
+        .lineas-table .nombre-linea {
+            font-weight: 700;
+            color: #1c1c1e;
+            font-size: 11.5px;
+            line-height: 1.3;
+        }
+        .lineas-table .material-linea {
+            color: #4a4a4a;
+            font-size: 10.5px;
+            font-weight: 500;
+        }
+        .lineas-table .cantidad-linea {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: #1c1c1e;
+            font-size: 11.5px;
+        }
+        .lineas-table .unidad-linea {
+            color: #6b6b7a;
+            font-size: 10.5px;
+        }
+
+        /* CHIPS DE TIPO — mismos colores que en la UI web */
+        .tipo-linea {
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            font-size: 9.5px;
+            font-weight: 700;
+            padding: 3px 9px;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            border: 1px solid;
+        }
+        .tipo-linea.etiqueta {
+            background: #fef3c7;
+            color: #78350f;
+            border-color: #fcd34d;
+        }
+        .tipo-linea.cartel {
+            background: #e0f2fe;
+            color: #075985;
+            border-color: #7dd3fc;
+        }
+        .tipo-linea.otros {
+            background: #f3f4f6;
+            color: #4b5563;
+            border-color: #d1d5db;
+        }
+
+        /* DETALLES */
+        .detalle-linea {
+            line-height: 1.55;
+            color: #4a4a4a;
+            font-size: 10px;
+        }
+        .detalle-linea .dato-linea {
+            display: block;
+            margin-bottom: 1px;
+        }
+        .detalle-linea .lbl {
+            color: #8e8e93;
+            font-weight: 500;
+        }
+        .detalle-linea .val {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 700;
+            color: #1c1c1e;
+            font-size: 10px;
+        }
+        .detalle-linea .merma {
+            color: #dc2626;
+            font-weight: 700;
+        }
+        .detalle-linea .borde {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        /* ============================================================
+           FOOTER
+           ============================================================ */
+        .footer {
+            margin-top: 22px;
+            border-top: 2px solid #e8e0d8;
+            padding-top: 12px;
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Inter', sans-serif;
+            font-size: 10px;
+            color: #8e8e93;
+            font-weight: 500;
+        }
+
+        /* ============================================================
+           RESPONSIVE (por si se imprime en tamaño carta)
+           ============================================================ */
         @media (max-width: 600px) {
             body { padding: 16px; }
-            .header { flex-direction: column; align-items: flex-start; gap: 4px; }
+            .header { flex-direction: column; align-items: flex-start; gap: 6px; }
             .header-right { text-align: left; }
             .data-grid { grid-template-columns: 1fr; }
-            .data-item .label { width: 90px; }
         }
+
         @page { margin: 12mm 15mm; }
     </style>
 </head>
 <body>
+    <!-- HEADER -->
     <div class="header">
         <div class="header-left">
             <div class="brand">CAIROSTUDIO</div>
-            <div class="brand-sub">GRUPO CREATIVO</div>
+            <div class="brand-sub">Grupo Creativo</div>
         </div>
         <div class="header-right">
             <div class="doc-title">ORDEN DE TRABAJO</div>
@@ -57,42 +315,70 @@
         </div>
     </div>
 
+    <!-- DATOS GENERALES -->
     <div class="data-card">
         <div class="data-grid">
-            <div class="data-item"><span class="label">N° Orden</span><span class="value">{{ order.order_num or 'Sin número' }}</span></div>
-            <div class="data-item"><span class="label">Fecha</span><span class="value">{{ order.date.strftime('%d/%m/%Y') if order.date else '-' }}</span></div>
-            <div class="data-item"><span class="label">Cliente</span><span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span></div>
-            <div class="data-item"><span class="label">Solicitado</span><span class="value">{{ order.solicitado or '-' }}</span></div>
-            <div class="data-item"><span class="label">Tipo</span><span class="value">{{ order.tipo_proyecto or 'grafica' }}</span></div>
-            <div class="data-item"><span class="label">Prioridad</span><span class="value">{{ order.priority or 'normal' }}</span></div>
+            <div class="data-item">
+                <span class="label">N° Orden</span>
+                <span class="value mono">{{ order.order_num or 'Sin número' }}</span>
+            </div>
+            <div class="data-item">
+                <span class="label">Fecha</span>
+                <span class="value mono">{{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}</span>
+            </div>
+            <div class="data-item">
+                <span class="label">Cliente</span>
+                <span class="value">{{ order.client.nombre if order.client else 'Sin cliente' }}</span>
+            </div>
+            <div class="data-item">
+                <span class="label">Solicitado por</span>
+                <span class="value" style="text-transform: capitalize;">{{ order.solicitado or '—' }}</span>
+            </div>
+            <div class="data-item">
+                <span class="label">Tipo de proyecto</span>
+                <span class="value" style="text-transform: capitalize;">{{ order.tipo_proyecto or 'grafica' }}</span>
+            </div>
+            <div class="data-item">
+                <span class="label">Prioridad</span>
+                <span class="value" style="text-transform: capitalize;">{{ order.priority or 'normal' }}</span>
+            </div>
         </div>
     </div>
 
+    <!-- SERVICIOS -->
     <div class="section">
-        <div class="section-title"><span class="icon">🛠</span> Servicios</div>
+        <div class="section-title">Servicios</div>
         {% set servicios = order.get_servicios() %}
         <div class="servicios-list">
-            {% if servicios %}{% for serv in servicios %}<span class="servicio-tag">{{ serv }}</span>{% endfor %}{% else %}<span style="color:#999; font-style:italic;">No especificados</span>{% endif %}
+            {% if servicios %}
+                {% for serv in servicios %}
+                    <span class="servicio-tag">{{ serv }}</span>
+                {% endfor %}
+            {% else %}
+                <span class="servicios-vacio">No especificados</span>
+            {% endif %}
         </div>
     </div>
 
+    <!-- TENER EN CUENTA -->
     <div class="section">
-        <div class="section-title"><span class="icon">📝</span> Tener en cuenta</div>
+        <div class="section-title">Tener en cuenta</div>
         <div class="desc-text">{{ order.descripcion or 'Sin descripción' }}</div>
     </div>
 
+    <!-- LÍNEAS DE TRABAJO -->
     <div class="section">
-        <div class="section-title"><span class="icon">📎</span> Líneas de trabajo</div>
+        <div class="section-title">Líneas de trabajo</div>
         {% if order.archivos %}
         <table class="lineas-table">
             <thead>
                 <tr>
-                    <th style="width:16%;">Nombre</th>
-                    <th style="width:16%;">Material</th>
+                    <th style="width:17%;">Nombre</th>
+                    <th style="width:15%;">Material</th>
                     <th style="width:8%;">Cant.</th>
-                    <th style="width:8%;">Unidad</th>
-                    <th style="width:10%;">Tipo</th>
-                    <th style="width:42%;">Detalles</th>
+                    <th style="width:9%;">Unidad</th>
+                    <th style="width:11%;">Tipo</th>
+                    <th style="width:40%;">Detalles</th>
                 </tr>
             </thead>
             <tbody>
@@ -103,55 +389,83 @@
                 {% set is_cartel = (tipo_archivo == 'cartel') %}
                 <tr>
                     <td class="nombre-linea">{{ archivo.nombre_visible }}</td>
-                    <td class="material-linea">{{ archivo.material or '-' }}</td>
-                    <td class="cantidad-linea">{{ archivo.cantidad if archivo.cantidad is not none else '-' }}</td>
-                    <td class="unidad-linea">{% if archivo.unidad == 'unidades' %}unidades{% elif archivo.unidad in ('m', 'm2') %}m²{% else %}{{ archivo.unidad or '-' }}{% endif %}</td>
+                    <td class="material-linea">{{ archivo.material or '—' }}</td>
+                    <td class="cantidad-linea">{{ archivo.cantidad if archivo.cantidad is not none else '—' }}</td>
+                    <td class="unidad-linea">
+                        {% if archivo.unidad == 'unidades' %}unidades
+                        {% elif archivo.unidad in ('m', 'm2') %}m²
+                        {% else %}{{ archivo.unidad or '—' }}{% endif %}
+                    </td>
                     <td>
                         {% if is_etiqueta %}
-                            <span class="tipo-linea" style="background:#b8860b; color:white; padding:2px 8px; border-radius:12px;">Etiquetas</span>
+                            <span class="tipo-linea etiqueta">Etiquetas</span>
                         {% elif is_cartel %}
-                            <span class="tipo-linea" style="background:#0ea5e9; color:white; padding:2px 8px; border-radius:12px;">Cartel</span>
+                            <span class="tipo-linea cartel">Cartel</span>
                         {% else %}
-                            <span class="tipo-linea">Otros</span>
+                            <span class="tipo-linea otros">Otros</span>
                         {% endif %}
                     </td>
                     <td>
                         {% if is_etiqueta %}
-                            <div class="detalle-etiqueta">
-                                <span>Etiqueta: {{ params.ancho }}×{{ params.alto }} cm</span>
-                                <span> | Ancho útil: {{ params.ancho_util_usado|round(2) if params.ancho_util_usado else '—' }} m</span>
-                                <span> | Caben: {{ params.n_etiquetas or 0 }} ({{ params.filas or 0 }}×{{ params.columnas or 0 }})</span>
-                                <span> | Costo: ${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span>
-                                {% if params.merma_operativa_m2 is defined %}
-                                    <br><span style="color:#dc2626; font-weight:600;">
-                                        Merma operativa: {{ params.merma_operativa_m2|round(2) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
-                                    </span>
-                                    {% if params.merma_borde_rollo_m2 %}
-                                        <br><span style="color:#f59e0b; font-weight:600;">
-                                            Borde rollo: {{ params.merma_borde_rollo_m2|round(3) }} m²
-                                        </span>
+                            <div class="detalle-linea">
+                                <span class="dato-linea">
+                                    <span class="lbl">Etiqueta:</span>
+                                    <span class="val">{{ params.ancho }}×{{ params.alto }} cm</span>
+                                    <span class="lbl"> · Ancho útil:</span>
+                                    <span class="val">{{ params.ancho_util_usado|round(2) if params.ancho_util_usado else '—' }} m</span>
+                                    <span class="lbl"> · Caben:</span>
+                                    <span class="val">{{ params.n_etiquetas or 0 }}</span>
+                                    <span class="lbl">({{ params.filas or 0 }}×{{ params.columnas or 0 }})</span>
+                                </span>
+                                <span class="dato-linea">
+                                    <span class="lbl">Costo:</span>
+                                    <span class="val">${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span>
+                                    {% if params.merma_operativa_m2 is defined %}
+                                        <span class="lbl"> · Merma operativa:</span>
+                                        <span class="merma">{{ params.merma_operativa_m2|round(2) }} m² ({{ params.merma_operativa_pct|round(1) }}%)</span>
                                     {% endif %}
-                                {% endif %}
+                                    {% if params.merma_borde_rollo_m2 %}
+                                        <span class="lbl"> · Borde rollo:</span>
+                                        <span class="borde">{{ params.merma_borde_rollo_m2|round(3) }} m²</span>
+                                    {% endif %}
+                                </span>
                             </div>
                         {% elif is_cartel %}
-                            <div class="detalle-cartel">
-                                <span>Cartel: {{ params.ancho }}×{{ params.alto }} cm</span>
-                                <span> | Piezas: {{ params.cantidad }}</span>
-                                <span> | Distribución: {{ params.filas }}f × {{ params.cols }}c</span>
-                                <span> | Alto impresión: {{ params.alto_impresion_cm|round(1) }} cm + gap {{ params.gap_final_cm|round(1) }} cm</span>
-                                <span> | Material: {{ params.tipo_material }}</span>
-                                <span> | Alineación: {% if params.centrar %}Centrado{% else %}Izquierda{% endif %}</span> <!-- NUEVO -->
-                                <br>
-                                <span>Costo impresión: ${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span>
-                                <span> | Sobrante facturado: ${{ params.costo_merma|round(2) if params.costo_merma else '—' }} ({{ params.merma_facturada_m2|round(2) if params.merma_facturada_m2 else '0' }} m²)</span>
-                                <span> | <strong>Costo total: ${{ params.costo_estimado|round(2) }}</strong></span>
-                                <br>
-                                <span style="color:#dc2626; font-weight:600;">
-                                    Merma operativa (gap): {{ params.merma_operativa_m2|round(3) }} m² ({{ params.merma_operativa_pct|round(1) }}%)
+                            <div class="detalle-linea">
+                                <span class="dato-linea">
+                                    <span class="lbl">Cartel:</span>
+                                    <span class="val">{{ params.ancho }}×{{ params.alto }} cm</span>
+                                    <span class="lbl"> · Piezas:</span>
+                                    <span class="val">{{ params.cantidad }}</span>
+                                    <span class="lbl"> · Distribución:</span>
+                                    <span class="val">{{ params.filas }}f × {{ params.cols }}c</span>
+                                    <span class="lbl"> · Alto impresión:</span>
+                                    <span class="val">{{ params.alto_impresion_cm|round(1) }} cm</span>
+                                    <span class="lbl">+ gap</span>
+                                    <span class="val">{{ params.gap_final_cm|round(1) }} cm</span>
+                                </span>
+                                <span class="dato-linea">
+                                    <span class="lbl">Material:</span>
+                                    <span class="val">{{ params.tipo_material }}</span>
+                                    <span class="lbl"> · Alineación:</span>
+                                    <span class="val">{% if params.centrar %}Centrado{% else %}Izquierda{% endif %}</span>
+                                </span>
+                                <span class="dato-linea">
+                                    <span class="lbl">Costo impresión:</span>
+                                    <span class="val">${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span>
+                                    <span class="lbl"> · Sobrante facturado:</span>
+                                    <span class="val">${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span>
+                                    <span class="lbl">({{ params.merma_facturada_m2|round(2) if params.merma_facturada_m2 else '0' }} m²)</span>
+                                    <span class="lbl"> · Costo total:</span>
+                                    <span class="val">${{ params.costo_estimado|round(2) }}</span>
+                                </span>
+                                <span class="dato-linea">
+                                    <span class="lbl">Merma operativa (gap):</span>
+                                    <span class="merma">{{ params.merma_operativa_m2|round(3) }} m² ({{ params.merma_operativa_pct|round(1) }}%)</span>
                                 </span>
                             </div>
                         {% else %}
-                            <span style="font-size:10px; color:#999;">—</span>
+                            <span class="lbl" style="color:#b8b8c0;">—</span>
                         {% endif %}
                     </td>
                 </tr>
@@ -159,10 +473,11 @@
             </tbody>
         </table>
         {% else %}
-        <p style="color:#999; font-style:italic;">No hay líneas definidas</p>
+        <p class="servicios-vacio">No hay líneas definidas</p>
         {% endif %}
     </div>
 
+    <!-- FOOTER -->
     <div class="footer">
         <span class="left">CairoStudio · Grupo Creativo</span>
         <span class="right">Generado: {{ now.strftime('%d/%m/%Y %H:%M') if now else '' }}</span>
