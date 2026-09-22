@@ -28,7 +28,7 @@
         </span>
         <span class="copy-hint">Copiado ✓</span>
     </button>
-    <span style="font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
+    <span style="font-family:'Inter',sans-serif; font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
         {{ order.client.nombre if order.client else 'Sin cliente' }}
         · {{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}
         · {{ order.archivos|length }} línea{{ 's' if order.archivos|length != 1 else '' }}
@@ -44,7 +44,15 @@
     html, body { overflow-x: clip; }
 
     body { background: #f7f0e8; font-family: 'Inter', sans-serif; color: #1c1c1e; }
-    .container { max-width: 1100px; margin: 0 auto; }
+
+    /* ===== CONTAINER FULL RESPONSIVE ===== */
+    .container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 24px;
+        width: 100%;
+        box-sizing: border-box;
+    }
 
     /* ===== BREADCRUMB ===== */
     .breadcrumb {
@@ -83,11 +91,12 @@
         position: relative;
     }
     .order-num-copy .num {
+        font-family: 'Inter', sans-serif;
         font-size: 28px;
         font-weight: 700;
-        font-family: 'Montserrat', sans-serif;
         letter-spacing: -0.5px;
         color: #1c1c1e;
+        line-height: 1.2;
         transition: color 0.15s;
     }
     .order-num-copy .copy-ico {
@@ -246,7 +255,6 @@
     .section-title .icon svg { width: 16px; height: 16px; }
 
     /* ===== BADGES DE DATOS GENERALES ===== */
-    /* Todos excepto prioridad usan el color dorado CairoStudio */
     .resumen-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
     .badge-dato {
         padding: 5px 14px;
@@ -266,7 +274,6 @@
     .badge-dato .valor { font-weight: 700; color: #1c1c1e; }
     .badge-dato .valor.mayus { text-transform: capitalize; }
 
-    /* Dorado para order / date / client */
     .badge-dato[data-tipo="order"],
     .badge-dato[data-tipo="date"],
     .badge-dato[data-tipo="client"] {
@@ -285,10 +292,7 @@
         box-shadow: 0 4px 14px rgba(168,133,79,0.18);
     }
 
-    /* Cliente clickeable: quitar estilos por defecto de <a> */
-    a.badge-dato {
-        cursor: pointer;
-    }
+    a.badge-dato { cursor: pointer; }
     a.badge-dato:hover .valor {
         text-decoration: underline;
         text-decoration-color: #a8854f;
@@ -310,7 +314,6 @@
     }
     a.badge-dato:hover::after { opacity: 1; transform: translateX(2px); }
 
-    /* PRIORIDAD — escala cromática */
     .badge-dato[data-tipo="priority"] { border-color: #d1d5db; background: #f3f4f6; }
     .badge-dato[data-tipo="priority"] svg { color: #6b7280; }
     .badge-dato[data-tipo="priority"][data-priority="normal"] { border-color: #6ee7b7; background: #d1fae5; }
@@ -405,7 +408,7 @@
         word-break: break-word;
     }
 
-    /* ===== TENER EN CUENTA — indicaciones importantes ===== */
+    /* ===== TENER EN CUENTA ===== */
     .nota-fondo {
         background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
         padding: 18px 22px;
@@ -685,7 +688,7 @@
         display: block;
         width: 100%;
         height: auto;
-        max-height: 280px;
+        max-height: 420px;
         cursor: grab;
         user-select: none;
         touch-action: none;
@@ -738,7 +741,7 @@
 
     .preview-resumen {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
         gap: 8px;
         margin-top: 12px;
         padding-top: 12px;
@@ -780,7 +783,6 @@
         padding-top: 12px;
         border-top: 1px solid #e8e0da;
     }
-    /* Título con misma tipografía que .preview-resumen .lbl (Inter uppercase) */
     .paños-detalle-titulo {
         font-family: 'Inter', sans-serif;
         font-size: 11px;
@@ -913,11 +915,23 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
+
+    /* Pantallas muy grandes: aprovechar mejor el espacio */
+    @media (min-width: 1600px) {
+        .container { padding: 0 40px; }
+        .preview-canvas-wrap canvas { max-height: 500px; }
+    }
+
+    @media (max-width: 1024px) {
+        .container { padding: 0 20px; }
+    }
+
     @media (max-width: 768px) {
+        .container { padding: 0 16px; }
         .resumen-badges { gap: 8px; }
         .badge-dato { font-size: 12px; padding: 4px 12px; }
-        .preview-canvas-wrap canvas { max-height: 220px; }
-        .preview-resumen { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 6px; }
+        .preview-canvas-wrap canvas { max-height: 280px; }
+        .preview-resumen { grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 6px; }
         .preview-resumen .val { font-size: 14px; }
         .section-title { font-size: 16px; }
         .section-title .icon { width: 28px; height: 28px; }
@@ -1013,6 +1027,49 @@
         .empty-lineas .empty-ico svg { width: 28px; height: 28px; }
         .empty-lineas .empty-titulo { font-size: 16px; }
     }
+        /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA — Todo en Inter
+       Igualar todo el detalle al look de /ordenes/ (list_ordenes.html):
+       Títulos sans-serif (Inter), valores numéricos en Montserrat.
+       ============================================================ */
+    .serif,
+    .card h4.serif,
+    .section-title,
+    .section-title h2,
+    .panel h5,
+    .preview-section-title,
+    .empty-lineas .empty-titulo,
+    .order-num-copy .copy-hint,
+    .badge-status,
+    .cs-alert-title {
+        font-family: 'Inter', sans-serif !important;
+    }
+
+    /* Ajustes de peso para que los títulos sin serif se vean sólidos */
+    .section-title,
+    .section-title h2 {
+        font-weight: 700;
+        letter-spacing: -0.3px;
+    }
+    .section-title h2 { font-size: 18px; }
+    .panel h5 { font-weight: 700; letter-spacing: -0.1px; }
+    .preview-section-title { font-weight: 700; letter-spacing: -0.2px; }
+    .empty-lineas .empty-titulo { font-weight: 700; letter-spacing: -0.2px; }
+
+    /* Los valores numéricos SÍ se quedan en Montserrat (así los tiene
+       también list_ordenes.html en el order-num del kanban y KPIs) */
+    .badge-dato .valor,
+    .meta-item .meta-val,
+    .tarjeta-linea .nombre-linea,
+    .tarjeta-linea .sublinea .dato,
+    .panel-row .val,
+    .preview-resumen .val,
+    .paño-item .paño-num,
+    .paño-item .paño-etiquetas .num-mont,
+    .paño-item .paño-filas .num-mont,
+    .paños-detalle-titulo .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+    }
 </style>
 {% endblock %}
 
@@ -1089,7 +1146,6 @@
                 </svg>
                 <span class="valor">{{ order.date.strftime('%d/%m/%Y') if order.date else '—' }}</span>
             </span>
-            {# Cliente clickeable → detalle del cliente #}
             {% if order.client %}
                 <a href="{{ url_for('clientes.detalle_cliente', cliente_id=order.client.id) }}"
                    class="badge-dato" data-tipo="client"
@@ -1624,7 +1680,6 @@
             {% endfor %}
         </div>
         {% else %}
-        <!-- ===== EMPTY STATE CON CTA ===== -->
         <div class="empty-lineas">
             <div class="empty-ico">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -1822,7 +1877,6 @@ function toggleLineaCollapse(headerEl) {
         if (!info.paños.length) { cont.innerHTML = ''; return; }
         const totalEtiq = info.paños.reduce((s, p) => s + p.etiquetas, 0);
 
-        // Agrupar paños consecutivos con los mismos valores
         const grupos = [];
         info.paños.forEach(p => {
             const last = grupos[grupos.length - 1];

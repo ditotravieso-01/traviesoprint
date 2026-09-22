@@ -4,8 +4,8 @@
 
 {% block page_title %}
 <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
-    <span style="font-size:28px; font-weight:700;">Órdenes</span>
-    <span style="font-size:14px; font-weight:400; color:#8e8e93; letter-spacing:0.5px;">
+    <span class="page-main-title">Órdenes</span>
+    <span class="page-subtitle">
         Gestión de producción · {{ total }} registros
     </span>
 </div>
@@ -13,6 +13,35 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       Inter → todo
+       Montserrat → solo valores numéricos técnicos
+       Playfair Display → solo marca en PDF (no aplica aquí)
+       ============================================================ */
+    .content-card,
+    .content-card *:not(.num-mont):not(.kpi-value):not(.order-num):not(.modal .cs-num),
+    .modal,
+    .modal *:not(.num-mont):not(.order-num) {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .page-main-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #1c1c1e;
+        line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: #8e8e93;
+        letter-spacing: 0.5px;
+    }
+
     /* ===== ESTILOS GENERALES ===== */
     .content-card {
         max-width: 100%;
@@ -41,13 +70,16 @@
     .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.04); }
     .kpi-card .kpi-info { display: flex; flex-direction: column; }
     .kpi-card .kpi-value {
-        font-family: 'Playfair Display', serif;
+        /* Número técnico → Montserrat */
+        font-family: 'Montserrat', sans-serif;
         font-size: 22px;
         font-weight: 700;
         color: #1c1c1e;
         line-height: 1.2;
+        letter-spacing: -0.3px;
     }
     .kpi-card .kpi-label {
+        font-family: 'Inter', sans-serif;
         font-size: 11px;
         color: #8e8e93;
         font-weight: 500;
@@ -100,6 +132,7 @@
         padding: 6px 16px;
         border-radius: 30px;
         border: none;
+        font-family: 'Inter', sans-serif;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
@@ -109,7 +142,6 @@
         background: #1c1c1e;
         color: white;
         transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
         text-decoration: none;
         white-space: nowrap;
     }
@@ -132,13 +164,13 @@
     }
     .filters-group select,
     .filters-group input {
+        font-family: 'Inter', sans-serif;
         padding: 4px 10px;
         border: 1.5px solid #e0dcd8;
         border-radius: 30px;
         font-size: 12px;
         background: white;
         color: #1c1c1e;
-        font-family: 'Inter', sans-serif;
         transition: border-color 0.2s, box-shadow 0.2s;
         height: 30px;
         min-width: 120px;
@@ -170,6 +202,7 @@
         border: 1px solid #e0dcd8;
     }
     .view-toggle .view-btn {
+        font-family: 'Inter', sans-serif;
         padding: 4px 8px;
         border-radius: 30px;
         border: none;
@@ -179,7 +212,6 @@
         font-size: 13px;
         color: #555;
         transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
         display: flex;
         align-items: center;
         gap: 4px;
@@ -214,6 +246,7 @@
         min-width: 700px;
     }
     .table th {
+        font-family: 'Inter', sans-serif;
         background: #f8f6f4;
         text-align: left;
         padding: 10px 14px;
@@ -230,12 +263,19 @@
     .table th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.3; }
     .table th.sorted-asc .sort-icon { opacity: 1; color: #a8854f; }
     .table th.sorted-desc .sort-icon { opacity: 1; color: #a8854f; transform: rotate(180deg); }
-    .table td { padding: 8px 14px; border-bottom: 1px solid #f0ece8; vertical-align: middle; }
+    .table td { padding: 8px 14px; border-bottom: 1px solid #f0ece8; vertical-align: middle; font-family: 'Inter', sans-serif; }
     .table tr:hover td { background: #fafaf9; }
-    .table .order-num { font-weight: 700; color: #1c1c1e; }
-    .table .client-name { font-weight: 500; }
+    .table .order-num {
+        /* Número técnico → Montserrat */
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+    }
+    .table .client-name { font-family: 'Inter', sans-serif; font-weight: 500; }
 
     .status-badge {
+        font-family: 'Inter', sans-serif;
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -243,7 +283,6 @@
         border-radius: 30px;
         font-weight: 600;
         font-size: 11px;
-        font-family: 'Inter', sans-serif;
         text-transform: capitalize;
         letter-spacing: 0.3px;
     }
@@ -263,11 +302,13 @@
     .status-entregados { background: #fefce8; color: #78350f; }
     .status-entregados .dot { background: #f59e0b; }
 
-    .badge { font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
+    .badge { font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 600; padding: 2px 10px; border-radius: 30px; display: inline-block; }
     .badge-ok { background: #10b981; color: white; }
     .badge-pendiente { background: #f59e0b; color: white; }
+
     /* ===== BADGES DE TIPO DE PROYECTO ===== */
     .tipo-badge {
+        font-family: 'Inter', sans-serif;
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -275,7 +316,6 @@
         border-radius: 30px;
         font-size: 11px;
         font-weight: 600;
-        font-family: 'Inter', sans-serif;
         letter-spacing: 0.3px;
         white-space: nowrap;
         border: 1px solid transparent;
@@ -310,8 +350,10 @@
         flex-wrap: wrap;
         align-items: center;
     }
-    /* ===== BADGE DE ENTRADA (Kanban, estilo como el detalle) ===== */
+
+    /* ===== BADGE DE ENTRADA ===== */
     .entrada-badge {
+        font-family: 'Inter', sans-serif;
         display: inline-flex;
         align-items: center;
         gap: 5px;
@@ -319,15 +361,14 @@
         border-radius: 30px;
         font-size: 11px;
         font-weight: 600;
-        font-family: 'inter', sans-serif;
         letter-spacing: 0.3px;
         border: 1px solid;
         white-space: nowrap;
     }
-    .entrada-badge i{ font-size: 10px; }
-    .entrada-badge.ok { background: #ecfdf5; color:#065f46; border-color:#6ee7b7;}
-    .entrada-badge.ok i { color: #10b981;}
-    .entrada-badge.espera { background: #fffbeb;color: #78350f; border-color: #fcd34d;}
+    .entrada-badge i { font-size: 10px; }
+    .entrada-badge.ok { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+    .entrada-badge.ok i { color: #10b981; }
+    .entrada-badge.espera { background: #fffbeb; color: #78350f; border-color: #fcd34d; }
     .entrada-badge.espera i { color: #f59e0b; }
 
     /* ===== KANBAN ===== */
@@ -351,11 +392,48 @@
     }
     .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
     .kanban-card .header { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
-    .kanban-card .order-num { font-family: 'Montserrat', sans-serif; font-size: 16px; font-weight: 700; color: #1c1c1e; letter-spacing: -0.2px; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .kanban-card .client { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; color: #444; letter-spacing: 0.1px; line-height: 1.3; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    .kanban-card .sub { font-size: 12px; color: #8e8e93; }
-    .kanban-card .sub .highlight { font-weight: 600; color: #1c1c1e; }
-    .kanban-card .badge-prioridad { font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.3px; flex-shrink: 0; }
+    .kanban-card .order-num {
+        /* Número técnico → Montserrat */
+        font-family: 'Montserrat', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        line-height: 1.15;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .kanban-card .client {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: #444;
+        letter-spacing: 0.1px;
+        line-height: 1.3;
+        margin-top: 2px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .kanban-card .sub { font-family: 'Inter', sans-serif; font-size: 12px; color: #8e8e93; }
+    .kanban-card .sub .highlight {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .kanban-card .badge-prioridad {
+        font-family: 'Inter', sans-serif;
+        font-size: 9px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        flex-shrink: 0;
+    }
     .badge-prioridad.urgente { background: #fee2e2; color: #991b1b; }
     .badge-prioridad.normal { background: #d1fae5; color: #065f46; }
     .badge-prioridad.critica { background: #fef3c7; color: #78350f; }
@@ -369,6 +447,7 @@
         border-top: 1px solid #f0ece8;
     }
     .kanban-card .actions .btn {
+        font-family: 'Inter', sans-serif;
         padding: 3px 10px;
         border-radius: 20px;
         border: 1px solid #d2d2d7;
@@ -377,11 +456,12 @@
         font-size: 11px;
         cursor: pointer;
         transition: 0.2s;
-        font-family: 'Inter', sans-serif;
         color: #1c1c1e;
         text-decoration: none;
         display: inline-flex;
-        align-items: center; gap: 3px; }
+        align-items: center;
+        gap: 3px;
+    }
     .kanban-card .actions .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
     .kanban-card .actions .btn-warning { border-color: #f59e0b; color: #d97706; }
     .kanban-card .actions .btn-warning:hover { background: #fef3c7; }
@@ -413,6 +493,7 @@
         flex-wrap: wrap;
     }
     .pagination .btn {
+        font-family: 'Inter', sans-serif;
         padding: 4px 12px;
         font-size: 13px;
         border-radius: 30px;
@@ -421,13 +502,12 @@
         color: #1c1c1e;
         cursor: pointer;
         transition: 0.2s;
-        font-family: 'Inter', sans-serif;
         text-decoration: none;
     }
     .pagination .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
     .pagination .btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
     .pagination .btn.disabled { opacity: 0.3; pointer-events: none; }
-    .pagination .info { font-size: 13px; color: #8e8e93; padding: 0 8px; }
+    .pagination .info { font-family: 'Inter', sans-serif; font-size: 13px; color: #8e8e93; padding: 0 8px; }
 
     /* ===== MODAL ===== */
     .modal-overlay {
@@ -457,10 +537,24 @@
     }
     .modal .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #8e8e93; float: right; line-height: 1; }
     .modal .modal-close:hover { color: #1c1c1e; }
-    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; color: #1c1c1e; }
-    .modal .form-group { margin-bottom: 16px; }
-    .modal .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
+    .modal h2 {
+        font-family: 'Inter', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 16px;
+        color: #1c1c1e;
+        letter-spacing: -0.3px;
+    }
+    .modal .form-group label {
+        font-family: 'Inter', sans-serif;
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+        color: #333;
+        margin-bottom: 4px;
+    }
     .modal .form-group input {
+        font-family: 'Inter', sans-serif;
         width: 100%;
         padding: 10px 14px;
         border: 1.5px solid #e0dcd8;
@@ -468,7 +562,6 @@
         font-size: 15px;
         background: #fafaf9;
         transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
     }
     .modal .form-group input:focus {
         outline: none;
@@ -477,7 +570,20 @@
         box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
     .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
-    .modal .btn { padding: 8px 20px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .modal .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 20px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
     .modal .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
     .modal .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; }
     .modal .btn-success { background: #10b981; color: white; }
@@ -499,22 +605,8 @@
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr; }
         .view-toggle .view-btn .label { display: none; }
-        .page-title { flex-direction: column; align-items: flex-start; gap: 4px; }
     }
-    /* ===== SVG que reemplazan <i class="fas"> ===== */
-    .kpi-icon { color: #a8854f; opacity: 0.4; }
-    .kpi-icon svg { display: block; }
 
-    .filter-icon { color: #8e8e93; display: inline-flex; align-items: center; }
-
-    /* Los botones que contienen SVG deben alinear bien */
-    /* ===== SVG que reemplazan <i class="fas"> ===== */
-    .kpi-icon { color: #a8854f; opacity: 0.4; }
-    .kpi-icon svg { display: block; }
-
-    .filter-icon { color: #8e8e93; display: inline-flex; align-items: center; }
-
-    /* Alineación de SVG dentro de botones */
     /* ===== SVG que reemplazan <i class="fas"> ===== */
     .kpi-icon { color: #a8854f; opacity: 0.4; }
     .kpi-icon svg { display: block; }
@@ -528,9 +620,6 @@
     }
 
     /* ===== COLORES GLOBALES DE ACCIONES ===== */
-    /* Estos se aplican a TODAS las vistas: tabla y kanban */
-
-    /* PDF: indigo — outline, NO rojo (rojo = eliminar) */
     .btn-pdf {
         background: transparent;
         border: 1px solid #6366f1;
@@ -544,7 +633,6 @@
         box-shadow: none;
     }
 
-    /* Eliminar: rojo outline (destructivo, no sólido) */
     .btn-danger {
         background: transparent;
         border: 1px solid #dc2626;
@@ -561,7 +649,7 @@
 {% endblock %}
 
 {% block content %}
-{# ===== MACRO DE PAGINACIÓN (definida antes de usarla) ===== #}
+{# ===== MACRO DE PAGINACIÓN ===== #}
 {% macro render_pagination(page, total_pages, search, estado) %}
 {% if total_pages > 1 %}
 <div class="pagination">
@@ -732,7 +820,7 @@
                         <td class="order-num">{{ order.order_num or 'Sin número' }}</td>
                         <td class="client-name">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
 
-                        {# --- COLUMNA PROYECTO (badges de tipos) --- #}
+                        {# --- COLUMNA PROYECTO --- #}
                         <td>
                             {% set tipos = order.get_tipos_archivos() %}
                             {% if tipos %}
@@ -773,7 +861,7 @@
 
                         <td>{{ order.archivos|length }}</td>
 
-                        {# --- COLUMNA ENTRADA (OK / En espera) --- #}
+                        {# --- COLUMNA ENTRADA --- #}
                         <td>
                             {% if order.entrada_ok %}
                                 <span class="entrada-badge ok">
@@ -977,7 +1065,10 @@
             </div>
             {% else %}
             <div style="grid-column:1/-1; text-align:center; padding:40px; color:#8e8e93;">
-                <i class="fas fa-file-alt" style="font-size:48px; opacity:0.3; display:block; margin-bottom:12px;"></i>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3; display:block; margin: 0 auto 12px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
                 No hay órdenes que coincidan con los filtros.
             </div>
             {% endfor %}
@@ -989,7 +1080,13 @@
     <div class="modal-overlay" id="modalEntrada">
         <div class="modal">
             <button class="modal-close" onclick="cerrarModalEntrada()">&times;</button>
-            <h2><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Marcar entrada al sistema</h2>
+            <h2>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 6px;">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Marcar entrada al sistema
+            </h2>
             <form method="POST" id="formEntrada">
                 <div class="form-group">
                     <label>Número de orden de Odoo *</label>
@@ -998,7 +1095,14 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="cerrarModalEntrada()">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>Marcar entrada</button>
+                    <button type="submit" class="btn btn-success">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Marcar entrada
+                    </button>
                 </div>
             </form>
         </div>
@@ -1077,7 +1181,7 @@
     })();
 
     // ================================================================
-    //  MODAL DE ENTRADA (CORREGIDO)
+    //  MODAL DE ENTRADA
     // ================================================================
     function abrirModalEntrada(orderId) {
         const modal = document.getElementById('modalEntrada');
@@ -1089,7 +1193,7 @@
         form.action = '/ordenes/marcar-entrada/' + orderId;
         document.getElementById('odoo_order_num').value = '';
         modal.classList.add('active');
-        modal.style.display = 'flex'; // Aseguramos visibilidad
+        modal.style.display = 'flex';
     }
 
     function cerrarModalEntrada() {
