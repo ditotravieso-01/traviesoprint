@@ -1,17 +1,56 @@
 {% extends "base.html" %}
 
-{% block title %}{{ empresa_nombre }} - Dashboard{% endblock %}
+{% block title %}{{ empresa_nombre }} · Dashboard{% endblock %}
 
-{% block page_title %}<i class="fas fa-crown" style="color: #a8854f;"></i> {{ empresa_nombre }} - Panel de Control{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">{{ empresa_nombre }}</span>
+    <span class="page-subtitle">Panel de control · Resumen general</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== ESTUDIO BLANC BASE ===== */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #f7f0e8; font-family: 'Inter', sans-serif; color: #1c1c1e; }
-    .container { max-width: 100%; margin: 0 auto; padding: 20px; }
-    .serif { font-family: 'Playfair Display', serif; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       Inter → todo
+       Montserrat → solo valores numéricos técnicos
+       Playfair Display → solo en pdf_orden.html (no aplica aquí)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #1c1c1e;
+        line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 400;
+        color: #8e8e93;
+        letter-spacing: 0.5px;
+    }
 
+    /* ===== BASE ===== */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { overflow-x: clip; }
+    body {
+        background: linear-gradient(180deg, #f7f0e8 0%, #faf6f0 100%);
+        background-attachment: fixed;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    .container { max-width: 100%; margin: 0 auto; padding: 20px; }
+
+    /* Blindaje: todo en Inter excepto valores numéricos explícitos */
+    .container,
+    .container *:not(.kpi-value):not(.modulo-num):not(.comparativa-valor):not(.num-mont) {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ===== HEADER ===== */
     .dashboard-header {
         display: flex;
         justify-content: flex-end;
@@ -29,25 +68,36 @@
         justify-content: flex-end;
     }
     .btn {
+        font-family: 'Inter', sans-serif;
         background: none;
         border: 1px solid #d2d2d7;
         border-radius: 30px;
         padding: 6px 18px;
         font-size: 13px;
+        font-weight: 600;
         cursor: pointer;
         color: #555;
-        font-family: 'Inter', sans-serif;
         transition: 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        text-decoration: none;
+        line-height: 1;
     }
-    .btn:hover { border-color: #a8854f; background: #fafaf9; }
+    .btn:hover { border-color: #a8854f; background: #fafaf9; color: #78350f; }
     .btn-primary { background: #a8854f; color: white; border-color: #a8854f; }
-    .btn-primary:hover { background: #8a6f3f; border-color: #8a6f3f; }
-    .btn-icon { padding: 6px 12px; font-size: 14px; border-radius: 50%; min-width: 36px; justify-content: center; }
-    .update-time { font-weight: 600; color: #a8854f; font-size: 13px; }
+    .btn-primary:hover { background: #8a6f3f; border-color: #8a6f3f; color: white; }
+    .btn-icon { padding: 6px 10px; border-radius: 50%; min-width: 36px; justify-content: center; }
+    .btn-sm { padding: 4px 12px; font-size: 12px; }
+    .btn svg { flex-shrink: 0; }
+    .update-time {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        color: #a8854f;
+        font-size: 13px;
+    }
 
+    /* ===== CARDS BASE ===== */
     .card {
         background: rgba(255,255,255,0.85);
         backdrop-filter: blur(10px);
@@ -57,22 +107,22 @@
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 20px;
         transition: box-shadow 0.2s;
-        cursor: default;
     }
     .card-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 16px;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
         font-weight: 700;
         color: #1c1c1e;
+        letter-spacing: -0.2px;
         margin-bottom: 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
     }
     .card-title .left { display: flex; align-items: center; gap: 8px; }
-    .card-title .left i { color: #a8854f; }
+    .card-title .left svg { color: #a8854f; flex-shrink: 0; }
 
-    /* ===== DRAG & DROP (solo en modo personalización) ===== */
+    /* ===== DRAG & DROP ===== */
     .sortable-grid.drag-enabled .sortable-ghost {
         opacity: 0.3;
         background: #ede9fe;
@@ -85,17 +135,11 @@
         box-shadow: 0 8px 30px rgba(0,0,0,0.06);
     }
     .sortable-grid.drag-enabled .card,
-    .sortable-grid.drag-enabled .modulo-card {
-        cursor: grab;
-    }
+    .sortable-grid.drag-enabled .modulo-card { cursor: grab; }
     .sortable-grid.drag-enabled .card:active,
-    .sortable-grid.drag-enabled .modulo-card:active {
-        cursor: grabbing;
-    }
+    .sortable-grid.drag-enabled .modulo-card:active { cursor: grabbing; }
     .sortable-grid .card,
-    .sortable-grid .modulo-card {
-        cursor: default;
-    }
+    .sortable-grid .modulo-card { cursor: default; }
 
     /* ===== KPIs ===== */
     .kpi-grid {
@@ -111,18 +155,35 @@
         border: 1px solid #f0ece8;
         border-top: 4px solid #a8854f;
         transition: 0.2s;
-        cursor: default;
     }
     .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
-    .kpi-card .label { font-size: 13px; font-weight: 500; color: #8e8e93; }
+    .kpi-card .label {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
     .kpi-card .value {
-        font-family: 'Playfair Display', serif;
+        /* Valor numérico técnico → Montserrat */
+        font-family: 'Montserrat', sans-serif !important;
         font-size: 28px;
         font-weight: 700;
         color: #1c1c1e;
         margin-top: 4px;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
     }
-    .kpi-card .change { font-size: 12px; font-weight: 600; margin-top: 2px; color: #10b981; }
+    .kpi-card .change {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        margin-top: 4px;
+        color: #10b981;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
     .kpi-card.warning { border-top-color: #f59e0b; }
     .kpi-card.danger { border-top-color: #dc2626; }
     .kpi-card.success { border-top-color: #10b981; }
@@ -148,30 +209,51 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 4px;
+        margin-bottom: 6px;
     }
     .modulo-card .modulo-header .nombre {
+        font-family: 'Inter', sans-serif;
         font-weight: 700;
-        font-size: 15px;
+        font-size: 14px;
         color: #1c1c1e;
         display: flex;
         align-items: center;
         gap: 6px;
+        letter-spacing: -0.1px;
     }
-    .modulo-card .modulo-header .nombre i { color: #a8854f; }
+    .modulo-card .modulo-header .nombre svg { color: #a8854f; flex-shrink: 0; }
+    .modulo-card .modulo-header .goto {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #a8854f;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-weight: 600;
+        transition: color 0.15s;
+    }
+    .modulo-card .modulo-header .goto:hover { color: #78350f; }
     .modulo-card .stats {
         display: flex;
         flex-wrap: wrap;
-        gap: 6px 12px;
-        font-size: 13px;
+        gap: 6px 14px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
     }
     .modulo-card .stats .num {
+        /* Valor numérico técnico → Montserrat */
+        font-family: 'Montserrat', sans-serif !important;
         font-weight: 700;
         font-size: 18px;
-        font-family: 'Playfair Display', serif;
         color: #1c1c1e;
+        letter-spacing: -0.3px;
     }
-    .modulo-card .stats .label { color: #8e8e93; font-weight: 500; }
+    .modulo-card .stats .label {
+        font-family: 'Inter', sans-serif;
+        color: #8e8e93;
+        font-weight: 500;
+    }
     .modulo-card.workflow { border-top-color: #f59e0b; }
     .modulo-card.clientes { border-top-color: #3b82f6; }
     .modulo-card.inventario { border-top-color: #10b981; }
@@ -203,11 +285,11 @@
     }
     .tabs-nav::-webkit-scrollbar { display: none; }
     .tab-btn {
+        font-family: 'Inter', sans-serif;
         background: none;
         border: none;
         padding: 8px 16px;
         border-radius: 30px;
-        font-family: 'Inter', sans-serif;
         font-weight: 600;
         font-size: 13px;
         color: #8e8e93;
@@ -225,6 +307,7 @@
         color: white;
         box-shadow: 0 2px 8px rgba(168,133,79,0.2);
     }
+    .tab-btn svg { flex-shrink: 0; }
     .tab-content {
         display: none;
         background: #fefcf9;
@@ -234,20 +317,37 @@
     }
     .tab-content.active { display: block; }
 
+    /* Títulos internos de tab */
+    .tab-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.3px;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .tab-title svg { color: #a8854f; flex-shrink: 0; }
+
     /* ===== CALENDARIO ===== */
     .calendario-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .calendario-mensual {
         width: 100%;
         border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
         font-size: 14px;
         min-width: 360px;
     }
     .calendario-mensual th {
         padding: 8px 4px;
+        font-family: 'Inter', sans-serif;
         font-weight: 600;
         color: #8e8e93;
         text-transform: uppercase;
-        font-size: 12px;
+        font-size: 11px;
+        letter-spacing: 0.5px;
         border-bottom: 2px solid #f0ece8;
     }
     .calendario-mensual td {
@@ -263,6 +363,7 @@
     }
     .calendario-mensual td:hover { background: #fafaf9; }
     .calendario-mensual td .numero {
+        font-family: 'Inter', sans-serif;
         font-weight: 500;
         display: block;
         font-size: 14px;
@@ -276,6 +377,7 @@
         width: 20px;
         height: 20px;
         line-height: 20px;
+        font-family: 'Montserrat', sans-serif;
         font-size: 10px;
         font-weight: 700;
         margin-top: 2px;
@@ -285,6 +387,7 @@
     .calendario-mensual td .entrega-list {
         display: none;
         margin-top: 4px;
+        font-family: 'Inter', sans-serif;
         font-size: 11px;
         color: #1c1c1e;
         background: #fcfaf8;
@@ -308,7 +411,7 @@
     .calendario-mensual td.otro-mes .numero { color: #ccc; }
     .calendario-mensual td.hoy { background: #f0ece8; font-weight: 700; }
 
-    /* ===== COMPARATIVA (ajustada) ===== */
+    /* ===== COMPARATIVA ===== */
     .comparativa-wrapper {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -328,18 +431,31 @@
         justify-content: center;
         gap: 8px;
         padding: 0 8px;
+        font-family: 'Inter', sans-serif;
         font-size: 13px;
     }
     .comparativa-wrapper .stats .item {
         display: flex;
         justify-content: space-between;
+        font-family: 'Inter', sans-serif;
         font-size: 13px;
         padding: 3px 0;
         border-bottom: 1px solid #f5f2ef;
     }
-    .comparativa-wrapper .stats .item .label { color: #8e8e93; font-weight: 500; font-size: 12px; }
-    .comparativa-wrapper .stats .item .valor { font-weight: 700; color: #1c1c1e; font-size: 14px; }
-    .trend { font-weight: 600; font-size: 12px; }
+    .comparativa-wrapper .stats .item .label {
+        font-family: 'Inter', sans-serif;
+        color: #8e8e93;
+        font-weight: 500;
+        font-size: 12px;
+    }
+    .comparativa-wrapper .stats .item .valor {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-size: 14px;
+        letter-spacing: -0.2px;
+    }
+    .trend { font-weight: 600; font-size: 12px; font-family: 'Inter', sans-serif; }
     .trend.up { color: #10b981; }
     .trend.down { color: #dc2626; }
     .trend.neutral { color: #f59e0b; }
@@ -349,10 +465,12 @@
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 8px 0;
+        padding: 10px 0;
         border-bottom: 1px solid #f5f2ef;
-        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
     }
+    .actividad-item:last-child, .alerta-item:last-child { border-bottom: none; }
     .actividad-item .icono, .alerta-item .icono {
         width: 36px;
         height: 36px;
@@ -362,20 +480,43 @@
         justify-content: center;
         flex-shrink: 0;
     }
+    .actividad-item .icono svg, .alerta-item .icono svg { width: 16px; height: 16px; }
     .actividad-item .icono.movimiento { background: #e0f2fe; color: #1e40af; }
     .actividad-item .icono.cliente_nuevo { background: #d1fae5; color: #065f46; }
     .actividad-item .icono.orden_nueva { background: #fef3c7; color: #78350f; }
-    .actividad-item .texto { flex: 1; }
-    .actividad-item .tiempo { font-size: 12px; color: #8e8e93; }
-    .alerta-item .icono.critico { color: #dc2626; }
-    .alerta-item .icono.atraso { color: #f59e0b; }
+    .actividad-item .texto, .alerta-item .texto {
+        flex: 1;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    .actividad-item .texto strong, .alerta-item .texto strong {
+        font-weight: 700;
+        color: #1c1c1e;
+    }
+    .actividad-item .tiempo {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: #8e8e93;
+        font-weight: 500;
+    }
+    .alerta-item .icono.critico { background: #fee2e2; color: #dc2626; }
+    .alerta-item .icono.atraso { background: #fef3c7; color: #d97706; }
     .badge-dias {
+        font-family: 'Montserrat', sans-serif;
         background: #dc2626;
         color: white;
         padding: 2px 10px;
         border-radius: 30px;
         font-size: 11px;
-        font-weight: 600;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+    }
+    .empty-msg {
+        font-family: 'Inter', sans-serif;
+        color: #8e8e93;
+        font-size: 13px;
+        font-style: italic;
+        padding: 12px 0;
     }
 
     /* ===== PERSONALIZACIÓN ===== */
@@ -388,6 +529,25 @@
         margin-bottom: 20px;
     }
     .customize-panel.open { display: block; }
+    .customize-panel .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .customize-panel .panel-header h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .customize-panel .panel-header h4 svg { color: #a8854f; }
     .customize-panel .row {
         display: flex;
         flex-wrap: wrap;
@@ -397,11 +557,14 @@
     }
     .customize-panel .group { flex: 1 1 200px; }
     .customize-panel .group label {
+        font-family: 'Inter', sans-serif;
         display: block;
         font-weight: 600;
-        font-size: 13px;
-        color: #555;
-        margin-bottom: 4px;
+        font-size: 12px;
+        color: #6b6b7a;
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
     .customize-panel .group .tag-group {
         display: flex;
@@ -409,14 +572,17 @@
         gap: 6px;
     }
     .customize-panel .group .tag {
+        font-family: 'Inter', sans-serif;
         background: #f0ece8;
-        padding: 4px 12px;
+        padding: 5px 14px;
         border-radius: 30px;
-        font-size: 13px;
+        font-size: 12.5px;
+        font-weight: 600;
         cursor: pointer;
         transition: 0.2s;
         border: 1px solid transparent;
         user-select: none;
+        color: #555;
     }
     .customize-panel .group .tag.active {
         background: #a8854f;
@@ -425,13 +591,21 @@
     }
     .customize-panel .group .tag:hover { border-color: #a8854f; }
     .customize-panel .group select {
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
         font-family: 'Inter', sans-serif;
+        padding: 7px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 500;
+        background: white;
+        color: #1c1c1e;
         width: 100%;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .customize-panel .group select:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.1);
     }
     .customize-panel .actions {
         display: flex;
@@ -442,16 +616,18 @@
         flex-wrap: wrap;
     }
     .customize-panel .drag-hint {
+        font-family: 'Inter', sans-serif;
         background: #fef3c7;
         border-radius: 30px;
-        padding: 4px 16px;
+        padding: 5px 16px;
         font-size: 12px;
+        font-weight: 600;
         color: #78350f;
         display: inline-flex;
         align-items: center;
         gap: 6px;
         border: 1px solid #f59e0b;
-        margin-bottom: 8px;
+        margin-bottom: 12px;
     }
 
     /* ===== RESPONSIVE ===== */
@@ -479,18 +655,16 @@
         .container { padding: 12px; }
         .customize-panel .row { flex-direction: column; gap: 12px; }
         .customize-panel .group { flex: 1 1 100%; }
-        .customize-panel .group .tag { font-size: 12px; padding: 6px 14px; }
         .customize-panel .actions .btn { flex: 1; justify-content: center; }
-        .comparativa-wrapper .stats .item .label { font-size: 11px; }
-        .comparativa-wrapper .stats .item .valor { font-size: 13px; }
+        .page-main-title { font-size: 22px; }
+        .page-subtitle { font-size: 13px; }
     }
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr; }
         .kpi-card .value { font-size: 22px; }
         .modulo-card .stats .num { font-size: 16px; }
-        .modulo-card .modulo-header .nombre { font-size: 14px; }
+        .modulo-card .modulo-header .nombre { font-size: 13px; }
         .tab-btn { font-size: 11px; padding: 4px 10px; gap: 4px; }
-        .tab-btn i { font-size: 12px; }
         .calendario-mensual td { height: 32px; font-size: 10px; padding: 2px; }
         .calendario-mensual td .numero { font-size: 11px; }
         .calendario-mensual td .entrega-marker { width: 14px; height: 14px; line-height: 14px; font-size: 7px; }
@@ -499,30 +673,71 @@
         .update-time { font-size: 11px; }
         .comparativa-wrapper .chart-container { height: 100px; }
         .comparativa-wrapper .stats .item { font-size: 11px; }
-        .comparativa-wrapper .stats .item .label { font-size: 10px; }
-        .comparativa-wrapper .stats .item .valor { font-size: 12px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="container">
-    <!-- HEADER -->
+    <!-- ===== HEADER ===== -->
     <div class="dashboard-header">
         <div class="header-actions">
             <span class="update-time" id="updateTime">cargando...</span>
-            <button class="btn btn-icon" onclick="cargarDatos()"><i class="fas fa-sync-alt"></i></button>
-            <button class="btn btn-icon" onclick="toggleCustomize()" title="Personalizar"><i class="fas fa-sliders-h"></i></button>
+            <button class="btn btn-icon" onclick="cargarDatos()" title="Actualizar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+            <button class="btn btn-icon" onclick="toggleCustomize()" title="Personalizar">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+            </button>
         </div>
     </div>
 
     <!-- ===== PANEL DE PERSONALIZACIÓN ===== -->
     <div class="customize-panel" id="customizePanel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
-            <h4 class="serif" style="font-size:18px;"><i class="fas fa-palette"></i> Personalizar dashboard</h4>
-            <button class="btn" onclick="resetearPreferencias()" style="font-size:12px;"><i class="fas fa-undo"></i> Restablecer</button>
+        <div class="panel-header">
+            <h4>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="13.5" cy="6.5" r=".5"></circle>
+                    <circle cx="17.5" cy="10.5" r=".5"></circle>
+                    <circle cx="8.5" cy="7.5" r=".5"></circle>
+                    <circle cx="6.5" cy="12.5" r=".5"></circle>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+                </svg>
+                Personalizar dashboard
+            </h4>
+            <button class="btn" onclick="resetearPreferencias()" style="font-size:12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Restablecer
+            </button>
         </div>
-        <div class="drag-hint" id="dragHint"><i class="fas fa-arrows-alt"></i> Arrastra los bloques para reordenarlos</div>
+        <div class="drag-hint">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="5 9 2 12 5 15"></polyline>
+                <polyline points="9 5 12 2 15 5"></polyline>
+                <polyline points="15 19 12 22 9 19"></polyline>
+                <polyline points="19 9 22 12 19 15"></polyline>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+            </svg>
+            Arrastra los bloques para reordenarlos
+        </div>
         <div class="row">
             <div class="group">
                 <label>KPIs visibles (elige 3-5)</label>
@@ -533,7 +748,7 @@
                     <span class="tag active" data-kpi="stock_critico">Stock crítico</span>
                     <span class="tag active" data-kpi="clientes_activos">Activos</span>
                 </div>
-                <small style="color:#8e8e93;">Haz clic en cada etiqueta</small>
+                <small style="color:#8e8e93; font-size:11px; display:block; margin-top:4px;">Haz clic en cada etiqueta</small>
             </div>
             <div class="group">
                 <label>Gráfico 1 (izquierda)</label>
@@ -543,7 +758,7 @@
                     <option value="doughnut">Dona</option>
                     <option value="area">Área</option>
                 </select>
-                <label style="margin-top:6px;">Datos</label>
+                <label style="margin-top:8px;">Datos</label>
                 <select id="chart1Data">
                     <option value="workflow">Distribución por estado</option>
                     <option value="evolucion">Evolución diaria</option>
@@ -556,7 +771,7 @@
                     <option value="area">Área</option>
                     <option value="bar">Barras</option>
                 </select>
-                <label style="margin-top:6px;">Datos</label>
+                <label style="margin-top:8px;">Datos</label>
                 <select id="chart2Data">
                     <option value="evolucion">Evolución diaria</option>
                     <option value="workflow">Distribución por estado</option>
@@ -564,34 +779,93 @@
             </div>
         </div>
         <div class="actions">
-            <button class="btn btn-primary" onclick="aplicarPersonalizacion()"><i class="fas fa-check"></i> Aplicar</button>
-            <button class="btn" onclick="toggleCustomize()"><i class="fas fa-times"></i> Cerrar</button>
+            <button class="btn btn-primary" onclick="aplicarPersonalizacion()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Aplicar
+            </button>
+            <button class="btn" onclick="toggleCustomize()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cerrar
+            </button>
         </div>
     </div>
 
     <!-- ===== PESTAÑAS ===== -->
     <div class="tabs-container">
         <div class="tabs-nav" id="tabsNav">
-            <button class="tab-btn active" data-tab="resumen"><i class="fas fa-home"></i> Resumen</button>
-            <button class="tab-btn" data-tab="calendario"><i class="fas fa-calendar-alt"></i> Calendario</button>
-            <button class="tab-btn" data-tab="comparativa"><i class="fas fa-chart-simple"></i> Comparativa</button>
-            <button class="tab-btn" data-tab="actividad"><i class="fas fa-bolt"></i> Actividad</button>
-            <button class="tab-btn" data-tab="alertas"><i class="fas fa-exclamation-triangle"></i> Alertas</button>
+            <button class="tab-btn active" data-tab="resumen">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Resumen
+            </button>
+            <button class="tab-btn" data-tab="calendario">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Calendario
+            </button>
+            <button class="tab-btn" data-tab="comparativa">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Comparativa
+            </button>
+            <button class="tab-btn" data-tab="actividad">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Actividad
+            </button>
+            <button class="tab-btn" data-tab="alertas">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Alertas
+            </button>
         </div>
 
         <!-- RESUMEN -->
         <div class="tab-content active" id="tab-resumen">
             <div class="kpi-grid" id="kpiGrid"></div>
-            <!-- Módulos -->
             <div class="modulo-grid sortable-grid" id="moduloGrid"></div>
-            <!-- Gráficos -->
             <div class="charts-grid sortable-grid" id="chartsGrid">
                 <div class="card" id="chart1Container">
-                    <div class="card-title"><span class="left"><i class="fas fa-chart-bar"></i> Distribución por estado</span></div>
+                    <div class="card-title">
+                        <span class="left">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10"></line>
+                                <line x1="12" y1="20" x2="12" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="14"></line>
+                            </svg>
+                            Distribución por estado
+                        </span>
+                    </div>
                     <div class="chart-wrapper"><canvas id="chart1"></canvas></div>
                 </div>
                 <div class="card" id="chart2Container">
-                    <div class="card-title"><span class="left"><i class="fas fa-chart-line"></i> Evolución diaria</span></div>
+                    <div class="card-title">
+                        <span class="left">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                                <polyline points="17 6 23 6 23 12"></polyline>
+                            </svg>
+                            Evolución diaria
+                        </span>
+                    </div>
                     <div class="chart-wrapper"><canvas id="chart2"></canvas></div>
                 </div>
             </div>
@@ -599,15 +873,32 @@
 
         <!-- CALENDARIO -->
         <div class="tab-content" id="tab-calendario">
-            <h3 class="serif" style="font-size:20px; margin-bottom:12px;">
-                <i class="fas fa-calendar-alt"></i> Calendario de eventos
+            <h3 class="tab-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                Calendario de eventos
             </h3>
             <div style="margin-bottom:12px; display:flex; gap:8px; flex-wrap:wrap;">
-                <a href="{{ url_for('calendario.index') }}" class="btn btn-sm btn-primary">
-                    <i class="fas fa-external-link-alt"></i> Ir al calendario completo
+                <a href="{{ url_for('calendario.index') }}" class="btn btn-primary">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                    Ir al calendario completo
                 </a>
-                <button class="btn btn-sm btn-secondary" onclick="window.location.href='{{ url_for('calendario.index') }}?view=day'">
-                    <i class="fas fa-calendar-day"></i> Vista día
+                <button class="btn" onclick="window.location.href='{{ url_for('calendario.index') }}?view=day'">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    Vista día
                 </button>
             </div>
             <div id="calendarioWidget" style="min-height:300px; max-width:100%;"></div>
@@ -615,7 +906,14 @@
 
         <!-- COMPARATIVA -->
         <div class="tab-content" id="tab-comparativa">
-            <h3 class="serif" style="font-size:18px; margin-bottom:12px;"><i class="fas fa-chart-simple"></i> Comparativa mensual</h3>
+            <h3 class="tab-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+                Comparativa mensual
+            </h3>
             <div class="comparativa-wrapper">
                 <div class="chart-container"><canvas id="chartComparativa"></canvas></div>
                 <div class="stats" id="statsComparativa"></div>
@@ -624,13 +922,25 @@
 
         <!-- ACTIVIDAD -->
         <div class="tab-content" id="tab-actividad">
-            <h3 class="serif" style="font-size:20px; margin-bottom:12px;"><i class="fas fa-bolt"></i> Actividad reciente</h3>
+            <h3 class="tab-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                </svg>
+                Actividad reciente
+            </h3>
             <div id="actividadList"></div>
         </div>
 
         <!-- ALERTAS -->
         <div class="tab-content" id="tab-alertas">
-            <h3 class="serif" style="font-size:20px; margin-bottom:12px;"><i class="fas fa-exclamation-triangle"></i> Alertas</h3>
+            <h3 class="tab-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Alertas
+            </h3>
             <div id="alertasList"></div>
         </div>
     </div>
@@ -641,8 +951,22 @@
 <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
 <script>
     // ================================================================
-    //  DEPURACIÓN
+    //  ICONOS SVG (Feather) — reutilizables en template strings
     // ================================================================
+    const ICONS = {
+        fileAlt: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+        userPlus: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>',
+        arrowRight: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>',
+        clock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>',
+        xCircle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+        alertCircle: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
+        columns: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>',
+        users: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+        package: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>',
+        fileText: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>',
+        externalLink: '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>'
+    };
+
     console.log('✅ Dashboard script iniciado');
 
     // ================================================================
@@ -682,7 +1006,7 @@
     let preferencias = getPrefs();
 
     // ================================================================
-    //  SORTABLE (controlado)
+    //  SORTABLE
     // ================================================================
     function initSortable() {
         const moduloEl = document.getElementById('moduloGrid');
@@ -697,9 +1021,7 @@
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
                 disabled: true,
-                onEnd: function() {
-                    guardarOrden('moduloOrder', '#moduloGrid');
-                }
+                onEnd: function() { guardarOrden('moduloOrder', '#moduloGrid'); }
             });
             sortableInstances.push(instance);
         }
@@ -712,9 +1034,7 @@
                 chosenClass: 'sortable-chosen',
                 dragClass: 'sortable-drag',
                 disabled: true,
-                onEnd: function() {
-                    guardarOrden('chartOrder', '#chartsGrid');
-                }
+                onEnd: function() { guardarOrden('chartOrder', '#chartsGrid'); }
             });
             sortableInstances.push(instance);
         }
@@ -724,9 +1044,7 @@
 
     function setSortableEnabled(enabled) {
         sortableEnabled = enabled;
-        sortableInstances.forEach(inst => {
-            inst.option('disabled', !enabled);
-        });
+        sortableInstances.forEach(inst => { inst.option('disabled', !enabled); });
         document.querySelectorAll('.sortable-grid').forEach(el => {
             el.classList.toggle('drag-enabled', enabled);
         });
@@ -751,9 +1069,7 @@
         const children = Array.from(el.children);
         order.forEach(id => {
             let child = children.find(c => c.id === id);
-            if (!child) {
-                child = children.find(c => c.dataset && c.dataset.modulo === id);
-            }
+            if (!child) child = children.find(c => c.dataset && c.dataset.modulo === id);
             if (child) el.appendChild(child);
         });
         console.log('🔄 Orden restaurado:', key, order);
@@ -782,10 +1098,7 @@
     function renderKPIs() {
         const grid = document.getElementById('kpiGrid');
         grid.innerHTML = '';
-        if (!datos.kpis) {
-            console.warn('⚠️ No hay datos de KPIs');
-            return;
-        }
+        if (!datos.kpis) return;
 
         const kpisMap = {
             total: { label: 'Órdenes totales', color: '', value: datos.kpis.total },
@@ -814,44 +1127,53 @@
     //  RENDER MÓDULOS
     // ================================================================
     function renderModulos() {
-        if (!datos.modulos) {
-            console.warn('⚠️ No hay datos de módulos');
-            return;
-        }
+        if (!datos.modulos) return;
         const m = datos.modulos;
         const grid = document.getElementById('moduloGrid');
         grid.innerHTML = '';
 
         const modulosData = [
-            { id: 'modulo-workflow', clase: 'workflow', icono: 'fa-columns', nombre: 'Workflow', link: '{{ url_for("workflow.board") }}',
-              stats: [
-                  { num: m.workflow.pendientes, label: 'Pend.' },
-                  { num: m.workflow.proceso, label: 'Proceso' },
-                  { num: m.workflow.listo, label: 'Listo' },
-                  { num: m.workflow.entregados, label: 'Entreg.' }
-              ],
-              extra: '' },
-            { id: 'modulo-clientes', clase: 'clientes', icono: 'fa-users', nombre: 'Clientes', link: '{{ url_for("clientes.listar_clientes") }}',
-              stats: [
-                  { num: m.clientes.total, label: 'Total' },
-                  { num: m.clientes.nuevos, label: 'Nuevos (30d)' },
-                  { num: m.clientes.activos, label: 'Activos' }
-              ],
-              extra: `<div style="font-size:13px; color:#8e8e93; margin-top:4px;">Top: <strong>${m.clientes.top}</strong></div>` },
-            { id: 'modulo-inventario', clase: 'inventario', icono: 'fa-boxes', nombre: 'Inventario', link: '{{ url_for("inventario.index") }}',
-              stats: [
-                  { num: m.inventario.total, label: 'Productos' },
-                  { num: m.inventario.sin_stock, label: 'Sin stock' },
-                  { num: m.inventario.bajo_stock, label: 'Bajo stock' }
-              ],
-              extra: `<div style="font-size:13px; color:#8e8e93; margin-top:4px;">Valor: $<strong>${m.inventario.valor.toLocaleString()}</strong></div>` },
-            { id: 'modulo-ordenes', clase: 'ordenes', icono: 'fa-file-alt', nombre: 'Órdenes', link: '{{ url_for("ordenes.list_orders") }}',
-              stats: [
-                  { num: m.ordenes.total, label: 'Total' },
-                  { num: m.ordenes.pend_entrada, label: 'Sin entrada' },
-                  { num: m.ordenes.facturacion.toLocaleString(), label: 'Facturado' }
-              ],
-              extra: `<div style="font-size:13px; color:#8e8e93; margin-top:4px;">Última: <strong>${m.ordenes.ultima}</strong></div>` }
+            {
+                id: 'modulo-workflow', clase: 'workflow', icono: ICONS.columns, nombre: 'Workflow',
+                link: '{{ url_for("workflow.board") }}',
+                stats: [
+                    { num: m.workflow.pendientes, label: 'Pend.' },
+                    { num: m.workflow.proceso, label: 'Proceso' },
+                    { num: m.workflow.listo, label: 'Listo' },
+                    { num: m.workflow.entregados, label: 'Entreg.' }
+                ],
+                extra: ''
+            },
+            {
+                id: 'modulo-clientes', clase: 'clientes', icono: ICONS.users, nombre: 'Clientes',
+                link: '{{ url_for("clientes.listar_clientes") }}',
+                stats: [
+                    { num: m.clientes.total, label: 'Total' },
+                    { num: m.clientes.nuevos, label: 'Nuevos (30d)' },
+                    { num: m.clientes.activos, label: 'Activos' }
+                ],
+                extra: `<div style="font-size:12.5px; color:#8e8e93; margin-top:6px; font-weight:500;">Top: <strong style="color:#1c1c1e;">${m.clientes.top}</strong></div>`
+            },
+            {
+                id: 'modulo-inventario', clase: 'inventario', icono: ICONS.package, nombre: 'Inventario',
+                link: '{{ url_for("inventario.index") }}',
+                stats: [
+                    { num: m.inventario.total, label: 'Productos' },
+                    { num: m.inventario.sin_stock, label: 'Sin stock' },
+                    { num: m.inventario.bajo_stock, label: 'Bajo stock' }
+                ],
+                extra: `<div style="font-size:12.5px; color:#8e8e93; margin-top:6px; font-weight:500;">Valor: <strong style="color:#1c1c1e;">$${m.inventario.valor.toLocaleString()}</strong></div>`
+            },
+            {
+                id: 'modulo-ordenes', clase: 'ordenes', icono: ICONS.fileText, nombre: 'Órdenes',
+                link: '{{ url_for("ordenes.list_orders") }}',
+                stats: [
+                    { num: m.ordenes.total, label: 'Total' },
+                    { num: m.ordenes.pend_entrada, label: 'Sin entrada' },
+                    { num: m.ordenes.facturacion.toLocaleString(), label: 'Facturado' }
+                ],
+                extra: `<div style="font-size:12.5px; color:#8e8e93; margin-top:6px; font-weight:500;">Última: <strong style="color:#1c1c1e;">${m.ordenes.ultima}</strong></div>`
+            }
         ];
 
         modulosData.forEach(mod => {
@@ -862,8 +1184,8 @@
             let statsHtml = mod.stats.map(s => `<span><span class="num">${s.num}</span> <span class="label">${s.label}</span></span>`).join('');
             card.innerHTML = `
                 <div class="modulo-header">
-                    <span class="nombre"><i class="fas ${mod.icono}"></i> ${mod.nombre}</span>
-                    <span style="font-size:12px; color:#a8854f; cursor:pointer;" onclick="window.location.href='${mod.link}'">↗</span>
+                    <span class="nombre">${mod.icono} ${mod.nombre}</span>
+                    <span class="goto" onclick="window.location.href='${mod.link}'">${ICONS.externalLink}</span>
                 </div>
                 <div class="stats">${statsHtml}</div>
                 ${mod.extra}
@@ -903,7 +1225,6 @@
                     colors: ['#f59e0b','#f97316','#3b82f6','#dc2626','#8b5cf6','#10b981','#f59e0b'],
                     label: 'Órdenes'
                 };
-                title = 'Distribución por estado';
             } else if (dataKey === 'evolucion' && datos.evolucion) {
                 dataSet = {
                     labels: datos.evolucion.labels,
@@ -911,13 +1232,13 @@
                     colors: ['#a8854f'],
                     label: 'Órdenes'
                 };
-                title = 'Evolución diaria';
             } else {
                 dataSet = { labels: [], values: [], colors: ['#a8854f'], label: '' };
             }
 
             const isMulti = dataKey === 'workflow';
             const colors = dataSet.colors;
+            const fontFamily = "'Inter', sans-serif";
             let config;
 
             switch (type) {
@@ -925,7 +1246,14 @@
                     config = {
                         type: 'bar',
                         data: { labels: dataSet.labels, datasets: [{ label: dataSet.label, data: dataSet.values, backgroundColor: colors.map(c=>c+'80'), borderColor: colors, borderWidth: 2, borderRadius: 4 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: isMulti } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 1, font: { size: 9 } } } } }
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: isMulti, labels: { font: { family: fontFamily, size: 10 } } } },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 10 } } },
+                                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 1, font: { family: fontFamily, size: 10 } } }
+                            }
+                        }
                     };
                     break;
                 case 'line':
@@ -933,17 +1261,29 @@
                     config = {
                         type: 'line',
                         data: { labels: dataSet.labels, datasets: [{ label: dataSet.label, data: dataSet.values, borderColor: colors[0], backgroundColor: type === 'area' ? 'rgba(168,133,79,0.2)' : 'rgba(168,133,79,0.08)', fill: type === 'area', tension: 0.3, pointBackgroundColor: colors[0], pointRadius: 3 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 9 } } }, y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 9 } } } } }
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 10 } } },
+                                y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { family: fontFamily, size: 10 } } }
+                            }
+                        }
                     };
                     break;
                 case 'doughnut':
                     config = {
                         type: 'doughnut',
                         data: { labels: dataSet.labels, datasets: [{ data: dataSet.values, backgroundColor: colors, borderColor: 'white', borderWidth: 2 }] },
-                        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 9 }, padding: 6 } } }, cutout: '55%' }
+                        options: {
+                            responsive: true, maintainAspectRatio: false,
+                            plugins: { legend: { position: 'bottom', labels: { font: { family: fontFamily, size: 10 }, padding: 8 } } },
+                            cutout: '55%'
+                        }
                     };
                     break;
-                default: config = { type: 'bar', data: { labels: [], datasets: [] } };
+                default:
+                    config = { type: 'bar', data: { labels: [], datasets: [] } };
             }
             charts[cfg.id] = new Chart(ctx, config);
         });
@@ -957,6 +1297,7 @@
     // ================================================================
     function renderCalendario() {
         const container = document.getElementById('calendarioMensual');
+        if (!container) return;
         const ahora = new Date();
         const mes = ahora.getMonth();
         const año = ahora.getFullYear();
@@ -965,9 +1306,7 @@
         const entregas = datos.entregas || {};
 
         let html = '<table class="calendario-mensual"><thead><tr>';
-        ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].forEach(d => {
-            html += `<th>${d}</th>`;
-        });
+        ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].forEach(d => { html += `<th>${d}</th>`; });
         html += '</tr></thead><tbody><tr>';
 
         for (let i = 0; i < primerDia; i++) {
@@ -996,9 +1335,7 @@
             }
             html += '</td>';
 
-            if (diaSemana === 6 && dia < diasEnMes) {
-                html += '</tr><tr>';
-            }
+            if (diaSemana === 6 && dia < diasEnMes) html += '</tr><tr>';
         }
 
         const ultimoDiaSemana = (primerDia + diasEnMes - 1) % 7;
@@ -1021,8 +1358,11 @@
     // ================================================================
     function renderComparativa() {
         if (!datos.comparativa) return;
-        const ctx = document.getElementById('chartComparativa').getContext('2d');
+        const canvas = document.getElementById('chartComparativa');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         if (window.comparativaChart) window.comparativaChart.destroy();
+        const fontFamily = "'Inter', sans-serif";
         window.comparativaChart = new Chart(ctx, {
             type: 'bar',
             data: {
@@ -1037,12 +1377,11 @@
                 }]
             },
             options: {
-                responsive: true,
-                maintainAspectRatio: false,
+                responsive: true, maintainAspectRatio: false,
                 plugins: { legend: { display: false } },
                 scales: {
-                    x: { grid: { display: false }, ticks: { font: { size: 10 } } },
-                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 5, font: { size: 9 } } }
+                    x: { grid: { display: false }, ticks: { font: { family: fontFamily, size: 10 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 5, font: { family: fontFamily, size: 10 } } }
                 }
             }
         });
@@ -1084,24 +1423,24 @@
         const container = document.getElementById('actividadList');
         container.innerHTML = '';
         if (!datos.actividad || datos.actividad.length === 0) {
-            container.innerHTML = '<p style="color:#8e8e93;">Sin actividad reciente.</p>';
+            container.innerHTML = '<p class="empty-msg">Sin actividad reciente.</p>';
             return;
         }
         datos.actividad.forEach(item => {
             const div = document.createElement('div');
             div.className = 'actividad-item';
-            let icono = 'fa-arrow-right', clase = 'movimiento', texto = '';
+            let icono = ICONS.arrowRight, clase = 'movimiento', texto = '';
             if (item.tipo === 'orden_nueva') {
-                icono = 'fa-file-alt'; clase = 'orden_nueva';
+                icono = ICONS.fileAlt; clase = 'orden_nueva';
                 texto = `<strong>Nueva orden:</strong> ${item.orden} (${item.cliente})`;
             } else if (item.tipo === 'cliente_nuevo') {
-                icono = 'fa-user-plus'; clase = 'cliente_nuevo';
+                icono = ICONS.userPlus; clase = 'cliente_nuevo';
                 texto = `<strong>Nuevo cliente:</strong> ${item.cliente}`;
             } else {
                 texto = item.mensaje || 'Evento';
             }
             div.innerHTML = `
-                <div class="icono ${clase}"><i class="fas ${icono}"></i></div>
+                <div class="icono ${clase}">${icono}</div>
                 <div class="texto">${texto}</div>
                 <div class="tiempo">${item.tiempo || ''}</div>
             `;
@@ -1117,22 +1456,22 @@
         const container = document.getElementById('alertasList');
         container.innerHTML = '';
         if (!datos.alertas || datos.alertas.length === 0) {
-            container.innerHTML = '<p style="color:#8e8e93;">Sin alertas.</p>';
+            container.innerHTML = '<p class="empty-msg">Sin alertas.</p>';
             return;
         }
         datos.alertas.forEach(item => {
             const div = document.createElement('div');
             div.className = 'alerta-item';
-            let icono = 'fa-exclamation-circle', clase = 'atraso', texto = '';
+            let icono = ICONS.alertCircle, clase = 'atraso', texto = '';
             if (item.tipo === 'orden_atrasada') {
-                icono = 'fa-clock'; clase = 'atraso';
+                icono = ICONS.clock; clase = 'atraso';
                 texto = `<strong>Orden ${item.orden}</strong> (${item.cliente}) en <strong>${item.columna}</strong> · <span class="badge-dias">${item.dias} días</span>`;
             } else if (item.tipo === 'sin_stock') {
-                icono = 'fa-times-circle'; clase = 'critico';
+                icono = ICONS.xCircle; clase = 'critico';
                 texto = `<strong>Sin stock:</strong> ${item.producto}`;
             }
             div.innerHTML = `
-                <div class="icono ${clase}"><i class="fas ${icono}"></i></div>
+                <div class="icono ${clase}">${icono}</div>
                 <div class="texto">${texto}</div>
             `;
             container.appendChild(div);
@@ -1181,9 +1520,7 @@
     }
 
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            activarPestana(this.dataset.tab);
-        });
+        btn.addEventListener('click', function() { activarPestana(this.dataset.tab); });
     });
 
     // ================================================================
@@ -1195,10 +1532,8 @@
             tag.addEventListener('click', function(e) {
                 e.stopPropagation();
                 this.classList.toggle('active');
-                console.log('🏷️ Tag clickeado:', this.dataset.kpi, 'active:', this.classList.contains('active'));
             });
         });
-        console.log('✅ Eventos de tags asignados');
     });
 
     function toggleCustomize() {
@@ -1215,10 +1550,8 @@
             document.getElementById('chart1Data').value = prefs.chart1.data;
             document.getElementById('chart2Type').value = prefs.chart2.type;
             document.getElementById('chart2Data').value = prefs.chart2.data;
-            console.log('🔓 Panel de personalización abierto');
         } else {
             setSortableEnabled(false);
-            console.log('🔒 Panel de personalización cerrado');
         }
     }
 
@@ -1244,7 +1577,6 @@
         document.getElementById('customizePanel').classList.remove('open');
         setSortableEnabled(false);
         actualizarTodo();
-        console.log('✅ Personalización aplicada:', preferencias);
     }
 
     function resetearPreferencias() {
@@ -1277,50 +1609,35 @@
         cargarDatos();
 
         intervalId = setInterval(cargarDatos, 30000);
+
+        // Widget FullCalendar (si existe)
+        if (document.getElementById('calendarioWidget') && typeof FullCalendar !== 'undefined') {
+            const widgetEl = document.getElementById('calendarioWidget');
+            const widget = new FullCalendar.Calendar(widgetEl, {
+                locale: 'es',
+                initialView: 'dayGridMonth',
+                height: 280,
+                headerToolbar: { left: 'prev,next', center: 'title', right: '' },
+                buttonText: { today: 'Hoy', month: 'Mes', week: 'Semana', day: 'Día' },
+                events: {
+                    url: '{{ url_for("calendario.get_eventos") }}',
+                    method: 'GET',
+                    failure: function() { /* silencioso */ }
+                },
+                eventClick: function(info) {
+                    const url = info.event.extendedProps.url;
+                    if (url) window.location.href = url;
+                    else alert(`${info.event.title}\n\n${info.event.extendedProps.descripcion || ''}`);
+                },
+                dayMaxEvents: 2,
+                moreLinkText: function(count) { return `+ ${count} más`; }
+            });
+            widget.render();
+        }
     });
 
     window.addEventListener('beforeunload', () => {
         if (intervalId) clearInterval(intervalId);
     });
-
-
-    // Inicializar widget de calendario en el dashboard
-    if (document.getElementById('calendarioWidget')) {
-        const widgetEl = document.getElementById('calendarioWidget');
-        const widget = new FullCalendar.Calendar(widgetEl, {
-            locale: 'es',
-            initialView: 'dayGridMonth',
-            height: 280,
-            headerToolbar: {
-                left: 'prev,next',
-                center: 'title',
-                right: ''
-            },
-            buttonText: {
-                today: 'Hoy',
-                month: 'Mes',
-                week: 'Semana',
-                day: 'Día'
-            },
-            events: {
-                url: '{{ url_for("calendario.get_eventos") }}',
-                method: 'GET',
-                failure: function() { /* silencioso */ }
-            },
-            eventClick: function(info) {
-                const url = info.event.extendedProps.url;
-                if (url) window.location.href = url;
-                else {
-                    const mensaje = `${info.event.title}\n\n${info.event.extendedProps.descripcion || ''}`;
-                    alert(mensaje);
-                }
-            },
-            dayMaxEvents: 2,
-            moreLinkText: function(count) {
-                return `+ ${count} más`;
-            }
-        });
-        widget.render();
-    }
 </script>
 {% endblock %}
