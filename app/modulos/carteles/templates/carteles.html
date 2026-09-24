@@ -2,433 +2,1487 @@
 
 {% block title %}Calculadora de Carteles · CairoStudio{% endblock %}
 
-{% block page_title %}Calculadora de Carteles / Lona{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Calculadora de Carteles</span>
+    <span class="page-subtitle">Optimiza la distribución en rollo y calcula el costo</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-    .calc-container {
-        display: flex;
-        gap: 30px;
-        flex-wrap: wrap;
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22/23)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
     }
-    .calc-form {
-        flex: 1;
-        min-width: 300px;
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
     }
-    .calc-result {
-        flex: 1;
-        min-width: 300px;
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
     }
-    .form-section {
-        background: rgba(255,255,255,0.8);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        padding: 20px 24px;
-        margin-bottom: 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-        transition: all 0.2s;
-    }
-    .form-section:hover {
-        box-shadow: 0 8px 30px rgba(0,0,0,0.04);
-    }
-    .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
-        margin-bottom: 14px;
-        color: #1c1c1e;
-        border-bottom: 1px solid #f0ece8;
-        padding-bottom: 8px;
-    }
-    .form-grid-2 {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 16px;
-    }
-    .form-group {
-        margin-bottom: 14px;
-    }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
+
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .cart-wrap, .cart-wrap * { box-sizing: border-box; }
+    .cart-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
         font-family: 'Inter', sans-serif;
     }
-    .form-group input, .form-group select {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 10px;
-        font-size: 15px;
-        background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
+    .cart-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .cart-btn {
         font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-    }
-    .form-group input:focus, .form-group select:focus {
-        outline: none;
-        border-color: #1a1a1a;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
-    }
-    .form-group small {
-        display: block;
-        font-size: 11px;
-        color: #8e8e93;
-        margin-top: 3px;
-        font-style: italic;
-    }
-    .input-suffix {
-        position: relative;
-    }
-    .input-suffix input {
-        padding-right: 60px;
-    }
-    .input-suffix::after {
-        content: attr(data-suffix);
-        position: absolute;
-        right: 14px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: #8e8e93;
-        font-size: 13px;
-        font-weight: 500;
-        pointer-events: none;
-    }
-    .checkbox-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px 20px;
-        margin: 12px 0 16px 0;
-    }
-    .checkbox-group label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 400;
-        font-size: 14px;
-        cursor: pointer;
-        color: #1c1c1e;
-        font-family: 'Inter', sans-serif;
-    }
-    .checkbox-group input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #1a1a1a;
-    }
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-    }
-    .btn {
-        padding: 10px 24px;
+        padding: 8px 16px;
         border-radius: 30px;
-        border: none;
+        border: 1.5px solid #d2d2d7;
         font-weight: 600;
+        font-size: 12.5px;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        font-size: 15px;
-        font-family: 'Inter', sans-serif;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+        background: white;
+        color: #1c1c1e;
     }
-    .btn-primary { background: #1c1c1e; color: white; }
-    .btn-primary:hover { background: #333; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
-    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
-    .btn-danger { background: #dc2626; color: white; }
-    .btn-danger:hover { background: #b91c1c; }
-    .result-box {
-        background: rgba(255,255,255,0.7);
+    .cart-btn:hover { border-color: #8e8e93; background: #f5f5f5; transform: translateY(-1px); }
+    .cart-btn svg { flex-shrink: 0; }
+    .cart-btn-primary {
+        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .cart-btn-primary:hover {
+        background: linear-gradient(135deg, #2c2c30 0%, #3a3a3e 100%);
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+    }
+    .cart-btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+    }
+    .cart-btn-warning:hover {
+        box-shadow: 0 6px 16px rgba(245,158,11,0.35);
+        border-color: transparent;
+    }
+    .cart-btn-danger {
+        background: transparent;
+        border: 1.5px solid #dc2626;
+        color: #dc2626;
+    }
+    .cart-btn-danger:hover {
+        background: #fef2f2;
+        border-color: #b91c1c;
+        color: #b91c1c;
+        transform: none;
+    }
+
+    /* ============================================================
+       TOOLBAR COMPACTA
+       ============================================================ */
+    .cart-toolbar {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 14px;
+        background: rgba(255,255,255,0.75);
         backdrop-filter: blur(10px);
-        padding: 18px 22px;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid rgba(0,0,0,0.04);
-        line-height: 1.8;
-        font-size: 15px;
-        min-height: 120px;
         margin-bottom: 16px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
-    .canvas-wrapper {
-        border: 1px solid #f0ece8;
-        border-radius: 12px;
-        padding: 8px;
+    .cart-toolbar .toolbar-sep {
+        width: 1px;
+        height: 22px;
+        background: #e0dcd8;
+        margin: 0 2px;
+        flex-shrink: 0;
+    }
+    .cart-toolbar .favorites-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .cart-toolbar .favorites-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .cart-toolbar .favorites-select-wrap { min-width: 170px; }
+    .cart-toolbar .file-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .cart-toolbar .file-name {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #8e8e93;
+        font-style: italic;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .cart-toolbar .file-name.has-file {
+        color: #065f46;
+        font-weight: 600;
+        font-style: normal;
+    }
+
+    .cart-badge {
+        background: #1c1c1e;
+        color: white;
+        border-radius: 30px;
+        padding: 2px 8px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 10.5px;
+        font-weight: 700;
+        display: inline-block;
+        letter-spacing: -0.1px;
+    }
+
+    /* ============================================================
+       GRID PRINCIPAL
+       ============================================================ */
+    .cart-main-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) !important;
+        gap: 16px;
+        margin-bottom: 16px;
+        align-items: start;
+    }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .cart-card {
         background: white;
-        margin-top: 12px;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        padding: 16px 18px;
+        min-width: 0;
+    }
+    .cart-card .card-header-row,
+    .cart-sim-card .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .cart-card .card-header-row h4,
+    .cart-sim-card .card-header-row h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cart-card .card-header-row h4 svg,
+    .cart-sim-card .card-header-row h4 svg { color: #a8854f; flex-shrink: 0; }
+
+    /* ============================================================
+       KPI GRID
+       ============================================================ */
+    .cart-result-kpis {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .cart-result-kpi {
+        background: linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%);
+        border-radius: 12px;
+        padding: 12px 14px;
+        border-left: 3px solid #a8854f;
+        min-width: 0;
+        transition: all 0.2s;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
-    canvas {
+    .cart-result-kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .cart-result-kpi.verde { border-left-color: #10b981; }
+    .cart-result-kpi.azul { border-left-color: #3b82f6; }
+    .cart-result-kpi.morado { border-left-color: #8b5cf6; }
+    .cart-result-kpi.rosa { border-left-color: #ec4899; }
+
+    .cart-result-kpi .kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    .cart-result-kpi .kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .cart-result-kpi.verde .kpi-value { color: #065f46; }
+    .cart-result-kpi.azul .kpi-value { color: #1e40af; }
+    .cart-result-kpi.morado .kpi-value { color: #5b21b6; }
+    .cart-result-kpi.rosa .kpi-value { color: #9d174d; }
+    .cart-result-kpi .kpi-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
+        color: #6b6b7a;
+        margin-top: 2px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ============================================================
+       RESULT BOX + TABS
+       ============================================================ */
+    .cart-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .cart-tab-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        padding: 6px 14px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        color: #8e8e93;
+        cursor: pointer;
+        border-radius: 30px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .cart-tab-btn:hover { background: rgba(0,0,0,0.03); color: #1c1c1e; }
+    .cart-tab-btn.active {
+        background: #a8854f;
+        color: white;
+        box-shadow: 0 2px 8px rgba(168,133,79,0.25);
+    }
+    .cart-tab-btn svg { flex-shrink: 0; }
+    .cart-tab-content { display: none; }
+    .cart-tab-content.active { display: block; }
+
+    .cart-result-box {
+        padding: 14px 16px;
+        background: #fafaf9;
+        border-radius: 10px;
+        border: 1px solid #f0ece8;
+        line-height: 1.7;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        min-height: 100px;
+        color: #1c1c1e;
+        transition: opacity 0.15s;
+    }
+    .cart-result-box.loading {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+    .cart-result-box strong {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+    }
+    .cart-result-box p { margin: 0; color: #8e8e93; }
+    .cart-result-box br { line-height: 1.7; }
+
+    .cart-error-box {
+        padding: 10px 14px;
+        background: #fef2f2;
+        color: #991b1b;
+        border-radius: 10px;
+        border-left: 3px solid #dc2626;
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        margin-top: 12px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+    .cart-error-box.visible { display: flex; }
+    .cart-error-box svg { flex-shrink: 0; color: #dc2626; }
+
+    /* ============================================================
+       PARÁMETROS: GRID COMPACTO 2 COLUMNAS
+       ============================================================ */
+    .cart-params-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .cart-params-grid .param-item {
+        min-width: 0;
+    }
+    .cart-params-grid .param-item.full-width {
+        grid-column: 1 / -1;
+    }
+    .cart-params-grid .param-item > label {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 10px;
+        color: #6b6b7a;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .cart-params-grid .param-item input[type="number"] {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        width: 100%;
+        padding: 8px 11px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        font-size: 13.5px;
+        background: #fafaf9;
+        color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
+    }
+    .cart-params-grid .param-item input[type="number"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .cart-params-grid .param-item small {
+        display: block;
+        font-size: 10px;
+        color: #8e8e93;
+        margin-top: 3px;
+        font-style: italic;
+        line-height: 1.3;
+    }
+
+    /* Custom select DENTRO del params-grid: alinear con inputs numéricos */
+    .cart-params-grid .cs-select-wrap {
+        width: 100%;
+    }
+    .cart-params-grid .cs-select-trigger {
+        border-radius: 9px;
+        min-height: 36px;
+        padding: 8px 11px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        background: #fafaf9;
+        border: 1.5px solid #e0dcd8;
+        color: #1c1c1e;
+    }
+    .cart-params-grid .cs-select-trigger:hover {
+        background: #ffffff;
+        border-color: #a8854f;
+    }
+    .cart-params-grid .cs-select-wrap.open .cs-select-trigger,
+    .cart-params-grid .cs-select-trigger:focus {
+        background: #ffffff;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+
+    /* ============================================================
+       CHECKBOXES
+       ============================================================ */
+    .cart-params-checks {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin: 14px 0 12px 0;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+    }
+    .cart-params-checks label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        border: 1.5px solid #ebe6df;
+        background: #fcfaf8;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11.5px;
+        color: #4a4a4a;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+        line-height: 1.2;
+        min-width: 0;
+    }
+    .cart-params-checks label:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .cart-params-checks label:has(input:checked) {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        border-color: #e5d4b8;
+        color: #78350f;
+    }
+    .cart-params-checks input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: #a8854f;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    /* ============================================================
+       ACCIONES
+       ============================================================ */
+    .cart-params-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    .cart-params-actions .cart-btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ============================================================
+       SIMULACIÓN
+       ============================================================ */
+    .cart-sim-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        padding: 14px 16px;
+    }
+    .cart-sim-card .sim-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+        gap: 16px;
+        align-items: stretch;
+    }
+    .cart-canvas-wrapper {
+        aspect-ratio: 2 / 1;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border: 1px solid #f0ece8;
+        border-radius: 12px;
+        padding: 6px;
+        background: white;
+        overflow: hidden;
+    }
+    canvas#simCanvas {
         display: block;
         width: 100%;
-        height: auto;
+        height: 100%;
         border-radius: 8px;
         background: #fcfcfc;
+        cursor: grab;
+        touch-action: none;
     }
-    .file-upload-area {
-        border: 2px dashed #d2d2d7;
-        border-radius: 12px;
-        padding: 16px;
-        text-align: center;
+    canvas#simCanvas:active { cursor: grabbing; }
+
+    .cart-sim-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        height: 100%;
+    }
+    .cart-sim-sidebar .sim-info-box {
+        background: #fafaf9;
+        border: 1px solid #f0ece8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .cart-sim-sidebar .sim-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px dashed #e8e0da;
+        font-family: 'Inter', sans-serif;
+        gap: 8px;
+    }
+    .cart-sim-sidebar .sim-info-row:last-child { border-bottom: none; }
+    .cart-sim-sidebar .sim-info-row .sim-info-label {
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #6b6b7a;
+        font-size: 11.5px;
+        white-space: nowrap;
+    }
+    .cart-sim-sidebar .sim-info-row .sim-info-label svg {
+        color: #a8854f;
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+    .cart-sim-sidebar .sim-info-row .sim-info-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-size: 13px;
+        letter-spacing: -0.2px;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .cart-sim-sidebar .sim-info-highlight {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .cart-sim-sidebar .sim-info-highlight .sim-info-label {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #065f46;
+    }
+    .cart-sim-sidebar .sim-info-highlight .sim-info-label svg {
+        color: #065f46;
+        flex-shrink: 0;
+    }
+    .cart-sim-sidebar .sim-info-highlight .sim-info-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 14px;
+        color: #065f46;
+        letter-spacing: -0.2px;
+    }
+
+    /* Desglose de filas */
+    .cart-filas-summary {
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #bae6fd;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .cart-filas-summary.visible { display: flex; }
+    .cart-filas-summary .filas-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        color: #075985;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 4px;
+    }
+    .cart-filas-summary .filas-title svg { color: #0284c7; flex-shrink: 0; }
+    .cart-filas-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        padding: 3px 0;
+        gap: 8px;
+    }
+    .cart-filas-row .filas-lbl {
+        color: #0c4a6e;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .cart-filas-row .filas-val {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #0c4a6e;
+        font-size: 12px;
+        letter-spacing: -0.2px;
+        text-align: right;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .cart-filas-row.highlight .filas-val { color: #0369a1; font-size: 13px; }
+
+    /* Zoom controls */
+    .cart-zoom-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .cart-zoom-controls .zoom-row {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    .cart-zoom-controls .zoom-btn {
+        background: white;
+        border: 1.5px solid #d2d2d7;
+        border-radius: 30px;
+        padding: 4px 8px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11px;
         cursor: pointer;
-        transition: border-color 0.2s, background 0.2s;
-        background: rgba(255,255,255,0.5);
-        margin-top: 8px;
+        transition: all 0.15s;
+        color: #1c1c1e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        flex: 1;
     }
-    .file-upload-area:hover {
-        border-color: #1a1a1a;
-        background: rgba(255,255,255,0.8);
+    .cart-zoom-controls .zoom-btn:hover {
+        border-color: #a8854f;
+        background: #faf6f0;
+        color: #78350f;
     }
-    .file-upload-area input[type="file"] { display: none; }
-    .file-name { font-size: 13px; color: #8e8e93; font-style: italic; }
-    .history-panel {
-        position: fixed; top: 0; right: -420px; width: 400px; height: 100%;
-        background: rgba(255,255,255,0.98); backdrop-filter: blur(12px);
-        box-shadow: -4px 0 30px rgba(0,0,0,0.06);
-        padding: 30px 24px; transition: right 0.3s ease;
-        z-index: 1000; overflow-y: auto; border-left: 1px solid rgba(0,0,0,0.04);
+    .cart-zoom-controls .zoom-btn.export {
+        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
+        color: white;
+        border-color: transparent;
+        width: 100%;
     }
-    .history-panel.open { right: 0; }
-    .history-panel h3 {
-        font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px;
-        display: flex; justify-content: space-between; align-items: center; color: #1c1c1e;
+    .cart-zoom-controls .zoom-btn.export:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
-    .history-panel .close-btn {
-        background: none; border: none; font-size: 24px; cursor: pointer;
-        color: #8e8e93; padding: 0 4px; transition: color 0.2s;
+    .cart-zoom-controls .zoom-slider-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: #fafaf9;
+        border: 1px solid #f0ece8;
+        border-radius: 30px;
     }
-    .history-panel .close-btn:hover { color: #1c1c1e; }
-    .history-item {
-        border-bottom: 1px solid #f0ece8; padding: 12px 8px; font-size: 14px;
-        cursor: pointer; transition: background 0.2s; border-radius: 8px;
+    .cart-zoom-controls .zoom-slider-row input[type="range"] {
+        flex: 1;
+        accent-color: #a8854f;
+        min-width: 0;
     }
-    .history-item:hover { background: rgba(0,0,0,0.02); }
-    .history-item .date { color: #8e8e93; font-size: 12px; }
-    .history-item .result { font-weight: 600; color: #1c1c1e; }
-    .modal-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.25); backdrop-filter: blur(6px);
-        display: none; justify-content: center; align-items: center; z-index: 2000;
+    .cart-zoom-controls .zoom-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1c1c1e;
+        min-width: 42px;
+        text-align: right;
+        letter-spacing: -0.2px;
     }
-    .modal-overlay.active { display: flex; }
-    .modal-box {
-        background: white; border-radius: 20px; padding: 30px 35px;
-        max-width: 500px; width: 90%; box-shadow: 0 30px 80px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease; border: 1px solid rgba(0,0,0,0.04);
+
+    /* ============================================================
+       HISTORY PANEL
+       ============================================================ */
+    .cart-history-panel {
+        position: fixed;
+        top: 0;
+        right: -420px;
+        width: 400px;
+        max-width: 92vw;
+        height: 100%;
+        background: rgba(255,255,255,0.98);
+        backdrop-filter: blur(12px);
+        box-shadow: -4px 0 30px rgba(0,0,0,0.08);
+        padding: 24px 20px;
+        transition: right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+        z-index: 1000;
+        overflow-y: auto;
+        border-left: 1px solid rgba(0,0,0,0.05);
+    }
+    .cart-history-panel.open { right: 0; }
+    .cart-history-panel .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .cart-history-panel .history-header h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cart-history-panel .history-header h3 svg { color: #a8854f; flex-shrink: 0; }
+    .cart-history-panel .history-close {
+        background: none;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        color: #8e8e93;
+        padding: 0 4px;
+        line-height: 1;
+        transition: color 0.15s, transform 0.15s;
+    }
+    .cart-history-panel .history-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .cart-history-item {
+        border-bottom: 1px solid #f0ece8;
+        padding: 10px 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        cursor: pointer;
+        transition: background 0.15s;
+        border-radius: 8px;
+        margin: 0 -4px;
+    }
+    .cart-history-item:hover { background: #faf6f0; }
+    .cart-history-item .date {
+        color: #8e8e93;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .cart-history-item .result {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-size: 12.5px;
+        margin-top: 2px;
+        letter-spacing: -0.2px;
+    }
+    .cart-history-item .params {
+        font-size: 11px;
+        color: #8e8e93;
+        margin-top: 3px;
+    }
+    .cart-history-panel .history-empty {
+        color: #8e8e93;
+        text-align: center;
+        padding: 30px 20px;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .cart-history-panel .history-footer {
+        text-align: center;
+        color: #8e8e93;
+        font-size: 11px;
+        margin-top: 16px;
+        border-top: 1px solid #f0ece8;
+        padding-top: 12px;
+    }
+
+    /* ============================================================
+       MODALES
+       ============================================================ */
+    .cart-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.3);
+        backdrop-filter: blur(6px);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+        padding: 16px;
+    }
+    .cart-modal-overlay.active { display: flex; }
+    .cart-modal-box {
+        background: white;
+        border-radius: 18px;
+        padding: 22px 24px;
+        max-width: 420px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        border-top: 5px solid #a8854f;
+        box-sizing: border-box;
     }
     @keyframes modalIn {
-        from { transform: scale(0.95) translateY(12px); opacity: 0; }
+        from { transform: scale(0.94) translateY(10px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .modal-box h3 {
-        font-family: 'Playfair Display', serif; margin-bottom: 8px; color: #1c1c1e;
-        display: flex; justify-content: space-between; align-items: center;
+    .cart-modal-box .modal-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
     }
-    .modal-box .close-modal {
-        background: none; border: none; font-size: 24px; cursor: pointer;
-        color: #8e8e93; transition: color 0.2s;
+    .cart-modal-box h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    .modal-box .close-modal:hover { color: #1c1c1e; }
-    .modal-box input {
-        width: 100%; padding: 10px 14px; border: 1px solid #d2d2d7;
-        border-radius: 10px; font-size: 15px; margin: 12px 0;
-        font-family: 'Inter', sans-serif; color: #1c1c1e; transition: border-color 0.2s;
+    .cart-modal-box h3 svg { color: #a8854f; flex-shrink: 0; }
+    .cart-modal-box .modal-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #8e8e93;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s, transform 0.15s;
     }
-    .modal-box input:focus {
-        outline: none; border-color: #1a1a1a; box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+    .cart-modal-box .modal-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .cart-modal-box p.modal-desc {
+        font-family: 'Inter', sans-serif;
+        color: #6b6b7a;
+        font-size: 12.5px;
+        margin: 0 0 12px 0;
+        line-height: 1.5;
     }
-    .badge {
-        background: #1c1c1e; color: white; border-radius: 30px;
-        padding: 2px 10px; font-size: 11px; font-weight: 600; display: inline-block;
+    .cart-modal-box input[type="text"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 14px;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        background: #fafaf9;
+        box-sizing: border-box;
+        margin-bottom: 12px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cart-modal-box input[type="text"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+    }
+
+    /* ============================================================
+       CUSTOM SELECT
+       ============================================================ */
+    .cs-select-wrap { position: relative; display: block; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; width: 100%; padding: 7px 14px;
+        border: 1.5px solid #d2d2d7; border-radius: 30px;
+        background: white; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 12.5px;
+        font-weight: 600; color: #1c1c1e; text-align: left;
+        min-height: 34px; box-sizing: border-box; transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #a8854f; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none; border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 500; }
+    .cs-select-trigger .cs-arrow { color: #a8854f; transition: transform 0.2s; flex-shrink: 0; }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 320px;
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+        box-sizing: border-box;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-options { padding: 2px; overflow-y: auto; flex: 1; min-height: 0; }
+    .cs-select-empty {
+        padding: 14px 12px; text-align: center;
+        color: #8e8e93; font-size: 13px; font-style: italic;
+    }
+    .cs-select-option {
+        padding: 8px 12px; border-radius: 8px; cursor: pointer;
+        font-size: 13px; font-weight: 500; color: #4a4a4a;
+        font-family: 'Inter', sans-serif; transition: background 0.1s;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 1280px) {
+        .cart-main-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+        }
+    }
+    @media (max-width: 1100px) {
+        .cart-main-grid { grid-template-columns: 1fr !important; }
+        .cart-sim-card .sim-layout {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .cart-canvas-wrapper {
+            aspect-ratio: 2 / 1;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .cart-sim-sidebar {
+            max-width: 720px;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+        }
+        .cart-sim-sidebar .sim-info-box { flex: 0 0 auto; }
     }
     @media (max-width: 768px) {
-        .calc-container { flex-direction: column; }
-        .form-grid-2 { grid-template-columns: 1fr; }
-        .history-panel { width: 300px; }
+        .cart-toolbar { flex-direction: column; align-items: stretch; }
+        .cart-toolbar .toolbar-sep { display: none; }
+        .cart-toolbar .cart-btn { justify-content: center; }
+        .cart-toolbar .favorites-group,
+        .cart-toolbar .file-group { width: 100%; }
+        .cart-toolbar .favorites-select-wrap { min-width: 0; width: 100%; }
+
+        .cart-result-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+        .cart-params-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        .cart-params-actions { flex-direction: column; }
+
+        .cart-history-panel { width: 320px; }
+        .cart-result-kpi .kpi-value { font-size: 19px; }
+    }
+    @media (max-width: 640px) {
+        .cart-card { padding: 14px 14px; border-radius: 14px; }
+        .cart-sim-card { padding: 12px 12px; border-radius: 14px; }
+        .cart-toolbar { padding: 10px 12px; border-radius: 12px; }
+        .cart-result-kpi { padding: 10px 12px; }
+        .cart-result-kpi .kpi-value { font-size: 18px; }
+        .cart-result-kpi .kpi-label { font-size: 9px; }
+        .cart-result-kpi .kpi-sub { font-size: 10px; }
+        .cart-canvas-wrapper { aspect-ratio: 1.7 / 1; }
+    }
+    @media (max-width: 480px) {
+        .cart-result-kpis { grid-template-columns: 1fr !important; }
+        .cart-params-grid { grid-template-columns: 1fr !important; }
+        .cart-history-panel { width: 100%; }
+        .cart-canvas-wrapper { aspect-ratio: 1.4 / 1; }
+        .cart-result-kpi .kpi-value { font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card" style="padding: 28px 32px;">
+<div class="cart-wrap">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-        <div>
-            <button class="btn btn-outline" onclick="toggleHistory()"><i class="fas fa-history"></i> Historial <span class="badge" id="historyCount">0</span></button>
-            <button class="btn btn-outline" onclick="toggleFavoritos()"><i class="fas fa-star"></i> Favoritos</button>
+    <!-- ============================================================
+         TOOLBAR
+         ============================================================ -->
+    <div class="cart-toolbar">
+        <button type="button" class="cart-btn cart-btn-warning" onclick="openFavoriteModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Guardar favorito
+        </button>
+
+        <div class="favorites-group">
+            <span class="favorites-label">Favoritos</span>
+            <div class="favorites-select-wrap">
+                <select id="favoritesSelect" onchange="loadFavorite(this.value)">
+                    <option value="">— Seleccionar —</option>
+                </select>
+            </div>
+        </div>
+
+        <span class="toolbar-sep"></span>
+
+        <button type="button" class="cart-btn" onclick="toggleHistory()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Historial <span class="cart-badge" id="historyCount">0</span>
+        </button>
+
+        <span class="toolbar-sep"></span>
+
+        <button type="button" class="cart-btn" onclick="exportPDF()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+            </svg>
+            Exportar PDF
+        </button>
+
+        <span class="toolbar-sep"></span>
+
+        <div class="file-group">
+            <button type="button" class="cart-btn" onclick="document.getElementById('fileInput').click()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Subir PDF
+            </button>
+            <input type="file" id="fileInput" accept=".pdf,.jpg,.png" onchange="handleFileUpload(event)" style="display:none;">
+            <span class="file-name" id="fileName">Ningún archivo</span>
+            <button type="button" class="cart-btn cart-btn-danger" onclick="clearFile()" title="Limpiar archivo">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </button>
         </div>
     </div>
 
-    <!-- Variables para simulación inicial (solo si venimos de un POST) -->
-    <div id="simData" style="display:none;"
-        data-ancho="{{ simData.anchoCm }}"
-        data-alto="{{ simData.altoCm }}"
-        data-material="{{ simData.material }}"
-        data-area="{{ simData.areaM2 }}"
-        data-merma="{{ simData.mermaM2 }}"
-        data-costo-total="{{ simData.costoTotal }}"
-        data-girar="{{ 'true' if simData.girar else 'false' }}"
-        data-cantidad="{{ simData.cantidad }}"
-        data-ancho-rollo="{{ simData.anchoRollo }}"
-        data-cols="{{ simData.cols }}"
-        data-filas="{{ simData.filas }}"
-        data-orientacion="{{ simData.orientacion }}"
-        data-ancho-efectivo="{{ simData.anchoEfectivo }}"
-        data-alto-efectivo="{{ simData.altoEfectivo }}">
-    </div>
+    <!-- ============================================================
+         GRID PRINCIPAL
+         ============================================================ -->
+    <div class="cart-main-grid">
 
-    <div class="calc-container">
-        <!-- FORMULARIO -->
-        <div class="calc-form">
+        <!-- COLUMNA IZQUIERDA: RESULTADO -->
+        <div class="cart-card">
+            <div class="cart-result-kpis">
+                <div class="cart-result-kpi verde">
+                    <div class="kpi-label">Distribución</div>
+                    <div class="kpi-value" id="kpiDistribucion">—</div>
+                    <div class="kpi-sub" id="kpiOrientacion">—</div>
+                </div>
+                <div class="cart-result-kpi azul">
+                    <div class="kpi-label">Piezas totales</div>
+                    <div class="kpi-value" id="kpiPiezas">—</div>
+                    <div class="kpi-sub" id="kpiFilas">—</div>
+                </div>
+                <div class="cart-result-kpi morado">
+                    <div class="kpi-label">Área impresa</div>
+                    <div class="kpi-value" id="kpiArea">—</div>
+                    <div class="kpi-sub" id="kpiMerma">—</div>
+                </div>
+                <div class="cart-result-kpi rosa">
+                    <div class="kpi-label">Costo total</div>
+                    <div class="kpi-value" id="kpiCosto">—</div>
+                    <div class="kpi-sub" id="kpiPrecio">—</div>
+                </div>
+            </div>
+
+            <div class="cart-tabs">
+                <button type="button" class="cart-tab-btn active" data-tab="tab-resumen">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Resumen
+                </button>
+                <button type="button" class="cart-tab-btn" data-tab="tab-detalles">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Detalles
+                </button>
+            </div>
+
+            <div id="tab-resumen" class="cart-tab-content active">
+                <div id="resultDisplay" class="cart-result-box">
+                    {% if resultado %}
+                        {{ resultado|safe }}
+                    {% else %}
+                        <p>Introduce las dimensiones para ver el cálculo en vivo.</p>
+                    {% endif %}
+                </div>
+            </div>
+            <div id="tab-detalles" class="cart-tab-content">
+                <div class="cart-result-box" id="detallesDisplay">
+                    <p>Los detalles del cálculo aparecerán aquí.</p>
+                </div>
+            </div>
+
+            <div id="errorDisplay" class="cart-error-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span id="errorText"></span>
+            </div>
+        </div>
+
+        <!-- COLUMNA DERECHA: PARÁMETROS -->
+        <div class="cart-card">
+            <div class="card-header-row">
+                <h4>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Parámetros
+                </h4>
+            </div>
+
             <form id="calcForm" onsubmit="return false;">
-                <div class="form-section">
-                    <h4>Dimensiones</h4>
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label for="ancho">Ancho (cm)</label>
-                            <input type="number" step="0.1" id="ancho" name="ancho" value="{{ ancho or '' }}" placeholder="ej. 100" required oninput="calcularEnVivo()">
-                        </div>
-                        <div class="form-group">
-                            <label for="alto">Alto (cm)</label>
-                            <input type="number" step="0.1" id="alto" name="alto" value="{{ alto or '' }}" placeholder="ej. 200" required oninput="calcularEnVivo()">
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cantidad">Cantidad de piezas</label>
-                        <input type="number" id="cantidad" name="cantidad" value="{{ cantidad or 1 }}" min="1" step="1" oninput="calcularEnVivo()">
+
+                <div class="cart-params-grid">
+                    <div class="param-item">
+                        <label for="ancho">Ancho (cm)</label>
+                        <input type="number" step="1" min="0" id="ancho" name="ancho"
+                               value="{{ ancho or '' }}" placeholder="100" oninput="calcularEnVivo()">
                     </div>
 
-                    <div class="form-group">
-                        <label for="ancho_rollo">Ancho del rollo (cm)</label>
-                        <input type="number" step="0.1" id="ancho_rollo" name="ancho_rollo"
-                               value="{{ ancho_rollo or 134.0 }}" min="1" placeholder="ej. 134"
-                               oninput="calcularEnVivo()">
-                        <small>Puedes introducir cualquier ancho. Por defecto: 134 cm (o 100 cm).</small>
+                    <div class="param-item">
+                        <label for="alto">Alto (cm)</label>
+                        <input type="number" step="1" min="0" id="alto" name="alto"
+                               value="{{ alto or '' }}" placeholder="200" oninput="calcularEnVivo()">
                     </div>
 
-                    <div class="form-group">
+                    <div class="param-item">
+                        <label for="cantidad">Cantidad (piezas)</label>
+                        <input type="number" step="1" min="1" id="cantidad" name="cantidad"
+                               value="{{ cantidad or 1 }}" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="ancho_rollo">Ancho rollo (cm)</label>
+                        <input type="number" step="0.1" min="1" id="ancho_rollo" name="ancho_rollo"
+                               value="{{ ancho_rollo or 134.0 }}" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item full-width">
                         <label for="material">Material</label>
                         <select id="material" name="material" onchange="onMaterialChange()">
                             {% for key, mat in materiales.items() %}
-                                <option value="{{ key }}" data-impresion="{{ mat.impresion }}" data-merma="{{ mat.merma }}" {% if material == key %}selected{% endif %}>{{ mat.nombre }}</option>
+                                <option value="{{ key }}"
+                                        data-impresion="{{ mat.impresion }}"
+                                        data-merma="{{ mat.merma }}"
+                                        {% if material == key %}selected{% endif %}>{{ mat.nombre }}</option>
                             {% endfor %}
                         </select>
                     </div>
 
-                    <div class="form-grid-2">
-                        <div class="form-group">
-                            <label for="precio_impresion">Precio impresión ($/m²)</label>
-                            <div class="input-suffix" data-suffix="$/m²">
-                                <input type="number" step="0.01" min="0" id="precio_impresion" name="precio_impresion"
-                                       value="{{ precio_impresion if precio_impresion is not none else 10 }}"
-                                       oninput="calcularEnVivo()">
-                            </div>
-                            <small>Se autocompleta al elegir material. Editable.</small>
-                        </div>
-                        <div class="form-group">
-                            <label for="precio_merma">Precio merma ($/m²)</label>
-                            <div class="input-suffix" data-suffix="$/m²">
-                                <input type="number" step="0.01" min="0" id="precio_merma" name="precio_merma"
-                                       value="{{ precio_merma if precio_merma is not none else 4 }}"
-                                       oninput="calcularEnVivo()">
-                            </div>
-                            <small>Se autocompleta al elegir material. Editable.</small>
-                        </div>
+                    <div class="param-item">
+                        <label for="precio_impresion">Precio impresión ($/m²)</label>
+                        <input type="number" step="0.01" min="0" id="precio_impresion" name="precio_impresion"
+                               value="{{ precio_impresion if precio_impresion is not none else 10 }}"
+                               oninput="calcularEnVivo()">
                     </div>
 
-                    <div class="checkbox-group">
-                        <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (intercambiar ancho/alto)</label>
-                    </div>
-                    <div class="file-upload-area" onclick="document.getElementById('fileInput').click()">
-                        <i class="fas fa-cloud-upload-alt" style="font-size:20px; color:#8e8e93;"></i>
-                        <p style="color:#8e8e93; margin:4px 0;">Subir imagen/PDF para extraer medidas (opcional)</p>
-                        <input type="file" id="fileInput" accept=".pdf,.jpg,.png" onchange="handleFileUpload(event)">
-                        <span class="file-name" id="fileName">Ningún archivo</span>
+                    <div class="param-item">
+                        <label for="precio_merma">Precio merma ($/m²)</label>
+                        <input type="number" step="0.01" min="0" id="precio_merma" name="precio_merma"
+                               value="{{ precio_merma if precio_merma is not none else 4 }}"
+                               oninput="calcularEnVivo()">
                     </div>
                 </div>
 
-                <div class="form-section">
-                    <h4>⚙️ Acciones</h4>
-                    <div class="btn-group">
-                        <button type="button" class="btn btn-primary" onclick="calcularEnVivo()"><i class="fas fa-calculator"></i> Calcular</button>
-                        <button type="button" class="btn btn-outline" onclick="limpiarCampos()"><i class="fas fa-undo"></i> Limpiar</button>
-                        <button type="button" class="btn btn-outline" onclick="guardarFavorito()"><i class="fas fa-star"></i> Guardar favorito</button>
-                    </div>
+                <div class="cart-params-checks">
+                    <label>
+                        <input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()">
+                        Girar 90° (intercambiar ancho/alto)
+                    </label>
+                </div>
+
+                <div class="cart-params-actions">
+                    <button type="button" class="cart-btn" onclick="limpiarCampos()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Limpiar campos
+                    </button>
                 </div>
             </form>
         </div>
+    </div>
 
-        <!-- RESULTADOS Y SIMULACIÓN -->
-        <div class="calc-result">
-            <div class="form-section">
-                <h4>Resultado</h4>
-                <div id="resultDisplay" class="result-box">
-                    {% if resultado %}
-                        {{ resultado|safe }}
-                    {% else %}
-                        <p style="color:#8e8e93;">Introduce las dimensiones y haz clic en "Calcular".</p>
-                    {% endif %}
-                </div>
-                <div id="errorDisplay" style="color:#991b1b; background:#fde8e5; padding:10px 16px; border-radius:8px; border-left:4px solid #dc2626; display:none; margin-bottom:12px;"></div>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="btn btn-outline" onclick="exportPDF()"><i class="fas fa-file-pdf"></i> Exportar PDF</button>
-                </div>
+    <!-- ============================================================
+         SIMULACIÓN
+         ============================================================ -->
+    <div class="cart-sim-card">
+        <div class="card-header-row">
+            <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                Simulación en el rollo
+            </h4>
+        </div>
+
+        <div class="sim-layout">
+            <div class="cart-canvas-wrapper">
+                <canvas id="simCanvas" width="800" height="400"></canvas>
             </div>
 
-            <div class="form-section">
-                <h4>Simulación en el rollo</h4>
-                <div class="canvas-wrapper">
-                    <canvas id="simCanvas" width="600" height="300"></canvas>
+            <div class="cart-sim-sidebar">
+
+                <div class="sim-info-box">
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"></path>
+                            </svg>
+                            Material
+                        </span>
+                        <span class="sim-info-value" id="simMaterial">—</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Orientación
+                        </span>
+                        <span class="sim-info-value" id="simOrientacion">—</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            Filas usadas
+                        </span>
+                        <span class="sim-info-value" id="simFilas">—</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            Distribución
+                        </span>
+                        <span class="sim-info-value" id="simDistribucion">—</span>
+                    </div>
                 </div>
+
+                <div class="sim-info-highlight">
+                    <span class="sim-info-label">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Rollo consumido
+                    </span>
+                    <span class="sim-info-value" id="simAreaOcupada">—</span>
+                </div>
+
+                <!-- Desglose de filas -->
+                <div class="cart-filas-summary" id="simFilasBox">
+                    <div class="filas-title">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Desglose de filas
+                    </div>
+                    <div class="filas-row highlight">
+                        <span class="filas-lbl">Filas totales</span>
+                        <span class="filas-val" id="filasTotal">—</span>
+                    </div>
+                    <div class="filas-row">
+                        <span class="filas-lbl">Filas completas</span>
+                        <span class="filas-val" id="filasCompletas">—</span>
+                    </div>
+                    <div class="filas-row">
+                        <span class="filas-lbl">Piezas por fila</span>
+                        <span class="filas-val" id="filasPiezasPorFila">—</span>
+                    </div>
+                    <div class="filas-row">
+                        <span class="filas-lbl">Última fila (parcial)</span>
+                        <span class="filas-val" id="filasUltima">—</span>
+                    </div>
+                </div>
+
+                <div class="cart-zoom-controls">
+                    <div class="zoom-row">
+                        <button type="button" class="zoom-btn" onclick="zoomIn()" title="Acercar">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="zoom-btn" onclick="zoomOut()" title="Alejar">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="zoom-btn" onclick="resetZoom()" title="Restablecer zoom">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="zoom-slider-row">
+                        <input type="range" id="slider_zoom" min="0.1" max="20" step="0.1" value="1" oninput="updateZoom(this.value)">
+                        <span class="zoom-label" id="zoomLabel">1.0x</span>
+                    </div>
+                    <button type="button" class="zoom-btn export" onclick="exportImage()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Exportar PNG
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
 
-<!-- PANEL DE HISTORIAL -->
-<div class="history-panel" id="historyPanel">
-    <h3>
-        📋 Historial
-        <button class="close-btn" onclick="toggleHistory()">✕</button>
-    </h3>
-    <div id="historyList"></div>
-    <button class="btn btn-outline" onclick="limpiarHistorial()" style="width:100%; margin-top:12px;">Limpiar historial</button>
-</div>
-
-<!-- PANEL DE FAVORITOS -->
-<div class="modal-overlay" id="favoritosModal">
-    <div class="modal-box">
+<!-- ============================================
+     PANEL DE HISTORIAL
+     ============================================ -->
+<div class="cart-history-panel" id="historyPanel">
+    <div class="history-header">
         <h3>
-            ⭐ Favoritos
-            <button class="close-modal" onclick="toggleFavoritos()">✕</button>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Historial
         </h3>
-        <div id="favoritosList"></div>
-        <button class="btn btn-outline" onclick="toggleFavoritos()" style="margin-top:12px; width:100%;">Cerrar</button>
+        <button class="history-close" onclick="toggleHistory()">×</button>
     </div>
+    <div id="historyList">
+        <p class="history-empty">No hay cálculos guardados aún.</p>
+    </div>
+    <p class="history-footer">Haz clic en un cálculo para cargarlo de nuevo.</p>
 </div>
 
-<!-- MODAL PARA GUARDAR FAVORITO -->
-<div class="modal-overlay" id="favoritoGuardarModal">
-    <div class="modal-box">
-        <h3>
-            ⭐ Guardar favorito
-            <button class="close-modal" onclick="cerrarGuardarFavorito()">✕</button>
-        </h3>
-        <p style="color:#8e8e93; font-size:14px;">Pon un nombre para esta configuración:</p>
-        <input type="text" id="favoritoNombre" placeholder="Ej. Cartel 100x200 cm">
-        <button class="btn btn-primary" style="width:100%;" onclick="guardarFavoritoEnviar()">Guardar</button>
+<!-- ============================================
+     MODAL: GUARDAR FAVORITO
+     ============================================ -->
+<div class="cart-modal-overlay" id="favoriteModal">
+    <div class="cart-modal-box">
+        <div class="modal-header-row">
+            <h3>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Guardar como favorito
+            </h3>
+            <button class="modal-close" onclick="closeFavoriteModal()">×</button>
+        </div>
+        <p class="modal-desc">Pon un nombre para identificar esta configuración:</p>
+        <input type="text" id="favoriteName" placeholder="Ej. Cartel 100x200 cm">
+        <button type="button" class="cart-btn cart-btn-primary" style="width:100%; justify-content:center;" onclick="saveFavorite()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Guardar
+        </button>
     </div>
 </div>
 
@@ -437,18 +1491,246 @@
 {% block extra_js %}
 <script>
     // ==========================================
-    // VARIABLES
+    // PDF.JS WORKER
     // ==========================================
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
+
+    // ==========================================
+    // VARIABLES GLOBALES
+    // ==========================================
+    let currentScale = 1.0;
+    let offsetX = 0, offsetY = 0;
+    let isDragging = false;
+    let dragStartX, dragStartY;
+
+    // Estado de la simulación actual
+    let simData = {
+        anchoCm: 0, altoCm: 0, material: 'Vinilo',
+        areaM2: 0, mermaM2: 0, costoTotal: 0,
+        costoImpresion: 0, costoMerma: 0,
+        girar: false, cantidad: 1, anchoRollo: 134,
+        cols: 0, filas: 0, orientacion: 'normal',
+        anchoEfectivo: 0, altoEfectivo: 0,
+        precioImpresion: 10, precioMerma: 4
+    };
+
+    // Historial y favoritos (localStorage)
     let history = JSON.parse(localStorage.getItem('carteles_history')) || [];
     let favorites = JSON.parse(localStorage.getItem('carteles_favorites')) || [];
     let historyIdCounter = history.length ? Math.max(...history.map(h => h.id)) + 1 : 1;
     let favoriteIdCounter = favorites.length ? Math.max(...favorites.map(f => f.id)) + 1 : 1;
 
-    // Defaults de precios por material (vienen del backend)
+    // Defaults de materiales (vienen del backend)
     const MATERIALES_DEFAULTS = {{ materiales|tojson }};
 
     // ==========================================
-    // AUTOCOMPLETAR PRECIOS AL CAMBIAR MATERIAL
+    // HELPERS
+    // ==========================================
+    function resetSimData() {
+        simData = {
+            anchoCm: 0, altoCm: 0, material: 'Vinilo',
+            areaM2: 0, mermaM2: 0, costoTotal: 0,
+            costoImpresion: 0, costoMerma: 0,
+            girar: false, cantidad: 1, anchoRollo: 134,
+            cols: 0, filas: 0, orientacion: 'normal',
+            anchoEfectivo: 0, altoEfectivo: 0,
+            precioImpresion: 10, precioMerma: 4
+        };
+    }
+
+    function sanitizeServerHTML(html) {
+        if (!html) return html;
+        return html
+            .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+            .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+            .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
+            .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
+            .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
+            .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+            .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
+            .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')
+            .replace(/[\u{2600}-\u{27BF}]/gu, '')
+            .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+            .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
+            .replace(/[\u{2B00}-\u{2BFF}]/gu, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    // ==========================================
+    // CUSTOM SELECT
+    // ==========================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `<span class="cs-value"></span><svg class="cs-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '— Seleccionar —';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions() {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const opts = Array.from(selectEl.options);
+            if (opts.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin opciones';
+                optionsContainer.appendChild(empty);
+                return;
+            }
+            opts.forEach((opt, idx) => {
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(320, menu.scrollHeight || 180);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 200) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            renderOptions();
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(-1); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (wrap.classList.contains('open')) selectHighlighted(); else open(); }
+            else if (e.key === 'Escape') { if (wrap.classList.contains('open')) { e.preventDefault(); close(); } }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        selectEl._csRefresh = updateValue;
+        updateValue();
+    }
+
+    function refreshCustomSelect(selectEl) {
+        if (selectEl && typeof selectEl._csRefresh === 'function') {
+            selectEl._csRefresh();
+        }
+    }
+
+    // ==========================================
+    // MATERIAL: AUTOCOMPLETAR PRECIOS
     // ==========================================
     function onMaterialChange() {
         const select = document.getElementById('material');
@@ -461,28 +1743,210 @@
     }
 
     // ==========================================
-    // CÁLCULO EN VIVO (AJAX)
+    // CONFIG ACTUAL
+    // ==========================================
+    function getCurrentConfig() {
+        return {
+            ancho: document.getElementById('ancho').value || '',
+            alto: document.getElementById('alto').value || '',
+            cantidad: document.getElementById('cantidad').value || '1',
+            material: document.getElementById('material').value,
+            ancho_rollo: document.getElementById('ancho_rollo').value || '134.0',
+            precio_impresion: document.getElementById('precio_impresion').value || '10',
+            precio_merma: document.getElementById('precio_merma').value || '4',
+            girar: document.getElementById('girar').checked ? '1' : '0'
+        };
+    }
+
+    function loadConfig(config) {
+        document.getElementById('ancho').value = config.ancho || '';
+        document.getElementById('alto').value = config.alto || '';
+        document.getElementById('cantidad').value = config.cantidad || '1';
+        document.getElementById('ancho_rollo').value = config.ancho_rollo || '134.0';
+        document.getElementById('material').value = config.material || 'Vinilo';
+        refreshCustomSelect(document.getElementById('material'));
+        if (config.precio_impresion) document.getElementById('precio_impresion').value = config.precio_impresion;
+        if (config.precio_merma) document.getElementById('precio_merma').value = config.precio_merma;
+        document.getElementById('girar').checked = config.girar === '1';
+        calcularEnVivo();
+    }
+
+    // ==========================================
+    // DESGLOSE DE FILAS
+    // ==========================================
+    function computeFilasInfo(data) {
+        if (!data) return null;
+        const cols = data.cols || 0;
+        const filas = data.filas || 0;
+        const cantidad = data.cantidad || 0;
+        if (cols <= 0 || filas <= 0 || cantidad <= 0) return null;
+
+        const piezasPorFila = cols;
+        const filasCompletas = Math.floor(cantidad / piezasPorFila);
+        const piezasUltimaFila = cantidad - filasCompletas * piezasPorFila;
+        const ultimaEsParcial = piezasUltimaFila > 0 && piezasUltimaFila < piezasPorFila;
+
+        return {
+            cantidad,
+            filasTotal: filas,
+            filasCompletas,
+            piezasPorFila,
+            piezasUltimaFila,
+            ultimaEsParcial
+        };
+    }
+
+    function actualizarFilasUI(info) {
+        const box = document.getElementById('simFilasBox');
+        if (!box) return;
+        if (!info || info.filasTotal <= 1) {
+            box.classList.remove('visible');
+            return;
+        }
+        box.classList.add('visible');
+        document.getElementById('filasTotal').textContent = info.filasTotal;
+        document.getElementById('filasCompletas').textContent = info.filasCompletas;
+        document.getElementById('filasPiezasPorFila').textContent = info.piezasPorFila;
+        document.getElementById('filasUltima').textContent =
+            info.piezasUltimaFila > 0 ? info.piezasUltimaFila + ' pz' : '—';
+    }
+
+    // ==========================================
+    // ACTUALIZAR KPIs
+    // ==========================================
+    function actualizarKPIs(data) {
+        if (!data) data = simData;
+
+        const cols = data.cols || 0;
+        const filas = data.filas || 0;
+        const cantidad = data.cantidad || 0;
+        const areaM2 = data.areaM2 || 0;
+        const mermaM2 = data.mermaM2 || 0;
+        const costoTotal = data.costoTotal || 0;
+        const orientacion = data.orientacion || 'normal';
+        const material = data.material || '—';
+        const precioImpresion = data.precioImpresion || 0;
+
+        const kpiDistribucion = document.getElementById('kpiDistribucion');
+        const kpiOrientacion = document.getElementById('kpiOrientacion');
+        const kpiPiezas = document.getElementById('kpiPiezas');
+        const kpiFilas = document.getElementById('kpiFilas');
+        const kpiArea = document.getElementById('kpiArea');
+        const kpiMerma = document.getElementById('kpiMerma');
+        const kpiCosto = document.getElementById('kpiCosto');
+        const kpiPrecio = document.getElementById('kpiPrecio');
+
+        if (cols > 0 && filas > 0) {
+            kpiDistribucion.textContent = `${cols}×${filas}`;
+            kpiOrientacion.textContent = orientacion;
+        } else {
+            kpiDistribucion.textContent = '—';
+            kpiOrientacion.textContent = '—';
+        }
+
+        const filasInfo = computeFilasInfo(data);
+        if (cantidad > 0) {
+            kpiPiezas.textContent = cantidad;
+            if (filasInfo && filasInfo.filasTotal > 1) {
+                kpiFilas.textContent = `${filasInfo.filasTotal} filas · ${filasInfo.piezasPorFila}/fila`;
+            } else if (filas > 0) {
+                kpiFilas.textContent = `${filas} fila${filas !== 1 ? 's' : ''}`;
+            } else {
+                kpiFilas.textContent = '—';
+            }
+        } else {
+            kpiPiezas.textContent = '—';
+            kpiFilas.textContent = '—';
+        }
+
+        if (areaM2 > 0) {
+            kpiArea.textContent = `${areaM2.toFixed(3)} m²`;
+            kpiMerma.textContent = mermaM2 > 0 ? `Merma: ${mermaM2.toFixed(3)} m²` : 'Sin merma';
+        } else {
+            kpiArea.textContent = '—';
+            kpiMerma.textContent = '—';
+        }
+
+        if (costoTotal > 0) {
+            kpiCosto.textContent = `$${costoTotal.toFixed(2)}`;
+            kpiPrecio.textContent = `$${precioImpresion.toFixed(2)}/m² impresión`;
+        } else {
+            kpiCosto.textContent = '—';
+            kpiPrecio.textContent = '—';
+        }
+
+        const simMaterial = document.getElementById('simMaterial');
+        const simOrientacion = document.getElementById('simOrientacion');
+        const simFilas = document.getElementById('simFilas');
+        const simDistribucion = document.getElementById('simDistribucion');
+        const simAreaOcupada = document.getElementById('simAreaOcupada');
+
+        if (simMaterial) simMaterial.textContent = material;
+        if (simOrientacion) simOrientacion.textContent = orientacion;
+        if (simFilas) simFilas.textContent = filas > 0 ? filas : '—';
+        if (simDistribucion) simDistribucion.textContent = (cols > 0 && filas > 0) ? `${cols}×${filas}` : '—';
+        if (simAreaOcupada) simAreaOcupada.textContent = areaM2 > 0 ? `${areaM2.toFixed(3)} m²` : '—';
+
+        actualizarFilasUI(filasInfo);
+    }
+
+    // ==========================================
+    // CÁLCULO EN VIVO (con validación local)
     // ==========================================
     function calcularEnVivo() {
         const form = document.getElementById('calcForm');
         const formData = new FormData(form);
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorText = document.getElementById('errorText');
 
-        // Validación mínima antes de llamar
         const ancho = parseFloat(document.getElementById('ancho').value);
         const alto = parseFloat(document.getElementById('alto').value);
-        const ancho_rollo = parseFloat(document.getElementById('ancho_rollo').value);
+        const anchoRollo = parseFloat(document.getElementById('ancho_rollo').value);
+        const girar = document.getElementById('girar').checked;
 
+        // --- Validaciones locales ---
         if (!ancho || !alto || ancho <= 0 || alto <= 0) {
-            document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce ancho y alto válidos para ver el resultado.</p>';
-            document.getElementById('errorDisplay').style.display = 'none';
-            drawSimulation(null);
+            document.getElementById('resultDisplay').innerHTML = '<p>Introduce ancho y alto válidos para ver el resultado.</p>';
+            document.getElementById('detallesDisplay').innerHTML = '<p>Los detalles del cálculo aparecerán aquí.</p>';
+            errorDisplay.classList.remove('visible');
+            resetSimData();
+            actualizarKPIs(simData);
+            drawSimulation();
             return;
         }
-        if (!ancho_rollo || ancho_rollo <= 0) {
-            document.getElementById('errorDisplay').style.display = 'block';
-            document.getElementById('errorDisplay').textContent = '❌ El ancho del rollo debe ser mayor a 0.';
+        if (!anchoRollo || anchoRollo <= 0) {
+            errorDisplay.classList.add('visible');
+            errorText.textContent = 'El ancho del rollo debe ser mayor a 0.';
             return;
         }
+
+        const cantidadRaw = document.getElementById('cantidad').value;
+        const cantidad = parseInt(cantidadRaw, 10);
+        if (!cantidadRaw || isNaN(cantidad) || cantidad < 1) {
+            errorDisplay.classList.add('visible');
+            errorText.textContent = 'La cantidad debe ser un número entero mayor o igual a 1.';
+            return;
+        }
+
+        // Validar que la pieza cabe en el rollo (evita dibujar fuera)
+        if (cantidad === 1) {
+            const anchoEfectivo = girar ? alto : ancho;
+            if (anchoEfectivo > anchoRollo) {
+                errorDisplay.classList.add('visible');
+                errorText.textContent = `El ancho de la pieza (${anchoEfectivo.toFixed(1)} cm) no cabe en el rollo (${anchoRollo.toFixed(1)} cm).`;
+                return;
+            }
+        } else {
+            if (Math.min(ancho, alto) > anchoRollo) {
+                errorDisplay.classList.add('visible');
+                errorText.textContent = `Ni el ancho (${ancho.toFixed(1)} cm) ni el alto (${alto.toFixed(1)} cm) caben en el rollo (${anchoRollo.toFixed(1)} cm).`;
+                return;
+            }
+        }
+
+        // Loading state
+        const resultBox = document.getElementById('resultDisplay');
+        resultBox.classList.add('loading');
 
         fetch("{{ url_for('carteles.calcular_ajax') }}", {
             method: 'POST',
@@ -490,42 +1954,125 @@
         })
         .then(response => response.json())
         .then(data => {
+            resultBox.classList.remove('loading');
             if (data.error) {
-                document.getElementById('errorDisplay').style.display = 'block';
-                document.getElementById('errorDisplay').textContent = '❌ ' + data.error;
-                document.getElementById('resultDisplay').innerHTML = '';
-                drawSimulation(null);
+                errorDisplay.classList.add('visible');
+                errorText.textContent = sanitizeServerHTML(data.error || 'Error desconocido.');
+                document.getElementById('resultDisplay').innerHTML = '<p>No se pudo calcular. Revisa el error abajo.</p>';
+                document.getElementById('detallesDisplay').innerHTML = '';
+                resetSimData();
+                actualizarKPIs(simData);
+                drawSimulation();
             } else {
-                document.getElementById('errorDisplay').style.display = 'none';
-                document.getElementById('resultDisplay').innerHTML = data.resultado;
-                const simData = data.simData;
-                drawSimulation(simData);
+                errorDisplay.classList.remove('visible');
+                document.getElementById('resultDisplay').innerHTML = sanitizeServerHTML(data.resultado);
+                document.getElementById('detallesDisplay').innerHTML = buildDetalles(data.simData);
+                simData = data.simData;
+                actualizarKPIs(simData);
+                drawSimulation();
 
-                const config = {
-                    ancho: document.getElementById('ancho').value,
-                    alto: document.getElementById('alto').value,
-                    cantidad: document.getElementById('cantidad').value,
-                    material: document.getElementById('material').value,
-                    ancho_rollo: document.getElementById('ancho_rollo').value,
-                    precio_impresion: document.getElementById('precio_impresion').value,
-                    precio_merma: document.getElementById('precio_merma').value,
-                    girar: document.getElementById('girar').checked ? '1' : '0'
-                };
-                const resultText = data.resultado.replace(/<[^>]*>/g, '').substring(0, 60) + '...';
-                guardarHistorial(config, resultText);
+                const config = getCurrentConfig();
+                const resultText = data.resultado.replace(/<[^>]*>/g, '').substring(0, 60).trim() + '...';
+                saveToHistory(config, resultText);
             }
         })
         .catch(error => {
+            resultBox.classList.remove('loading');
             console.error('Error:', error);
-            document.getElementById('errorDisplay').style.display = 'block';
-            document.getElementById('errorDisplay').textContent = '❌ Error de conexión.';
+            errorDisplay.classList.add('visible');
+            errorText.textContent = 'Error de conexión con el servidor.';
         });
+    }
+
+    // Detalles ampliados construidos en el cliente
+    function buildDetalles(d) {
+        if (!d) return '<p>Sin datos.</p>';
+        const filasInfo = computeFilasInfo(d);
+        let html = '';
+        html += `<strong>Dimensiones:</strong> ${d.anchoCm}×${d.altoCm} cm<br>`;
+        if (d.anchoEfectivo && d.altoEfectivo && (d.anchoEfectivo !== d.anchoCm || d.altoEfectivo !== d.altoCm)) {
+            html += `<strong>Pieza efectiva:</strong> ${d.anchoEfectivo}×${d.altoEfectivo} cm (orientación ${d.orientacion})<br>`;
+        }
+        html += `<strong>Distribución:</strong> ${d.cols} col × ${d.filas} fila${d.filas !== 1 ? 's' : ''}<br>`;
+        html += `<strong>Cantidad:</strong> ${d.cantidad} pieza${d.cantidad !== 1 ? 's' : ''}<br>`;
+        if (filasInfo && filasInfo.filasTotal > 1) {
+            html += `<strong>Desglose:</strong> ${filasInfo.filasCompletas} fila${filasInfo.filasCompletas !== 1 ? 's' : ''} completa${filasInfo.filasCompletas !== 1 ? 's' : ''} de ${filasInfo.piezasPorFila} pz`;
+            if (filasInfo.piezasUltimaFila > 0) {
+                html += ` + última fila con ${filasInfo.piezasUltimaFila} pz`;
+            }
+            html += `<br>`;
+        }
+        html += `<strong>Rollo:</strong> ${d.anchoRollo} cm de ancho<br>`;
+        html += `<strong>Material:</strong> ${d.material}<br>`;
+        html += `<strong>Área impresa:</strong> ${d.areaM2.toFixed(4)} m²<br>`;
+        html += `<strong>Merma:</strong> ${d.mermaM2.toFixed(4)} m²<br>`;
+        html += `<strong>Costo impresión:</strong> $${d.costoImpresion.toFixed(2)} ($${d.precioImpresion.toFixed(2)}/m²)<br>`;
+        html += `<strong>Costo merma:</strong> $${d.costoMerma.toFixed(2)} ($${d.precioMerma.toFixed(2)}/m²)<br>`;
+        html += `<strong>Costo total:</strong> $${d.costoTotal.toFixed(2)}`;
+        return html;
+    }
+
+    // ==========================================
+    // DIBUJAR MINI-FILAS
+    // ==========================================
+    function drawMiniFilas(ctx, info, x, y, width, height) {
+        const n = info.filasTotal;
+        const gap = 8;
+        const eachW = (width - gap * (n - 1)) / n;
+
+        for (let i = 0; i < n; i++) {
+            const px = x + i * (eachW + gap);
+            const isLast = i === n - 1;
+            const isPartial = isLast && info.ultimaEsParcial;
+
+            ctx.fillStyle = isPartial ? '#fef3c7' : '#ecfdf5';
+            ctx.fillRect(px, y, eachW, height);
+
+            ctx.strokeStyle = isPartial ? '#f59e0b' : '#10b981';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px, y, eachW, height);
+
+            ctx.fillStyle = isPartial ? '#78350f' : '#065f46';
+            ctx.font = 'bold 11px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`F${i + 1}`, px + eachW / 2, y + 16);
+
+            const count = isPartial ? info.piezasUltimaFila : info.piezasPorFila;
+            ctx.font = 'bold 15px Montserrat, sans-serif';
+            ctx.fillText(String(count), px + eachW / 2, y + 36);
+
+            ctx.font = '9px Inter, sans-serif';
+            ctx.fillStyle = isPartial ? '#92400e' : '#047857';
+            ctx.fillText('pz', px + eachW / 2, y + 52);
+        }
+    }
+
+    function drawFilasSummaryBadge(ctx, info, x, y, width, height) {
+        ctx.fillStyle = '#f0f9ff';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = '#bae6fd';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, width, height);
+
+        ctx.fillStyle = '#075985';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`Se necesitan ${info.filasTotal} filas en el rollo`, x + width / 2, y + height / 2 - 8);
+
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = '#0369a1';
+        ctx.fillText(
+            `${info.filasCompletas} completa${info.filasCompletas !== 1 ? 's' : ''} de ${info.piezasPorFila} pz · última con ${info.piezasUltimaFila} pz`,
+            x + width / 2, y + height / 2 + 14
+        );
     }
 
     // ==========================================
     // DIBUJAR SIMULACIÓN
     // ==========================================
-    function drawSimulation(simData) {
+    function drawSimulation() {
         const canvas = document.getElementById('simCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -534,116 +2081,269 @@
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = '#f8f6f4';
         ctx.fillRect(0, 0, w, h);
+        ctx.textBaseline = 'alphabetic';
 
-        if (!simData || !simData.anchoCm || !simData.altoCm) {
+        const data = simData;
+        const cols = data.cols || 0;
+        const filas = data.filas || 0;
+        const cantidad = data.cantidad || 0;
+        const anchoCm = data.anchoEfectivo || data.anchoCm || 0;
+        const altoCm = data.altoEfectivo || data.altoCm || 0;
+        const anchoRollo = data.anchoRollo || 134;
+
+        const filasInfo = computeFilasInfo(data);
+
+        // Franja superior de mini-filas
+        let topOffset = 0;
+        const margin = 20;
+        const miniStripH = 66;
+        const miniStripGap = 12;
+
+        if (filasInfo && filasInfo.filasTotal > 1) {
+            if (filasInfo.filasTotal <= 8) {
+                drawMiniFilas(ctx, filasInfo, margin, 14, w - margin * 2, miniStripH);
+            } else {
+                drawFilasSummaryBadge(ctx, filasInfo, margin, 14, w - margin * 2, miniStripH);
+            }
+            topOffset = 14 + miniStripH + miniStripGap;
+        }
+
+        if (cols === 0 || filas === 0 || anchoCm === 0 || altoCm === 0) {
             ctx.fillStyle = '#8e8e93';
-            ctx.font = '16px Inter, sans-serif';
+            ctx.font = '15px Inter, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Calcula para ver la simulación', w/2, h/2);
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Introduce los datos para ver la simulación', w / 2, topOffset + (h - topOffset) / 2);
+            ctx.textBaseline = 'alphabetic';
             return;
         }
 
-        const cols = simData.cols || 1;
-        const filas = simData.filas || 1;
-        const anchoCm = simData.anchoEfectivo || simData.anchoCm;
-        const altoCm = simData.altoEfectivo || simData.altoCm;
-        const anchoRollo = simData.anchoRollo || 134;
+        // Área para el rollo
+        const areaTop = topOffset + margin;
+        const areaBottom = h - margin;
+        const areaLeft = margin;
+        const areaRight = w - margin;
+        const areaW = areaRight - areaLeft;
+        const areaH = areaBottom - areaTop;
 
-        // Escala proporcional
-        const maxAnchoPx = w * 0.9;
-        const maxAltoPx = h * 0.9;
-        const anchoPx = anchoCm * 3;
-        const altoPx = altoCm * 3;
-        const escalaX = Math.min(1, maxAnchoPx / (cols * anchoPx));
-        const escalaY = Math.min(1, maxAltoPx / (filas * altoPx));
-        const escala = Math.min(escalaX, escalaY, 1);
+        // Rollo en centímetros reales
+        const gapCm = 6.5; // gap final fijo carteles
+        const papelAncho = anchoRollo;
+        const altoUsado = filas * altoCm;
+        const papelAlto = Math.max(altoUsado + gapCm, 1);
 
-        const anchoFinal = anchoPx * escala;
-        const altoFinal = altoPx * escala;
-        const totalAncho = cols * anchoFinal;
-        const totalAlto = filas * altoFinal;
-        const offsetX = (w - totalAncho) / 2;
-        const offsetY = (h - totalAlto) / 2;
+        const escalaBase = Math.min(areaW / papelAncho, areaH / papelAlto) * 0.9;
+        const escala = escalaBase * currentScale;
 
-        // Fondo rollo
-        const anchoRolloPx = Math.min(w * 0.95, anchoRollo * 3 * escala);
-        const offsetRolloX = (w - anchoRolloPx) / 2;
+        const anchoPx = anchoCm * escala;
+        const altoPx = altoCm * escala;
+        const totalWidth = cols * anchoPx;
+        const totalHeight = filas * altoPx;
+        const gapPx = gapCm * escala;
+
+        const baseX = areaLeft + (areaW - totalWidth) / 2 + offsetX;
+        const baseY = areaTop + (areaH - (totalHeight + gapPx)) / 2 + offsetY;
+
+        ctx.save();
+
+        // Fondo del rollo (incluye el gap final)
+        const rolloPx = anchoRollo * escala;
+        const rolloX = areaLeft + (areaW - rolloPx) / 2 + offsetX;
+        const rolloTop = baseY - 8;
+        const rolloBottom = totalHeight + gapPx + 16;
+
         ctx.fillStyle = 'rgba(0,0,0,0.03)';
-        ctx.fillRect(offsetRolloX, offsetY - 10, anchoRolloPx, totalAlto + 20);
+        ctx.fillRect(rolloX, rolloTop, rolloPx, rolloBottom);
         ctx.strokeStyle = '#d2d2d7';
         ctx.setLineDash([4, 3]);
-        ctx.strokeRect(offsetRolloX, offsetY - 10, anchoRolloPx, totalAlto + 20);
+        ctx.lineWidth = 1;
+        ctx.strokeRect(rolloX, rolloTop, rolloPx, rolloBottom);
         ctx.setLineDash([]);
 
         // Piezas
         for (let r = 0; r < filas; r++) {
+            // ¿Cuántas piezas hay realmente en esta fila?
+            const piezasEnFila = (r < filas - 1)
+                ? cols
+                : (cantidad - (filas - 1) * cols);
+
             for (let c = 0; c < cols; c++) {
-                const x = offsetX + c * anchoFinal;
-                const y = offsetY + r * altoFinal;
+                if (c >= piezasEnFila) continue;
+
+                const x = baseX + c * anchoPx;
+                const y = baseY + r * altoPx;
+
                 ctx.fillStyle = '#bae6fd';
-                ctx.fillRect(x, y, anchoFinal, altoFinal);
+                ctx.fillRect(x, y, anchoPx, altoPx);
                 ctx.strokeStyle = '#0ea5e9';
                 ctx.lineWidth = 1;
-                ctx.strokeRect(x, y, anchoFinal, altoFinal);
-                ctx.fillStyle = '#1c1c1e';
-                ctx.font = '10px Inter, sans-serif';
-                ctx.textAlign = 'center';
-                ctx.fillText(`${c+1}×${r+1}`, x + anchoFinal/2, y + altoFinal/2 + 4);
+                ctx.strokeRect(x, y, anchoPx, altoPx);
+
+                if (anchoPx > 26 && altoPx > 16) {
+                    ctx.fillStyle = '#1c1c1e';
+                    ctx.font = `${Math.min(12, Math.max(8, anchoPx / 5))}px Inter, sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(`${r + 1}·${c + 1}`, x + anchoPx / 2, y + altoPx / 2);
+                    ctx.textBaseline = 'alphabetic';
+                }
             }
         }
 
-        // Etiquetas
-        ctx.fillStyle = '#1c1c1e';
-        ctx.font = 'bold 12px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText(`Distribución: ${cols}×${filas}`, 12, 22);
-        ctx.font = '11px Inter, sans-serif';
-        ctx.fillText(`Pieza: ${anchoCm}×${altoCm} cm`, 12, 40);
-        ctx.fillText(`Rollo: ${anchoRollo} cm`, 12, 56);
-
-        // Gap / merma
-        const altoGapPx = 6.5 * 3 * escala;
-        if (altoGapPx > 2) {
+        // Gap final (6.5 cm fijo, no facturado)
+        if (gapPx > 2) {
             ctx.fillStyle = 'rgba(245,158,11,0.35)';
-            ctx.fillRect(offsetX, offsetY + totalAlto, totalAncho, altoGapPx);
+            ctx.fillRect(baseX, baseY + totalHeight, totalWidth, gapPx);
             ctx.strokeStyle = '#f59e0b';
             ctx.setLineDash([3, 2]);
-            ctx.strokeRect(offsetX, offsetY + totalAlto, totalAncho, altoGapPx);
+            ctx.strokeRect(baseX, baseY + totalHeight, totalWidth, gapPx);
             ctx.setLineDash([]);
         }
+
+        // Borde exterior de las piezas
+        ctx.strokeStyle = '#1c1c1e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(baseX, baseY, totalWidth, totalHeight);
+
+        ctx.restore();
     }
 
-    // ==========================================
-    // SUBIR ARCHIVO
-    // ==========================================
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        document.getElementById('fileName').textContent = file.name;
-        alert('Las medidas se extraerán automáticamente en la versión completa.\nPor ahora, ajusta los valores manualmente.');
-    }
+    const canvasEl = document.getElementById('simCanvas');
 
     // ==========================================
-    // EXPORTAR PDF
+    // ZOOM Y PAN
     // ==========================================
+    function zoomIn() {
+        currentScale = Math.min(currentScale * 1.2, 20);
+        document.getElementById('slider_zoom').value = currentScale;
+        document.getElementById('zoomLabel').textContent = currentScale.toFixed(1) + 'x';
+        drawSimulation();
+    }
+
+    function zoomOut() {
+        currentScale = Math.max(currentScale / 1.2, 0.1);
+        document.getElementById('slider_zoom').value = currentScale;
+        document.getElementById('zoomLabel').textContent = currentScale.toFixed(1) + 'x';
+        drawSimulation();
+    }
+
+    function resetZoom() {
+        currentScale = 1.0;
+        offsetX = 0;
+        offsetY = 0;
+        document.getElementById('slider_zoom').value = 1.0;
+        document.getElementById('zoomLabel').textContent = '1.0x';
+        drawSimulation();
+    }
+
+    function updateZoom(val) {
+        currentScale = parseFloat(val);
+        document.getElementById('zoomLabel').textContent = currentScale.toFixed(1) + 'x';
+        drawSimulation();
+    }
+
+    canvasEl.addEventListener('mousedown', function(e) {
+        isDragging = true;
+        dragStartX = e.clientX - offsetX;
+        dragStartY = e.clientY - offsetY;
+        canvasEl.style.cursor = 'grabbing';
+    });
+
+    window.addEventListener('mousemove', function(e) {
+        if (!isDragging) return;
+        offsetX = e.clientX - dragStartX;
+        offsetY = e.clientY - dragStartY;
+        drawSimulation();
+    });
+
+    window.addEventListener('mouseup', function() {
+        isDragging = false;
+        canvasEl.style.cursor = 'grab';
+    });
+
+    canvasEl.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        if (e.deltaY < 0) zoomIn();
+        else zoomOut();
+    }, { passive: false });
+
+    // ==========================================
+    // EXPORTAR
+    // ==========================================
+    function exportImage() {
+        const canvas = document.getElementById('simCanvas');
+        const link = document.createElement('a');
+        link.download = 'simulacion_carteles.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+
     function exportPDF() {
         const resultDiv = document.getElementById('resultDisplay');
-        const content = resultDiv ? resultDiv.innerText : 'Sin datos';
+        const detallesDiv = document.getElementById('detallesDisplay');
+        const content = (resultDiv ? resultDiv.innerText : '') + '\n\n' + (detallesDiv ? detallesDiv.innerText : '');
         const docDefinition = {
             content: [
-                { text: 'Calculadora de Carteles - CairoStudio', style: 'header' },
+                { text: 'Calculadora de Carteles · CairoStudio', style: 'header' },
                 { text: 'Resultado del cálculo', style: 'subheader' },
-                { text: content, style: 'body' },
+                { text: content.trim() || 'Sin datos', style: 'body' },
                 { text: `Fecha: ${new Date().toLocaleString()}`, style: 'footer' }
             ],
             styles: {
                 header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
                 subheader: { fontSize: 14, bold: true, margin: [0, 10, 0, 6] },
-                body: { fontSize: 12, margin: [0, 0, 0, 10] },
-                footer: { fontSize: 10, color: '#888', margin: [0, 20, 0, 0] }
+                body: { fontSize: 11, margin: [0, 0, 0, 10] },
+                footer: { fontSize: 9, color: '#888', margin: [0, 20, 0, 0] }
             }
         };
-        pdfMake.createPdf(docDefinition).download('carteles_resultado.pdf');
+        if (typeof pdfMake !== 'undefined') {
+            pdfMake.createPdf(docDefinition).download('carteles_resultado.pdf');
+        } else {
+            alert('pdfmake no está disponible. Usa "Exportar PNG" del panel lateral.');
+        }
+    }
+
+    // ==========================================
+    // SUBIR ARCHIVO (PDF → extraer medidas)
+    // ==========================================
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = file.name;
+        fileNameEl.classList.add('has-file');
+
+        if (file.type !== 'application/pdf') {
+            alert('Solo se soporta PDF para extraer medidas automáticamente. Ajusta las medidas manualmente.');
+            return;
+        }
+
+        const fileReader = new FileReader();
+        fileReader.onload = function() {
+            const typedarray = new Uint8Array(this.result);
+            pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                pdf.getPage(1).then(function(page) {
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const widthCm = viewport.width * 0.0352778;
+                    const heightCm = viewport.height * 0.0352778;
+                    document.getElementById('ancho').value = widthCm.toFixed(1);
+                    document.getElementById('alto').value = heightCm.toFixed(1);
+                    fileNameEl.textContent = `${file.name} · ${widthCm.toFixed(1)}×${heightCm.toFixed(1)} cm`;
+                    calcularEnVivo();
+                });
+            }).catch(function(err) {
+                console.error(err);
+                alert('No se pudo leer el PDF.');
+            });
+        };
+        fileReader.readAsArrayBuffer(file);
+    }
+
+    function clearFile() {
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = 'Ningún archivo';
+        fileNameEl.classList.remove('has-file');
+        document.getElementById('fileInput').value = '';
     }
 
     // ==========================================
@@ -655,21 +2355,37 @@
         document.getElementById('cantidad').value = '1';
         document.getElementById('ancho_rollo').value = '134.0';
         document.getElementById('material').value = 'Vinilo';
-        // Reset precios a los defaults de Vinilo
+        refreshCustomSelect(document.getElementById('material'));
         const vinilo = MATERIALES_DEFAULTS['Vinilo'];
         document.getElementById('precio_impresion').value = vinilo.impresion.toFixed(2);
         document.getElementById('precio_merma').value = vinilo.merma.toFixed(2);
         document.getElementById('girar').checked = false;
-        document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce las dimensiones y haz clic en "Calcular".</p>';
-        document.getElementById('errorDisplay').style.display = 'none';
-        document.getElementById('fileName').textContent = 'Ningún archivo';
-        drawSimulation(null);
+        clearFile();
+        resetZoom();
+        document.getElementById('resultDisplay').innerHTML = '<p>Introduce las dimensiones para ver el cálculo en vivo.</p>';
+        document.getElementById('detallesDisplay').innerHTML = '<p>Los detalles del cálculo aparecerán aquí.</p>';
+        document.getElementById('errorDisplay').classList.remove('visible');
+        resetSimData();
+        actualizarKPIs(simData);
+        drawSimulation();
     }
 
     // ==========================================
-    // HISTORIAL
+    // HISTORIAL (con dedup)
     // ==========================================
-    function guardarHistorial(config, resultText) {
+    function saveToHistory(config, resultText) {
+        const last = history[0];
+        if (last) {
+            const sameConfig =
+                last.config.ancho === config.ancho &&
+                last.config.alto === config.alto &&
+                last.config.cantidad === config.cantidad &&
+                last.config.material === config.material &&
+                last.config.ancho_rollo === config.ancho_rollo &&
+                last.config.girar === config.girar;
+            if (sameConfig) return;
+        }
+
         const entry = {
             id: historyIdCounter++,
             date: new Date().toLocaleString(),
@@ -679,42 +2395,34 @@
         history.unshift(entry);
         if (history.length > 50) history.pop();
         localStorage.setItem('carteles_history', JSON.stringify(history));
-        actualizarHistorialUI();
-        actualizarContadorHistorial();
+        updateHistoryUI();
+        updateHistoryCount();
     }
 
-    function actualizarHistorialUI() {
+    function updateHistoryUI() {
         const list = document.getElementById('historyList');
         if (history.length === 0) {
-            list.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay cálculos guardados.</p>';
+            list.innerHTML = '<p class="history-empty">No hay cálculos guardados aún.</p>';
             return;
         }
         list.innerHTML = history.map(item => `
-            <div class="history-item" onclick="cargarHistorial(${item.id})">
+            <div class="cart-history-item" onclick="loadHistoryItem(${item.id})">
                 <div class="date">${item.date}</div>
                 <div class="result">${item.resultado}</div>
+                <div class="params">${item.config.ancho || '?'}×${item.config.alto || '?'} cm · ${item.config.cantidad || '1'} pz · ${item.config.material || '—'}</div>
             </div>
         `).join('');
     }
 
-    function cargarHistorial(id) {
+    function loadHistoryItem(id) {
         const item = history.find(h => h.id === id);
         if (item) {
-            const c = item.config;
-            document.getElementById('ancho').value = c.ancho || '';
-            document.getElementById('alto').value = c.alto || '';
-            document.getElementById('cantidad').value = c.cantidad || '1';
-            document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
-            document.getElementById('material').value = c.material || 'Vinilo';
-            if (c.precio_impresion) document.getElementById('precio_impresion').value = c.precio_impresion;
-            if (c.precio_merma) document.getElementById('precio_merma').value = c.precio_merma;
-            document.getElementById('girar').checked = c.girar === '1';
-            calcularEnVivo();
+            loadConfig(item.config);
             toggleHistory();
         }
     }
 
-    function actualizarContadorHistorial() {
+    function updateHistoryCount() {
         document.getElementById('historyCount').textContent = history.length;
     }
 
@@ -722,128 +2430,109 @@
         document.getElementById('historyPanel').classList.toggle('open');
     }
 
-    function limpiarHistorial() {
-        if (!confirm('¿Limpiar todo el historial?')) return;
-        history = [];
-        localStorage.setItem('carteles_history', JSON.stringify(history));
-        actualizarHistorialUI();
-        actualizarContadorHistorial();
-    }
-
     // ==========================================
     // FAVORITOS
     // ==========================================
-    function toggleFavoritos() {
-        const modal = document.getElementById('favoritosModal');
-        modal.classList.toggle('active');
-        if (modal.classList.contains('active')) {
-            actualizarFavoritosUI();
-        }
+    function openFavoriteModal() {
+        document.getElementById('favoriteModal').classList.add('active');
+        document.getElementById('favoriteName').value = '';
+        setTimeout(() => document.getElementById('favoriteName').focus(), 100);
     }
 
-    function guardarFavorito() {
-        document.getElementById('favoritoNombre').value = '';
-        document.getElementById('favoritoGuardarModal').classList.add('active');
+    function closeFavoriteModal() {
+        document.getElementById('favoriteModal').classList.remove('active');
     }
 
-    function cerrarGuardarFavorito() {
-        document.getElementById('favoritoGuardarModal').classList.remove('active');
-    }
-
-    function guardarFavoritoEnviar() {
-        const nombre = document.getElementById('favoritoNombre').value.trim();
-        if (!nombre) {
+    function saveFavorite() {
+        const name = document.getElementById('favoriteName').value.trim();
+        if (!name) {
             alert('Por favor, pon un nombre para el favorito.');
             return;
         }
-        const config = {
-            ancho: document.getElementById('ancho').value,
-            alto: document.getElementById('alto').value,
-            cantidad: document.getElementById('cantidad').value,
-            material: document.getElementById('material').value,
-            ancho_rollo: document.getElementById('ancho_rollo').value,
-            precio_impresion: document.getElementById('precio_impresion').value,
-            precio_merma: document.getElementById('precio_merma').value,
-            girar: document.getElementById('girar').checked ? '1' : '0'
-        };
+        const config = getCurrentConfig();
         const entry = {
             id: favoriteIdCounter++,
-            name: nombre,
+            name: name,
             config: JSON.parse(JSON.stringify(config))
         };
         favorites.push(entry);
         localStorage.setItem('carteles_favorites', JSON.stringify(favorites));
-        cerrarGuardarFavorito();
-        toggleFavoritos();
-        alert(`⭐ Favorito "${nombre}" guardado correctamente.`);
+        updateFavoritesUI();
+        closeFavoriteModal();
     }
 
-    function actualizarFavoritosUI() {
-        const list = document.getElementById('favoritosList');
-        if (favorites.length === 0) {
-            list.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay favoritos guardados.</p>';
-            return;
-        }
-        list.innerHTML = favorites.map(f => `
-            <div class="history-item" style="display:flex; justify-content:space-between; align-items:center;">
-                <div onclick="cargarFavorito(${f.id})">
-                    <strong>${f.name}</strong>
-                    <div style="font-size:12px; color:#8e8e93;">${f.config.ancho || '?'}×${f.config.alto || '?'} cm · ${f.config.cantidad || '1'} pieza(s)</div>
-                </div>
-                <button onclick="eliminarFavorito(${f.id})" style="background:none; border:none; color:#dc2626; cursor:pointer; font-size:16px;">✕</button>
-            </div>
-        `).join('');
+    function updateFavoritesUI() {
+        const select = document.getElementById('favoritesSelect');
+        select.innerHTML = '<option value="">— Seleccionar —</option>';
+        favorites.forEach(f => {
+            const opt = document.createElement('option');
+            opt.value = f.id;
+            opt.textContent = f.name;
+            select.appendChild(opt);
+        });
+        refreshCustomSelect(select);
     }
 
-    function cargarFavorito(id) {
-        const item = favorites.find(f => f.id === id);
+    function loadFavorite(id) {
+        if (!id) return;
+        const item = favorites.find(f => f.id == id);
         if (item) {
-            const c = item.config;
-            document.getElementById('ancho').value = c.ancho || '';
-            document.getElementById('alto').value = c.alto || '';
-            document.getElementById('cantidad').value = c.cantidad || '1';
-            document.getElementById('ancho_rollo').value = c.ancho_rollo || '134.0';
-            document.getElementById('material').value = c.material || 'Vinilo';
-            if (c.precio_impresion) document.getElementById('precio_impresion').value = c.precio_impresion;
-            if (c.precio_merma) document.getElementById('precio_merma').value = c.precio_merma;
-            document.getElementById('girar').checked = c.girar === '1';
-            calcularEnVivo();
-            toggleFavoritos();
+            loadConfig(item.config);
+            document.getElementById('favoritesSelect').value = '';
+            refreshCustomSelect(document.getElementById('favoritesSelect'));
         }
     }
 
-    function eliminarFavorito(id) {
-        if (!confirm('¿Eliminar este favorito?')) return;
-        favorites = favorites.filter(f => f.id !== id);
-        localStorage.setItem('carteles_favorites', JSON.stringify(favorites));
-        actualizarFavoritosUI();
-    }
+    // ==========================================
+    // MODALES / ESC
+    // ==========================================
+    document.querySelectorAll('.cart-modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.cart-modal-overlay').forEach(m => m.classList.remove('active'));
+            document.getElementById('historyPanel').classList.remove('open');
+        }
+    });
+
+    // ==========================================
+    // PESTAÑAS
+    // ==========================================
+    document.querySelectorAll('.cart-tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.cart-tab-btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            const tabId = this.dataset.tab;
+            document.querySelectorAll('.cart-tab-content').forEach(tc => tc.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+        });
+    });
 
     // ==========================================
     // INICIALIZACIÓN
     // ==========================================
     document.addEventListener('DOMContentLoaded', function() {
-        actualizarHistorialUI();
-        actualizarContadorHistorial();
+        initCustomSelect(document.getElementById('material'));
+        initCustomSelect(document.getElementById('favoritesSelect'));
 
-        // Dibujar simulación inicial si hay datos del POST
-        const simDataEl = document.getElementById('simData');
-        if (simDataEl) {
-            const anchoCm = parseFloat(simDataEl.dataset.ancho) || 0;
-            const altoCm = parseFloat(simDataEl.dataset.alto) || 0;
-            if (anchoCm > 0 && altoCm > 0) {
-                const data = {
-                    anchoCm: anchoCm,
-                    altoCm: altoCm,
-                    cols: parseInt(simDataEl.dataset.cols) || 1,
-                    filas: parseInt(simDataEl.dataset.filas) || 1,
-                    anchoEfectivo: parseFloat(simDataEl.dataset.anchoEfectivo) || anchoCm,
-                    altoEfectivo: parseFloat(simDataEl.dataset.altoEfectivo) || altoCm,
-                    anchoRollo: parseFloat(simDataEl.dataset.anchoRollo) || 134,
-                    orientacion: simDataEl.dataset.orientacion || 'normal'
-                };
-                drawSimulation(data);
-            }
+        updateHistoryUI();
+        updateHistoryCount();
+        updateFavoritesUI();
+        actualizarKPIs(simData);
+        drawSimulation();
+        document.getElementById('zoomLabel').textContent = '1.0x';
+
+        const resultDisplay = document.getElementById('resultDisplay');
+        if (resultDisplay) resultDisplay.innerHTML = sanitizeServerHTML(resultDisplay.innerHTML);
+
+        const anchoIni = parseFloat(document.getElementById('ancho').value);
+        const altoIni = parseFloat(document.getElementById('alto').value);
+        if (anchoIni > 0 && altoIni > 0) {
+            calcularEnVivo();
         }
     });
 </script>
