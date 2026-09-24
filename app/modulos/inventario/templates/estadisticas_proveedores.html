@@ -2,65 +2,398 @@
 
 {% block title %}Estadísticas de Proveedores · Inventario{% endblock %}
 
-{% block page_title %}📊 Estadísticas de Proveedores{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Estadísticas de Proveedores</span>
+    <span class="page-subtitle">
+        Ranking por inversión y volumen de compras ·
+        <span class="num-mont">{{ stats|length }}</span> proveedor{{ 'es' if stats|length != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    table { width:100%; border-collapse:collapse; font-size:14px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
-    td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
-    .badge-info { background:#e0e7ff; color:#3b82f6; padding:2px 10px; border-radius:30px; font-size:12px; font-weight:600; display:inline-block; }
-    .rank { font-weight:700; color:#a8854f; }
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
-    @media (max-width:768px) {
-        table, thead, tbody, tr, th, td { display:block; }
-        thead { display:none; }
-        tbody { display:flex; flex-direction:column; gap:12px; }
-        tr { background:white; border-radius:14px; padding:14px 16px; border:1px solid #f0ece8; box-shadow:0 1px 4px rgba(0,0,0,0.02); display:flex; flex-direction:column; gap:4px; }
-        td { border:none; padding:2px 0; text-align:left; }
-        td:before { content:attr(data-label); font-weight:600; color:#8e8e93; font-size:11px; text-transform:uppercase; letter-spacing:0.3px; display:block; margin-bottom:2px; }
-        td:first-child { font-weight:600; font-size:16px; }
-        td:first-child:before { display:none; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
+
+    .inv-list-wrap, .inv-list-wrap * { box-sizing: border-box; }
+    .inv-list-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .inv-list-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .inv-list-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .inv-list-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .inv-list-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .inv-list-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .inv-list-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       CARD + TABLA
+       ============================================================ */
+    .inv-list-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+    }
+    .inv-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table.inv-list-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        min-width: 0;
+    }
+    table.inv-list-table th {
+        font-family: 'Inter', sans-serif;
+        padding: 12px 16px;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #fafaf9;
+        text-align: left;
+        white-space: nowrap;
+    }
+    table.inv-list-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    table.inv-list-table tr:last-child td { border-bottom: none; }
+    table.inv-list-table tr:hover td { background: #fafaf9; }
+
+    table.inv-list-table td.rank-cell {
+        width: 60px;
+    }
+    table.inv-list-table td.nombre-cell {
+        font-weight: 700;
+        letter-spacing: -0.1px;
+    }
+    table.inv-list-table td.num-cell {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.inv-list-table td.num-cell.inversion {
+        color: #065f46;
+    }
+
+    /* Badges de ranking */
+    .inv-rank-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 14px;
+        letter-spacing: -0.3px;
+    }
+    .inv-rank-badge.top1 {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #78350f;
+        box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+    }
+    .inv-rank-badge.top2 {
+        background: linear-gradient(135deg, #f0ece8 0%, #e0dcd8 100%);
+        color: #4a4a4a;
+    }
+    .inv-rank-badge.top3 {
+        background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+        color: #7c2d12;
+    }
+    .inv-rank-badge.otros {
+        background: #fafaf9;
+        color: #8e8e93;
+        border: 1px solid #f0ece8;
+    }
+
+    /* Barra de progreso (porcentaje de inversión) */
+    .inv-progress-bar {
+        width: 100%;
+        max-width: 200px;
+        height: 6px;
+        background: rgba(0,0,0,0.04);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 4px;
+    }
+    .inv-progress-bar .fill {
+        height: 100%;
+        border-radius: 4px;
+        background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+        transition: width 0.3s;
+    }
+
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .inv-list-empty {
+        text-align: center;
+        padding: 56px 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+    }
+    .inv-list-empty-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #fafaf9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: #b8b8c0;
+    }
+    .inv-list-empty-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-bottom: 6px;
+    }
+    .inv-list-empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #8e8e93;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+        .inv-list-header { flex-direction: column; align-items: stretch; }
+        .inv-list-header-actions { margin-left: 0; width: 100%; }
+        .inv-list-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        table.inv-list-table,
+        table.inv-list-table thead,
+        table.inv-list-table tbody,
+        table.inv-list-table tr,
+        table.inv-list-table th,
+        table.inv-list-table td { display: block; }
+        table.inv-list-table thead { display: none; }
+        table.inv-list-table tbody { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+        table.inv-list-table tr {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #f0ece8;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        table.inv-list-table td {
+            border: none;
+            padding: 3px 0;
+            width: 100%;
+        }
+        table.inv-list-table td:before {
+            content: attr(data-label);
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        table.inv-list-table td.rank-cell { width: 100%; }
+        table.inv-list-table td.rank-cell:before { content: none; }
+        table.inv-list-table td.nombre-cell:before { content: none; }
+        table.inv-list-table td.nombre-cell {
+            font-size: 16px;
+            border-bottom: 1px solid #f0ece8;
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">Ranking de proveedores por inversión y volumen</p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="inv-list-wrap">
 
-<div class="card">
-    <table>
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Proveedor</th>
-                <th>Total Unidades</th>
-                <th>Total Inversión (USD)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for stat in stats %}
-            <tr>
-                <td data-label="#"><span class="rank">{{ loop.index }}</span></td>
-                <td data-label="Proveedor"><strong>{{ stat.nombre }}</strong></td>
-                <td data-label="Total Unidades">{{ stat.total_unidades|round(2) }}</td>
-                <td data-label="Total Inversión (USD)">${{ stat.total_inversion|round(2) }}</td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4" style="text-align:center;color:#8e8e93;padding:20px;">No hay datos de compras asociadas a proveedores.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- HEADER -->
+    <div class="inv-list-header">
+        <div class="inv-list-header-info">
+            <p class="inv-list-header-title">Ranking de proveedores</p>
+            <p class="inv-list-header-desc">Ordenados por inversión total (mayor a menor)</p>
+        </div>
+        <div class="inv-list-header-actions">
+            <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    {% if stats %}
+
+    {% set total_inversion = stats|sum(attribute='total_inversion') %}
+    {% set max_inversion = stats[0].total_inversion if stats else 1 %}
+
+    <!-- TABLA -->
+    <div class="inv-list-card">
+        <div class="inv-table-scroll">
+            <table class="inv-list-table">
+                <thead>
+                    <tr>
+                        <th style="width:60px;">#</th>
+                        <th>Proveedor</th>
+                        <th>Total unidades</th>
+                        <th>Total inversión (USD)</th>
+                        <th style="width:200px;">Participación</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for stat in stats %}
+                    {% set rank_class = 'top1' if loop.index == 1 else ('top2' if loop.index == 2 else ('top3' if loop.index == 3 else 'otros')) %}
+                    {% set pct = (stat.total_inversion / total_inversion * 100) if total_inversion > 0 else 0 %}
+                    <tr>
+                        <td data-label="#" class="rank-cell">
+                            <span class="inv-rank-badge {{ rank_class }}">{{ loop.index }}</span>
+                        </td>
+                        <td data-label="Proveedor" class="nombre-cell">{{ stat.nombre }}</td>
+                        <td data-label="Total unidades" class="num-cell">{{ stat.total_unidades|round(2) }}</td>
+                        <td data-label="Total inversión (USD)" class="num-cell inversion">${{ stat.total_inversion|round(2) }}</td>
+                        <td data-label="Participación">
+                            <div style="font-family:'Montserrat',sans-serif; font-weight:700; font-size:12.5px; color:#065f46; letter-spacing:-0.2px;">
+                                {{ "%.1f"|format(pct) }}%
+                            </div>
+                            <div class="inv-progress-bar">
+                                <div class="fill" style="width:{{ pct }}%;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div class="inv-list-empty">
+        <div class="inv-list-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+        </div>
+        <div class="inv-list-empty-title">No hay datos de compras</div>
+        <div class="inv-list-empty-desc">
+            Cuando registres compras asignando un proveedor, aparecerán aquí las estadísticas ordenadas por inversión.
+        </div>
+    </div>
+
+    {% endif %}
+
 </div>
 {% endblock %}

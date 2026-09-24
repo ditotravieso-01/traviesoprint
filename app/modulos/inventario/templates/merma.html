@@ -2,106 +2,217 @@
 
 {% block title %}Reporte de Merma · Inventario{% endblock %}
 
-{% block page_title %}📉 Reporte de Merma{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Reporte de Merma</span>
+    <span class="page-subtitle">
+        {% if tipo_merma == 'real' %}Pérdida física comparada contra el sistema{% else %}Desperdicio operativo calculado de las órdenes{% endif %}
+        · <span class="num-mont">{{ total_registros }}</span> registro{{ 's' if total_registros != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
     /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
+    .inventario-wrap,
+    .inventario-wrap *:not(.num-mont):not(.help-card .emoji):not(code):not(.mono) {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ============================================================
        TABS
        ============================================================ */
-    .tabs { display: flex; gap: 8px; margin-bottom: 16px; border-bottom: 2px solid #f0ece8; flex-wrap: wrap; }
-    .tab-btn {
-        padding: 10px 24px; background: transparent; border: none;
-        font-weight: 600; font-size: 14px; cursor: pointer; color: #8e8e93;
-        border-bottom: 3px solid transparent; margin-bottom: -2px;
-        transition: all 0.2s; font-family: 'Inter', sans-serif;
-        display: inline-flex; align-items: center; gap: 6px;
+    .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 18px;
+        border-bottom: 2px solid #f0ece8;
+        flex-wrap: wrap;
+        padding-bottom: 4px;
     }
-    .tab-btn:hover { color: #1c1c1e; }
-    .tab-btn.active { color: #a8854f; border-bottom-color: #a8854f; }
+    .tab-btn {
+        padding: 10px 20px;
+        background: transparent;
+        border: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        letter-spacing: -0.2px;
+        cursor: pointer;
+        color: #8e8e93;
+        border-radius: 30px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .tab-btn:hover { color: #1c1c1e; background: rgba(0,0,0,0.03); }
+    .tab-btn.active { color: #ffffff; background: #a8854f; }
+    .tab-btn svg { flex-shrink: 0; }
 
     /* ============================================================
        FILTROS
        ============================================================ */
     .filters-bar {
-        display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
-        padding: 16px 20px; background: rgba(255,255,255,0.6);
-        backdrop-filter: blur(10px); border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04); margin-bottom: 20px;
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        padding: 16px 20px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 20px;
     }
-    .filters-bar .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filters-bar .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+    }
     .filters-bar label {
-        font-size: 12px; font-weight: 600; color: #8e8e93;
-        text-transform: uppercase; letter-spacing: 0.5px;
         font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
-    .filters-bar select, .filters-bar input {
-        padding: 6px 12px; border: 1px solid #d2d2d7; border-radius: 8px;
-        font-size: 13px; background: white; color: #1c1c1e;
-        min-width: 140px; font-family: 'Inter', sans-serif;
+    .filters-bar input[type="date"] {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        min-width: 140px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+        height: 38px;
     }
-    .filters-bar select:focus, .filters-bar input:focus {
-        outline: none; border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+    .filters-bar input[type="date"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
 
     /* ============================================================
        BOTONES
        ============================================================ */
     .btn {
-        padding: 8px 18px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 13px; cursor: pointer;
-        transition: all 0.2s; display: inline-flex; align-items: center;
-        gap: 6px; background: #1c1c1e; color: white;
-        font-family: 'Inter', sans-serif; text-decoration: none;
-    }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
-    .btn-help { background: #0ea5e9; color: white; }
-    .btn-help:hover { background: #0284c7; }
-
-    /* ============================================================
-       CARDS
-       ============================================================ */
-    .card {
-        background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
-        border-radius: 16px; padding: 18px 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 12px rgba(0,0,0,0.02); margin-bottom: 16px;
-    }
-    .card h4 {
-        font-family: 'Playfair Display', serif; font-size: 18px;
-        margin-bottom: 12px; color: #1c1c1e;
-    }
-
-    /* ============================================================
-       TABLA ESCRITORIO
-       ============================================================ */
-    .table-wrap { overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Inter', sans-serif; }
-    th {
-        text-align: left; padding: 8px 10px; font-weight: 600;
-        color: #8e8e93; border-bottom: 1px solid rgba(0,0,0,0.04);
-        font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px;
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
         white-space: nowrap;
     }
-    th.sortable { cursor: pointer; user-select: none; position: relative; transition: color 0.15s; }
-    th.sortable:hover { color: #1c1c1e; }
-    th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
-    th.sortable.asc::after { content: ' ↑'; color: #a8854f; }
-    th.sortable.desc::after { content: ' ↓'; color: #a8854f; }
-    td { padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,0.02); }
-    .badge-tipo {
-        display: inline-block; padding: 2px 10px; border-radius: 30px;
-        font-size: 11px; font-weight: 600;
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
     }
-    .badge-real { background: #dbeafe; color: #1e40af; }
-    .badge-estimada { background: #fef3c7; color: #78350f; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-help {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        color: white;
+    }
+    .btn-help:hover { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
 
     /* ============================================================
-   GRÁFICOS — patrón idéntico a movimientos.html
-   ============================================================ */
+       CARD BASE
+       ============================================================ */
+    .card {
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        padding: 20px 22px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
+    }
+    .card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0 0 14px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .card h4 svg { color: #a8854f; flex-shrink: 0; }
+    .card h4 .badge-tipo {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 30px;
+        display: inline-block;
+    }
+
+    /* ============================================================
+       NOTA ACLARATORIA
+       ============================================================ */
+    .merma-help {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        background: #e0f2fe;
+        border-left: 4px solid #0ea5e9;
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #0c4a6e;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+    .merma-help svg { color: #0ea5e9; margin-top: 2px; flex-shrink: 0; }
+    .merma-help strong { color: #0c4a6e; }
+    .merma-help a {
+        color: #0284c7;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .merma-help a:hover { text-decoration: underline; }
+
+    /* ============================================================
+       CHARTS
+       ============================================================ */
     .chart-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -121,19 +232,25 @@
         gap: 8px;
     }
     .chart-header h5 {
-        font-family: 'Playfair Display', serif;
-        font-size: 15px;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
         margin: 0;
         color: #1c1c1e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
+    .chart-header h5 svg { color: #a8854f; flex-shrink: 0; }
     .chart-type-select {
-        padding: 4px 8px;
+        font-family: 'Inter', sans-serif;
+        padding: 5px 10px;
         border: 1px solid #d2d2d7;
-        border-radius: 6px;
+        border-radius: 8px;
         font-size: 12px;
         background: white;
         color: #1c1c1e;
-        font-family: 'Inter', sans-serif;
         cursor: pointer;
     }
     .chart-container {
@@ -142,15 +259,14 @@
         padding: 16px;
         box-sizing: border-box;
         background: white;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid #f0ece8;
         overflow: hidden;
     }
     .chart-inner {
         position: relative;
-        width: 80%;
+        width: 100%;
         height: 100%;
-        margin: 0 auto;
     }
     .chart-inner canvas {
         display: block !important;
@@ -163,6 +279,7 @@
         left: 50%;
         transform: translate(-50%, -50%);
         color: #8e8e93;
+        font-family: 'Inter', sans-serif;
         font-size: 13px;
         text-align: center;
         pointer-events: none;
@@ -182,44 +299,364 @@
     .chart-diag.visible { display: block; }
 
     /* ============================================================
-       NOTA ACLARATORIA
+       TABLA
        ============================================================ */
-    .merma-help {
-        display: flex; gap: 10px; align-items: flex-start;
-        background: #e0f2fe; border-left: 4px solid #0ea5e9;
-        padding: 10px 14px; border-radius: 8px;
-        font-size: 12px; color: #0c4a6e; margin-bottom: 12px;
-        line-height: 1.45;
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        min-width: 0;
     }
-    .merma-help i { color: #0ea5e9; margin-top: 2px; flex-shrink: 0; }
-    .merma-help strong { color: #0c4a6e; }
+    th {
+        text-align: left;
+        padding: 10px 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        white-space: nowrap;
+    }
+    th.sortable { cursor: pointer; user-select: none; transition: color 0.15s; }
+    th.sortable:hover { color: #1c1c1e; }
+    th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
+    th.sortable.asc::after { content: ' ↑'; color: #a8854f; }
+    th.sortable.desc::after { content: ' ↓'; color: #a8854f; }
+    td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    .badge-tipo-real { background: #dbeafe; color: #1e40af; }
+    .badge-tipo-estimada { background: #fef3c7; color: #78350f; }
 
     /* ============================================================
        PAGINACIÓN
        ============================================================ */
     .pagination {
-        display: flex; justify-content: center; align-items: center;
-        gap: 6px; flex-wrap: wrap; margin-top: 18px; padding-top: 14px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+        padding-top: 14px;
         border-top: 1px solid #f0ece8;
     }
     .pagination .page-btn {
-        min-width: 36px; height: 36px; padding: 0 10px;
-        border-radius: 10px; border: 1px solid #d2d2d7;
-        background: white; color: #1c1c1e; font-weight: 600;
-        font-size: 13px; font-family: 'Inter', sans-serif;
-        cursor: pointer; text-decoration: none;
-        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 36px;
+        height: 36px;
+        padding: 0 10px;
+        border-radius: 10px;
+        border: 1px solid #d2d2d7;
+        background: white;
+        color: #1c1c1e;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         transition: all 0.15s;
     }
     .pagination .page-btn:hover { border-color: #1c1c1e; background: #fafaf9; }
     .pagination .page-btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
     .pagination .page-btn.disabled { opacity: 0.4; pointer-events: none; }
-    .pagination .page-info { font-size: 12px; color: #8e8e93; margin-left: 8px; }
+    .pagination .page-info { font-family: 'Inter', sans-serif; font-size: 12px; color: #8e8e93; margin-left: 8px; }
 
     /* ============================================================
-       MÓVIL: TARJETAS COLAPSABLES
+       CUSTOM SELECT (.cs-select-*)
        ============================================================ */
-    @media (max-width: 767.98px) {
+    .cs-select-wrap {
+        position: relative;
+        display: inline-block;
+        min-width: 180px;
+    }
+    .filters-bar .cs-select-wrap { min-width: 180px; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        background: #ffffff;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1c1c1e;
+        text-align: left;
+        min-height: 38px;
+        box-sizing: border-box;
+        transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 340px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0;
+        background: #ffffff;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1;
+        border: none; background: transparent; outline: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        padding: 0; height: 22px; min-width: 0;
+        font-weight: 500;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-options {
+        padding: 6px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+    .cs-select-empty {
+        padding: 14px 12px;
+        text-align: center;
+        color: #8e8e93;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #4a4a4a;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       MODAL DE AYUDA
+       ============================================================ */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(6px);
+        z-index: 999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal-ayuda {
+        background: white;
+        border-radius: 20px;
+        width: 100%;
+        max-width: 720px;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+        animation: modalIn 0.25s ease;
+        overflow: hidden;
+    }
+    @keyframes modalIn {
+        from { transform: scale(0.96) translateY(8px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .modal-ayuda .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 18px 26px;
+        border-bottom: 1px solid #f0ece8;
+        background: #fafaf9;
+        flex-shrink: 0;
+    }
+    .modal-ayuda .modal-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #0ea5e9;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0;
+    }
+    .modal-ayuda .modal-close {
+        background: none;
+        border: none;
+        font-size: 26px;
+        color: #8e8e93;
+        cursor: pointer;
+        padding: 0 4px;
+        line-height: 1;
+    }
+    .modal-ayuda .modal-close:hover { color: #1c1c1e; }
+    .modal-ayuda .modal-body {
+        padding: 22px 26px;
+        overflow-y: auto;
+        flex: 1 1 auto;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+    .help-card {
+        display: flex;
+        gap: 14px;
+        padding: 14px 16px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        border-left: 4px solid #a8854f;
+        background: #fafaf9;
+    }
+    .help-card.real { border-left-color: #3b82f6; background: #eff6ff; }
+    .help-card.operativa { border-left-color: #f59e0b; background: #fffbeb; }
+    .help-card.imprevista { border-left-color: #dc2626; background: #fef2f2; }
+    .help-card.porcentaje { border-left-color: #8b5cf6; background: #f5f3ff; }
+    .help-card.flujo { border-left-color: #10b981; background: #f0fdf4; }
+    .help-card .emoji { font-size: 26px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
+    .help-card .help-text { flex: 1 1 auto; }
+    .help-card h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14.5px;
+        margin: 0 0 6px 0;
+        color: #1c1c1e;
+        font-weight: 700;
+        letter-spacing: -0.1px;
+    }
+    .help-card p { margin: 0 0 6px 0; font-size: 13px; }
+    .help-card p:last-child { margin-bottom: 0; }
+    .help-card ul { margin: 4px 0 4px 18px; padding: 0; font-size: 13px; }
+    .help-card li { margin-bottom: 3px; }
+    .help-footer {
+        text-align: center;
+        padding: 12px;
+        background: #f0f9ff;
+        border-radius: 10px;
+        margin-top: 8px;
+        font-size: 13px;
+        color: #0c4a6e;
+    }
+    .help-footer a {
+        color: #0284c7;
+        font-weight: 700;
+        text-decoration: none;
+    }
+    .help-footer a:hover { text-decoration: underline; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+        .filters-bar {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 14px;
+            gap: 10px;
+        }
+        .filters-bar .filter-group { width: 100%; }
+        .filters-bar .cs-select-wrap { min-width: 0; width: 100%; }
+        .filters-bar input[type="date"] {
+            width: 100%; min-width: 0;
+            font-size: 15px; height: 44px;
+        }
+        .filters-bar .btn {
+            width: 100%; justify-content: center;
+            height: 44px;
+        }
+
+        .tabs { gap: 4px; }
+        .tab-btn {
+            flex: 1 1 auto;
+            justify-content: center;
+            padding: 10px 12px;
+            font-size: 12px;
+        }
+
+        .chart-grid { grid-template-columns: 1fr; gap: 14px; }
+        .chart-container { height: 260px; padding: 12px; }
+        .chart-header h5 { font-size: 13px; }
+
+        /* Tabla: cards */
         .table-wrap table,
         .table-wrap thead,
         .table-wrap tbody,
@@ -230,7 +667,9 @@
         .table-wrap tbody { display: flex; flex-direction: column; gap: 8px; }
 
         .table-wrap tr {
-            background: white; border-radius: 12px; padding: 0;
+            background: white;
+            border-radius: 12px;
+            padding: 0;
             border: 1px solid #f0ece8;
             box-shadow: 0 1px 3px rgba(0,0,0,0.02);
             overflow: hidden;
@@ -239,23 +678,37 @@
         .table-wrap td:first-child {
             padding: 12px 44px 10px 14px;
             border-bottom: 1px dashed #f0ece8;
-            font-weight: 700; font-size: 15px; color: #1c1c1e;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 15px;
+            color: #1c1c1e;
             position: relative;
             cursor: pointer;
         }
         .table-wrap td:first-child::before { content: none; }
         .table-wrap td:first-child::after {
             content: '+';
-            position: absolute; right: 14px; top: 50%;
+            position: absolute;
+            right: 14px;
+            top: 50%;
             transform: translateY(-50%);
-            width: 24px; height: 24px; border-radius: 50%;
-            background: #f0ece8; color: #555;
-            font-size: 16px; font-weight: 700;
-            display: flex; align-items: center; justify-content: center;
-            line-height: 1; transition: all 0.2s;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #f0ece8;
+            color: #555;
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            transition: all 0.2s;
         }
         .table-wrap tr.expanded td:first-child::after {
-            content: '−'; background: #1c1c1e; color: white;
+            content: '−';
+            background: #1c1c1e;
+            color: white;
         }
 
         .table-wrap td:not(:first-child) {
@@ -266,168 +719,99 @@
         }
         .table-wrap td:not(:first-child):last-child { padding-bottom: 12px; }
         .table-wrap tr.expanded td:not(:first-child) {
-            display: flex; justify-content: space-between;
-            align-items: center; gap: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
         }
         .table-wrap td:not(:first-child)::before {
             content: attr(data-label);
-            font-weight: 600; color: #8e8e93;
-            font-size: 11px; text-transform: uppercase;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 10.5px;
+            text-transform: uppercase;
             letter-spacing: 0.3px;
         }
 
         .pagination { display: none; }
-    }
-
-    /* ============================================================
-       MODAL DE AYUDA
-       ============================================================ */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
-        z-index: 999; justify-content: center; align-items: center;
-        padding: 16px; box-sizing: border-box;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-ayuda {
-        background: white; border-radius: 20px; width: 100%; max-width: 720px;
-        max-height: 90vh; display: flex; flex-direction: column;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.2);
-        animation: modalIn 0.25s ease; overflow: hidden;
-    }
-    @keyframes modalIn {
-        from { transform: scale(0.96) translateY(8px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
-    }
-    .modal-ayuda .modal-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 18px 26px; border-bottom: 1px solid #f0ece8;
-        background: #fafaf9; flex-shrink: 0;
-    }
-    .modal-ayuda .modal-title {
-        font-family: 'Playfair Display', serif; font-size: 20px;
-        font-weight: 700; color: #0ea5e9;
-        display: flex; align-items: center; gap: 10px; margin: 0;
-    }
-    .modal-ayuda .modal-close {
-        background: none; border: none; font-size: 28px;
-        color: #8e8e93; cursor: pointer; padding: 0 4px; line-height: 1;
-    }
-    .modal-ayuda .modal-close:hover { color: #1c1c1e; }
-    .modal-ayuda .modal-body {
-        padding: 22px 26px; overflow-y: auto; flex: 1 1 auto;
-        font-family: 'Inter', sans-serif; color: #1c1c1e;
-        font-size: 14px; line-height: 1.6;
-    }
-    .help-card {
-        display: flex; gap: 14px; padding: 14px 16px;
-        border-radius: 12px; margin-bottom: 12px;
-        border-left: 4px solid #a8854f; background: #fafaf9;
-    }
-    .help-card.real { border-left-color: #3b82f6; background: #eff6ff; }
-    .help-card.operativa { border-left-color: #f59e0b; background: #fffbeb; }
-    .help-card.imprevista { border-left-color: #dc2626; background: #fef2f2; }
-    .help-card.porcentaje { border-left-color: #8b5cf6; background: #f5f3ff; }
-    .help-card.flujo { border-left-color: #10b981; background: #f0fdf4; }
-    .help-card .emoji { font-size: 26px; flex-shrink: 0; line-height: 1; margin-top: 2px; }
-    .help-card .help-text { flex: 1 1 auto; }
-    .help-card h3 { font-size: 15px; margin: 0 0 6px 0; color: #1c1c1e; font-weight: 700; }
-    .help-card p { margin: 0 0 6px 0; font-size: 13px; }
-    .help-card p:last-child { margin-bottom: 0; }
-    .help-card ul { margin: 4px 0 4px 18px; padding: 0; font-size: 13px; }
-    .help-card li { margin-bottom: 3px; }
-    .help-footer {
-        text-align: center; padding: 12px; background: #f0f9ff;
-        border-radius: 10px; margin-top: 8px; font-size: 13px; color: #0c4a6e;
-    }
-    .help-footer a { color: #0284c7; font-weight: 700; text-decoration: none; }
-    .help-footer a:hover { text-decoration: underline; }
-
-    /* ============================================================
-       RESPONSIVE — 5 BREAKPOINTS
-       ============================================================ */
-
-    @media (max-width: 575.98px) {
-        .tabs { gap: 4px; }
-        .tab-btn { flex: 1 1 auto; justify-content: center; padding: 10px 12px; font-size: 12px; }
-        .filters-bar { flex-direction: column; align-items: stretch; padding: 12px; gap: 10px; }
-        .filters-bar .filter-group { width: 100%; }
-        .filters-bar select, .filters-bar input { width: 100%; min-width: 0; height: 44px; font-size: 15px; }
-        .filters-bar .btn { width: 100%; justify-content: center; height: 44px; }
-        .card { padding: 14px 12px; border-radius: 12px; }
-        .card h4 { font-size: 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
-        .chart-grid { grid-template-columns: 1fr; gap: 12px; }
-        .chart-container { height: 280px; padding: 12px; }
-        .chart-header h5 { font-size: 13px; }
-        .chart-canvas-wrapper { width: 92%; }
 
         .modal-ayuda { max-height: 96vh; border-radius: 16px; }
         .modal-ayuda .modal-header { padding: 14px 18px; }
-        .modal-ayuda .modal-title { font-size: 16px; }
+        .modal-ayuda .modal-title { font-size: 15px; }
         .modal-ayuda .modal-body { padding: 16px 18px; font-size: 13px; }
         .help-card { padding: 12px 14px; gap: 10px; }
         .help-card .emoji { font-size: 22px; }
-        .help-card h3 { font-size: 14px; }
-    }
+        .help-card h3 { font-size: 13.5px; }
 
-    @media (min-width: 576px) and (max-width: 767.98px) {
-        .tab-btn { flex: 1 1 auto; justify-content: center; }
-        .filters-bar { gap: 10px; }
-        .filters-bar select, .filters-bar input { min-width: 120px; }
-        .chart-grid { grid-template-columns: 1fr; gap: 16px; }
-        .chart-container { height: 300px; }
-        .chart-canvas-wrapper { width: 88%; }
+        .page-main-title { font-size: 22px; }
+        .page-subtitle { font-size: 13px; }
     }
-
-    @media (min-width: 768px) and (max-width: 991.98px) {
-        .chart-grid { grid-template-columns: 1fr 1fr; }
-        .chart-container { height: 320px; }
-        .chart-canvas-wrapper { width: 84%; }
-        .filters-bar select, .filters-bar input { min-width: 130px; }
-    }
-
-    @media (min-width: 992px) and (max-width: 1199.98px) {
-        .chart-container { height: 340px; }
-        .chart-canvas-wrapper { width: 80%; }
-    }
-
-    @media (min-width: 1200px) {
-        .chart-container { height: 380px; padding: 20px; }
-        .chart-canvas-wrapper { width: 80%; }
-        .filters-bar { padding: 18px 24px; }
-        .card { padding: 22px 26px; }
+    @media (max-width: 480px) {
+        .chart-container { height: 220px; }
+        .card { padding: 14px 16px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">Análisis de pérdidas de inventario</p>
+<div class="inventario-wrap">
+
+    <!-- ============================================================
+         HEADER + ACCIONES
+         ============================================================ -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+        <p style="color:#8e8e93; margin:0; font-size:13.5px;">Análisis de pérdidas de inventario</p>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <button type="button" class="btn btn-help" onclick="abrirAyuda()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                ¿Cómo funciona?
+            </button>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
     </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-help" onclick="abrirAyuda()">
-            <i class="fas fa-question-circle"></i> ¿Cómo funciona?
+
+    <!-- ============================================================
+         TABS
+         ============================================================ -->
+    <div class="tabs">
+        <button type="button" class="tab-btn {% if tipo_merma == 'real' %}active{% endif %}" onclick="cambiarTab('real')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20"></path>
+                <path d="M12 2v20"></path>
+                <line x1="5" y1="5" x2="5.01" y2="5"></line>
+                <line x1="19" y1="19" x2="19.01" y2="19"></line>
+            </svg>
+            Merma real (conteo)
         </button>
-        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
+        <button type="button" class="tab-btn {% if tipo_merma == 'estimada' %}active{% endif %}" onclick="cambiarTab('estimada')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="12" y2="14"></line>
+            </svg>
+            Merma operativa (órdenes)
+        </button>
     </div>
-</div>
 
-<!-- ===== PESTAÑAS ===== -->
-<div class="tabs">
-    <button type="button" class="tab-btn {% if tipo_merma == 'real' %}active{% endif %}" onclick="cambiarTab('real')">
-        <i class="fas fa-ruler"></i> Merma real (conteo)
-    </button>
-    <button type="button" class="tab-btn {% if tipo_merma == 'estimada' %}active{% endif %}" onclick="cambiarTab('estimada')">
-        <i class="fas fa-calculator"></i> Merma operativa (órdenes)
-    </button>
-</div>
-
-<div class="card">
+    <!-- ============================================================
+         FILTROS
+         ============================================================ -->
     <form method="GET" action="{{ url_for('inventario.merma') }}" class="filters-bar" id="filtrosMermaForm">
         <input type="hidden" name="tipo_merma" id="tipoMermaInput" value="{{ tipo_merma }}">
         <input type="hidden" name="sort" value="{{ sort }}">
         <input type="hidden" name="order" value="{{ order }}">
+
         <div class="filter-group">
             <label>Período</label>
             <select name="periodo" onchange="this.form.submit()">
@@ -437,14 +821,17 @@
                 <option value="year" {% if periodo == 'year' %}selected{% endif %}>Año</option>
             </select>
         </div>
+
         <div class="filter-group">
             <label>Fecha inicio</label>
             <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}" onchange="this.form.submit()">
         </div>
+
         <div class="filter-group">
             <label>Fecha fin</label>
             <input type="date" name="fecha_fin" value="{{ fecha_fin }}" onchange="this.form.submit()">
         </div>
+
         <div class="filter-group">
             <label>Agrupar por</label>
             <select name="agrupar_por" onchange="this.form.submit()">
@@ -453,202 +840,252 @@
                 <option value="categoria" {% if agrupar_por == 'categoria' %}selected{% endif %}>Categoría</option>
             </select>
         </div>
+
         <div class="filter-group" style="justify-content:flex-end;">
-            <button type="submit" class="btn"><i class="fas fa-filter"></i> Aplicar</button>
-            <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline"><i class="fas fa-undo"></i> Limpiar</a>
+            <label>&nbsp;</label>
+            <button type="submit" class="btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                Aplicar
+            </button>
+        </div>
+
+        <div class="filter-group" style="justify-content:flex-end;">
+            <label>&nbsp;</label>
+            <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Limpiar
+            </a>
         </div>
     </form>
-</div>
 
-<!-- AYUDA CONTEXTUAL -->
-<div class="merma-help">
-    <i class="fas fa-info-circle"></i>
-    <div>
-        {% if tipo_merma == 'real' %}
-            <strong>Merma real:</strong> lo que se perdió de verdad, comparando lo que dice el sistema con lo que contaste a mano.
-        {% else %}
-            <strong>Merma operativa:</strong> lo que la máquina <em>debería</em> desperdiciar al imprimir (calculado automáticamente).
-        {% endif %}
-        <a href="#" onclick="event.preventDefault(); abrirAyuda();" style="color:#0284c7; font-weight:700; margin-left:4px;">Ver guía →</a>
-    </div>
-</div>
-
-<!-- GRÁFICOS -->
-<div class="chart-grid">
-    <div class="chart-box">
-        <div class="chart-header">
-            <h5>📊 Merma por {{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}</h5>
-            <select class="chart-type-select" id="tipoMerma" onchange="cambiarTipoMerma()">
-                <option value="horizontalBar">Barras horizontales</option>
-                <option value="bar">Barras verticales</option>
-                <option value="line">Líneas</option>
-                <option value="area">Área</option>
-            </select>
-        </div>
-        <div class="chart-container">
-            <div class="chart-inner">
-                <canvas id="mermaBarChart"></canvas>
-                <div class="chart-empty-msg" id="mermaBarEmpty" style="display:none;">Sin datos de merma en este período</div>
-            </div>
-        </div>
-        <div class="chart-diag" id="chartDiag"></div>
-    </div>
-    <div class="chart-box">
-        <div class="chart-header">
-            <h5>🍩 Distribución</h5>
-            <select class="chart-type-select" id="tipoDistribucion" onchange="cambiarTipoDistribucion()">
-                <option value="pie" selected>Pastel</option>
-                <option value="doughnut">Donut</option>
-            </select>
-        </div>
-        <div class="chart-container">
-            <div class="chart-inner">
-                <canvas id="mermaPieChart"></canvas>
-                <div class="chart-empty-msg" id="mermaPieEmpty" style="display:none;">Sin datos para mostrar</div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- TABLA -->
-<div class="card">
-    <h4>
-        📋 Detalle de merma
-        <span class="badge-tipo {% if tipo_merma == 'real' %}badge-real{% else %}badge-estimada{% endif %}" style="margin-left:8px;">
-            {{ 'Real (conteo físico)' if tipo_merma == 'real' else 'Operativa (órdenes)' }}
-        </span>
-        <span style="font-size:12px; color:#8e8e93; font-weight:400; margin-left:6px;">
-            ({{ total_registros }} registro{{ 's' if total_registros != 1 else '' }})
-        </span>
-    </h4>
-
-    <div class="table-wrap">
-        <table>
-            <thead>
-                {% if tipo_merma == 'estimada' %}
-                    <tr>
-                        <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">
-                            {{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}
-                        </th>
-                        {% if agrupar_por == 'producto' %}
-                            <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
-                        {% endif %}
-                        {% if agrupar_por == 'linea' %}
-                            <th class="sortable {% if sort == 'orden' %}{{ order }}{% endif %}" onclick="ordenar('orden')">Orden</th>
-                            <th class="sortable {% if sort == 'cliente' %}{{ order }}{% endif %}" onclick="ordenar('cliente')">Cliente</th>
-                        {% endif %}
-                        <th class="sortable {% if sort == 'area_facturada' %}{{ order }}{% endif %}" onclick="ordenar('area_facturada')">Facturado (m²)</th>
-                        <th class="sortable {% if sort == 'material_consumido' %}{{ order }}{% endif %}" onclick="ordenar('material_consumido')">Consumido (m²)</th>
-                        <th class="sortable {% if sort == 'merma' %}{{ order }}{% endif %}" onclick="ordenar('merma')">Merma (m²)</th>
-                        <th class="sortable {% if sort == 'porcentaje' %}{{ order }}{% endif %}" onclick="ordenar('porcentaje')">% Merma</th>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">
-                            {{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}
-                        </th>
-                        {% if agrupar_por == 'producto' %}
-                            <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
-                        {% endif %}
-                        <th class="sortable {% if sort == 'entradas' %}{{ order }}{% endif %}" onclick="ordenar('entradas')">Entradas</th>
-                        <th class="sortable {% if sort == 'consumos' %}{{ order }}{% endif %}" onclick="ordenar('consumos')">Consumos</th>
-                        <th class="sortable {% if sort == 'merma' %}{{ order }}{% endif %}" onclick="ordenar('merma')">Merma</th>
-                        <th class="sortable {% if sort == 'porcentaje' %}{{ order }}{% endif %}" onclick="ordenar('porcentaje')">% Merma</th>
-                    </tr>
-                {% endif %}
-            </thead>
-            <tbody>
-                {% if tipo_merma == 'estimada' %}
-                    {% for d in datos %}
-                    <tr class="merma-row">
-                        <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}">
-                            <strong>{{ d.nombre }}</strong>
-                        </td>
-                        {% if agrupar_por == 'producto' %}
-                            <td data-label="Categoría">{{ d.categoria }}</td>
-                        {% endif %}
-                        {% if agrupar_por == 'linea' %}
-                            <td data-label="Orden">{{ d.orden_num or '—' }}</td>
-                            <td data-label="Cliente">{{ d.cliente or '—' }}</td>
-                        {% endif %}
-                        <td data-label="Facturado (m²)">{{ d.area_facturada_m2 }}</td>
-                        <td data-label="Consumido (m²)">{{ d.material_consumido_m2 }}</td>
-                        <td data-label="Merma (m²)" style="color:#dc2626; font-weight:600;">{{ d.merma_operativa_m2 }}</td>
-                        <td data-label="% Merma" style="font-weight:700; color:
-                            {% if d.merma_operativa_pct > 15 %}#dc2626
-                            {% elif d.merma_operativa_pct > 5 %}#f59e0b
-                            {% else %}#555{% endif %};">
-                            {{ d.merma_operativa_pct }}%
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" style="text-align:center;color:#8e8e93;padding:20px;">No hay datos en este período.</td></tr>
-                    {% endfor %}
-                {% else %}
-                    {% for d in datos %}
-                    <tr class="merma-row">
-                        <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}">
-                            <strong>{{ d.nombre }}</strong>
-                        </td>
-                        {% if agrupar_por == 'producto' %}
-                            <td data-label="Categoría">{{ d.categoria }}</td>
-                        {% endif %}
-                        <td data-label="Entradas">{{ d.entradas }}</td>
-                        <td data-label="Consumos">{{ d.consumos }}</td>
-                        <td data-label="Merma" style="font-weight:600; color:
-                            {% if d.merma > 0 %}#dc2626
-                            {% elif d.merma < 0 %}#10b981
-                            {% else %}#555{% endif %};">
-                            {{ d.merma > 0 and '+' or '' }}{{ d.merma }}
-                        </td>
-                        <td data-label="% Merma" style="font-weight:700; color:
-                            {% if d.porcentaje > 15 %}#dc2626
-                            {% elif d.porcentaje > 5 %}#f59e0b
-                            {% else %}#555{% endif %};">
-                            {{ d.porcentaje }}%
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" style="text-align:center;color:#8e8e93;padding:20px;">No hay datos en este período.</td></tr>
-                    {% endfor %}
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Paginación -->
-    {% if total_pages > 1 %}
-    <div class="pagination">
-        <a class="page-btn {% if page == 1 %}disabled{% endif %}"
-           href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=1) }}">«</a>
-        <a class="page-btn {% if page == 1 %}disabled{% endif %}"
-           href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=page-1) }}">‹</a>
-
-        {% for p in range(1, total_pages + 1) %}
-            {% if p == page %}
-                <span class="page-btn active">{{ p }}</span>
-            {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
-                <a class="page-btn"
-                   href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=p) }}">{{ p }}</a>
-            {% elif p == 3 and page > 4 %}
-                <span class="page-info">…</span>
-            {% elif p == total_pages - 2 and page < total_pages - 3 %}
-                <span class="page-info">…</span>
+    <!-- ============================================================
+         AYUDA CONTEXTUAL
+         ============================================================ -->
+    <div class="merma-help">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+            {% if tipo_merma == 'real' %}
+                <strong>Merma real:</strong> lo que se perdió de verdad, comparando lo que dice el sistema con lo que contaste a mano.
+            {% else %}
+                <strong>Merma operativa:</strong> lo que la máquina <em>debería</em> desperdiciar al imprimir (calculado automáticamente).
             {% endif %}
-        {% endfor %}
-
-        <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
-           href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=page+1) }}">›</a>
-        <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
-           href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=total_pages) }}">»</a>
-
-        <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+            <a href="#" onclick="event.preventDefault(); abrirAyuda();">Ver guía →</a>
+        </div>
     </div>
-    {% endif %}
 
-    <div style="margin-top:12px; font-size:12px; color:#8e8e93; text-align:right;">
-        Período: {{ fecha_inicio }} al {{ fecha_fin }}
+    <!-- ============================================================
+         GRÁFICOS
+         ============================================================ -->
+    <div class="chart-grid">
+        <div class="chart-box">
+            <div class="chart-header">
+                <h5>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Merma por {{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}
+                </h5>
+                <select class="chart-type-select" id="tipoMerma" onchange="cambiarTipoMerma()">
+                    <option value="horizontalBar">Barras horizontales</option>
+                    <option value="bar">Barras verticales</option>
+                    <option value="line">Líneas</option>
+                    <option value="area">Área</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <canvas id="mermaBarChart"></canvas>
+                    <div class="chart-empty-msg" id="mermaBarEmpty" style="display:none;">Sin datos de merma en este período</div>
+                </div>
+            </div>
+            <div class="chart-diag" id="chartDiag"></div>
+        </div>
+
+        <div class="chart-box">
+            <div class="chart-header">
+                <h5>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                        <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                    </svg>
+                    Distribución
+                </h5>
+                <select class="chart-type-select" id="tipoDistribucion" onchange="cambiarTipoDistribucion()">
+                    <option value="pie" selected>Pastel</option>
+                    <option value="doughnut">Donut</option>
+                </select>
+            </div>
+            <div class="chart-container">
+                <div class="chart-inner">
+                    <canvas id="mermaPieChart"></canvas>
+                    <div class="chart-empty-msg" id="mermaPieEmpty" style="display:none;">Sin datos para mostrar</div>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- ============================================================
+         TABLA
+         ============================================================ -->
+    <div class="card">
+        <h4>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Detalle de merma
+            <span class="badge-tipo {% if tipo_merma == 'real' %}badge-tipo-real{% else %}badge-tipo-estimada{% endif %}">
+                {{ 'Real (conteo físico)' if tipo_merma == 'real' else 'Operativa (órdenes)' }}
+            </span>
+            <span style="font-family:'Inter',sans-serif; font-size:12px; color:#8e8e93; font-weight:500; margin-left:4px;">
+                {{ total_registros }} registro{{ 's' if total_registros != 1 else '' }}
+            </span>
+        </h4>
+
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    {% if tipo_merma == 'estimada' %}
+                        <tr>
+                            <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">
+                                {{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}
+                            </th>
+                            {% if agrupar_por == 'producto' %}
+                                <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
+                            {% endif %}
+                            {% if agrupar_por == 'linea' %}
+                                <th class="sortable {% if sort == 'orden' %}{{ order }}{% endif %}" onclick="ordenar('orden')">Orden</th>
+                                <th class="sortable {% if sort == 'cliente' %}{{ order }}{% endif %}" onclick="ordenar('cliente')">Cliente</th>
+                            {% endif %}
+                            <th class="sortable {% if sort == 'area_facturada' %}{{ order }}{% endif %}" onclick="ordenar('area_facturada')">Facturado (m²)</th>
+                            <th class="sortable {% if sort == 'material_consumido' %}{{ order }}{% endif %}" onclick="ordenar('material_consumido')">Consumido (m²)</th>
+                            <th class="sortable {% if sort == 'merma' %}{{ order }}{% endif %}" onclick="ordenar('merma')">Merma (m²)</th>
+                            <th class="sortable {% if sort == 'porcentaje' %}{{ order }}{% endif %}" onclick="ordenar('porcentaje')">% Merma</th>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">
+                                {{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}
+                            </th>
+                            {% if agrupar_por == 'producto' %}
+                                <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
+                            {% endif %}
+                            <th class="sortable {% if sort == 'entradas' %}{{ order }}{% endif %}" onclick="ordenar('entradas')">Entradas</th>
+                            <th class="sortable {% if sort == 'consumos' %}{{ order }}{% endif %}" onclick="ordenar('consumos')">Consumos</th>
+                            <th class="sortable {% if sort == 'merma' %}{{ order }}{% endif %}" onclick="ordenar('merma')">Merma</th>
+                            <th class="sortable {% if sort == 'porcentaje' %}{{ order }}{% endif %}" onclick="ordenar('porcentaje')">% Merma</th>
+                        </tr>
+                    {% endif %}
+                </thead>
+                <tbody>
+                    {% if tipo_merma == 'estimada' %}
+                        {% for d in datos %}
+                        <tr class="merma-row">
+                            <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else ('Línea' if agrupar_por == 'linea' else 'Producto') }}">
+                                <strong>{{ d.nombre }}</strong>
+                            </td>
+                            {% if agrupar_por == 'producto' %}
+                                <td data-label="Categoría">{{ d.categoria }}</td>
+                            {% endif %}
+                            {% if agrupar_por == 'linea' %}
+                                <td data-label="Orden" class="num-mont">{{ d.orden_num or '—' }}</td>
+                                <td data-label="Cliente">{{ d.cliente or '—' }}</td>
+                            {% endif %}
+                            <td data-label="Facturado (m²)" class="num-mont">{{ d.area_facturada_m2 }}</td>
+                            <td data-label="Consumido (m²)" class="num-mont">{{ d.material_consumido_m2 }}</td>
+                            <td data-label="Merma (m²)" class="num-mont" style="color:#dc2626;">{{ d.merma_operativa_m2 }}</td>
+                            <td data-label="% Merma" class="num-mont" style="color:
+                                {% if d.merma_operativa_pct > 15 %}#dc2626
+                                {% elif d.merma_operativa_pct > 5 %}#f59e0b
+                                {% else %}#555{% endif %};">
+                                {{ d.merma_operativa_pct }}%
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" style="text-align:center; color:#8e8e93; padding:20px;">No hay datos en este período.</td></tr>
+                        {% endfor %}
+                    {% else %}
+                        {% for d in datos %}
+                        <tr class="merma-row">
+                            <td data-label="{{ 'Categoría' if agrupar_por == 'categoria' else 'Producto' }}">
+                                <strong>{{ d.nombre }}</strong>
+                            </td>
+                            {% if agrupar_por == 'producto' %}
+                                <td data-label="Categoría">{{ d.categoria }}</td>
+                            {% endif %}
+                            <td data-label="Entradas" class="num-mont">{{ d.entradas }}</td>
+                            <td data-label="Consumos" class="num-mont">{{ d.consumos }}</td>
+                            <td data-label="Merma" class="num-mont" style="color:
+                                {% if d.merma > 0 %}#dc2626
+                                {% elif d.merma < 0 %}#10b981
+                                {% else %}#555{% endif %};">
+                                {{ d.merma > 0 and '+' or '' }}{{ d.merma }}
+                            </td>
+                            <td data-label="% Merma" class="num-mont" style="color:
+                                {% if d.porcentaje > 15 %}#dc2626
+                                {% elif d.porcentaje > 5 %}#f59e0b
+                                {% else %}#555{% endif %};">
+                                {{ d.porcentaje }}%
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" style="text-align:center; color:#8e8e93; padding:20px;">No hay datos en este período.</td></tr>
+                        {% endfor %}
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginación -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            <a class="page-btn {% if page == 1 %}disabled{% endif %}"
+               href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=1) }}">«</a>
+            <a class="page-btn {% if page == 1 %}disabled{% endif %}"
+               href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=page-1) }}">‹</a>
+
+            {% for p in range(1, total_pages + 1) %}
+                {% if p == page %}
+                    <span class="page-btn active">{{ p }}</span>
+                {% elif p <= 2 or p > total_pages - 2 or (p >= page - 1 and p <= page + 1) %}
+                    <a class="page-btn"
+                       href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=p) }}">{{ p }}</a>
+                {% elif p == 3 and page > 4 %}
+                    <span class="page-info">…</span>
+                {% elif p == total_pages - 2 and page < total_pages - 3 %}
+                    <span class="page-info">…</span>
+                {% endif %}
+            {% endfor %}
+
+            <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
+               href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=page+1) }}">›</a>
+            <a class="page-btn {% if page == total_pages %}disabled{% endif %}"
+               href="{{ url_for('inventario.merma', tipo_merma=tipo_merma, periodo=periodo, fecha_inicio=fecha_inicio, fecha_fin=fecha_fin, agrupar_por=agrupar_por, sort=sort, order=order, page=total_pages) }}">»</a>
+
+            <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+        </div>
+        {% endif %}
+
+        <div style="margin-top:12px; font-family:'Inter',sans-serif; font-size:12px; color:#8e8e93; text-align:right;">
+            Período: <span class="num-mont">{{ fecha_inicio }}</span> al <span class="num-mont">{{ fecha_fin }}</span>
+        </div>
+    </div>
+
 </div>
 
 <!-- ============================================================
@@ -657,7 +1094,14 @@
 <div class="modal-overlay" id="modalAyuda">
     <div class="modal-ayuda">
         <div class="modal-header">
-            <span class="modal-title"><i class="fas fa-question-circle"></i> ¿Cómo funciona este reporte?</span>
+            <span class="modal-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                ¿Cómo funciona este reporte?
+            </span>
             <button type="button" class="modal-close" onclick="cerrarAyuda()">&times;</button>
         </div>
         <div class="modal-body">
@@ -736,9 +1180,221 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Chart.js desde CDN — idéntico a movimientos.html que ya funciona -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+    // ============================================================
+    // CUSTOM SELECT
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.dataset.idx = idx;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            items.forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) {
+                highlightedIndex = delta > 0 ? 0 : n - 1;
+            } else {
+                highlightedIndex = (highlightedIndex + delta + n) % n;
+            }
+            updateHighlight();
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            if (items[highlightedIndex]) {
+                items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(340, menu.scrollHeight || 180);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 180) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        updateValue();
+    }
+
+    function initAllCustomSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
+    }
+
     // ============================================================
     // DATOS INYECTADOS
     // ============================================================
@@ -795,6 +1451,7 @@
         const colorNeg = '#10b98180';
         const colorPosLine = '#dc2626';
         const colorNegLine = '#10b981';
+        const fontFamily = "'Inter', sans-serif";
 
         if (isMobile() && tipo === 'horizontalBar') tipo = 'bar';
 
@@ -828,8 +1485,14 @@
                     }
                 },
                 scales: {
-                    x: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
-                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } }
+                    x: {
+                        grid: { color: 'rgba(0,0,0,0.03)' },
+                        ticks: { font: { size: 10, family: fontFamily } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(0,0,0,0.03)' },
+                        ticks: { font: { size: 10, family: fontFamily } }
+                    }
                 }
             }
         };
@@ -837,8 +1500,14 @@
         if (tipo === 'horizontalBar') {
             config.options.indexAxis = 'y';
             config.options.scales = {
-                x: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } },
-                y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                x: {
+                    grid: { color: 'rgba(0,0,0,0.03)' },
+                    ticks: { font: { size: 10, family: fontFamily } }
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { size: 10, family: fontFamily } }
+                }
             };
         } else if (tipo === 'line' || tipo === 'area') {
             config.type = 'line';
@@ -875,6 +1544,7 @@
 
         const colors = ['#10b981','#f59e0b','#dc2626','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316','#6366f1','#84cc16'];
         const legendPos = isMobile() ? 'bottom' : 'right';
+        const fontFamily = "'Inter', sans-serif";
 
         chartDistribucion = new Chart(ctx, {
             type: tipo,
@@ -894,7 +1564,11 @@
                 plugins: {
                     legend: {
                         position: legendPos,
-                        labels: { font: { size: 10, family: 'Inter' }, boxWidth: 12, padding: 8 }
+                        labels: {
+                            font: { size: 10, family: fontFamily },
+                            boxWidth: 12,
+                            padding: 8
+                        }
                     },
                     tooltip: {
                         callbacks: {
@@ -920,62 +1594,6 @@
     }
 
     // ============================================================
-    // INICIALIZACIÓN — idéntico a movimientos.html (que ya funciona)
-    // ============================================================
-    document.addEventListener('DOMContentLoaded', function() {
-        const tipoSelect = document.getElementById('tipoMerma');
-        if (tipoSelect && isMobile() && tipoSelect.value === 'horizontalBar') {
-            tipoSelect.value = 'bar';
-        }
-        crearGraficoMerma(tipoSelect ? tipoSelect.value : 'bar');
-        crearGraficoDistribucion((document.getElementById('tipoDistribucion') || {}).value || 'pie');
-
-        // Diagnóstico visible si algo falla
-        setTimeout(function() {
-            const canvas = document.getElementById('mermaBarChart');
-            const diag = document.getElementById('chartDiag');
-            if (!canvas || !diag) return;
-            if (canvas.offsetWidth < 10 || canvas.offsetHeight < 10) {
-                diag.textContent = `⚠️ Canvas sin tamaño · Chart:${typeof Chart} · ${canvas.offsetWidth}x${canvas.offsetHeight}`;
-                diag.classList.add('visible');
-            }
-        }, 1500);
-    });
-
-    // ============================================================
-    // RESIZE
-    // ============================================================
-    let resizeTimer;
-    window.addEventListener('resize', function() {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(function() {
-            const tipoSelect = document.getElementById('tipoMerma');
-            const tipoActual = tipoSelect ? tipoSelect.value : 'bar';
-            if (isMobile() && tipoActual === 'horizontalBar' && tipoSelect) {
-                tipoSelect.value = 'bar';
-                crearGraficoMerma('bar');
-            } else {
-                crearGraficoMerma(tipoActual);
-            }
-            const distSelect = document.getElementById('tipoDistribucion');
-            if (distSelect) crearGraficoDistribucion(distSelect.value);
-        }, 250);
-    });
-
-    // ============================================================
-    // ACORDEÓN DE FILAS EN MÓVIL
-    // ============================================================
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('tr.merma-row').forEach(row => {
-            row.addEventListener('click', function(e) {
-                if (window.innerWidth >= 768) return;
-                if (e.target.tagName === 'A') return;
-                this.classList.toggle('expanded');
-            });
-        });
-    });
-
-    // ============================================================
     // MODAL DE AYUDA
     // ============================================================
     function abrirAyuda() {
@@ -993,11 +1611,66 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') cerrarAyuda();
     });
+
+    // ============================================================
+    // INIT
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
+        // Custom selects (Periodo + Agrupar por)
+        initAllCustomSelects();
+
+        // Charts
+        const tipoSelect = document.getElementById('tipoMerma');
+        if (tipoSelect && isMobile() && tipoSelect.value === 'horizontalBar') {
+            tipoSelect.value = 'bar';
+        }
+        crearGraficoMerma(tipoSelect ? tipoSelect.value : 'bar');
+        crearGraficoDistribucion((document.getElementById('tipoDistribucion') || {}).value || 'pie');
+
+        // Modal ayuda: cerrar al click fuera
         const overlay = document.getElementById('modalAyuda');
-        if (!overlay) return;
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) cerrarAyuda();
+        if (overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) cerrarAyuda();
+            });
+        }
+
+        // Diagnóstico visible si algo falla
+        setTimeout(function() {
+            const canvas = document.getElementById('mermaBarChart');
+            const diag = document.getElementById('chartDiag');
+            if (!canvas || !diag) return;
+            if (canvas.offsetWidth < 10 || canvas.offsetHeight < 10) {
+                diag.textContent = `⚠️ Canvas sin tamaño · Chart:${typeof Chart} · ${canvas.offsetWidth}x${canvas.offsetHeight}`;
+                diag.classList.add('visible');
+            }
+        }, 1500);
+
+        // Acordeón en móvil
+        document.querySelectorAll('tr.merma-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                if (window.innerWidth >= 768) return;
+                if (e.target.tagName === 'A') return;
+                this.classList.toggle('expanded');
+            });
+        });
+
+        // Resize: re-crear gráficos
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                const tipoSelect = document.getElementById('tipoMerma');
+                const tipoActual = tipoSelect ? tipoSelect.value : 'bar';
+                if (isMobile() && tipoActual === 'horizontalBar' && tipoSelect) {
+                    tipoSelect.value = 'bar';
+                    crearGraficoMerma('bar');
+                } else {
+                    crearGraficoMerma(tipoActual);
+                }
+                const distSelect = document.getElementById('tipoDistribucion');
+                if (distSelect) crearGraficoDistribucion(distSelect.value);
+            }, 250);
         });
     });
 </script>

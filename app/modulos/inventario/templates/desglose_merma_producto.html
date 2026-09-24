@@ -2,295 +2,654 @@
 
 {% block title %}Desglose de merma · {{ producto.nombre }}{% endblock %}
 
-{% block page_title %}📊 Desglose de merma · {{ producto.nombre }}{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Desglose de merma</span>
+    <span class="page-subtitle">
+        {{ producto.nombre }}
+        {% if producto.categoria %} · {{ producto.categoria.nombre }}{% endif %}
+        · <span class="num-mont">{{ totales.total_lineas }}</span> línea{{ 's' if totales.total_lineas != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .totales-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-        gap: 14px;
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
+
+    /* ============================================================
+       LAYOUT DEFENSIVO — anula cualquier flex/grid heredado
+       ============================================================ */
+    .dmp-wrap,
+    .dmp-wrap * {
+        box-sizing: border-box;
+    }
+    .dmp-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0;
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .dmp-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+
+    /* ============================================================
+       HEADER CON ACCIONES
+       ============================================================ */
+    .dmp-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
         margin-bottom: 20px;
     }
-    .total-card {
+    .dmp-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .dmp-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .dmp-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .dmp-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       TOTALES GRID
+       ============================================================ */
+    .dmp-totales-grid {
+        display: grid !important;
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+        gap: 14px;
+        margin-bottom: 24px;
+    }
+    .dmp-total-card {
         background: white;
         border-radius: 14px;
-        padding: 14px 18px;
+        padding: 16px 18px;
         border-top: 4px solid #a8854f;
         box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        min-width: 0;
     }
-    .total-card.merma { border-top-color: #dc2626; }
-    .total-card .label {
+    .dmp-total-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .dmp-total-card .dmp-total-label {
+        font-family: 'Inter', sans-serif;
         font-size: 11px;
-        color: #8e8e93;
+        color: #6b6b7a;
         text-transform: uppercase;
-        font-weight: 600;
+        font-weight: 700;
         letter-spacing: 0.4px;
     }
-    .total-card .value {
-        font-family: 'Playfair Display', serif;
+    .dmp-total-card .dmp-total-value {
+        font-family: 'Montserrat', sans-serif !important;
         font-size: 24px;
         font-weight: 700;
         color: #1c1c1e;
+        letter-spacing: -0.4px;
+        line-height: 1.15;
         margin-top: 4px;
     }
-    .total-card.merma .value { color: #dc2626; }
+    .dmp-total-card.merma { border-top-color: #dc2626; }
+    .dmp-total-card.merma .dmp-total-value { color: #dc2626; }
 
-    .linea-card {
+    /* ============================================================
+       LÍNEA CARD
+       ============================================================ */
+    .dmp-linea-card {
         background: white;
         border-radius: 16px;
         border: 1px solid #f0ece8;
         box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         margin-bottom: 20px;
         overflow: hidden;
+        transition: box-shadow 0.2s;
     }
-    .linea-header {
+    .dmp-linea-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+
+    .dmp-linea-header {
         background: linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%);
-        padding: 14px 20px;
+        padding: 16px 22px;
         border-bottom: 1px solid #f0ece8;
-        display: flex;
+        display: flex !important;
         justify-content: space-between;
         align-items: flex-start;
         flex-wrap: wrap;
-        gap: 10px;
+        gap: 12px;
     }
-    .linea-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
+    .dmp-linea-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .dmp-linea-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
         font-weight: 700;
+        letter-spacing: -0.3px;
         color: #1c1c1e;
+        line-height: 1.25;
+        margin: 0;
     }
-    .linea-meta {
-        font-size: 13px;
-        color: #666;
-        margin-top: 4px;
+    .dmp-linea-meta {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #6b6b7a;
+        font-weight: 500;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
     }
-    .linea-meta a {
+    .dmp-linea-meta .dmp-meta-sep {
+        color: #d2d2d7;
+        font-weight: 400;
+    }
+    .dmp-linea-meta .dmp-orden-link {
         color: #3b82f6;
         text-decoration: none;
-        font-weight: 600;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
     }
-    .linea-meta a:hover { text-decoration: underline; }
-    .linea-badges {
+    .dmp-linea-meta .dmp-orden-link:hover { text-decoration: underline; }
+
+    .dmp-linea-badges {
         display: flex;
         gap: 6px;
         flex-wrap: wrap;
+        align-items: center;
+        flex-shrink: 0;
     }
-    .chip {
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 30px;
+    .dmp-chip {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
         font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 30px;
         background: #f0ece8;
-        color: #333;
+        color: #4a4a4a;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+        letter-spacing: 0.2px;
     }
-    .chip.blue { background: #dbeafe; color: #1e40af; }
-    .chip.orange { background: #fef3c7; color: #78350f; }
-    .chip.red { background: #fde8e5; color: #991b1b; }
-    .chip.green { background: #d1fae5; color: #065f46; }
+    .dmp-chip.blue { background: #dbeafe; color: #1e40af; }
+    .dmp-chip.orange { background: #fef3c7; color: #78350f; }
+    .dmp-chip.red { background: #fde8e5; color: #991b1b; }
+    .dmp-chip.green { background: #d1fae5; color: #065f46; }
+    .dmp-chip .num-mont { font-size: 12px; }
 
-    .linea-body {
-        padding: 16px 20px;
+    /* ============================================================
+       LÍNEA BODY
+       ============================================================ */
+    .dmp-linea-body {
+        padding: 18px 22px 22px;
     }
-    .linea-resumen {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+
+    /* Resumen grid de la línea */
+    .dmp-linea-resumen {
+        display: grid !important;
+        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
         gap: 12px;
-        margin-bottom: 16px;
-        padding-bottom: 16px;
+        margin-bottom: 18px;
+        padding-bottom: 18px;
         border-bottom: 1px dashed #e8e0da;
     }
-    .linea-resumen .item {
+    .dmp-resumen-item {
         display: flex;
         flex-direction: column;
+        gap: 3px;
+        min-width: 0;
     }
-    .linea-resumen .label {
-        font-size: 10px;
+    .dmp-resumen-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
         color: #6b6b7a;
         text-transform: uppercase;
         font-weight: 700;
         letter-spacing: 0.3px;
     }
-    .linea-resumen .value {
-        font-size: 16px;
+    .dmp-resumen-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 15px;
         font-weight: 700;
-        color: #1e1e2a;
-        margin-top: 2px;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        line-height: 1.2;
     }
-    .linea-resumen .value.merma { color: #dc2626; }
-    .linea-resumen .value.verde { color: #10b981; }
+    .dmp-resumen-value.merma { color: #dc2626; }
+    .dmp-resumen-value.verde { color: #10b981; }
 
-    .tabla-paños {
+    /* ============================================================
+       SUB-TABLA DE PAÑOS
+       ============================================================ */
+    .dmp-paños-section-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .dmp-paños-section-title svg { color: #a8854f; flex-shrink: 0; }
+
+    .dmp-paños-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table.dmp-paños-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 13px;
-    }
-    .tabla-paños th {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
         background: #fafaf9;
-        padding: 8px 10px;
-        text-align: left;
-        font-size: 11px;
-        color: #8e8e93;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #f0ece8;
+        min-width: 0;
+    }
+    table.dmp-paños-table th {
+        font-family: 'Inter', sans-serif;
+        background: #f5f2ef;
+        font-size: 10px;
+        padding: 9px 12px;
+        font-weight: 700;
+        color: #6b6b7a;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
-        border-bottom: 2px solid #f0ece8;
+        letter-spacing: 0.3px;
+        text-align: left;
+        border-bottom: 1px solid #e8e0da;
+        white-space: nowrap;
     }
-    .tabla-paños td {
-        padding: 8px 10px;
-        border-bottom: 1px solid #f5f2ef;
+    table.dmp-paños-table td {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f0ece8;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+        background: white;
     }
-    .tabla-paños tr:last-child td { border-bottom: none; }
-    .tabla-paños .num {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 12px;
+    table.dmp-paños-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.dmp-paños-table tr:last-child td { border-bottom: none; }
+
+    .dmp-paños-empty {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #8e8e93;
+        font-style: italic;
+        padding: 12px 0;
     }
 
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .dmp-empty {
+        text-align: center;
+        padding: 56px 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+    }
+    .dmp-empty .dmp-empty-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #fafaf9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: #b8b8c0;
+    }
+    .dmp-empty .dmp-empty-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-bottom: 6px;
+    }
+    .dmp-empty .dmp-empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #8e8e93;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto 18px;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .dmp-totales-grid { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+        .dmp-linea-resumen { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+    }
     @media (max-width: 768px) {
-        .linea-header { padding: 12px 14px; }
-        .linea-body { padding: 12px 14px; }
-        .linea-resumen {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-        }
-        .tabla-paños { font-size: 11px; }
-        .tabla-paños th, .tabla-paños td { padding: 6px 4px; }
+        .dmp-header { flex-direction: column; align-items: stretch; }
+        .dmp-header-actions { margin-left: 0; width: 100%; }
+        .dmp-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .dmp-totales-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; margin-bottom: 18px; }
+        .dmp-total-card { padding: 12px 14px; }
+        .dmp-total-card .dmp-total-value { font-size: 20px; }
+        .dmp-total-card .dmp-total-label { font-size: 10px; }
+
+        .dmp-linea-header { padding: 14px 16px; flex-direction: column; align-items: stretch; }
+        .dmp-linea-badges { width: 100%; justify-content: flex-start; }
+        .dmp-linea-body { padding: 14px 16px 18px; }
+
+        .dmp-linea-resumen { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+
+        /* Tabla paños: reducir padding */
+        table.dmp-paños-table { font-size: 11.5px; }
+        table.dmp-paños-table th,
+        table.dmp-paños-table td { padding: 7px 10px; }
+    }
+    @media (max-width: 480px) {
+        .dmp-totales-grid { grid-template-columns: 1fr !important; gap: 8px; }
+        .dmp-total-card .dmp-total-value { font-size: 18px; }
+        .dmp-linea-resumen { grid-template-columns: 1fr !important; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">
-            Cada línea muestra el desglose real: aire sobrante, gap efectivo, cut mark y material consumido.
-        </p>
-    </div>
-    <a href="{{ url_for('inventario.detalle_producto', producto_id=producto.id) }}" class="btn btn-outline" style="padding:8px 18px;border-radius:30px;background:transparent;border:1px solid #d2d2d7;color:#1c1c1e;text-decoration:none;font-weight:600;font-size:13px;">
-        <i class="fas fa-arrow-left"></i> Volver al producto
-    </a>
-</div>
+<div class="dmp-wrap">
 
-<!-- Totales acumulados -->
-<div class="totales-grid">
-    <div class="total-card">
-        <div class="label">Líneas</div>
-        <div class="value">{{ totales.total_lineas }}</div>
-    </div>
-    <div class="total-card">
-        <div class="label">Área facturada</div>
-        <div class="value">{{ totales.area_facturada_m2 }} m²</div>
-    </div>
-    <div class="total-card">
-        <div class="label">Material consumido</div>
-        <div class="value">{{ totales.material_consumido_m2 }} m²</div>
-    </div>
-    <div class="total-card merma">
-        <div class="label">Merma operativa</div>
-        <div class="value">{{ totales.merma_operativa_m2 }} m²</div>
-    </div>
-    <div class="total-card merma">
-        <div class="label">% Merma</div>
-        <div class="value">{{ totales.merma_operativa_pct }}%</div>
-    </div>
-</div>
-
-{% if lineas %}
-    {% for l in lineas %}
-    <div class="linea-card">
-        <div class="linea-header">
-            <div>
-                <div class="linea-title">{{ l.nombre_linea }}</div>
-                <div class="linea-meta">
-                    {% if l.orden_num != '—' %}
-                        Orden <a href="{{ url_for('ordenes.detalle_order', order_id=l.orden_id) }}" target="_blank">{{ l.orden_num }}</a>
-                        · {{ l.cliente }}
-                        {% if l.fecha %} · {{ l.fecha.strftime('%d/%m/%Y') }}{% endif %}
-                    {% else %}
-                        Sin orden asignada
-                    {% endif %}
-                </div>
-            </div>
-            <div class="linea-badges">
-                <span class="chip blue">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</span>
-                <span class="chip orange">{{ l.cantidad }} {{ l.unidad }}</span>
-                <span class="chip">{{ l.n_paños }} paño{{ 's' if l.n_paños > 1 else '' }}</span>
-            </div>
-        </div>
-        <div class="linea-body">
-            <div class="linea-resumen">
-                <div class="item">
-                    <span class="label">Área facturada</span>
-                    <span class="value">{{ "%.2f"|format(l.area_facturada_m2) }} m²</span>
-                </div>
-                <div class="item">
-                    <span class="label">Filas × Cols</span>
-                    <span class="value">{{ l.filas }} × {{ l.columnas }}</span>
-                </div>
-                <div class="item">
-                    <span class="label">Largo total (real)</span>
-                    <span class="value">{{ "%.2f"|format(l.largo_total_m) }} m</span>
-                </div>
-                <div class="item">
-                    <span class="label">Material consumido</span>
-                    <span class="value">{{ "%.2f"|format(l.material_consumido_m2) }} m²</span>
-                </div>
-                <div class="item">
-                    <span class="label">Merma</span>
-                    <span class="value merma">{{ "%.2f"|format(l.merma_operativa_m2) }} m²</span>
-                </div>
-                <div class="item">
-                    <span class="label">% Merma</span>
-                    <span class="value merma">{{ "%.1f"|format(l.merma_operativa_pct) }}%</span>
-                </div>
-            </div>
-
-            {% if l.desglose_paños %}
-            <div style="font-size:12px;color:#8e8e93;text-transform:uppercase;letter-spacing:0.4px;font-weight:700;margin-bottom:6px;">
-                Desglose por paño
-            </div>
-            <table class="tabla-paños">
-                <thead>
-                    <tr>
-                        <th>Paño</th>
-                        <th>Área</th>
-                        <th>Filas</th>
-                        <th>Aire</th>
-                        <th>Gap efectivo</th>
-                        <th>Sobrante</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for p in l.desglose_paños %}
-                    <tr>
-                        <td class="num">#{{ p.n }}</td>
-                        <td class="num">{{ "%.2f"|format(p.area) }} m²</td>
-                        <td class="num">{{ p.filas }}</td>
-                        <td class="num">{{ p.aire_mm }} mm</td>
-                        <td class="num" style="color:{% if p.gap_efectivo_mm < l.gap_usado_cm * 10 %} #10b981 {% else %}#1c1c1e{% endif %};font-weight:600;">
-                            {{ p.gap_efectivo_mm }} mm
-                            {% if p.gap_efectivo_mm < l.gap_usado_cm * 10 %}
-                                <span style="font-size:10px;">↓</span>
-                            {% endif %}
-                        </td>
-                        <td class="num" style="color:{% if p.sobrante_mm > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
-                            {{ p.sobrante_mm }} mm
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            {% else %}
-            <p style="color:#8e8e93;font-size:12px;font-style:italic;margin:0;">
-                Este registro fue generado con la fórmula antigua. No hay desglose por paño disponible.
+    <!-- ============================================================
+         HEADER CON ACCIONES
+         ============================================================ -->
+    <div class="dmp-header">
+        <div class="dmp-header-info">
+            <p class="dmp-header-title">Desglose real de merma operativa</p>
+            <p class="dmp-header-desc">
+                Cada línea muestra el desglose real: aire sobrante, gap efectivo, cut mark y material consumido.
             </p>
-            {% endif %}
+        </div>
+        <div class="dmp-header-actions">
+            <a href="{{ url_for('inventario.detalle_producto', producto_id=producto.id) }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver al producto
+            </a>
         </div>
     </div>
-    {% endfor %}
-{% else %}
-<div style="text-align:center;padding:60px 20px;background:white;border-radius:16px;border:1px solid #f0ece8;">
-    <div style="font-size:48px;opacity:0.3;margin-bottom:12px;">📊</div>
-    <p style="color:#8e8e93;font-size:16px;">No hay líneas de orden asociadas a este producto.</p>
+
+    <!-- ============================================================
+         TOTALES ACUMULADOS
+         ============================================================ -->
+    <div class="dmp-totales-grid">
+        <div class="dmp-total-card">
+            <div class="dmp-total-label">Líneas</div>
+            <div class="dmp-total-value">{{ totales.total_lineas }}</div>
+        </div>
+        <div class="dmp-total-card">
+            <div class="dmp-total-label">Área facturada</div>
+            <div class="dmp-total-value">{{ totales.area_facturada_m2 }} m²</div>
+        </div>
+        <div class="dmp-total-card">
+            <div class="dmp-total-label">Material consumido</div>
+            <div class="dmp-total-value">{{ totales.material_consumido_m2 }} m²</div>
+        </div>
+        <div class="dmp-total-card merma">
+            <div class="dmp-total-label">Merma operativa</div>
+            <div class="dmp-total-value">{{ totales.merma_operativa_m2 }} m²</div>
+        </div>
+        <div class="dmp-total-card merma">
+            <div class="dmp-total-label">% Merma</div>
+            <div class="dmp-total-value">{{ totales.merma_operativa_pct }}%</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         LISTA DE LÍNEAS
+         ============================================================ -->
+    {% if lineas %}
+        {% for l in lineas %}
+        <div class="dmp-linea-card">
+
+            <!-- HEADER DE LA LÍNEA -->
+            <div class="dmp-linea-header">
+                <div class="dmp-linea-header-info">
+                    <h3 class="dmp-linea-title">{{ l.nombre_linea }}</h3>
+                    <div class="dmp-linea-meta">
+                        {% if l.orden_num != '—' %}
+                            <span>Orden</span>
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=l.orden_id) }}"
+                               target="_blank"
+                               class="dmp-orden-link">
+                                {{ l.orden_num }}
+                            </a>
+                            <span class="dmp-meta-sep">·</span>
+                            <span>{{ l.cliente }}</span>
+                            {% if l.fecha %}
+                                <span class="dmp-meta-sep">·</span>
+                                <span>{{ l.fecha.strftime('%d/%m/%Y') }}</span>
+                            {% endif %}
+                        {% else %}
+                            <span style="font-style:italic; color:#8e8e93;">Sin orden asignada</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="dmp-linea-badges">
+                    <span class="dmp-chip blue">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        </svg>
+                        <span class="num-mont">{{ l.ancho_cm }}</span>×<span class="num-mont">{{ l.alto_cm }}</span> cm
+                    </span>
+                    <span class="dmp-chip orange">
+                        <span class="num-mont">{{ l.cantidad }}</span> {{ l.unidad }}
+                    </span>
+                    <span class="dmp-chip">
+                        <span class="num-mont">{{ l.n_paños }}</span> paño{{ 's' if l.n_paños > 1 else '' }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- BODY DE LA LÍNEA -->
+            <div class="dmp-linea-body">
+
+                <!-- Resumen en grid -->
+                <div class="dmp-linea-resumen">
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">Área facturada</span>
+                        <span class="dmp-resumen-value">{{ "%.2f"|format(l.area_facturada_m2) }} m²</span>
+                    </div>
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">Filas × Cols</span>
+                        <span class="dmp-resumen-value">{{ l.filas }} × {{ l.columnas }}</span>
+                    </div>
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">Largo total (real)</span>
+                        <span class="dmp-resumen-value">{{ "%.2f"|format(l.largo_total_m) }} m</span>
+                    </div>
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">Material consumido</span>
+                        <span class="dmp-resumen-value">{{ "%.2f"|format(l.material_consumido_m2) }} m²</span>
+                    </div>
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">Merma</span>
+                        <span class="dmp-resumen-value merma">{{ "%.2f"|format(l.merma_operativa_m2) }} m²</span>
+                    </div>
+                    <div class="dmp-resumen-item">
+                        <span class="dmp-resumen-label">% Merma</span>
+                        <span class="dmp-resumen-value merma">{{ "%.1f"|format(l.merma_operativa_pct) }}%</span>
+                    </div>
+                </div>
+
+                <!-- Tabla de paños -->
+                {% if l.desglose_paños %}
+                    <div class="dmp-paños-section-title">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Desglose por paño
+                    </div>
+                    <div class="dmp-paños-scroll">
+                        <table class="dmp-paños-table">
+                            <thead>
+                                <tr>
+                                    <th>Paño</th>
+                                    <th>Área</th>
+                                    <th>Filas</th>
+                                    <th>Aire</th>
+                                    <th>Gap efectivo</th>
+                                    <th>Sobrante</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in l.desglose_paños %}
+                                <tr>
+                                    <td class="num-mont">#{{ p.n }}</td>
+                                    <td class="num-mont">{{ "%.2f"|format(p.area_m2 or p.area or 0) }} m²</td>
+                                    <td class="num-mont">{{ p.filas }}</td>
+                                    <td class="num-mont">{{ p.aire_total_mm or p.aire_mm or 0 }} mm</td>
+                                    <td class="num-mont" style="color:{% if (p.gap_efectivo_mm or 0) < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};">
+                                        {{ p.gap_efectivo_mm }} mm
+                                        {% if (p.gap_efectivo_mm or 0) < l.gap_usado_cm * 10 %}
+                                            <span style="font-size:10px;">↓</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="num-mont" style="color:{% if (p.sobrante_salida_mm or p.sobrante_mm or 0) > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
+                                        {{ p.sobrante_salida_mm or p.sobrante_mm or 0 }} mm
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="dmp-paños-empty">
+                        Este registro fue generado con la fórmula antigua. No hay desglose por paño disponible.
+                    </div>
+                {% endif %}
+
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+    <div class="dmp-empty">
+        <div class="dmp-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+        </div>
+        <div class="dmp-empty-title">No hay líneas de orden asociadas a este producto</div>
+        <div class="dmp-empty-desc">
+            Cuando proceses órdenes que incluyan este producto, aparecerá aquí su desglose completo de merma.
+        </div>
+        <a href="{{ url_for('inventario.detalle_producto', producto_id=producto.id) }}" class="btn btn-outline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Volver al producto
+        </a>
+    </div>
+    {% endif %}
+
 </div>
-{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // Sin interactividad — el desglose se muestra siempre expandido.
+    // Solo se necesita el nombre del producto para futuras extensiones.
+    // ============================================================
+    console.log('[desglose-merma] Producto:', {{ producto.nombre|tojson }});
+</script>
 {% endblock %}

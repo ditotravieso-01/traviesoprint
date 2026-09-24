@@ -1,97 +1,508 @@
 {% extends "base.html" %}
 
 {% block title %}Reporte Semanal · {{ semana_natural or semana }}{% endblock %}
-{% block page_title %}📊 Reporte · {{ semana_natural or semana }}{% endblock %}
+
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Reporte Semanal</span>
+    <span class="page-subtitle">
+        {{ semana_natural or semana }} ·
+        <span class="num-mont">{{ conteos|length }}</span> conteo{{ 's' if conteos|length != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-success { background:#10b981; color:white; }
-    .btn-success:hover { background:#059669; }
-    .btn-warning { background:#f59e0b; color:white; }
-    .btn-warning:hover { background:#d97706; }
-    .btn-danger { background:#dc2626; color:white; }
-    .btn-danger:hover { background:#b91c1c; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
-
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    .card h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:12px; color:#1c1c1e; }
-
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:14px; margin-bottom:20px; }
-    .kpi-card {
-        background:white; border-radius:14px; padding:16px 20px;
-        border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02);
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
     }
-    .kpi-card .value { font-family:'Playfair Display',serif; font-size:28px; font-weight:700; color:#1c1c1e; }
-    .kpi-card .label { font-size:13px; color:#1c1c1e; font-weight:600; margin-top:6px; }
-    .kpi-card .hint { font-size:11px; color:#8e8e93; margin-top:2px; line-height:1.35; }
-    .kpi-card.rojo { border-top-color:#dc2626; }
-    .kpi-card.rojo .value { color:#dc2626; }
-    .kpi-card.verde { border-top-color:#10b981; }
-    .kpi-card.verde .value { color:#10b981; }
-    .kpi-card.amarillo { border-top-color:#f59e0b; }
-    .kpi-card.amarillo .value { color:#f59e0b; }
-
-    .orden-card { background:white; border-radius:14px; padding:0; border:1px solid #f0ece8; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
-    .orden-card .orden-header { background:linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%); padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer; }
-    .orden-card .orden-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#1c1c1e; }
-    .orden-card .orden-meta { font-size:13px; color:#666; margin-top:2px; }
-    .orden-card .orden-meta a { color:#3b82f6; text-decoration:none; font-weight:600; }
-    .orden-card .orden-meta a:hover { text-decoration:underline; }
-    .orden-card .orden-total { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
-    .orden-card .orden-total .merma-tag { background:#fde8e5; color:#991b1b; padding:4px 12px; border-radius:30px; font-weight:700; font-size:13px; }
-    .orden-card .orden-body { padding:16px 20px; display:none; border-top:1px solid #f0ece8; }
-    .orden-card.open .orden-body { display:block; }
-
-    table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; background:#fafaf9; }
-    td { padding:8px 10px; border-bottom:1px solid #f5f2ef; }
-    .num { font-family:'JetBrains Mono',monospace; font-size:12px; }
-    .merma-pos { color:#dc2626; font-weight:600; }
-
-    .paños-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
-    .paños-table th { background:#fafaf9; font-size:10px; padding:6px 8px; }
-    .paños-table td { padding:6px 8px; }
-
-    .info-box {
-        display:flex; gap:10px; align-items:flex-start;
-        background:#eff6ff; border-left:4px solid #3b82f6;
-        padding:12px 16px; border-radius:8px;
-        font-size:13px; color:#1e3a8a; margin-bottom:16px; line-height:1.5;
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
     }
-    .info-box i { color:#3b82f6; margin-top:2px; flex-shrink:0; }
-
-    .acciones-conteo { display:flex; gap:4px; }
-    .acciones-conteo .btn { padding:6px 10px; font-size:12px; border-radius:20px; }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
 
     /* ============================================================
-       BADGE DE SEMANA ISO (subtítulo pequeño bajo el título natural)
+       LAYOUT DEFENSIVO
        ============================================================ */
-    .iso-badge {
-        display: inline-block;
+    .rc-wrap, .rc-wrap * { box-sizing: border-box; }
+    .rc-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .rc-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: transparent; border: 1.5px solid #dc2626; color: #dc2626; }
+    .btn-danger:hover { background: #fef2f2; border-color: #b91c1c; color: #b91c1c; transform: none; box-shadow: none; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .rc-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .rc-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .rc-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .rc-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .rc-iso-badge {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 700;
         background: #f0ece8;
         color: #6b6b7a;
-        font-size: 11px;
-        font-weight: 600;
-        padding: 2px 10px;
+        padding: 3px 10px;
         border-radius: 30px;
         letter-spacing: 0.3px;
-        font-family: 'JetBrains Mono', monospace;
-        margin-left: 6px;
-        vertical-align: middle;
+    }
+    .rc-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+        align-items: center;
     }
 
     /* ============================================================
-       MODAL DE CONFIRMACIÓN PERSONALIZADO
+       INFO BOX
        ============================================================ */
-    .cs-confirm-overlay {
+    .rc-info-box {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        background: #eff6ff;
+        border-left: 4px solid #3b82f6;
+        padding: 14px 18px;
+        border-radius: 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #1e3a8a;
+        margin-bottom: 20px;
+        line-height: 1.55;
+    }
+    .rc-info-box svg { color: #3b82f6; flex-shrink: 0; margin-top: 2px; }
+    .rc-info-box strong { color: #1e3a8a; font-weight: 700; }
+    .rc-info-box em { font-style: italic; color: #1e40af; }
+
+    /* ============================================================
+       KPIs
+       ============================================================ */
+    .rc-kpi-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .rc-kpi {
+        background: white;
+        border-radius: 14px;
+        padding: 16px 18px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        min-width: 0;
+    }
+    .rc-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .rc-kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.4px;
+        line-height: 1.15;
+    }
+    .rc-kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #1c1c1e;
+        font-weight: 700;
+        margin-top: 6px;
+        letter-spacing: -0.1px;
+    }
+    .rc-kpi-hint {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        margin-top: 3px;
+        line-height: 1.4;
+    }
+    .rc-kpi.rojo { border-top-color: #dc2626; }
+    .rc-kpi.rojo .rc-kpi-value { color: #dc2626; }
+    .rc-kpi.verde { border-top-color: #10b981; }
+    .rc-kpi.verde .rc-kpi-value { color: #10b981; }
+    .rc-kpi.amarillo { border-top-color: #f59e0b; }
+    .rc-kpi.amarillo .rc-kpi-value { color: #f59e0b; }
+
+    /* ============================================================
+       CARD BASE
+       ============================================================ */
+    .rc-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 22px;
+        border: 1px solid #f0ece8;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .rc-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0 0 14px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .rc-card h4 svg { color: #a8854f; flex-shrink: 0; }
+    .rc-card-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: -8px 0 14px 0;
+        line-height: 1.5;
+    }
+    .rc-card-desc strong { color: #1c1c1e; }
+
+    /* ============================================================
+       TABLA DE CONTEOS
+       ============================================================ */
+    .rc-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table.rc-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        min-width: 0;
+    }
+    table.rc-table th {
+        font-family: 'Inter', sans-serif;
+        padding: 10px 12px;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #fafaf9;
+        text-align: left;
+        white-space: nowrap;
+    }
+    table.rc-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    table.rc-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.rc-table tr:last-child td { border-bottom: none; }
+    .rc-merma-pos { color: #dc2626; }
+    .rc-merma-neg { color: #10b981; }
+
+    .rc-actions-cell {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+    }
+    .rc-icon-btn {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        border: 1.5px solid #e0dcd8;
+        background: white;
+        color: #555;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        text-decoration: none;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .rc-icon-btn:hover {
+        border-color: #a8854f;
+        color: #78350f;
+        background: #faf6f0;
+    }
+    .rc-icon-btn.danger:hover {
+        border-color: #dc2626;
+        color: #991b1b;
+        background: #fef2f2;
+    }
+    .rc-icon-btn svg { width: 14px; height: 14px; }
+
+    /* ============================================================
+       ORDEN CARD (acordeón)
+       ============================================================ */
+    .rc-orden-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #f0ece8;
+        margin-bottom: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: box-shadow 0.2s;
+    }
+    .rc-orden-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+    .rc-orden-header {
+        background: linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%);
+        padding: 14px 20px;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+    }
+    .rc-orden-header:hover { background: linear-gradient(135deg, #f5f2ef 0%, #efe9e2 100%); }
+    .rc-orden-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .rc-orden-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .rc-orden-title .rc-orden-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .rc-orden-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    .rc-orden-link:hover { text-decoration: underline; }
+    .rc-orden-meta {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #6b6b7a;
+        font-weight: 500;
+    }
+    .rc-orden-total {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .rc-merma-tag {
+        font-family: 'Inter', sans-serif;
+        background: #fde8e5;
+        color: #991b1b;
+        padding: 4px 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 12.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .rc-chevron {
+        color: #8e8e93;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        transition: transform 0.25s ease;
+        flex-shrink: 0;
+    }
+    .rc-orden-card.open .rc-chevron { transform: rotate(180deg); background: #f0ece8; }
+    .rc-orden-body {
+        padding: 16px 20px;
+        display: none;
+        border-top: 1px solid #f0ece8;
+    }
+    .rc-orden-card.open .rc-orden-body { display: block; }
+
+    /* ============================================================
+       TABLA DE PAÑOS (anidada)
+       ============================================================ */
+    .rc-paños-row td {
+        background: #fafaf9;
+        padding: 0 !important;
+    }
+    .rc-paños-container {
+        padding: 14px 18px;
+        background: #fafaf9;
+    }
+    .rc-paños-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .rc-paños-title svg { color: #a8854f; flex-shrink: 0; }
+    table.rc-paños-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e8e0da;
+    }
+    table.rc-paños-table th {
+        font-family: 'Inter', sans-serif;
+        background: #f5f2ef;
+        font-size: 10px;
+        padding: 8px 10px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        text-align: left;
+        border-bottom: 1px solid #e8e0da;
+        white-space: nowrap;
+    }
+    table.rc-paños-table td {
+        padding: 7px 10px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    table.rc-paños-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.rc-paños-table tr:last-child td { border-bottom: none; }
+
+    .rc-paños-empty {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #8e8e93;
+        font-style: italic;
+        padding: 10px 0;
+    }
+
+    /* ============================================================
+       EMPTY
+       ============================================================ */
+    .rc-empty {
+        text-align: center;
+        padding: 40px 20px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        color: #8e8e93;
+    }
+
+    /* ============================================================
+       MODAL cs-confirm
+       ============================================================ */
+    .rc-confirm-overlay {
         display: none;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.35);
+        inset: 0;
+        background: rgba(0,0,0,0.4);
         backdrop-filter: blur(6px);
         -webkit-backdrop-filter: blur(6px);
         z-index: 9999;
@@ -100,418 +511,603 @@
         padding: 16px;
         box-sizing: border-box;
     }
-    .cs-confirm-overlay.active { display: flex; }
-
-    .cs-confirm-modal {
+    .rc-confirm-overlay.active { display: flex; }
+    .rc-confirm-modal {
         background: white;
         border-radius: 20px;
-        padding: 26px 28px 22px;
-        max-width: 460px;
         width: 100%;
+        max-width: 460px;
         box-shadow: 0 30px 80px rgba(0,0,0,0.22);
-        animation: csModalIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        animation: rcConfirmIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow: hidden;
         text-align: center;
         border-top: 5px solid #dc2626;
     }
-    .cs-confirm-modal.warning { border-top-color: #f59e0b; }
-    .cs-confirm-modal.danger  { border-top-color: #dc2626; }
-
-    @keyframes csModalIn {
+    .rc-confirm-modal.warning { border-top-color: #f59e0b; }
+    .rc-confirm-modal.danger  { border-top-color: #dc2626; }
+    @keyframes rcConfirmIn {
         from { transform: scale(0.94) translateY(10px); opacity: 0; }
         to   { transform: scale(1) translateY(0); opacity: 1; }
     }
-
-    .cs-confirm-icon {
-        font-size: 40px;
-        margin-bottom: 10px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
+    .rc-confirm-icon {
         width: 64px;
         height: 64px;
         border-radius: 50%;
         background: #fef2f2;
         color: #dc2626;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 26px auto 12px;
     }
-    .cs-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
-    .cs-confirm-icon.danger  { background: #fef2f2; color: #dc2626; }
-
-    .cs-confirm-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
+    .rc-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
+    .rc-confirm-icon.danger  { background: #fef2f2; color: #dc2626; }
+    .rc-confirm-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 19px;
         font-weight: 700;
         color: #1c1c1e;
         margin: 0 0 8px 0;
         line-height: 1.25;
+        letter-spacing: -0.2px;
     }
-
-    .cs-confirm-message {
+    .rc-confirm-message {
+        font-family: 'Inter', sans-serif;
         font-size: 14px;
         color: #555;
         line-height: 1.55;
-        margin: 0 0 22px 0;
+        margin: 0 28px 22px;
         white-space: pre-line;
     }
-
-    .cs-confirm-actions {
+    .rc-confirm-actions {
         display: flex;
         gap: 12px;
         justify-content: center;
         flex-wrap: wrap;
+        padding: 0 28px 26px;
     }
-    .cs-confirm-actions .btn {
-        min-width: 120px;
+    .rc-confirm-btn {
+        min-width: 130px;
         justify-content: center;
         padding: 10px 22px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.15s;
     }
+    .rc-confirm-btn.cancel {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .rc-confirm-btn.cancel:hover { background: #f5f5f5; border-color: #8e8e93; }
+    .rc-confirm-btn.danger {
+        background: #dc2626;
+        color: white;
+    }
+    .rc-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(220,38,38,0.25); }
+    .rc-confirm-btn.warning {
+        background: #f59e0b;
+        color: white;
+    }
+    .rc-confirm-btn.warning:hover { background: #d97706; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(245,158,11,0.25); }
 
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .rc-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 768px) {
+        .rc-header { flex-direction: column; align-items: stretch; }
+        .rc-header-actions { margin-left: 0; width: 100%; }
+        .rc-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .rc-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+        .rc-kpi { padding: 12px 14px; }
+        .rc-kpi-value { font-size: 20px; }
+
+        .rc-card { padding: 16px; }
+
+        /* Tabla conteos → cards */
+        table.rc-table,
+        table.rc-table thead,
+        table.rc-table tbody,
+        table.rc-table tr,
+        table.rc-table th,
+        table.rc-table td { display: block; }
+        table.rc-table thead { display: none; }
+        table.rc-table tbody { display: flex; flex-direction: column; gap: 10px; }
+        table.rc-table tr {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #f0ece8;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        table.rc-table td {
+            border: none;
+            padding: 2px 0;
+            width: 100%;
+        }
+        table.rc-table td:before {
+            content: attr(data-label);
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .rc-orden-header { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 16px; }
+        .rc-orden-total { width: 100%; justify-content: space-between; }
+        .rc-orden-body { padding: 12px 14px; }
+
+        .rc-confirm-modal { border-radius: 16px; }
+        .rc-confirm-icon { width: 54px; height: 54px; margin-top: 22px; }
+        .rc-confirm-title { font-size: 17px; }
+        .rc-confirm-message { font-size: 13px; margin: 0 20px 18px; }
+        .rc-confirm-actions { flex-direction: column; padding: 0 20px 22px; }
+        .rc-confirm-btn { width: 100%; }
+    }
     @media (max-width: 480px) {
-        .cs-confirm-modal { padding: 22px 20px 18px; border-radius: 16px; }
-        .cs-confirm-icon { width: 54px; height: 54px; font-size: 32px; }
-        .cs-confirm-title { font-size: 18px; }
-        .cs-confirm-message { font-size: 13px; }
-        .cs-confirm-actions { flex-direction: column; }
-        .cs-confirm-actions .btn { width: 100%; }
+        .rc-kpi-grid { grid-template-columns: 1fr !important; gap: 8px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">
-            Reporte de la {{ (semana_natural or semana)|lower }}
-            <span class="iso-badge">{{ semana }}</span>
-        </p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-        <select onchange="window.location.href='{{ url_for('inventario.reporte_conteos') }}?semana=' + this.value"
-                style="padding:6px 12px; border:1px solid #d2d2d7; border-radius:30px; font-size:13px;">
-            {% for s in semanas_disponibles %}
-                <option value="{{ s }}" {% if s == semana %}selected{% endif %}>{{ s }}</option>
-            {% endfor %}
-        </select>
-        <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo conteo</a>
-        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-        <form method="POST"
-              action="{{ url_for('inventario.eliminar_conteos_semana', semana=semana) }}"
-              class="form-cs-confirm"
-              data-mensaje="¿Eliminar TODOS los conteos de la semana {{ semana_natural or semana }}?&#10;&#10;Esta acción revertirá el stock al estado anterior y no se puede deshacer."
-              data-titulo="Eliminar toda la semana"
-              data-ok-text="Sí, eliminar todo"
-              data-variant="danger"
-              style="display:inline;">
-            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i> Eliminar toda la semana</button>
-        </form>
-    </div>
-</div>
+<div class="rc-wrap">
 
-<div class="info-box">
-    <i class="fas fa-info-circle"></i>
-    <div>
-        <strong>¿Qué estoy viendo?</strong> Este es el resumen del conteo físico que hiciste esta semana.
-        Compara <em>lo que el sistema creía tener</em> contra <em>lo que contaste a mano</em>, y separa
-        lo que es <strong>desperdicio normal de impresión</strong> de lo que es <strong>pérdida no explicada</strong>.
-        Puedes editar o eliminar cada conteo individual usando los botones de la tabla.
-    </div>
-</div>
-
-<div class="kpi-grid">
-    <div class="kpi-card rojo">
-        <div class="value">{{ "%.2f"|format(total_diferencia_m2) }} m²</div>
-        <div class="label">📉 Lo que faltó según el conteo</div>
-        <div class="hint">Diferencia entre lo que el sistema creía tener y lo que contaste físicamente.</div>
-    </div>
-    <div class="kpi-card verde">
-        <div class="value">{{ "%.2f"|format(total_merma_operativa_m2) }} m²</div>
-        <div class="label">🖨️ Desperdicio esperado al imprimir</div>
-        <div class="hint">Lo que la máquina tira normalmente (bordes, cortes, gaps). Es normal.</div>
-    </div>
-    <div class="kpi-card amarillo">
-        <div class="value">{{ "%.2f"|format(total_merma_imprevista_m2) }} m²</div>
-        <div class="label">⚠️ Pérdida no explicada</div>
-        <div class="hint">Lo que falta y NO se explica con la impresión. Si es alto, hay que investigar.</div>
-    </div>
-    <div class="kpi-card">
-        <div class="value">{{ conteos|length }}</div>
-        <div class="label">📦 Conteos registrados esta semana</div>
-        <div class="hint">Cada uno lo registraste individualmente.</div>
-    </div>
-</div>
-
-<!-- Tabla de conteos individuales -->
-{% if conteos %}
-<div class="card">
-    <h4>📋 Conteos individuales de la semana</h4>
-    <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
-        Cada fila es un conteo registrado. Puedes <strong>editar</strong> el stock físico contado o <strong>eliminar</strong> el conteo.
-    </p>
-    <div style="overflow-x:auto;">
-        <table>
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Fecha</th>
-                    <th>Stock sistema (u)</th>
-                    <th>Stock físico (u)</th>
-                    <th>Diferencia (u)</th>
-                    <th>Merma operativa (m²)</th>
-                    <th>Merma imprevista (m²)</th>
-                    <th>Comentario</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for c in conteos %}
-                <tr>
-                    <td><strong>{{ c.producto.nombre if c.producto else '—' }}</strong></td>
-                    <td class="num">{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else '—' }}</td>
-                    <td class="num">{{ "%.2f"|format(c.stock_sistema_unidades) }}</td>
-                    <td class="num">{{ "%.2f"|format(c.stock_fisico_unidades) }}</td>
-                    <td class="num" style="color:{% if c.diferencia_unidades > 0 %}#dc2626{% elif c.diferencia_unidades < 0 %}#10b981{% else %}#555{% endif %}; font-weight:600;">
-                        {{ "%+.2f"|format(c.diferencia_unidades) }}
-                    </td>
-                    <td class="num">{{ "%.3f"|format(c.merma_operativa_semana_m2 or 0) }}</td>
-                    <td class="num merma-pos">{{ "%.3f"|format(c.merma_imprevista_m2 or 0) }}</td>
-                    <td style="font-size:12px; color:#666;">{{ c.comentario or '—' }}</td>
-                    <td>
-                        <div class="acciones-conteo">
-                            <a href="{{ url_for('inventario.editar_conteo', conteo_id=c.id) }}" class="btn btn-sm btn-warning" title="Editar conteo">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            <form method="POST"
-                                  action="{{ url_for('inventario.eliminar_conteo', conteo_id=c.id) }}"
-                                  class="form-cs-confirm"
-                                  data-mensaje="¿Eliminar este conteo?&#10;&#10;El stock se revertirá al estado anterior."
-                                  data-titulo="Eliminar conteo"
-                                  data-ok-text="Sí, eliminar"
-                                  data-variant="warning"
-                                  style="display:inline;">
-                                <button type="submit" class="btn btn-sm btn-danger" title="Eliminar conteo">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
-{% endif %}
-
-<!-- Desperdicio por orden de la semana -->
-<div class="card">
-    <h4>🖨️ Desperdicio de cada orden procesada esta semana</h4>
-    <p style="color:#8e8e93; font-size:13px; margin-bottom:12px;">
-        Cada orden muestra cuánto material se usó de más al imprimir (bordes, cortes, gaps, aire).
-        Toca cualquier orden para ver el desglose paño por paño.
-    </p>
-
-    {% if ordenes_lista %}
-        {% for o in ordenes_lista %}
-        <div class="orden-card">
-            <div class="orden-header" onclick="this.parentElement.classList.toggle('open')">
-                <div>
-                    <div class="orden-title">
-                        Orden
-                        <a href="{{ url_for('ordenes.detalle_order', order_id=o.orden_id) }}" target="_blank" onclick="event.stopPropagation()">
-                            {{ o.orden_num }}
-                        </a>
-                    </div>
-                    <div class="orden-meta">
-                        {{ o.cliente }} · {{ o.fecha.strftime('%d/%m/%Y') if o.fecha else '—' }}
-                        · {{ o.lineas|length }} línea{{ 's' if o.lineas|length != 1 else '' }}
-                    </div>
-                </div>
-                <div class="orden-total">
-                    <span class="merma-tag">
-                        Desperdicio: {{ "%.2f"|format(o.total_merma_m2) }} m²
-                    </span>
-                    <i class="fas fa-chevron-down" style="color:#8e8e93;"></i>
-                </div>
-            </div>
-            <div class="orden-body">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Línea</th>
-                            <th>Etiqueta</th>
-                            <th>Se facturó</th>
-                            <th>Se usó</th>
-                            <th>Desperdicio</th>
-                            <th>%</th>
-                            <th>Paños</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for l in o.lineas %}
-                        <tr>
-                            <td>{{ l.nombre }}</td>
-                            <td class="num">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</td>
-                            <td class="num">{{ "%.2f"|format(l.area_m2) }} m²</td>
-                            <td class="num">{{ "%.2f"|format(l.material_m2) }} m²</td>
-                            <td class="num merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
-                            <td class="num">{{ "%.1f"|format(l.merma_pct) }}%</td>
-                            <td>
-                                <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
-                                    Ver ({{ l.n_paños }})
-                                </button>
-                            </td>
-                        </tr>
-                        <tr class="paños-row" style="display:none;">
-                            <td colspan="7" style="background:#fafaf9;">
-                                {% if l.desglose_paños %}
-                                <table class="paños-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Paño</th>
-                                            <th>Área</th>
-                                            <th>Filas</th>
-                                            <th>Aire</th>
-                                            <th>Gap efectivo</th>
-                                            <th>Sobrante</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for p in l.desglose_paños %}
-                                        <tr>
-                                            <td class="num">#{{ p.n }}</td>
-                                            <td class="num">{{ "%.2f"|format(p.area) }} m²</td>
-                                            <td class="num">{{ p.filas }}</td>
-                                            <td class="num">{{ p.aire_mm }} mm</td>
-                                            <td class="num" style="color:{% if p.gap_efectivo_mm < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};font-weight:600;">
-                                                {{ p.gap_efectivo_mm }} mm
-                                            </td>
-                                            <td class="num" style="color:{% if p.sobrante_mm > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
-                                                {{ p.sobrante_mm }} mm
-                                            </td>
-                                        </tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                                {% else %}
-                                <em style="color:#8e8e93; font-size:12px;">Sin desglose detallado (orden antigua).</em>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="rc-header">
+        <div class="rc-header-info">
+            <p class="rc-header-title">Resumen del conteo físico</p>
+            <p class="rc-header-desc">
+                {{ semana_natural or semana }}
+                <span class="rc-iso-badge">{{ semana }}</span>
+            </p>
         </div>
-        {% endfor %}
-    {% else %}
-    <p style="color:#8e8e93; text-align:center; padding:20px;">No hay órdenes procesadas esta semana.</p>
+        <div class="rc-header-actions">
+            <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nuevo conteo
+            </a>
+            <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+            {% if conteos %}
+            <form method="POST"
+                  action="{{ url_for('inventario.eliminar_conteos_semana', semana=semana) }}"
+                  class="form-rc-confirm"
+                  data-mensaje="¿Eliminar TODOS los conteos de esta semana?&#10;&#10;Esta acción revertirá el stock al estado anterior y no se puede deshacer."
+                  data-titulo="Eliminar toda la semana"
+                  data-ok-text="Sí, eliminar todo"
+                  data-variant="danger"
+                  style="display:inline;">
+                <button type="submit" class="btn btn-danger">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                    Eliminar semana
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- ============================================================
+         INFO BOX
+         ============================================================ -->
+    <div class="rc-info-box">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+            <strong>¿Qué estoy viendo?</strong> Este es el resumen del conteo físico que hiciste esta semana.
+            Compara <em>lo que el sistema creía tener</em> contra <em>lo que contaste a mano</em>, y separa
+            lo que es <strong>desperdicio normal de impresión</strong> de lo que es <strong>pérdida no explicada</strong>.
+            Puedes editar o eliminar cada conteo individual usando los botones de la tabla.
+        </div>
+    </div>
+
+    <!-- ============================================================
+         KPIs
+         ============================================================ -->
+    <div class="rc-kpi-grid">
+        <div class="rc-kpi rojo">
+            <div class="rc-kpi-value">{{ "%.2f"|format(total_diferencia_m2) }} m²</div>
+            <div class="rc-kpi-label">📉 Lo que faltó según el conteo</div>
+            <div class="rc-kpi-hint">Diferencia entre lo que el sistema creía tener y lo que contaste físicamente.</div>
+        </div>
+        <div class="rc-kpi verde">
+            <div class="rc-kpi-value">{{ "%.2f"|format(total_merma_operativa_m2) }} m²</div>
+            <div class="rc-kpi-label">🖨️ Desperdicio esperado al imprimir</div>
+            <div class="rc-kpi-hint">Lo que la máquina tira normalmente (bordes, cortes, gaps). Es normal.</div>
+        </div>
+        <div class="rc-kpi amarillo">
+            <div class="rc-kpi-value">{{ "%.2f"|format(total_merma_imprevista_m2) }} m²</div>
+            <div class="rc-kpi-label">⚠️ Pérdida no explicada</div>
+            <div class="rc-kpi-hint">Lo que falta y NO se explica con la impresión. Si es alto, hay que investigar.</div>
+        </div>
+        <div class="rc-kpi">
+            <div class="rc-kpi-value">{{ conteos|length }}</div>
+            <div class="rc-kpi-label">📦 Conteos registrados esta semana</div>
+            <div class="rc-kpi-hint">Cada uno lo registraste individualmente.</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         TABLA DE CONTEOS INDIVIDUALES
+         ============================================================ -->
+    {% if conteos %}
+    <div class="rc-card">
+        <h4>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Conteos individuales de la semana
+        </h4>
+        <p class="rc-card-desc">
+            Cada fila es un conteo registrado. Puedes <strong>editar</strong> el stock físico contado o <strong>eliminar</strong> el conteo.
+        </p>
+        <div class="rc-table-scroll">
+            <table class="rc-table">
+                <thead>
+                    <tr>
+                        <th>Producto</th>
+                        <th>Fecha</th>
+                        <th>Stock sistema (u)</th>
+                        <th>Stock físico (u)</th>
+                        <th>Diferencia (u)</th>
+                        <th>Merma operativa (m²)</th>
+                        <th>Merma imprevista (m²)</th>
+                        <th>Comentario</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for c in conteos %}
+                    <tr>
+                        <td data-label="Producto"><strong>{{ c.producto.nombre if c.producto else '—' }}</strong></td>
+                        <td data-label="Fecha" class="num-mont">{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else '—' }}</td>
+                        <td data-label="Stock sistema (u)" class="num-mont">{{ "%.2f"|format(c.stock_sistema_unidades) }}</td>
+                        <td data-label="Stock físico (u)" class="num-mont">{{ "%.2f"|format(c.stock_fisico_unidades) }}</td>
+                        <td data-label="Diferencia (u)" class="num-mont" style="color:{% if c.diferencia_unidades > 0 %}#dc2626{% elif c.diferencia_unidades < 0 %}#10b981{% else %}#555{% endif %};">
+                            {{ "%+.2f"|format(c.diferencia_unidades) }}
+                        </td>
+                        <td data-label="Merma operativa (m²)" class="num-mont">{{ "%.3f"|format(c.merma_operativa_semana_m2 or 0) }}</td>
+                        <td data-label="Merma imprevista (m²)" class="num-mont rc-merma-pos">{{ "%.3f"|format(c.merma_imprevista_m2 or 0) }}</td>
+                        <td data-label="Comentario" style="color:#6b6b7a; font-size:12.5px;">{{ c.comentario or '—' }}</td>
+                        <td data-label="Acciones">
+                            <div class="rc-actions-cell">
+                                <a href="{{ url_for('inventario.editar_conteo', conteo_id=c.id) }}" class="rc-icon-btn" title="Editar conteo">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                </a>
+                                <form method="POST"
+                                      action="{{ url_for('inventario.eliminar_conteo', conteo_id=c.id) }}"
+                                      class="form-rc-confirm"
+                                      data-mensaje="¿Eliminar este conteo?&#10;&#10;El stock se revertirá al estado anterior."
+                                      data-titulo="Eliminar conteo"
+                                      data-ok-text="Sí, eliminar"
+                                      data-variant="warning"
+                                      style="display:inline;">
+                                    <button type="submit" class="rc-icon-btn danger" title="Eliminar conteo">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
     {% endif %}
+
+    <!-- ============================================================
+         ÓRDENES PROCESADAS EN LA SEMANA
+         ============================================================ -->
+    <div class="rc-card">
+        <h4>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+            </svg>
+            Desperdicio de las órdenes procesadas
+        </h4>
+        <p class="rc-card-desc">
+            Cada orden muestra cuánto material se usó de más al imprimir (bordes, cortes, gaps, aire).
+            Toca cualquier orden para ver el desglose paño por paño.
+        </p>
+
+        {% if ordenes_lista %}
+            {% for o in ordenes_lista %}
+            <div class="rc-orden-card">
+                <div class="rc-orden-header" onclick="toggleOrdenCard(this)">
+                    <div class="rc-orden-info">
+                        <div class="rc-orden-title">
+                            <span class="rc-orden-label">Orden</span>
+                            <a href="{{ url_for('ordenes.detalle_order', order_id=o.orden_id) }}" target="_blank" class="rc-orden-link" onclick="event.stopPropagation()">
+                                {{ o.orden_num }}
+                            </a>
+                        </div>
+                        <div class="rc-orden-meta">
+                            {{ o.cliente }} · {{ o.fecha.strftime('%d/%m/%Y') if o.fecha else '—' }}
+                            · <span class="num-mont">{{ o.lineas|length }}</span> línea{{ 's' if o.lineas|length != 1 else '' }}
+                        </div>
+                    </div>
+                    <div class="rc-orden-total">
+                        <span class="rc-merma-tag">
+                            Desperdicio: <span class="num-mont">{{ "%.2f"|format(o.total_merma_m2) }}</span> m²
+                        </span>
+                        <span class="rc-chevron">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <div class="rc-orden-body">
+                    <div class="rc-table-scroll">
+                        <table class="rc-table">
+                            <thead>
+                                <tr>
+                                    <th>Línea</th>
+                                    <th>Etiqueta</th>
+                                    <th>Se facturó</th>
+                                    <th>Se usó</th>
+                                    <th>Desperdicio</th>
+                                    <th>%</th>
+                                    <th>Paños</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in o.lineas %}
+                                <tr>
+                                    <td data-label="Línea"><strong>{{ l.nombre }}</strong></td>
+                                    <td data-label="Etiqueta" class="num-mont">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</td>
+                                    <td data-label="Se facturó" class="num-mont">{{ "%.2f"|format(l.area_m2) }} m²</td>
+                                    <td data-label="Se usó" class="num-mont">{{ "%.2f"|format(l.material_m2) }} m²</td>
+                                    <td data-label="Desperdicio" class="num-mont rc-merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
+                                    <td data-label="%" class="num-mont">{{ "%.1f"|format(l.merma_pct) }}%</td>
+                                    <td data-label="Paños">
+                                        <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
+                                            Ver ({{ l.n_paños }})
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr class="rc-paños-row" style="display:none;">
+                                    <td colspan="7">
+                                        <div class="rc-paños-container">
+                                            {% if l.desglose_paños %}
+                                            <div class="rc-paños-title">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                                </svg>
+                                                Desglose por paño
+                                            </div>
+                                            <div style="overflow-x:auto;">
+                                                <table class="rc-paños-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Paño</th>
+                                                            <th>Área</th>
+                                                            <th>Filas</th>
+                                                            <th>Aire</th>
+                                                            <th>Gap efectivo</th>
+                                                            <th>Sobrante</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for p in l.desglose_paños %}
+                                                        <tr>
+                                                            <td class="num-mont">#{{ p.n }}</td>
+                                                            <td class="num-mont">{{ "%.2f"|format(p.area) }} m²</td>
+                                                            <td class="num-mont">{{ p.filas }}</td>
+                                                            <td class="num-mont">{{ p.aire_mm }} mm</td>
+                                                            <td class="num-mont" style="color:{% if p.gap_efectivo_mm < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};">
+                                                                {{ p.gap_efectivo_mm }} mm
+                                                            </td>
+                                                            <td class="num-mont" style="color:{% if p.sobrante_mm > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
+                                                                {{ p.sobrante_mm }} mm
+                                                            </td>
+                                                        </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                            {% else %}
+                                            <div class="rc-paños-empty">Sin desglose detallado (orden antigua).</div>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="rc-empty">No hay órdenes procesadas esta semana.</div>
+        {% endif %}
+    </div>
+
 </div>
 
 <!-- ============================================================
-     MODAL DE CONFIRMACIÓN PERSONALIZADO
+     MODAL cs-confirm
      ============================================================ -->
-<div class="cs-confirm-overlay" id="csConfirmOverlay">
-    <div class="cs-confirm-modal danger" id="csConfirmModal">
-        <div class="cs-confirm-icon danger" id="csConfirmIcon">
-            <i class="fas fa-trash-alt"></i>
+<div class="rc-confirm-overlay" id="rcConfirmOverlay">
+    <div class="rc-confirm-modal danger" id="rcConfirmModal">
+        <div class="rc-confirm-icon danger" id="rcConfirmIcon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
         </div>
-        <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
-        <p class="cs-confirm-message" id="csConfirmMessage">¿Estás seguro?</p>
-        <div class="cs-confirm-actions">
-            <button type="button" class="btn btn-outline" id="csConfirmCancel">Cancelar</button>
-            <button type="button" class="btn btn-danger" id="csConfirmOk">Eliminar</button>
+        <h3 class="rc-confirm-title" id="rcConfirmTitle">Confirmar acción</h3>
+        <p class="rc-confirm-message" id="rcConfirmMessage">¿Estás seguro?</p>
+        <div class="rc-confirm-actions">
+            <button type="button" class="rc-confirm-btn cancel" id="rcConfirmCancel">Cancelar</button>
+            <button type="button" class="rc-confirm-btn danger" id="rcConfirmOk">Eliminar</button>
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
     // ============================================================
-    // TOGGLE DE PAÑOS
+    // TOGGLE ORDEN CARD
+    // ============================================================
+    function toggleOrdenCard(headerEl) {
+        const card = headerEl.closest('.rc-orden-card');
+        if (!card) return;
+        card.classList.toggle('open');
+    }
+
+    // ============================================================
+    // TOGGLE PAÑOS
     // ============================================================
     function togglePaños(btn) {
         const row = btn.closest('tr').nextElementSibling;
-        if (row && row.classList.contains('paños-row')) {
-            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
-            btn.textContent = row.style.display === 'none' ? 'Ver' : 'Ocultar';
+        if (row && row.classList.contains('rc-paños-row')) {
+            const isOpen = row.style.display !== 'none';
+            row.style.display = isOpen ? 'none' : 'table-row';
+            btn.textContent = isOpen ? `Ver (${btn.dataset.n || ''})` : 'Ocultar';
         }
     }
 
     // ============================================================
-    // MODAL DE CONFIRMACIÓN PERSONALIZADO
+    // MODAL cs-confirm
     // ============================================================
-    let csConfirmCallback = null;
+    let rcConfirmCallback = null;
 
-    function csConfirm(opts) {
-        const overlay = document.getElementById('csConfirmOverlay');
-        const modal = document.getElementById('csConfirmModal');
-        const iconEl = document.getElementById('csConfirmIcon');
-        const titleEl = document.getElementById('csConfirmTitle');
-        const messageEl = document.getElementById('csConfirmMessage');
-        const okBtn = document.getElementById('csConfirmOk');
+    function rcConfirm(opts) {
+        const overlay = document.getElementById('rcConfirmOverlay');
+        const modal = document.getElementById('rcConfirmModal');
+        const iconEl = document.getElementById('rcConfirmIcon');
+        const titleEl = document.getElementById('rcConfirmTitle');
+        const messageEl = document.getElementById('rcConfirmMessage');
+        const okBtn = document.getElementById('rcConfirmOk');
+        if (!overlay) return;
 
         const variant = opts.variant || 'danger';
-        modal.className = 'cs-confirm-modal ' + variant;
-        iconEl.className = 'cs-confirm-icon ' + variant;
+        modal.className = 'rc-confirm-modal ' + variant;
+        iconEl.className = 'rc-confirm-icon ' + variant;
 
         if (variant === 'warning') {
-            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            okBtn.className = 'btn btn-warning';
+            iconEl.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>';
+            okBtn.className = 'rc-confirm-btn warning';
         } else {
-            iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            okBtn.className = 'btn btn-danger';
+            iconEl.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>';
+            okBtn.className = 'rc-confirm-btn danger';
         }
 
         titleEl.textContent = opts.title || 'Confirmar acción';
         messageEl.textContent = opts.message || '¿Estás seguro?';
         okBtn.textContent = opts.okText || 'Eliminar';
 
-        csConfirmCallback = opts.onConfirm || null;
+        rcConfirmCallback = opts.onConfirm || null;
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    function csConfirmClose() {
-        document.getElementById('csConfirmOverlay').classList.remove('active');
+    function rcConfirmClose() {
+        const overlay = document.getElementById('rcConfirmOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('active');
         document.body.style.overflow = '';
-        csConfirmCallback = null;
+        rcConfirmCallback = null;
     }
 
-    document.getElementById('csConfirmOk').addEventListener('click', function() {
-        const cb = csConfirmCallback;
-        csConfirmClose();
-        if (typeof cb === 'function') cb();
-    });
-
-    document.getElementById('csConfirmCancel').addEventListener('click', csConfirmClose);
-
-    document.getElementById('csConfirmOverlay').addEventListener('click', function(e) {
-        if (e.target === this) csConfirmClose();
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') csConfirmClose();
-    });
-
-    // ============================================================
-    // INTERCEPTAR FORMULARIOS CON CONFIRMACIÓN
-    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('form.form-cs-confirm').forEach(function(form) {
+        const okBtn = document.getElementById('rcConfirmOk');
+        const cancelBtn = document.getElementById('rcConfirmCancel');
+        const overlay = document.getElementById('rcConfirmOverlay');
+
+        if (okBtn) {
+            okBtn.addEventListener('click', function() {
+                const cb = rcConfirmCallback;
+                rcConfirmClose();
+                if (typeof cb === 'function') cb();
+            });
+        }
+        if (cancelBtn) cancelBtn.addEventListener('click', rcConfirmClose);
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) rcConfirmClose();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') rcConfirmClose();
+        });
+
+        // Interceptar forms con class form-rc-confirm
+        document.querySelectorAll('form.form-rc-confirm').forEach(function(form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const self = this;
-                csConfirm({
+                rcConfirm({
                     title: self.dataset.titulo || 'Confirmar acción',
                     message: self.dataset.mensaje || '¿Estás seguro?',
                     okText: self.dataset.okText || 'Eliminar',
                     variant: self.dataset.variant || 'danger',
                     onConfirm: function() {
-                        // form.submit() NO dispara el evento submit de nuevo → sin bucle
                         self.submit();
                     }
                 });
             });
         });
+
+        // Guardar n_paños en el botón de "Ver" para reusar
+        document.querySelectorAll('.rc-orden-card .btn-sm.btn-outline').forEach(function(btn) {
+            const txt = btn.textContent.trim();
+            const m = txt.match(/\((\d+)\)/);
+            if (m) btn.dataset.n = m[1];
+        });
+
+        // Abrir automáticamente la primera orden card
+        const firstCard = document.querySelector('.rc-orden-card');
+        if (firstCard && window.innerWidth >= 768) firstCard.classList.add('open');
     });
 </script>
 {% endblock %}

@@ -2,52 +2,55 @@
 
 {% block title %}Panel de Administración · Inventario{% endblock %}
 
-{% block page_title %}⚙️ Panel de Administración{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Panel de Administración</span>
+    <span class="page-subtitle">Configuración y gestión del inventario</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .admin-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px,1fr));
-        gap: 24px;
-        margin-top: 8px;
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
     }
-    .admin-card {
-        background: rgba(255,255,255,0.8);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 24px 20px 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-        transition: all 0.3s ease;
-        text-decoration: none;
-        color: #1c1c1e;
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        overflow: hidden;
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
     }
-    .admin-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
-        border-color: rgba(168,133,79,0.2);
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
     }
-    .admin-card .card-icon { font-size: 28px; margin-bottom: 8px; }
-    .admin-card h4 { font-family: 'Playfair Display', serif; font-size: 20px; margin: 0 0 4px 0; color: #1c1c1e; }
-    .admin-card .card-desc { font-size: 14px; color: #8e8e93; margin: 0 0 12px 0; flex: 1; }
-    .admin-card .card-stats {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding-top: 12px;
-        border-top: 1px solid #f0ece8;
-        margin-top: 4px;
+
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .inv-admin-wrap, .inv-admin-wrap * { box-sizing: border-box; }
+    .inv-admin-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
     }
-    .admin-card .count { font-size: 28px; font-weight: 700; color: #1c1c1e; font-family: 'Playfair Display', serif; }
-    .admin-card .count-label { font-size: 12px; color: #8e8e93; text-transform: uppercase; letter-spacing: 0.3px; font-weight: 600; }
-    .admin-card .card-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
-    .admin-card .card-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+    .inv-admin-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
     .btn {
+        font-family: 'Inter', sans-serif;
         padding: 8px 18px;
         border-radius: 30px;
         border: none;
@@ -60,111 +63,431 @@
         gap: 6px;
         background: #1c1c1e;
         color: white;
-        font-family: 'Inter', sans-serif;
         text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline {
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-help {
+        background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(14,165,233,0.25);
+    }
+    .btn-help:hover {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+        box-shadow: 0 6px 16px rgba(14,165,233,0.35);
+    }
+    .btn-card {
+        padding: 6px 14px;
+        font-size: 12.5px;
+        font-weight: 600;
+    }
+    .btn-card-outline {
         background: transparent;
-        border: 1px solid #d2d2d7;
+        border: 1.5px solid #d2d2d7;
         color: #1c1c1e;
     }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
+    .btn-card-outline:hover { border-color: #a8854f; color: #78350f; background: #faf6f0; transform: none; box-shadow: none; }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .inv-admin-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
     }
-    .btn-sm { padding: 4px 12px; font-size: 12px; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; }
-    .btn-warning { background: #f59e0b; color: white; }
-    .btn-warning:hover { background: #d97706; }
-    .admin-card.ubicacion { border-top: 5px solid #f59e0b; }
-    .admin-card.categoria { border-top: 5px solid #3b82f6; }
-    .admin-card.atributos { border-top: 5px solid #8b5cf6; }
-    .admin-card.proveedores { border-top: 5px solid #10b981; }
-    .btn-help {
+    .inv-admin-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .inv-admin-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .inv-admin-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .inv-admin-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       GRID DE ADMIN CARDS
+       ============================================================ */
+    .inv-admin-grid {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 20px;
+    }
+
+    .inv-admin-card {
+        background: white;
+        border-radius: 18px;
+        padding: 22px 22px 18px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+        min-width: 0;
+    }
+    .inv-admin-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.06);
+        border-color: rgba(168,133,79,0.2);
+    }
+    .inv-admin-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 4px;
         background: #a8854f;
-        color: white;
     }
-    .btn-help:hover { background: #8c7040; }
-    @media (max-width: 768px) { 
-        .admin-grid { grid-template-columns: 1fr; } 
-        .admin-card .card-actions { flex-direction: column; }
-        .admin-card .card-actions .btn { width: 100%; }
-        .admin-header { flex-direction: column; align-items: stretch; text-align: center; }
-        .admin-header .header-actions { justify-content: center; }
+    .inv-admin-card.categoria::before { background: #3b82f6; }
+    .inv-admin-card.atributos::before { background: #8b5cf6; }
+    .inv-admin-card.ubicacion::before { background: #f59e0b; }
+    .inv-admin-card.unidades::before { background: #14b8a6; }
+    .inv-admin-card.proveedores::before { background: #10b981; }
+    .inv-admin-card.estadisticas::before { background: #0ea5e9; }
+
+    .inv-admin-card .inv-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        flex-shrink: 0;
+    }
+    .inv-admin-card.categoria .inv-card-icon { background: #dbeafe; color: #1e40af; }
+    .inv-admin-card.atributos .inv-card-icon { background: #ede9fe; color: #5b21b6; }
+    .inv-admin-card.ubicacion .inv-card-icon { background: #fef3c7; color: #b45309; }
+    .inv-admin-card.unidades .inv-card-icon { background: #ccfbf1; color: #0f766e; }
+    .inv-admin-card.proveedores .inv-card-icon { background: #d1fae5; color: #065f46; }
+    .inv-admin-card.estadisticas .inv-card-icon { background: #e0f2fe; color: #075985; }
+    .inv-admin-card .inv-card-icon svg { width: 24px; height: 24px; }
+
+    .inv-admin-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0 0 6px 0;
+    }
+    .inv-admin-card .inv-card-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #6b6b7a;
+        margin: 0 0 16px 0;
+        flex: 1;
+        line-height: 1.5;
+    }
+    .inv-admin-card .inv-card-stats {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-top: 14px;
+        border-top: 1px solid #f0ece8;
+        margin-top: auto;
+    }
+    .inv-admin-card .inv-card-count {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.4px;
+        line-height: 1;
+    }
+    .inv-admin-card .inv-card-count-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+    }
+
+    .inv-admin-card .inv-card-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+    }
+    .inv-admin-card .inv-card-actions .btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .inv-admin-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 768px) {
+        .inv-admin-header { flex-direction: column; align-items: stretch; }
+        .inv-admin-header-actions { margin-left: 0; width: 100%; }
+        .inv-admin-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .inv-admin-grid { grid-template-columns: 1fr !important; gap: 14px; }
+        .inv-admin-card { padding: 18px 18px 14px; }
+        .inv-admin-card .inv-card-actions { flex-direction: column; }
+        .inv-admin-card .inv-card-actions .btn { width: 100%; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:4px 0 0 0;">Gestiona la configuración del inventario</p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.admin_help') }}" class="btn btn-help" target="_blank"><i class="fas fa-question-circle"></i> Guía de Ayuda</a>
-        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="inv-admin-wrap">
 
-<div class="admin-grid">
-    <!-- Categorías -->
-    <div class="admin-card categoria">
-        <div class="card-icon">🗂️</div>
-        <h4>Categorías</h4>
-        <div class="card-desc">Organiza los productos en categorías jerárquicas</div>
-        <div class="card-stats">
-            <div><div class="count">{{ categorias|length }}</div><div class="count-label">registros</div></div>
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="inv-admin-header">
+        <div class="inv-admin-header-info">
+            <p class="inv-admin-header-title">Configuración del inventario</p>
+            <p class="inv-admin-header-desc">Categorías, atributos, ubicaciones, unidades y proveedores</p>
         </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
-        </div>
-    </div>
-
-    <!-- Grupos de Atributos -->
-    <div class="admin-card atributos">
-        <div class="card-icon">🏷️</div>
-        <h4>Atributos</h4>
-        <div class="card-desc">Define atributos personalizados por categoría</div>
-        <div class="card-stats">
-            <div><div class="count">{{ grupos|length }}</div><div class="count-label">grupos</div></div>
-        </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_grupos') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_grupo') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
+        <div class="inv-admin-header-actions">
+            <a href="{{ url_for('inventario.admin_help') }}" class="btn btn-help" target="_blank">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Guía de Ayuda
+            </a>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
         </div>
     </div>
 
-    <!-- Ubicaciones -->
-    <div class="admin-card ubicacion">
-        <div class="card-icon">📍</div>
-        <h4>Ubicaciones</h4>
-        <div class="card-desc">Gestiona las ubicaciones físicas del inventario</div>
-        <div class="card-stats">
-            <div><div class="count">{{ ubicaciones|length }}</div><div class="count-label">registros</div></div>
+    <!-- ============================================================
+         GRID DE 6 CARDS
+         ============================================================ -->
+    <div class="inv-admin-grid">
+
+        <!-- CATEGORÍAS -->
+        <div class="inv-admin-card categoria">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </div>
+            <h4>Categorías</h4>
+            <p class="inv-card-desc">Organiza los productos en categorías jerárquicas padre/hijo</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">{{ categorias|length }}</span>
+                <span class="inv-card-count-label">registros</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.listar_categorias') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Gestionar
+                </a>
+                <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear
+                </a>
+            </div>
         </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_ubicacion') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
+
+        <!-- GRUPOS DE ATRIBUTOS -->
+        <div class="inv-admin-card atributos">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                    <path d="M2 17l10 5 10-5"></path>
+                    <path d="M2 12l10 5 10-5"></path>
+                </svg>
+            </div>
+            <h4>Atributos</h4>
+            <p class="inv-card-desc">Campos personalizados por categoría (color, acabado, serie...)</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">{{ grupos|length }}</span>
+                <span class="inv-card-count-label">grupos</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.listar_grupos') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Gestionar
+                </a>
+                <a href="{{ url_for('inventario.crear_grupo') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear
+                </a>
+            </div>
         </div>
+
+        <!-- UBICACIONES -->
+        <div class="inv-admin-card ubicacion">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+            </div>
+            <h4>Ubicaciones</h4>
+            <p class="inv-card-desc">Lugares físicos donde guardas el inventario (estantes, garaje...)</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">{{ ubicaciones|length }}</span>
+                <span class="inv-card-count-label">registros</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Gestionar
+                </a>
+                <a href="{{ url_for('inventario.crear_ubicacion') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear
+                </a>
+            </div>
+        </div>
+
+        <!-- UNIDADES -->
+        <div class="inv-admin-card unidades">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 12h20"></path>
+                    <path d="M12 2v20"></path>
+                    <line x1="5" y1="5" x2="5.01" y2="5"></line>
+                    <line x1="19" y1="19" x2="19.01" y2="19"></line>
+                    <line x1="5" y1="19" x2="5.01" y2="19"></line>
+                    <line x1="19" y1="5" x2="19.01" y2="5"></line>
+                </svg>
+            </div>
+            <h4>Unidades de medida</h4>
+            <p class="inv-card-desc">Kilogramos, litros, unidades, metros cuadrados, etc.</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">{{ unidades|length }}</span>
+                <span class="inv-card-count-label">registros</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.listar_unidades') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Gestionar
+                </a>
+                <a href="{{ url_for('inventario.crear_unidad') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear
+                </a>
+            </div>
+        </div>
+
+        <!-- PROVEEDORES -->
+        <div class="inv-admin-card proveedores">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 21h18"></path>
+                    <path d="M5 21V7l8-4v18"></path>
+                    <path d="M19 21V11l-6-4"></path>
+                </svg>
+            </div>
+            <h4>Proveedores</h4>
+            <p class="inv-card-desc">Empresas que suministran los materiales del inventario</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">{{ proveedores|length }}</span>
+                <span class="inv-card-count-label">registros</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path>
+                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                    Gestionar
+                </a>
+                <a href="{{ url_for('inventario.crear_proveedor') }}" class="btn btn-card btn-outline">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear
+                </a>
+            </div>
+        </div>
+
+        <!-- ESTADÍSTICAS DE PROVEEDORES -->
+        <div class="inv-admin-card estadisticas">
+            <div class="inv-card-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"></line>
+                    <line x1="12" y1="20" x2="12" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="14"></line>
+                </svg>
+            </div>
+            <h4>Estadísticas</h4>
+            <p class="inv-card-desc">Ranking de proveedores por inversión y volumen de compras</p>
+            <div class="inv-card-stats">
+                <span class="inv-card-count">$</span>
+                <span class="inv-card-count-label">Inversión total</span>
+            </div>
+            <div class="inv-card-actions">
+                <a href="{{ url_for('inventario.estadisticas_proveedores') }}" class="btn btn-card btn-outline" style="flex: 1;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Ver estadísticas
+                </a>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Proveedores -->
-    <div class="admin-card proveedores">
-        <div class="card-icon">🏢</div>
-        <h4>Proveedores</h4>
-        <div class="card-desc">Gestiona los proveedores de materiales</div>
-        <div class="card-stats">
-            <div><div class="count">{{ proveedores|length }}</div><div class="count-label">registros</div></div>
-        </div>
-        <div class="card-actions">
-            <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-warning btn-sm"><i class="fas fa-edit"></i> Gestionar</a>
-            <a href="{{ url_for('inventario.crear_proveedor') }}" class="btn btn-success btn-sm"><i class="fas fa-plus"></i> Crear</a>
-        </div>
-    </div>
 </div>
 {% endblock %}

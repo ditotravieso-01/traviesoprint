@@ -1,154 +1,468 @@
 {% extends "base.html" %}
 
-{% block title %}{% if producto %}{{ producto.nombre }} · Inventario{% else %}Nuevo Producto · Inventario{% endif %}{% endblock %}
+{% block title %}{{ producto.nombre if producto else 'Nuevo Producto' }} · Inventario{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if producto else '📦 Nuevo' }} Producto{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">{{ 'Editar producto' if producto else 'Nuevo producto' }}</span>
+    <span class="page-subtitle">
+        {{ producto.nombre if producto else 'Completa los datos del producto' }}
+        {% if producto and producto.categoria %} · {{ producto.categoria.nombre }}{% endif %}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width: 800px; margin: 0 auto; }
-    .form-section { background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); border-radius: 20px; padding: 28px 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid rgba(0,0,0,0.04); }
-    .form-section h4 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 20px; color: #1c1c1e; border-bottom: 2px solid #f0ece8; padding-bottom: 12px; display: flex; align-items: center; gap: 10px; }
-    .form-section h4 i { color: #a8854f; font-size: 22px; }
-    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; font-family: 'Inter', sans-serif; }
-    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 16px; border: 1.5px solid #e0dcd8; border-radius: 10px; font-size: 16px; background: #fafaf9; transition: border-color 0.2s, box-shadow 0.2s; font-family: 'Inter', sans-serif; color: #1c1c1e; -webkit-appearance: none; appearance: none; }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #a8854f; background: white; box-shadow: 0 0 0 4px rgba(168,133,79,0.08); }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
-    .form-group input[readonly] { background: #f0ece8; cursor: not-allowed; color: #6b7280; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
 
-    /* ===== SELECT DE CATEGORÍA — estilo mejorado con jerarquía ===== */
-    .categoria-select-wrap { position: relative; }
-    .categoria-select-wrap::after {
-        content: '';
-        position: absolute;
-        right: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 0;
-        height: 0;
-        border-left: 5px solid transparent;
-        border-right: 5px solid transparent;
-        border-top: 6px solid #8e8e93;
-        pointer-events: none;
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .inv-form-wrap, .inv-form-wrap * { box-sizing: border-box; }
+    .inv-form-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
     }
-    .categoria-select-wrap select {
-        padding-right: 42px;
-        font-weight: 500;
-        background: linear-gradient(180deg, #ffffff 0%, #fafaf9 100%);
-        border: 1.5px solid #e0dcd8;
-        cursor: pointer;
+    .inv-form-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
-    .categoria-select-wrap select:hover {
-        border-color: #c9b48a;
+    .inv-form-container { max-width: 820px; margin: 0 auto; }
+
+    /* ============================================================
+       CARD
+       ============================================================ */
+    .inv-form-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 28px 32px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
     }
-    .categoria-select-wrap select:focus {
-        border-color: #a8854f;
-        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
-        background: white;
-    }
-    /* Opciones: en navegadores compatibles aplicamos niveles visuales */
-    .categoria-select-wrap select option[data-level="0"] {
+    .inv-form-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
         font-weight: 700;
+        letter-spacing: -0.3px;
         color: #1c1c1e;
-        background: #f8f6f4;
-        padding: 6px 0;
+        margin: 0 0 20px 0;
+        padding-bottom: 14px;
+        border-bottom: 2px solid #f0ece8;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
-    .categoria-select-wrap select option[data-level="1"] {
-        font-weight: 500;
-        color: #444;
-    }
-    .categoria-select-wrap select option[data-level="2"] {
-        font-weight: 400;
-        color: #555;
-    }
-    .categoria-select-wrap select option[data-level="3"] {
-        font-weight: 400;
-        color: #666;
+    .inv-form-card h4 svg { color: #a8854f; flex-shrink: 0; }
+
+    /* ============================================================
+       GRIDS
+       ============================================================ */
+    .inv-form-grid-2 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 16px;
     }
 
-    /* Chip de jerarquía dentro del select */
-    .categoria-breadcrumb {
+    /* ============================================================
+       FORM GROUP
+       ============================================================ */
+    .inv-form-group { margin-bottom: 18px; }
+    .inv-form-group:last-of-type { margin-bottom: 0; }
+    .inv-form-group > label {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 11.5px;
+        color: #6b6b7a;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .inv-form-group input[type="text"],
+    .inv-form-group input[type="number"],
+    .inv-form-group input[type="date"],
+    .inv-form-group input[type="email"],
+    .inv-form-group textarea {
+        font-family: 'Inter', sans-serif;
+        width: 100%;
+        padding: 11px 14px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 14.5px;
+        background: #fafaf9;
+        color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
+    }
+    .inv-form-group input:focus,
+    .inv-form-group textarea:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+    }
+    .inv-form-group input[disabled] {
+        background: #f0ece8;
+        cursor: not-allowed;
+        color: #6b7280;
+    }
+    .inv-form-group textarea {
+        resize: vertical;
+        min-height: 70px;
+        line-height: 1.55;
+    }
+    .inv-form-group small {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        color: #8e8e93;
+        font-size: 12px;
+        margin-top: 5px;
+        line-height: 1.45;
+    }
+
+    /* ============================================================
+       CHECKBOX GROUP (servicios, tipo, prioridad, etc.)
+       ============================================================ */
+    .inv-checkbox-grid {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .inv-checkbox-grid label {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        padding: 9px 14px 9px 11px;
+        border-radius: 10px;
+        border: 1.5px solid #ebe6df;
+        background: #fcfaf8;
+        color: #4a4a4a;
+        transition: all 0.15s ease;
+        margin: 0;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+    .inv-checkbox-grid label:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .inv-checkbox-grid label:has(input:checked) {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        border-color: #e5d4b8; color: #78350f;
+    }
+    .inv-checkbox-grid input[type="checkbox"],
+    .inv-checkbox-grid input[type="radio"] {
+        width: 16px; height: 16px;
+        accent-color: #a8854f;
+        flex-shrink: 0; margin: 0; cursor: pointer;
+    }
+
+    /* ============================================================
+       INFO BOX
+       ============================================================ */
+    .inv-info-box {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        margin-bottom: 14px;
+        line-height: 1.55;
+    }
+    .inv-info-box.info {
+        background: #e0f2fe;
+        border-left: 4px solid #0ea5e9;
+        color: #0c4a6e;
+    }
+    .inv-info-box.info svg { color: #0ea5e9; }
+    .inv-info-box.grupo {
+        background: #ede9fe;
+        border-left: 4px solid #8b5cf6;
+        color: #4c1d95;
+        display: none;
+    }
+    .inv-info-box.grupo.visible { display: flex; }
+    .inv-info-box.grupo svg { color: #8b5cf6; }
+    .inv-info-box svg { flex-shrink: 0; margin-top: 2px; }
+    .inv-info-box strong { font-weight: 700; }
+
+    /* ============================================================
+       SECCIONES COLAPSABLES
+       ============================================================ */
+    .inv-section-box {
+        margin-top: 18px;
+        padding: 18px 20px;
+        background: rgba(0,0,0,0.02);
+        border-radius: 12px;
+        border: 1px solid #f0ece8;
+        display: none;
+    }
+    .inv-section-box.visible { display: block; }
+    .inv-section-box h5 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0 0 14px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .inv-section-box h5 svg { color: #a8854f; flex-shrink: 0; }
+
+    /* Material impresión: fondo verde suave */
+    .inv-section-box.material-impresion {
+        background: rgba(16,185,129,0.04);
+        border-color: rgba(16,185,129,0.15);
+    }
+    .inv-section-box.material-impresion label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #065f46;
+        font-size: 13.5px;
+    }
+    .inv-section-box.material-impresion label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #10b981;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .inv-section-box.material-impresion small {
+        display: block;
+        color: #8e8e93;
+        font-size: 12px;
+        margin-top: 6px;
+        font-weight: 400;
+        padding-left: 28px;
+    }
+
+    /* ============================================================
+       LEGACY FIELDS (ocultos)
+       ============================================================ */
+    .inv-legacy-hidden { display: none; }
+
+    /* ============================================================
+       BREADCRUMB DE CATEGORÍA
+       ============================================================ */
+    .inv-categoria-breadcrumb {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px;
-        margin-top: 6px;
-        font-size: 11px;
+        gap: 5px;
+        margin-top: 7px;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
         color: #8e8e93;
-        min-height: 16px;
+        min-height: 18px;
     }
-    .categoria-breadcrumb .crumb {
+    .inv-categoria-breadcrumb .crumb {
         background: #f5f2ef;
-        padding: 2px 8px;
+        padding: 2px 10px;
         border-radius: 12px;
-        font-weight: 500;
+        font-weight: 600;
         color: #555;
     }
-    .categoria-breadcrumb .crumb-root {
+    .inv-categoria-breadcrumb .crumb-root {
         background: #fef3c7;
         color: #78350f;
-        font-weight: 600;
-    }
-    .categoria-breadcrumb .crumb-sep {
-        color: #c9b48a;
-        font-weight: 600;
     }
 
-    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px; padding-top: 16px; border-top: 1px solid #f0ece8; }
-    .btn { padding: 10px 28px; border-radius: 30px; border: none; font-weight: 600; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-size: 14px; font-family: 'Inter', sans-serif; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 4px 16px rgba(16,185,129,0.2); }
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .inv-btn-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 26px;
+        padding-top: 18px;
+        border-top: 1px solid #f0ece8;
+    }
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+        justify-content: center;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+    }
     .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
-    .campos-extra { margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid #f0ece8; display: none; }
-    .campos-extra.visible { display: block; }
-    .campos-extra h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
-    .campos-rollo { margin-top: 16px; padding: 16px; background: rgba(0,0,0,0.02); border-radius: 12px; border: 1px solid #f0ece8; display: none; }
-    .campos-rollo.visible { display: block; }
-    .campos-rollo h5 { font-family: 'Playfair Display', serif; font-size: 16px; margin: 0 0 12px 0; color: #1c1c1e; }
-    .legacy-hidden { display: none; }
-    .material-impresion-group { margin-top: 16px; padding: 16px; background: rgba(16,185,129,0.04); border-radius: 12px; border: 1px solid rgba(16,185,129,0.1); display: none; }
-    .material-impresion-group.visible { display: block; }
-    .material-impresion-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; color: #10b981; }
-    .material-impresion-group small { color: #8e8e93; font-size: 12px; margin-top: 4px; display: block; }
-    .info-box { background: #e0f2fe; border-left: 4px solid #0ea5e9; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #0c4a6e; margin-bottom: 12px; }
-    .info-box i { color: #0ea5e9; margin-right: 6px; }
-    .grupo-info { background: #ede9fe; border-left: 4px solid #8b5cf6; padding: 8px 12px; border-radius: 8px; font-size: 12px; color: #4c1d95; margin-bottom: 12px; display: none; }
-    .grupo-info.visible { display: block; }
-    .grupo-info i { color: #8b5cf6; margin-right: 6px; }
 
-    @media (max-width: 768px) {
-        .form-grid-2 { grid-template-columns: 1fr; }
-        .form-section { padding: 20px; }
-        .btn-group { flex-direction: column; }
-        .btn { justify-content: center; padding: 14px 20px; font-size: 16px; }
-        .form-group input, .form-group select, .form-group textarea { padding: 14px 16px; font-size: 16px; }
+    /* ============================================================
+       CUSTOM SELECT
+       ============================================================ */
+    .cs-select-wrap { position: relative; display: block; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
     }
-    @media (max-width: 480px) {
-        .form-section { padding: 16px; }
-        .btn { padding: 12px 16px; font-size: 15px; }
-        .form-group input, .form-group select, .form-group textarea { padding: 12px 14px; font-size: 16px; }
+    .cs-select-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; width: 100%; padding: 11px 14px;
+        border: 1.5px solid #e0dcd8; border-radius: 10px;
+        background: #fafaf9; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 14.5px;
+        font-weight: 500; color: #1c1c1e; text-align: left;
+        min-height: 44px; box-sizing: border-box; transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #d5c9b0; background: #ffffff; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none; border-color: #a8854f;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-trigger .cs-arrow { color: #a8854f; transition: transform 0.2s; flex-shrink: 0; }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 340px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px; border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0; background: #ffffff;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1; border: none; background: transparent; outline: none;
+        font-family: 'Inter', sans-serif; font-size: 13.5px;
+        color: #1c1c1e; padding: 0; height: 22px; min-width: 0;
+        font-weight: 500;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-options { padding: 6px; overflow-y: auto; flex: 1; min-height: 0; }
+    .cs-select-empty {
+        padding: 14px 12px; text-align: center;
+        color: #8e8e93; font-size: 13px; font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px; border-radius: 8px; cursor: pointer;
+        font-size: 13.5px; font-weight: 500; color: #4a4a4a;
+        font-family: 'Inter', sans-serif; transition: background 0.1s;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+        .inv-form-grid-2 { grid-template-columns: 1fr !important; }
+        .inv-form-card { padding: 20px 18px; border-radius: 16px; }
+        .inv-form-card h4 { font-size: 15px; }
+        .inv-btn-group { flex-direction: column; }
+        .inv-btn-group .btn { width: 100%; }
+        .inv-form-group input,
+        .inv-form-group textarea,
+        .cs-select-trigger { font-size: 16px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-section">
-        <h4><i class="fas fa-box"></i> {{ 'Editar producto' if producto else 'Nuevo producto' }}</h4>
-        <form method="POST" id="productoForm">
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Nombre *</label>
-                    <input type="text" name="nombre" value="{{ producto.nombre if producto else '' }}" required>
-                </div>
-                <div class="form-group">
-                    <label>Categoría *</label>
-                    <div class="categoria-select-wrap">
-                        <select name="categoria_id" id="categoria_id" required>
+<div class="inv-form-wrap">
+    <div class="inv-form-container">
+        <div class="inv-form-card">
+            <h4>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+                {{ 'Editar producto' if producto else 'Nuevo producto' }}
+            </h4>
+
+            <form method="POST" id="productoForm">
+                <!-- Nombre + Categoría -->
+                <div class="inv-form-grid-2">
+                    <div class="inv-form-group">
+                        <label>Nombre *</label>
+                        <input type="text" name="nombre" value="{{ producto.nombre if producto else '' }}" required>
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Categoría *</label>
+                        <select name="categoria_id" id="categoria_id" data-searchable="1" required>
                             <option value="">— Seleccionar —</option>
                             {% for cat in categoria_options %}
                             <option value="{{ cat.id }}"
@@ -159,163 +473,388 @@
                             </option>
                             {% endfor %}
                         </select>
-                    </div>
-                    <div class="categoria-breadcrumb" id="categoriaBreadcrumb"></div>
-                </div>
-            </div>
-
-            <div class="legacy-hidden">
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Área (legacy)</label>
-                        <select name="area_id">
-                            <option value="">-- Seleccionar --</option>
-                            {% for a in areas %}
-                            <option value="{{ a.id }}" {% if producto and producto.area_id == a.id %}selected{% endif %}>{{ a.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Ubicación</label>
-                        <select name="ubicacion_id">
-                            <option value="">-- Seleccionar --</option>
-                            {% for ubi in ubicaciones %}
-                            <option value="{{ ubi.id }}" {% if producto and producto.ubicacion_id == ubi.id %}selected{% endif %}>{{ ubi.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Tipo de producto (legacy)</label>
-                        <select name="tipo_producto_id">
-                            <option value="">-- Seleccionar --</option>
-                            {% for t in tipos %}
-                            <option value="{{ t.id }}" {% if producto and producto.tipo_producto_id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Unidad (legacy)</label>
-                        <select name="unidad_id">
-                            <option value="">-- Seleccionar --</option>
-                            {% for u in unidades %}
-                            <option value="{{ u.id }}" {% if producto and producto.unidad_id == u.id %}selected{% endif %}>{{ u.nombre }} ({{ u.simbolo or '' }})</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Descripción del producto...">{{ producto.descripcion if producto else '' }}</textarea>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Costo unitario (USD)</label>
-                    <input type="number" step="0.01" name="costo" value="{{ producto.costo if producto else 0 }}">
-                </div>
-                <div class="form-group">
-                    <label>Stock mínimo (alerta)</label>
-                    <input type="number" step="0.01" name="stock_minimo" value="{{ producto.stock_minimo if producto else 0 }}">
-                </div>
-            </div>
-
-            <div id="atributos_dinamicos" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0ece8;"></div>
-            <div class="grupo-info" id="grupoInfo"></div>
-
-            <!-- CAMPOS DE ROLLO -->
-            <div class="campos-rollo" id="campos_rollo">
-                <h5>📐 Datos del rollo</h5>
-
-                <div class="info-box">
-                    <i class="fas fa-info-circle"></i>
-                    El <strong>ancho real</strong> es el ancho físico del rollo. El <strong>gap entre paños</strong> es la separación que deja la máquina al imprimir (afecta al cálculo de merma).
-                </div>
-
-                <div class="form-grid-2">
-                    <div class="form-group">
-                        <label>Ancho real (m)</label>
-                        <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.34">
-                        <small>Ancho físico del rollo (default 1.34, rango real 1.342–1.347).</small>
-                    </div>
-                    <div class="form-group">
-                        <label>Largo de rollo (m) *</label>
-                        <input type="number" step="0.01" min="0" name="largo_rollo" id="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50" required>
-                        <small>Se usa para calcular el stock en metros y el consumo en órdenes.</small>
+                        <div class="inv-categoria-breadcrumb" id="categoriaBreadcrumb"></div>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label>Separación entre paños (cm)</label>
-                    <input type="number" step="0.1" min="0" name="gap_panno_cm" id="gap_panno_cm" value="{{ producto.gap_panno_cm if producto else 6.5 }}" placeholder="Ej. 6.5">
-                    <small>Distancia entre paños que deja la máquina. Valor por defecto <strong>6.5 cm</strong>. Ajusta según tu máquina.</small>
+                <!-- Legacy hidden -->
+                <div class="inv-legacy-hidden">
+                    <select name="area_id">
+                        <option value="">--</option>
+                        {% for a in areas %}
+                        <option value="{{ a.id }}" {% if producto and producto.area_id == a.id %}selected{% endif %}>{{ a.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="ubicacion_id">
+                        <option value="">--</option>
+                        {% for ubi in ubicaciones %}
+                        <option value="{{ ubi.id }}" {% if producto and producto.ubicacion_id == ubi.id %}selected{% endif %}>{{ ubi.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="tipo_producto_id">
+                        <option value="">--</option>
+                        {% for t in tipos %}
+                        <option value="{{ t.id }}" {% if producto and producto.tipo_producto_id == t.id %}selected{% endif %}>{{ t.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <select name="unidad_id">
+                        <option value="">--</option>
+                        {% for u in unidades %}
+                        <option value="{{ u.id }}" {% if producto and producto.unidad_id == u.id %}selected{% endif %}>{{ u.nombre }}</option>
+                        {% endfor %}
+                    </select>
                 </div>
 
-                <div class="form-group">
-                    <label>Fecha de vencimiento</label>
-                    <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
+                <!-- Descripción -->
+                <div class="inv-form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" rows="3" placeholder="Descripción del producto...">{{ producto.descripcion if producto else '' }}</textarea>
                 </div>
-            </div>
 
-            <!-- STOCK EN UNIDADES -->
-            <div class="form-group">
-                <label>Stock (unidades)</label>
-                <input type="number" step="0.01" name="stock" id="stock_unidades" value="{{ producto.stock if producto else 0 }}" {% if producto %}disabled{% endif %}>
-                {% if producto %}<small>El stock se ajusta desde la vista de detalle.</small>{% endif %}
-            </div>
+                <!-- Costo + Stock mínimo -->
+                <div class="inv-form-grid-2">
+                    <div class="inv-form-group">
+                        <label>Costo unitario (USD)</label>
+                        <input type="number" step="0.01" name="costo" value="{{ producto.costo if producto else 0 }}">
+                    </div>
+                    <div class="inv-form-group">
+                        <label>Stock mínimo (alerta)</label>
+                        <input type="number" step="0.01" name="stock_minimo" value="{{ producto.stock_minimo if producto else 0 }}">
+                    </div>
+                </div>
 
-            <!-- STOCK EN METROS -->
-            <div class="form-group" id="stock_metros_group" style="display: none;">
-                <label>Stock (metros)</label>
-                <input type="number" step="0.01" name="stock_metros" id="stock_metros" readonly value="{{ producto.stock_metros if producto else 0 }}">
-                <small>Se calcula automáticamente: <span id="calculo_metros">0</span> = <span id="stock_mostrar">0</span> × <span id="largo_mostrar">0</span></small>
-            </div>
+                <!-- Atributos dinámicos -->
+                <div id="atributos_dinamicos" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0ece8;"></div>
 
-            <!-- MATERIAL DE IMPRESIÓN -->
-            <div class="material-impresion-group" id="material_impresion_group">
-                <label>
-                    <input type="checkbox" name="es_material_impresion" id="es_material_impresion" {% if producto and producto.es_material_impresion %}checked{% endif %}>
-                    <span>✅ Es material de impresión (aparecerá en órdenes de trabajo)</span>
-                </label>
-                <small>Marca esta casilla si el producto es un rollo, tinta u otro material que se usa en producción.</small>
-            </div>
+                <!-- Grupo info -->
+                <div class="inv-info-box grupo" id="grupoInfo">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div id="grupoInfoText"></div>
+                </div>
 
-            <div class="btn-group">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> {{ 'Actualizar' if producto else 'Crear producto' }}
-                </button>
-                <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-            </div>
-        </form>
+                <!-- Datos del rollo -->
+                <div class="inv-section-box" id="campos_rollo">
+                    <h5>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 12h20"></path>
+                            <path d="M12 2v20"></path>
+                        </svg>
+                        Datos del rollo
+                    </h5>
+
+                    <div class="inv-info-box info" style="margin-bottom:14px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="16" x2="12" y2="12"></line>
+                            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                        </svg>
+                        <div>
+                            El <strong>ancho real</strong> es el ancho físico del rollo. El <strong>gap entre paños</strong> es la separación que deja la máquina al imprimir (afecta al cálculo de merma).
+                        </div>
+                    </div>
+
+                    <div class="inv-form-grid-2">
+                        <div class="inv-form-group">
+                            <label>Ancho real (m)</label>
+                            <input type="number" step="0.01" min="0" name="ancho_rollo" id="ancho_rollo" value="{{ producto.ancho_rollo if producto else '' }}" placeholder="Ej. 1.34">
+                            <small>Ancho físico del rollo (default 1.34).</small>
+                        </div>
+                        <div class="inv-form-group">
+                            <label>Largo de rollo (m) *</label>
+                            <input type="number" step="0.01" min="0" name="largo_rollo" id="largo_rollo" value="{{ producto.largo_rollo if producto else '' }}" placeholder="Ej. 50">
+                            <small>Se usa para calcular el stock en metros y el consumo en órdenes.</small>
+                        </div>
+                    </div>
+
+                    <div class="inv-form-group">
+                        <label>Separación entre paños (cm)</label>
+                        <input type="number" step="0.1" min="0" name="gap_panno_cm" id="gap_panno_cm" value="{{ producto.gap_panno_cm if producto else 6.5 }}" placeholder="Ej. 6.5">
+                        <small>Distancia entre paños que deja la máquina. Por defecto <strong>6.5 cm</strong>.</small>
+                    </div>
+
+                    <div class="inv-form-group">
+                        <label>Fecha de vencimiento</label>
+                        <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" value="{{ producto.fecha_vencimiento.strftime('%Y-%m-%d') if producto and producto.fecha_vencimiento else '' }}">
+                    </div>
+                </div>
+
+                <!-- Stock unidades -->
+                <div class="inv-form-group" style="margin-top: 18px;">
+                    <label>Stock (unidades)</label>
+                    <input type="number" step="0.01" name="stock" id="stock_unidades" value="{{ producto.stock if producto else 0 }}" {% if producto %}disabled{% endif %}>
+                    {% if producto %}<small>El stock se ajusta desde la vista de detalle.</small>{% endif %}
+                </div>
+
+                <!-- Stock metros (auto) -->
+                <div class="inv-form-group" id="stock_metros_group" style="display: none;">
+                    <label>Stock (metros)</label>
+                    <input type="number" step="0.01" name="stock_metros" id="stock_metros" readonly value="{{ producto.stock_metros if producto else 0 }}">
+                    <small>Se calcula automáticamente: <span id="calculo_metros">0</span> = <span id="stock_mostrar">0</span> × <span id="largo_mostrar">0</span></small>
+                </div>
+
+                <!-- Material impresión -->
+                <div class="inv-section-box material-impresion" id="material_impresion_group">
+                    <label>
+                        <input type="checkbox" name="es_material_impresion" id="es_material_impresion" {% if producto and producto.es_material_impresion %}checked{% endif %}>
+                        <span>Es material de impresión (aparecerá en órdenes de trabajo)</span>
+                    </label>
+                    <small>Marca esta casilla si el producto es un rollo, tinta u otro material que se usa en producción.</small>
+                </div>
+
+                <!-- Botones -->
+                <div class="inv-btn-group">
+                    <button type="submit" class="btn btn-success">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        {{ 'Actualizar' if producto else 'Crear producto' }}
+                    </button>
+                    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
-    // =============================================
-    // BREADCRUMB DE CATEGORÍA SELECCIONADA
-    // =============================================
+    // ============================================================
+    // CUSTOM SELECT
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '—';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.dataset.idx = idx;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            if (items[highlightedIndex]) items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(340, menu.scrollHeight || 220);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 260) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        updateValue();
+    }
+
+    function initAllCustomSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
+    }
+
+    // ============================================================
+    // BREADCRUMB DE CATEGORÍA
+    // ============================================================
     function actualizarBreadcrumb() {
         const select = document.getElementById('categoria_id');
         const breadcrumb = document.getElementById('categoriaBreadcrumb');
+        if (!select || !breadcrumb) return;
         const opt = select.options[select.selectedIndex];
-        if (!opt || !opt.value) {
-            breadcrumb.innerHTML = '';
-            return;
-        }
+        if (!opt || !opt.value) { breadcrumb.innerHTML = ''; return; }
         const level = parseInt(opt.dataset.level || '0');
         const nombre = opt.dataset.nombrePuro || opt.text;
-        const crumbs = [];
-        crumbs.push(`<span class="crumb ${level === 0 ? 'crumb-root' : ''}">${nombre}</span>`);
-        breadcrumb.innerHTML = crumbs.join('');
+        breadcrumb.innerHTML = `<span class="crumb ${level === 0 ? 'crumb-root' : ''}">${nombre}</span>`;
     }
 
-    // =============================================
-    // CARGAR ATRIBUTOS DINÁMICOS SEGÚN CATEGORÍA
-    // =============================================
+    // ============================================================
+    // CARGAR ATRIBUTOS DINÁMICOS
+    // ============================================================
     function cargarAtributos() {
         const catId = document.getElementById('categoria_id').value;
         const container = document.getElementById('atributos_dinamicos');
@@ -323,13 +862,14 @@
         const stockMetrosGroup = document.getElementById('stock_metros_group');
         const materialGroup = document.getElementById('material_impresion_group');
         const grupoInfo = document.getElementById('grupoInfo');
+        const grupoInfoText = document.getElementById('grupoInfoText');
 
         container.innerHTML = '';
         camposRollo.classList.remove('visible');
         stockMetrosGroup.style.display = 'none';
         materialGroup.classList.remove('visible');
         grupoInfo.classList.remove('visible');
-        grupoInfo.innerHTML = '';
+        grupoInfoText.innerHTML = '';
 
         if (!catId) return;
 
@@ -341,9 +881,8 @@
                 const grupoOrigen = data.grupo_origen;
                 const grupoCategoria = data.grupo_categoria;
 
-                // Aviso de herencia: si el grupo viene de una categoría ancestro
                 if (grupoOrigen && grupoCategoria) {
-                    grupoInfo.innerHTML = `<i class="fas fa-info-circle"></i> Los atributos provienen del grupo <strong>"${grupoOrigen}"</strong> heredado de la categoría <strong>${grupoCategoria}</strong>.`;
+                    grupoInfoText.innerHTML = `Los atributos provienen del grupo <strong>"${grupoOrigen}"</strong> heredado de la categoría <strong>${grupoCategoria}</strong>.`;
                     grupoInfo.classList.add('visible');
                 }
 
@@ -361,7 +900,7 @@
                 if (atributosFiltrados.length === 0) {
                     container.innerHTML = '';
                 } else {
-                    let html = '<h5 class="serif" style="font-size:16px; margin-bottom:12px;">Atributos personalizados</h5>';
+                    let html = '<h5 style="font-family:Inter,sans-serif;font-size:14px;font-weight:700;margin:0 0 12px 0;color:#1c1c1e;">Atributos personalizados</h5>';
                     atributosFiltrados.forEach(attr => {
                         let value = '';
                         {% if producto %}
@@ -373,38 +912,39 @@
 
                         let input = '';
                         if (attr.tipo === 'texto') {
-                            input = `<input type="text" class="form-control" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
+                            input = `<input type="text" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
                         } else if (attr.tipo === 'numero') {
-                            input = `<input type="number" step="any" class="form-control" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
+                            input = `<input type="number" step="any" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
                         } else if (attr.tipo === 'fecha') {
-                            input = `<input type="date" class="form-control" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
+                            input = `<input type="date" name="attr_${attr.nombre}" value="${value}" ${attr.requerido ? 'required' : ''}>`;
                         } else if (attr.tipo === 'seleccion') {
                             const opts = attr.opciones ? attr.opciones : [];
                             let optHtml = opts.map(o => `<option value="${o.trim()}" ${value === o.trim() ? 'selected' : ''}>${o.trim()}</option>`).join('');
-                            input = `<select class="form-control" name="attr_${attr.nombre}" ${attr.requerido ? 'required' : ''}>
+                            input = `<select name="attr_${attr.nombre}" ${attr.requerido ? 'required' : ''}>
                                 <option value="">Seleccionar...</option>
                                 ${optHtml}
                             </select>`;
                         } else if (attr.tipo === 'booleano') {
                             const checked = (value === '1' || value === true) ? 'checked' : '';
-                            input = `<div class="form-check">
-                                <input type="checkbox" class="form-check-input" name="attr_${attr.nombre}" value="1" ${checked}>
-                                <label class="form-check-label">Sí</label>
+                            input = `<div class="inv-checkbox-grid">
+                                <label><input type="checkbox" name="attr_${attr.nombre}" value="1" ${checked}> Sí</label>
                             </div>`;
                         }
-                        html += `<div class="form-group">
+                        html += `<div class="inv-form-group">
                             <label>${attr.etiqueta} ${attr.requerido ? '*' : ''}</label>
                             ${input}
                         </div>`;
                     });
                     container.innerHTML = html;
+                    // Re-inicializar custom selects en atributos dinámicos
+                    setTimeout(() => initAllCustomSelects(container), 50);
                 }
 
                 calcularMetros();
             })
             .catch(error => {
                 console.error('Error al cargar atributos:', error);
-                container.innerHTML = '<p class="text-danger">Error al cargar atributos.</p>';
+                container.innerHTML = '<p style="color:#dc2626;font-size:13px;">Error al cargar atributos.</p>';
             });
     }
 
@@ -414,12 +954,34 @@
         const metros = stock * largo;
         const campoMetros = document.getElementById('stock_metros');
         if (campoMetros) campoMetros.value = metros.toFixed(2);
-        document.getElementById('stock_mostrar').textContent = stock;
-        document.getElementById('largo_mostrar').textContent = largo;
-        document.getElementById('calculo_metros').textContent = metros.toFixed(2);
+        const stockMostrar = document.getElementById('stock_mostrar');
+        const largoMostrar = document.getElementById('largo_mostrar');
+        const calculoMetros = document.getElementById('calculo_metros');
+        if (stockMostrar) stockMostrar.textContent = stock;
+        if (largoMostrar) largoMostrar.textContent = largo;
+        if (calculoMetros) calculoMetros.textContent = metros.toFixed(2);
     }
 
+    // ============================================================
+    // INIT
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
+        initAllCustomSelects();
+
+        const catSelect = document.getElementById('categoria_id');
+        if (catSelect) {
+            // Después del custom select, el id sigue apuntando al native
+            catSelect.addEventListener('change', function() {
+                actualizarBreadcrumb();
+                cargarAtributos();
+            });
+        }
+
+        actualizarBreadcrumb();
+        if (catSelect && catSelect.value) {
+            cargarAtributos();
+        }
+
         const stockInput = document.getElementById('stock_unidades');
         const largoInput = document.getElementById('largo_rollo');
         if (stockInput) {
@@ -429,20 +991,6 @@
         if (largoInput) {
             largoInput.addEventListener('input', calcularMetros);
             largoInput.addEventListener('change', calcularMetros);
-        }
-
-        const catSelect = document.getElementById('categoria_id');
-        if (catSelect) {
-            catSelect.addEventListener('change', function() {
-                actualizarBreadcrumb();
-                cargarAtributos();
-            });
-        }
-
-        // Estado inicial
-        actualizarBreadcrumb();
-        if (catSelect && catSelect.value) {
-            cargarAtributos();
         }
 
         calcularMetros();

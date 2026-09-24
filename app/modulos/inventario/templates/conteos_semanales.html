@@ -1,55 +1,400 @@
 {% extends "base.html" %}
 
 {% block title %}Conteos Semanales · Inventario{% endblock %}
-{% block page_title %}📅 Conteos Semanales{% endblock %}
+
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Conteos Semanales</span>
+    <span class="page-subtitle">
+        Conteo físico del económico · <span class="num-mont">{{ semanas_lista|length }}</span> semana{{ 's' if semanas_lista|length != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-success { background:#10b981; color:white; }
-    .btn-success:hover { background:#059669; }
-    .btn-warning { background:#f59e0b; color:white; }
-    .btn-warning:hover { background:#d97706; }
-    .btn-danger { background:#dc2626; color:white; }
-    .btn-danger:hover { background:#b91c1c; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
-    .kpi-card { background:white; border-radius:14px; padding:14px 18px; border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02); }
-    .kpi-card .value { font-family:'Playfair Display',serif; font-size:26px; font-weight:700; color:#1c1c1e; }
-    .kpi-card .label { font-size:12px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
-    .kpi-card.rojo { border-top-color:#dc2626; }
-    .kpi-card.rojo .value { color:#dc2626; }
-    .kpi-card.verde { border-top-color:#10b981; }
-    .kpi-card.verde .value { color:#10b981; }
-
-    .filters-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; background:rgba(255,255,255,0.6); border-radius:12px; border:1px solid rgba(0,0,0,0.04); margin-bottom:18px; }
-    .filters-bar .filter-group { display:flex; flex-direction:column; gap:4px; }
-    .filters-bar label { font-size:11px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:0.5px; }
-    .filters-bar select, .filters-bar input { padding:6px 12px; border:1px solid #d2d2d7; border-radius:8px; font-size:13px; background:white; min-width:160px; }
-
-    .semana-card { background:white; border-radius:14px; padding:16px 20px; border:1px solid #f0ece8; margin-bottom:14px; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
-    .semana-card .semana-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
-    .semana-card .semana-title { font-family:'Playfair Display',serif; font-size:18px; font-weight:700; color:#1c1c1e; }
-    .semana-card .semana-stats { display:flex; gap:20px; flex-wrap:wrap; font-size:13px; }
-    .semana-card .semana-stats .item { display:flex; flex-direction:column; }
-    .semana-card .semana-stats .item .lbl { color:#8e8e93; font-size:11px; text-transform:uppercase; font-weight:600; }
-    .semana-card .semana-stats .item .val { font-weight:700; color:#1c1c1e; font-size:15px; }
-    .semana-card .semana-stats .item .val.rojo { color:#dc2626; }
-    .semana-card .semana-stats .item .val.verde { color:#10b981; }
-    .semana-card .semana-actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-
-    table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; }
-    td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
-    .merma-pos { color:#dc2626; font-weight:600; }
-    .merma-neg { color:#10b981; font-weight:600; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
 
     /* ============================================================
-       MODAL cs-confirm — reemplazo del confirm() nativo
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .cs-conteos-wrap,
+    .cs-conteos-wrap * { box-sizing: border-box; }
+    .cs-conteos-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .cs-conteos-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success { background: #10b981; color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-danger { background: transparent; border: 1.5px solid #dc2626; color: #dc2626; }
+    .btn-danger:hover { background: #fef2f2; border-color: #b91c1c; color: #b91c1c; transform: none; box-shadow: none; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .cs-conteos-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .cs-conteos-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .cs-conteos-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .cs-conteos-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .cs-conteos-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       FILTROS
+       ============================================================ */
+    .cs-conteos-filters {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px;
+        padding: 16px 20px;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .cs-conteos-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 200px;
+    }
+    .cs-conteos-filter-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1;
+    }
+
+    /* ============================================================
+       KPI GRID
+       ============================================================ */
+    .cs-conteos-kpi-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .cs-conteos-kpi {
+        background: white;
+        border-radius: 14px;
+        padding: 16px 18px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        min-width: 0;
+    }
+    .cs-conteos-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .cs-conteos-kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.4px;
+        line-height: 1.15;
+    }
+    .cs-conteos-kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+    .cs-conteos-kpi.verde { border-top-color: #10b981; }
+    .cs-conteos-kpi.verde .cs-conteos-kpi-value { color: #10b981; }
+    .cs-conteos-kpi.rojo { border-top-color: #dc2626; }
+    .cs-conteos-kpi.rojo .cs-conteos-kpi-value { color: #dc2626; }
+
+    /* ============================================================
+       SEMANA CARD
+       ============================================================ */
+    .cs-conteos-semana-card {
+        background: white;
+        border-radius: 16px;
+        padding: 18px 22px;
+        border: 1px solid #f0ece8;
+        margin-bottom: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: box-shadow 0.2s;
+    }
+    .cs-conteos-semana-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.05); }
+    .cs-conteos-semana-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .cs-conteos-semana-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: #1c1c1e;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cs-conteos-semana-title svg { color: #a8854f; flex-shrink: 0; }
+    .cs-conteos-semana-stats {
+        display: flex;
+        gap: 24px;
+        flex-wrap: wrap;
+        font-family: 'Inter', sans-serif;
+    }
+    .cs-conteos-stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+    .cs-conteos-stat-label {
+        font-size: 10.5px;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+    }
+    .cs-conteos-stat-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+    }
+    .cs-conteos-stat-value.rojo { color: #dc2626; }
+    .cs-conteos-stat-value.verde { color: #10b981; }
+
+    .cs-conteos-semana-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        align-items: center;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+        justify-content: flex-end;
+    }
+
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .cs-conteos-empty {
+        text-align: center;
+        padding: 56px 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+    }
+    .cs-conteos-empty-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #fafaf9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: #b8b8c0;
+    }
+    .cs-conteos-empty-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-bottom: 6px;
+    }
+    .cs-conteos-empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #8e8e93;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto 18px;
+    }
+
+    /* ============================================================
+       CUSTOM SELECT (.cs-select-*)
+       ============================================================ */
+    .cs-select-wrap { position: relative; display: block; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; width: 100%; padding: 8px 12px;
+        border: 1.5px solid #e0dcd8; border-radius: 10px;
+        background: #ffffff; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 13px;
+        font-weight: 500; color: #1c1c1e; text-align: left;
+        min-height: 38px; box-sizing: border-box; transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none; border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f; transition: transform 0.2s; flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 340px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 12px; border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0; background: #ffffff;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1; border: none; background: transparent; outline: none;
+        font-family: 'Inter', sans-serif; font-size: 13.5px;
+        color: #1c1c1e; padding: 0; height: 22px; min-width: 0;
+        font-weight: 500;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-options {
+        padding: 6px; overflow-y: auto; flex: 1; min-height: 0;
+    }
+    .cs-select-empty {
+        padding: 14px 12px; text-align: center;
+        color: #8e8e93; font-size: 13px; font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px; border-radius: 8px; cursor: pointer;
+        font-size: 13.5px; font-weight: 500; color: #4a4a4a;
+        font-family: 'Inter', sans-serif; transition: background 0.1s;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       MODAL cs-confirm
        ============================================================ */
     .cs-confirm-overlay {
         display: none;
@@ -65,7 +410,6 @@
         box-sizing: border-box;
     }
     .cs-confirm-overlay.active { display: flex; }
-
     .cs-confirm-modal {
         background: white;
         border-radius: 20px;
@@ -79,52 +423,38 @@
     }
     @keyframes csConfirmIn {
         from { transform: scale(0.94) translateY(8px); opacity: 0; }
-        to   { transform: scale(1) translateY(0); opacity: 1; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
     }
     .cs-confirm-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+        display: flex; align-items: center; gap: 12px;
         padding: 20px 24px 10px 24px;
     }
     .cs-confirm-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        background: #fde8e5;
-        color: #dc2626;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        flex-shrink: 0;
+        width: 44px; height: 44px; border-radius: 50%;
+        background: #fde8e5; color: #dc2626;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px; flex-shrink: 0;
     }
     .cs-confirm-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        font-weight: 700;
-        color: #1c1c1e;
-        margin: 0;
-        line-height: 1.2;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 18px; font-weight: 700;
+        color: #1c1c1e; margin: 0; line-height: 1.2;
+        letter-spacing: -0.3px;
     }
     .cs-confirm-body {
         padding: 4px 24px 22px 24px;
-        font-size: 14px;
-        color: #4b5563;
-        line-height: 1.5;
         font-family: 'Inter', sans-serif;
+        font-size: 14px; color: #4b5563;
+        line-height: 1.55;
     }
     .cs-confirm-body strong { color: #1c1c1e; font-weight: 700; }
     .cs-confirm-body .cs-confirm-hint {
-        display: block;
-        margin-top: 10px;
-        font-size: 12px;
-        color: #8e8e93;
+        display: block; margin-top: 10px;
+        font-size: 12px; color: #8e8e93;
         font-style: italic;
     }
     .cs-confirm-actions {
-        display: flex;
-        gap: 10px;
+        display: flex; gap: 10px;
         justify-content: flex-end;
         padding: 16px 24px 20px 24px;
         border-top: 1px solid #f0ece8;
@@ -132,168 +462,270 @@
         flex-wrap: wrap;
     }
     .cs-confirm-btn {
-        padding: 10px 22px;
-        border-radius: 30px;
-        border: none;
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
+        padding: 10px 22px; border-radius: 30px; border: none;
+        font-weight: 600; font-size: 13px; cursor: pointer;
         font-family: 'Inter', sans-serif;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        transition: all 0.15s;
-        text-decoration: none;
+        display: inline-flex; align-items: center; gap: 6px;
+        transition: all 0.15s; text-decoration: none;
     }
     .cs-confirm-btn-cancel {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
+        background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e;
     }
-    .cs-confirm-btn-cancel:hover {
-        background: #f5f5f5;
-        border-color: #8e8e93;
-    }
-    .cs-confirm-btn-danger {
-        background: #dc2626;
-        color: white;
-    }
+    .cs-confirm-btn-cancel:hover { background: #f5f5f5; border-color: #8e8e93; }
+    .cs-confirm-btn-danger { background: #dc2626; color: white; }
     .cs-confirm-btn-danger:hover {
         background: #b91c1c;
         box-shadow: 0 4px 12px rgba(220,38,38,0.25);
         transform: translateY(-1px);
     }
 
-    @media (max-width: 480px) {
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .cs-conteos-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 768px) {
+        .cs-conteos-header { flex-direction: column; align-items: stretch; }
+        .cs-conteos-header-actions { margin-left: 0; width: 100%; }
+        .cs-conteos-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .cs-conteos-filters { flex-direction: column; align-items: stretch; padding: 14px; }
+        .cs-conteos-filter-group { width: 100%; min-width: 0; }
+
+        .cs-conteos-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+        .cs-conteos-kpi { padding: 12px 14px; }
+        .cs-conteos-kpi-value { font-size: 20px; }
+
+        .cs-conteos-semana-header { flex-direction: column; align-items: stretch; }
+        .cs-conteos-semana-stats { gap: 14px; }
+        .cs-conteos-semana-actions { justify-content: stretch; }
+        .cs-conteos-semana-actions .btn { flex: 1 1 auto; justify-content: center; }
+
         .cs-confirm-modal { border-radius: 16px; }
         .cs-confirm-header { padding: 16px 18px 8px 18px; }
-        .cs-confirm-icon { width: 40px; height: 40px; font-size: 18px; }
-        .cs-confirm-title { font-size: 17px; }
         .cs-confirm-body { padding: 4px 18px 18px 18px; font-size: 13px; }
         .cs-confirm-actions { padding: 12px 18px 16px 18px; flex-direction: column-reverse; }
         .cs-confirm-btn { width: 100%; justify-content: center; }
+    }
+    @media (max-width: 480px) {
+        .cs-conteos-kpi-grid { grid-template-columns: 1fr !important; gap: 8px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">Conteo semanal del económico · merma imprevista</p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo conteo</a>
-        <a href="{{ url_for('inventario.reporte_conteos') }}" class="btn btn-warning"><i class="fas fa-chart-line"></i> Reporte</a>
-        <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline"><i class="fas fa-list-alt"></i> Merma por orden</a>
-        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="cs-conteos-wrap">
 
-<div class="card">
-    <form method="GET" class="filters-bar">
-        <div class="filter-group">
-            <label>Semana</label>
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="cs-conteos-header">
+        <div class="cs-conteos-header-info">
+            <p class="cs-conteos-header-title">Conteo físico semanal</p>
+            <p class="cs-conteos-header-desc">Registra lo que contaste a mano para detectar merma imprevista</p>
+        </div>
+        <div class="cs-conteos-header-actions">
+            <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nuevo conteo
+            </a>
+            <a href="{{ url_for('inventario.reporte_conteos') }}" class="btn btn-warning">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                Reporte
+            </a>
+            <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Merma por orden
+            </a>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         FILTROS
+         ============================================================ -->
+    <form method="GET" class="cs-conteos-filters">
+        <div class="cs-conteos-filter-group">
+            <label class="cs-conteos-filter-label">Semana</label>
             <select name="semana" onchange="this.form.submit()">
-                <option value="">Todas</option>
+                <option value="">Todas las semanas</option>
                 {% for s in semanas_lista %}
                     <option value="{{ s.semana }}" {% if semana_seleccionada == s.semana %}selected{% endif %}>{{ s.semana }}</option>
                 {% endfor %}
             </select>
         </div>
-        <div class="filter-group">
-            <label>Producto</label>
-            <select name="producto_id" onchange="this.form.submit()">
-                <option value="">Todos</option>
+        <div class="cs-conteos-filter-group">
+            <label class="cs-conteos-filter-label">Producto</label>
+            <select name="producto_id" data-searchable="1" onchange="this.form.submit()">
+                <option value="">Todos los productos</option>
                 {% for p in productos %}
                     <option value="{{ p.id }}" {% if producto_seleccionado == p.id %}selected{% endif %}>{{ p.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
-        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-undo"></i> Limpiar</a>
-    </form>
-</div>
-
-{% if semanas_lista %}
-<div class="kpi-grid">
-    <div class="kpi-card">
-        <div class="value">{{ semanas_lista|length }}</div>
-        <div class="label">Semanas registradas</div>
-    </div>
-    <div class="kpi-card">
-        <div class="value">{{ conteos|length }}</div>
-        <div class="label">Conteos totales</div>
-    </div>
-    <div class="kpi-card verde">
-        <div class="value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_operativa_m2')) }} m²</div>
-        <div class="label">Merma operativa</div>
-    </div>
-    <div class="kpi-card rojo">
-        <div class="value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_imprevista_m2')) }} m²</div>
-        <div class="label">Merma imprevista</div>
-    </div>
-</div>
-{% endif %}
-
-{% for s in semanas_lista %}
-<div class="semana-card">
-    <div class="semana-header">
-        <div class="semana-title">📅 {{ s.semana }}</div>
-        <div class="semana-stats">
-            <div class="item">
-                <span class="lbl">Conteos</span>
-                <span class="val">{{ s.total_conteos }}</span>
-            </div>
-            <div class="item">
-                <span class="lbl">Merma operativa</span>
-                <span class="val verde">{{ "%.2f"|format(s.total_merma_operativa_m2) }} m²</span>
-            </div>
-            <div class="item">
-                <span class="lbl">Merma imprevista</span>
-                <span class="val rojo">{{ "%.2f"|format(s.total_merma_imprevista_m2) }} m²</span>
-            </div>
-        </div>
-        <div class="semana-actions">
-            <a href="{{ url_for('inventario.reporte_conteos', semana=s.semana) }}" class="btn btn-sm btn-warning">
-                <i class="fas fa-chart-line"></i> Ver reporte
+        <div class="cs-conteos-filter-group" style="min-width:auto;">
+            <label class="cs-conteos-filter-label">&nbsp;</label>
+            <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Limpiar
             </a>
-            <form method="POST"
-                  action="{{ url_for('inventario.eliminar_conteos_semana', semana=s.semana) }}"
-                  style="display:inline;"
-                  data-cs-confirm
-                  data-cs-confirm-title="Eliminar semana completa"
-                  data-cs-confirm-message="¿Eliminar <strong>todos los conteos</strong> de la semana <strong>{{ s.semana }}</strong>?<span class='cs-confirm-hint'>El stock de cada producto será revertido al estado anterior a esta semana.</span>"
-                  data-cs-confirm-text="Eliminar semana"
-                  data-cs-confirm-icon="fas fa-calendar-times">
-                <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i> Eliminar semana</button>
-            </form>
+        </div>
+    </form>
+
+    <!-- ============================================================
+         KPIs GLOBALES
+         ============================================================ -->
+    {% if semanas_lista %}
+    <div class="cs-conteos-kpi-grid">
+        <div class="cs-conteos-kpi">
+            <div class="cs-conteos-kpi-value">{{ semanas_lista|length }}</div>
+            <div class="cs-conteos-kpi-label">Semanas registradas</div>
+        </div>
+        <div class="cs-conteos-kpi">
+            <div class="cs-conteos-kpi-value">{{ conteos|length }}</div>
+            <div class="cs-conteos-kpi-label">Conteos totales</div>
+        </div>
+        <div class="cs-conteos-kpi verde">
+            <div class="cs-conteos-kpi-value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_operativa_m2')) }} m²</div>
+            <div class="cs-conteos-kpi-label">Merma operativa</div>
+        </div>
+        <div class="cs-conteos-kpi rojo">
+            <div class="cs-conteos-kpi-value">{{ "%.1f"|format(semanas_lista|sum(attribute='total_merma_imprevista_m2')) }} m²</div>
+            <div class="cs-conteos-kpi-label">Merma imprevista</div>
         </div>
     </div>
+    {% endif %}
+
+    <!-- ============================================================
+         LISTA DE SEMANAS
+         ============================================================ -->
+    {% if semanas_lista %}
+        {% for s in semanas_lista %}
+        <div class="cs-conteos-semana-card">
+            <div class="cs-conteos-semana-header">
+                <div class="cs-conteos-semana-title">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ s.semana }}
+                </div>
+                <div class="cs-conteos-semana-stats">
+                    <div class="cs-conteos-stat-item">
+                        <span class="cs-conteos-stat-label">Conteos</span>
+                        <span class="cs-conteos-stat-value">{{ s.total_conteos }}</span>
+                    </div>
+                    <div class="cs-conteos-stat-item">
+                        <span class="cs-conteos-stat-label">Merma operativa</span>
+                        <span class="cs-conteos-stat-value verde">{{ "%.2f"|format(s.total_merma_operativa_m2) }} m²</span>
+                    </div>
+                    <div class="cs-conteos-stat-item">
+                        <span class="cs-conteos-stat-label">Merma imprevista</span>
+                        <span class="cs-conteos-stat-value rojo">{{ "%.2f"|format(s.total_merma_imprevista_m2) }} m²</span>
+                    </div>
+                </div>
+            </div>
+            <div class="cs-conteos-semana-actions">
+                <a href="{{ url_for('inventario.reporte_conteos', semana=s.semana) }}" class="btn btn-sm btn-warning">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Ver reporte
+                </a>
+                <form method="POST"
+                      action="{{ url_for('inventario.eliminar_conteos_semana', semana=s.semana) }}"
+                      style="display:inline;"
+                      data-cs-confirm
+                      data-cs-confirm-title="Eliminar semana completa"
+                      data-cs-confirm-message="¿Eliminar <strong>todos los conteos</strong> de la semana <strong>{{ s.semana }}</strong>?<span class='cs-confirm-hint'>El stock de cada producto será revertido al estado anterior a esta semana.</span>"
+                      data-cs-confirm-text="Eliminar semana">
+                    <button type="submit" class="btn btn-sm btn-danger">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        Eliminar semana
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+
+    {% else %}
+    <div class="cs-conteos-empty">
+        <div class="cs-conteos-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+        </div>
+        <div class="cs-conteos-empty-title">No hay conteos registrados</div>
+        <div class="cs-conteos-empty-desc">Registra el primer conteo semanal para empezar a detectar merma imprevista.</div>
+        <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Registrar primer conteo
+        </a>
+    </div>
+    {% endif %}
+
 </div>
-{% else %}
-<div class="card" style="text-align:center; padding:40px;">
-    <p style="color:#8e8e93; font-size:16px;">No hay conteos registrados aún.</p>
-    <a href="{{ url_for('inventario.nuevo_conteo') }}" class="btn btn-success" style="margin-top:12px;">
-        <i class="fas fa-plus"></i> Registrar primer conteo
-    </a>
-</div>
-{% endfor %}
 
 <!-- ============================================================
-     MODAL cs-confirm (uno solo por página)
+     MODAL cs-confirm
      ============================================================ -->
-<div class="cs-confirm-overlay" id="csConfirmOverlay" role="dialog" aria-modal="true" aria-labelledby="csConfirmTitle">
+<div class="cs-confirm-overlay" id="csConfirmOverlay" role="dialog" aria-modal="true">
     <div class="cs-confirm-modal">
         <div class="cs-confirm-header">
-            <div class="cs-confirm-icon"><i class="fas fa-exclamation-triangle" id="csConfirmIcon"></i></div>
+            <div class="cs-confirm-icon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </div>
             <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
         </div>
         <div class="cs-confirm-body" id="csConfirmBody">¿Estás seguro?</div>
         <div class="cs-confirm-actions">
             <button type="button" class="cs-confirm-btn cs-confirm-btn-cancel" id="csConfirmCancel">
-                <i class="fas fa-times"></i> Cancelar
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancelar
             </button>
             <button type="button" class="cs-confirm-btn cs-confirm-btn-danger" id="csConfirmAccept">
-                <i class="fas fa-trash-alt"></i> <span id="csConfirmAcceptText">Eliminar</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                <span id="csConfirmAcceptText">Eliminar</span>
             </button>
         </div>
     </div>
@@ -302,77 +734,285 @@
 
 {% block extra_js %}
 <script>
-(function() {
-    // Referencias
-    const overlay     = document.getElementById('csConfirmOverlay');
-    const titleEl     = document.getElementById('csConfirmTitle');
-    const bodyEl      = document.getElementById('csConfirmBody');
-    const iconEl      = document.getElementById('csConfirmIcon');
-    const acceptText  = document.getElementById('csConfirmAcceptText');
-    const btnCancel   = document.getElementById('csConfirmCancel');
-    const btnAccept   = document.getElementById('csConfirmAccept');
+    // ============================================================
+    // CUSTOM SELECT
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
 
-    if (!overlay) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
 
-    let pendingForm = null;   // form a enviar si se confirma
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
 
-    function openModal(opts) {
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.dataset.idx = idx;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            if (items[highlightedIndex]) items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(340, menu.scrollHeight || 220);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 220) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        updateValue();
+    }
+
+    function initAllCustomSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
+    }
+
+    // ============================================================
+    // cs-confirm
+    // ============================================================
+    let csConfirmCallback = null;
+
+    function csConfirm(opts) {
+        const overlay = document.getElementById('csConfirmOverlay');
+        const titleEl = document.getElementById('csConfirmTitle');
+        const bodyEl = document.getElementById('csConfirmBody');
+        const acceptText = document.getElementById('csConfirmAcceptText');
+        if (!overlay) return;
         titleEl.textContent = opts.title || 'Confirmar acción';
-        bodyEl.innerHTML    = opts.message || '¿Estás seguro?';
+        bodyEl.innerHTML = opts.message || '¿Estás seguro?';
         acceptText.textContent = opts.confirmText || 'Eliminar';
-        // El ícono se cambia aquí; si no se especifica, usa triángulo de advertencia
-        if (iconEl) iconEl.className = opts.icon || 'fas fa-exclamation-triangle';
+        csConfirmCallback = opts.onConfirm || null;
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
-    function closeModal() {
+    function csConfirmClose() {
+        const overlay = document.getElementById('csConfirmOverlay');
+        if (!overlay) return;
         overlay.classList.remove('active');
         document.body.style.overflow = '';
-        pendingForm = null;
+        csConfirmCallback = null;
     }
 
-    // Aceptar → enviar el form pendiente
-    btnAccept.addEventListener('click', function() {
-        if (!pendingForm) return closeModal();
-        // Marca el form como confirmado y lo envía sin disparar el submit de nuevo
-        pendingForm.dataset.csConfirmed = '1';
-        const form = pendingForm;
-        closeModal();
-        // Usamos requestSubmit si está disponible (respeta validaciones) o submit directo
-        if (typeof form.requestSubmit === 'function') {
-            form.requestSubmit();
-        } else {
-            form.submit();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Custom selects
+        initAllCustomSelects();
+
+        // cs-confirm setup
+        const btnAccept = document.getElementById('csConfirmAccept');
+        const btnCancel = document.getElementById('csConfirmCancel');
+        const overlay = document.getElementById('csConfirmOverlay');
+
+        if (btnAccept) {
+            btnAccept.addEventListener('click', function() {
+                const cb = csConfirmCallback;
+                csConfirmClose();
+                if (typeof cb === 'function') cb();
+            });
         }
-    });
+        if (btnCancel) btnCancel.addEventListener('click', csConfirmClose);
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) csConfirmClose();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') csConfirmClose();
+        });
 
-    btnCancel.addEventListener('click', closeModal);
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) closeModal();
-    });
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && overlay.classList.contains('active')) closeModal();
-    });
-
-    // Interceptar TODOS los formularios con [data-cs-confirm]
-    document.querySelectorAll('form[data-cs-confirm]').forEach(function(form) {
-        form.addEventListener('submit', function(e) {
-            // Si ya fue confirmado, dejamos pasar el submit
-            if (form.dataset.csConfirmed === '1') {
-                delete form.dataset.csConfirmed;
-                return;
-            }
-            e.preventDefault();
-            pendingForm = form;
-            openModal({
-                title:       form.dataset.csConfirmTitle   || 'Confirmar acción',
-                message:     form.dataset.csConfirmMessage || '¿Estás seguro?',
-                confirmText: form.dataset.csConfirmText    || 'Eliminar',
-                icon:        form.dataset.csConfirmIcon    || 'fas fa-exclamation-triangle'
+        // Interceptar forms con data-cs-confirm
+        document.querySelectorAll('form[data-cs-confirm]').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                if (form.dataset.csConfirmed === '1') {
+                    delete form.dataset.csConfirmed;
+                    return;
+                }
+                e.preventDefault();
+                const self = form;
+                csConfirm({
+                    title: self.dataset.csConfirmTitle || 'Confirmar acción',
+                    message: self.dataset.csConfirmMessage || '¿Estás seguro?',
+                    confirmText: self.dataset.csConfirmText || 'Eliminar',
+                    onConfirm: function() {
+                        self.dataset.csConfirmed = '1';
+                        if (typeof self.requestSubmit === 'function') self.requestSubmit();
+                        else self.submit();
+                    }
+                });
             });
         });
     });
-})();
 </script>
 {% endblock %}

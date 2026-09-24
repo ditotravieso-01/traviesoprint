@@ -1,18 +1,21 @@
 {% extends "base.html" %}
 
-{% block title %}{{ 'Editar' if proveedor else 'Nuevo' }} Proveedor · Inventario{% endblock %}
+{% block title %}{{ 'Editar' if unidad else 'Nueva' }} Unidad · Inventario{% endblock %}
 
 {% block page_title %}
 <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
-    <span class="page-main-title">{{ 'Editar proveedor' if proveedor else 'Nuevo proveedor' }}</span>
+    <span class="page-main-title">{{ 'Editar unidad' if unidad else 'Nueva unidad' }}</span>
     <span class="page-subtitle">
-        {{ proveedor.nombre if proveedor else 'Gestiona los proveedores de materiales' }}
+        {{ unidad.nombre if unidad else 'Gestiona las unidades de medida del inventario' }}
     </span>
 </div>
 {% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
     .page-main-title {
         font-family: 'Inter', sans-serif !important;
         font-size: 28px; font-weight: 700;
@@ -24,6 +27,9 @@
         color: #8e8e93; letter-spacing: 0.5px;
     }
 
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
     .inv-form-wrap, .inv-form-wrap * { box-sizing: border-box; }
     .inv-form-wrap {
         display: block !important;
@@ -39,6 +45,9 @@
     }
     .inv-form-container { max-width: 620px; margin: 0 auto; }
 
+    /* ============================================================
+       CARD
+       ============================================================ */
     .inv-form-card {
         background: rgba(255,255,255,0.85);
         backdrop-filter: blur(10px);
@@ -62,6 +71,9 @@
     }
     .inv-form-card h4 svg { color: #a8854f; flex-shrink: 0; }
 
+    /* ============================================================
+       FORM GROUP
+       ============================================================ */
     .inv-form-group { margin-bottom: 18px; }
     .inv-form-group:last-of-type { margin-bottom: 0; }
     .inv-form-group > label {
@@ -95,7 +107,27 @@
         box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
     .inv-form-group textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
+    .inv-form-group small {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        color: #8e8e93;
+        font-size: 12px;
+        margin-top: 5px;
+        line-height: 1.45;
+    }
 
+    /* Input especial para símbolo (monospace, más compacto) */
+    .inv-simbolo-input {
+        font-family: 'JetBrains Mono', monospace !important;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        max-width: 160px;
+        text-align: center;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
     .inv-btn-group {
         display: flex;
         gap: 12px;
@@ -135,6 +167,9 @@
     .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
     .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
 
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
     @media (max-width: 768px) {
         .inv-form-container { max-width: 100%; }
         .inv-form-card { padding: 20px 18px; border-radius: 16px; }
@@ -143,6 +178,7 @@
         .inv-btn-group .btn { width: 100%; }
         .inv-form-group input,
         .inv-form-group textarea { font-size: 16px; }
+        .inv-simbolo-input { max-width: 100%; }
     }
 </style>
 {% endblock %}
@@ -153,41 +189,30 @@
         <div class="inv-form-card">
             <h4>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 21h18"></path>
-                    <path d="M5 21V7l8-4v18"></path>
-                    <path d="M19 21V11l-6-4"></path>
+                    <path d="M2 12h20"></path>
+                    <path d="M12 2v20"></path>
                 </svg>
-                {{ 'Editar proveedor' if proveedor else 'Nuevo proveedor' }}
+                {{ 'Editar unidad' if unidad else 'Nueva unidad' }}
             </h4>
             <form method="POST">
                 <div class="inv-form-group">
                     <label>Nombre *</label>
-                    <input type="text" name="nombre" value="{{ proveedor.nombre if proveedor else '' }}" required placeholder="Ej. Suministros XYZ">
+                    <input type="text" name="nombre" value="{{ unidad.nombre if unidad else '' }}" required placeholder="Ej. Kilogramo, Litro, Unidad, Metro...">
+                    <small>Nombre descriptivo de la unidad de medida.</small>
                 </div>
+
                 <div class="inv-form-group">
-                    <label>RUC</label>
-                    <input type="text" name="ruc" value="{{ proveedor.ruc if proveedor else '' }}" placeholder="Número de RUC">
+                    <label>Símbolo</label>
+                    <input type="text" name="simbolo" value="{{ unidad.simbolo if unidad else '' }}" placeholder="Ej. kg, L, u, m" class="inv-simbolo-input" maxlength="10">
+                    <small>Forma corta (opcional). Se muestra en tablas y resúmenes.</small>
                 </div>
+
                 <div class="inv-form-group">
-                    <label>Teléfono</label>
-                    <input type="text" name="telefono" value="{{ proveedor.telefono if proveedor else '' }}" placeholder="Teléfono de contacto">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" rows="3" placeholder="Observaciones sobre esta unidad...">{{ unidad.descripcion if unidad else '' }}</textarea>
+                    <small>Opcional. Ayuda a identificar cuándo usar esta unidad.</small>
                 </div>
-                <div class="inv-form-group">
-                    <label>Email</label>
-                    <input type="email" name="email" value="{{ proveedor.email if proveedor else '' }}" placeholder="correo@proveedor.com">
-                </div>
-                <div class="inv-form-group">
-                    <label>Dirección</label>
-                    <input type="text" name="direccion" value="{{ proveedor.direccion if proveedor else '' }}" placeholder="Dirección física">
-                </div>
-                <div class="inv-form-group">
-                    <label>Persona de contacto</label>
-                    <input type="text" name="contacto" value="{{ proveedor.contacto if proveedor else '' }}" placeholder="Nombre del contacto principal">
-                </div>
-                <div class="inv-form-group">
-                    <label>Notas</label>
-                    <textarea name="notas" rows="3" placeholder="Observaciones adicionales...">{{ proveedor.notas if proveedor else '' }}</textarea>
-                </div>
+
                 <div class="inv-btn-group">
                     <button type="submit" class="btn btn-success">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -195,9 +220,9 @@
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
                             <polyline points="7 3 7 8 15 8"></polyline>
                         </svg>
-                        {{ 'Actualizar' if proveedor else 'Crear proveedor' }}
+                        {{ 'Actualizar' if unidad else 'Crear unidad' }}
                     </button>
-                    <a href="{{ url_for('inventario.listar_proveedores') }}" class="btn btn-outline">
+                    <a href="{{ url_for('inventario.listar_unidades') }}" class="btn btn-outline">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <line x1="18" y1="6" x2="6" y2="18"></line>
                             <line x1="6" y1="6" x2="18" y2="18"></line>

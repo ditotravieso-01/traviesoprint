@@ -2,75 +2,464 @@
 
 {% block title %}Categorías · Inventario{% endblock %}
 
-{% block page_title %}🏷️ Categorías{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Categorías</span>
+    <span class="page-subtitle">
+        Organiza los productos en categorías jerárquicas ·
+        <span class="num-mont">{{ categorias|length }}</span> categoría{{ 's' if categorias|length != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
-    .btn-success { background:#10b981; color:white; }
-    .btn-success:hover { background:#059669; }
-    .btn-warning { background:#f59e0b; color:white; }
-    .btn-warning:hover { background:#d97706; }
-    .btn-danger { background:#dc2626; color:white; }
-    .btn-danger:hover { background:#b91c1c; }
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    .table-wrap { overflow-x:auto; }
-    table { width:100%; border-collapse:collapse; font-size:14px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:12px; text-transform:uppercase; letter-spacing:0.5px; }
-    td { padding:8px 10px; border-bottom:1px solid rgba(0,0,0,0.02); }
-    .badge-info { background:#e0e7ff; color:#3b82f6; padding:2px 10px; border-radius:30px; font-size:12px; font-weight:600; display:inline-block; }
-    .badge-tipo { background:#f0ece8; color:#333; padding:2px 8px; border-radius:12px; font-size:11px; display:inline-block; }
-    .tree-indent { padding-left:20px; }
-    .cat-path { font-size:11px; color:#8e8e93; font-weight:400; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
+
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .inv-list-wrap, .inv-list-wrap * { box-sizing: border-box; }
+    .inv-list-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .inv-list-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+    }
+
+    /* ============================================================
+       HEADER
+       ============================================================ */
+    .inv-list-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .inv-list-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .inv-list-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .inv-list-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .inv-list-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       CARD + TABLA
+       ============================================================ */
+    .inv-list-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        overflow: hidden;
+    }
+    .inv-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table.inv-list-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        min-width: 0;
+    }
+    table.inv-list-table th {
+        font-family: 'Inter', sans-serif;
+        padding: 12px 16px;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        background: #fafaf9;
+        text-align: left;
+        white-space: nowrap;
+    }
+    table.inv-list-table td {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+    }
+    table.inv-list-table tr:last-child td { border-bottom: none; }
+    table.inv-list-table tr:hover td { background: #fafaf9; }
+
+    table.inv-list-table td.nombre-cell {
+        font-weight: 700;
+        letter-spacing: -0.1px;
+    }
+
+    .inv-path {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12px;
+        color: #6b6b7a;
+        background: #fafaf9;
+        padding: 3px 10px;
+        border-radius: 6px;
+        border: 1px solid #f0ece8;
+        display: inline-block;
+        max-width: 280px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        vertical-align: middle;
+    }
+
+    .inv-badge-info {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 26px;
+        background: #e0e7ff;
+        color: #1e40af;
+        padding: 0 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    .inv-bool-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 10px;
+        border-radius: 30px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .inv-bool-badge.si { background: #d1fae5; color: #065f46; }
+    .inv-bool-badge.no { background: #f0ece8; color: #6b6b7a; }
+
+    .inv-actions-cell {
+        display: flex;
+        gap: 4px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+    .inv-icon-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        border: 1.5px solid #e0dcd8;
+        background: white;
+        color: #555;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        text-decoration: none;
+        padding: 0;
+        flex-shrink: 0;
+    }
+    .inv-icon-btn:hover {
+        border-color: #a8854f;
+        color: #78350f;
+        background: #faf6f0;
+    }
+    .inv-icon-btn.danger:hover {
+        border-color: #dc2626;
+        color: #991b1b;
+        background: #fef2f2;
+    }
+    .inv-icon-btn svg { width: 14px; height: 14px; }
+
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .inv-list-empty {
+        text-align: center;
+        padding: 56px 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+    }
+    .inv-list-empty-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #fafaf9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: #b8b8c0;
+    }
+    .inv-list-empty-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-bottom: 6px;
+    }
+    .inv-list-empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #8e8e93;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto 18px;
+    }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+        .inv-list-header { flex-direction: column; align-items: stretch; }
+        .inv-list-header-actions { margin-left: 0; width: 100%; }
+        .inv-list-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        table.inv-list-table,
+        table.inv-list-table thead,
+        table.inv-list-table tbody,
+        table.inv-list-table tr,
+        table.inv-list-table th,
+        table.inv-list-table td { display: block; }
+        table.inv-list-table thead { display: none; }
+        table.inv-list-table tbody { display: flex; flex-direction: column; gap: 12px; padding: 12px; }
+        table.inv-list-table tr {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #f0ece8;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        table.inv-list-table td {
+            border: none;
+            padding: 3px 0;
+            width: 100%;
+        }
+        table.inv-list-table td:before {
+            content: attr(data-label);
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        table.inv-list-table td.nombre-cell:before { content: none; }
+        table.inv-list-table td.nombre-cell {
+            font-size: 16px;
+            border-bottom: 1px solid #f0ece8;
+            padding-bottom: 8px;
+            margin-bottom: 4px;
+        }
+
+        .inv-path { max-width: 100%; }
+
+        .inv-actions-cell { justify-content: flex-start; }
+        .inv-icon-btn { width: 38px; height: 38px; }
+        .inv-icon-btn svg { width: 16px; height: 16px; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:4px 0 0 0;">Gestiona las categorías del inventario</p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nueva categoría</a>
-        <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="inv-list-wrap">
 
-<div class="card">
-    <div class="table-wrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Nombre</th>
-                    <th>Ruta</th>
-                    <th>Material Impresión</th>
-                    <th>Productos</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for cat in categorias %}
-                <tr>
-                    <td><strong>{{ cat.nombre }}</strong></td>
-                    <td class="cat-path">{{ cat.get_full_path() }}</td>
-                    <td>{% if cat.es_material_impresion %}✅ Sí{% else %}❌ No{% endif %}</td>
-                    <td><span class="badge-info">{{ cat.productos|length }}</span></td>
-                    <td>
-                        <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta categoría?')">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="5" style="text-align:center;color:#8e8e93;padding:20px;">No hay categorías creadas.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+    <!-- HEADER -->
+    <div class="inv-list-header">
+        <div class="inv-list-header-info">
+            <p class="inv-list-header-title">Categorías del inventario</p>
+            <p class="inv-list-header-desc">Organiza jerárquicamente los productos (padres e hijos)</p>
+        </div>
+        <div class="inv-list-header-actions">
+            <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nueva categoría
+            </a>
+            <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
     </div>
+
+    {% if categorias %}
+
+    <!-- TABLA -->
+    <div class="inv-list-card">
+        <div class="inv-table-scroll">
+            <table class="inv-list-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Ruta completa</th>
+                        <th>Material impresión</th>
+                        <th>Productos</th>
+                        <th style="text-align:right;">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cat in categorias %}
+                    <tr>
+                        <td data-label="Nombre" class="nombre-cell">{{ cat.nombre }}</td>
+                        <td data-label="Ruta completa">
+                            <span class="inv-path">{{ cat.get_full_path() }}</span>
+                        </td>
+                        <td data-label="Material impresión">
+                            {% if cat.es_material_impresion %}
+                                <span class="inv-bool-badge si">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Sí
+                                </span>
+                            {% else %}
+                                <span class="inv-bool-badge no">No</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Productos">
+                            <span class="inv-badge-info num-mont">{{ cat.productos|length }}</span>
+                        </td>
+                        <td data-label="Acciones" style="text-align:right;">
+                            <div class="inv-actions-cell">
+                                <a href="{{ url_for('inventario.editar_categoria', categoria_id=cat.id) }}" class="inv-icon-btn" title="Editar categoría">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M12 20h9"></path>
+                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                    </svg>
+                                </a>
+                                <form method="POST" action="{{ url_for('inventario.eliminar_categoria', categoria_id=cat.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar esta categoría?\n\nLas subcategorías quedarán huérfanas bajo el padre de esta.');">
+                                    <button type="submit" class="inv-icon-btn danger" title="Eliminar categoría">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% else %}
+
+    <!-- EMPTY STATE -->
+    <div class="inv-list-empty">
+        <div class="inv-list-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+        </div>
+        <div class="inv-list-empty-title">No hay categorías creadas</div>
+        <div class="inv-list-empty-desc">
+            Las categorías agrupan los productos del inventario. Puedes crear jerarquías padre/hijo.
+        </div>
+        <a href="{{ url_for('inventario.crear_categoria') }}" class="btn btn-success">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            Crear primera categoría
+        </a>
+    </div>
+
+    {% endif %}
+
 </div>
 {% endblock %}

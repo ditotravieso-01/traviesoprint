@@ -1,234 +1,1235 @@
 {% extends "base.html" %}
 
 {% block title %}Merma por Orden · Inventario{% endblock %}
-{% block page_title %}📋 Merma por Orden{% endblock %}
+
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Merma por Orden</span>
+    <span class="page-subtitle">
+        Desperdicio operativo agrupado por orden ·
+        <span class="num-mont">{{ ordenes|length }}</span> orden{{ 'es' if ordenes|length != 1 else '' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .btn { padding:8px 18px; border-radius:30px; border:none; font-weight:600; font-size:13px; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:6px; background:#1c1c1e; color:white; font-family:'Inter',sans-serif; text-decoration:none; }
-    .btn:hover { transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background:transparent; border:1px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-warning { background:#f59e0b; color:white; }
-    .btn-warning:hover { background:#d97706; }
-    .btn-sm { padding:4px 12px; font-size:12px; }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
 
-    .card { background:rgba(255,255,255,0.7); backdrop-filter:blur(10px); border-radius:16px; padding:18px 20px; border:1px solid rgba(0,0,0,0.04); box-shadow:0 2px 12px rgba(0,0,0,0.02); margin-bottom:16px; }
-    .card h4 { font-family:'Playfair Display',serif; font-size:18px; margin-bottom:12px; color:#1c1c1e; }
+    /* ============================================================
+       LAYOUT DEFENSIVO — anula cualquier flex/grid heredado
+       ============================================================ */
+    .mpo-wrap,
+    .mpo-wrap * {
+        box-sizing: border-box;
+    }
+    .mpo-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0;
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .mpo-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        float: none !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
 
-    .filters-bar { display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; padding:14px 18px; background:rgba(255,255,255,0.6); border-radius:12px; border:1px solid rgba(0,0,0,0.04); margin-bottom:18px; }
-    .filters-bar .filter-group { display:flex; flex-direction:column; gap:4px; }
-    .filters-bar label { font-size:11px; font-weight:600; color:#8e8e93; text-transform:uppercase; letter-spacing:0.5px; }
-    .filters-bar select, .filters-bar input { padding:6px 12px; border:1px solid #d2d2d7; border-radius:8px; font-size:13px; background:white; min-width:160px; }
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 18px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline {
+        background: transparent;
+        border: 1.5px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-ghost {
+        background: transparent;
+        border: 1.5px solid #e0dcd8;
+        color: #6b6b7a;
+    }
+    .btn-ghost:hover { border-color: #a8854f; color: #78350f; background: #faf6f0; transform: none; box-shadow: none; }
 
-    .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:14px; margin-bottom:20px; }
-    .kpi-card { background:white; border-radius:14px; padding:14px 18px; border-top:4px solid #a8854f; box-shadow:0 2px 12px rgba(0,0,0,0.02); }
-    .kpi-card .value { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; color:#1c1c1e; }
-    .kpi-card .label { font-size:11px; color:#8e8e93; text-transform:uppercase; letter-spacing:0.3px; font-weight:600; margin-top:2px; }
-    .kpi-card.rojo { border-top-color:#dc2626; }
-    .kpi-card.rojo .value { color:#dc2626; }
-    .kpi-card.verde { border-top-color:#10b981; }
-    .kpi-card.verde .value { color:#10b981; }
+    /* ============================================================
+       HEADER CON ACCIONES
+       ============================================================ */
+    .mpo-header {
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+    .mpo-header-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+    }
+    .mpo-header-info .mpo-header-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+    }
+    .mpo-header-info .mpo-header-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+    }
+    .mpo-header-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
 
-    .orden-card { background:white; border-radius:14px; border:1px solid #f0ece8; margin-bottom:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.02); }
-    .orden-card .orden-header { background:linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%); padding:14px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; cursor:pointer; }
-    .orden-card .orden-title { font-family:'Playfair Display',serif; font-size:16px; font-weight:700; color:#1c1c1e; }
-    .orden-card .orden-title a { color:#3b82f6; text-decoration:none; }
-    .orden-card .orden-title a:hover { text-decoration:underline; }
-    .orden-card .orden-meta { font-size:13px; color:#666; margin-top:2px; }
-    .orden-card .orden-total { display:flex; gap:16px; flex-wrap:wrap; align-items:center; }
-    .orden-card .merma-tag { background:#fde8e5; color:#991b1b; padding:4px 12px; border-radius:30px; font-weight:700; font-size:13px; }
-    .orden-card .pct-tag { background:#fef3c7; color:#78350f; padding:4px 12px; border-radius:30px; font-weight:700; font-size:13px; }
-    .orden-card .orden-body { padding:16px 20px; display:none; border-top:1px solid #f0ece8; }
-    .orden-card.open .orden-body { display:block; }
+    /* ============================================================
+       KPI GRID — explícito 4 columnas
+       ============================================================ */
+    .mpo-kpi-grid {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 14px;
+        margin-bottom: 20px;
+    }
+    .mpo-kpi {
+        background: white;
+        border-radius: 14px;
+        padding: 16px 18px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        min-width: 0;
+    }
+    .mpo-kpi:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
+    .mpo-kpi .mpo-kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.4px;
+        line-height: 1.15;
+    }
+    .mpo-kpi .mpo-kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+    .mpo-kpi.rojo { border-top-color: #dc2626; }
+    .mpo-kpi.rojo .mpo-kpi-value { color: #dc2626; }
+    .mpo-kpi.verde { border-top-color: #10b981; }
+    .mpo-kpi.verde .mpo-kpi-value { color: #10b981; }
 
-    table { width:100%; border-collapse:collapse; font-size:13px; font-family:'Inter',sans-serif; }
-    th { text-align:left; padding:8px 10px; font-weight:600; color:#8e8e93; border-bottom:1px solid rgba(0,0,0,0.04); font-size:11px; text-transform:uppercase; letter-spacing:0.4px; background:#fafaf9; }
-    td { padding:8px 10px; border-bottom:1px solid #f5f2ef; }
-    .num { font-family:'JetBrains Mono',monospace; font-size:12px; }
-    .merma-pos { color:#dc2626; font-weight:600; }
-    .paños-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
-    .paños-table th { background:#fafaf9; font-size:10px; padding:6px 8px; }
-    .paños-table td { padding:6px 8px; }
+    /* ============================================================
+       FILTROS
+       ============================================================ */
+    .mpo-filters {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 12px;
+        padding: 16px 20px;
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.05);
+        margin-bottom: 20px;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .mpo-filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        min-width: 0;
+    }
+    .mpo-filter-group.mpo-filter-grow {
+        flex: 1 1 200px;
+    }
+    .mpo-filter-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1;
+    }
+    .mpo-filter-input,
+    .mpo-filters input[type="date"],
+    .mpo-filters input[type="text"] {
+        font-family: 'Inter', sans-serif;
+        padding: 8px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 13px;
+        background: white;
+        color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        box-sizing: border-box;
+        height: 38px;
+        width: 100%;
+        min-width: 0;
+    }
+    .mpo-filters input[type="date"]:focus,
+    .mpo-filters input[type="text"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .mpo-filter-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       ORDEN CARDS
+       ============================================================ */
+    .mpo-orden-card {
+        background: white;
+        border-radius: 14px;
+        border: 1px solid #f0ece8;
+        margin-bottom: 14px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: box-shadow 0.2s;
+    }
+    .mpo-orden-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); }
+
+    .mpo-orden-header {
+        background: linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%);
+        padding: 14px 20px;
+        display: flex !important;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.15s;
+    }
+    .mpo-orden-header:hover { background: linear-gradient(135deg, #f5f2ef 0%, #efe9e2 100%); }
+
+    .mpo-orden-info {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 0;
+        flex: 1 1 auto;
+    }
+    .mpo-orden-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .mpo-orden-title .mpo-orden-num-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .mpo-orden-title .mpo-orden-link {
+        color: #3b82f6;
+        text-decoration: none;
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    .mpo-orden-title .mpo-orden-link:hover { text-decoration: underline; }
+
+    .mpo-orden-meta {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #6b6b7a;
+        font-weight: 500;
+        line-height: 1.4;
+    }
+    .mpo-orden-meta .num-mont {
+        color: #1c1c1e;
+        font-size: 12.5px;
+    }
+
+    .mpo-orden-total {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        flex-shrink: 0;
+    }
+    .mpo-tag-merma {
+        font-family: 'Inter', sans-serif;
+        background: #fde8e5;
+        color: #991b1b;
+        padding: 4px 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 12.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .mpo-tag-merma .num-mont { font-size: 13px; }
+    .mpo-tag-pct {
+        font-family: 'Inter', sans-serif;
+        background: #fef3c7;
+        color: #78350f;
+        padding: 4px 14px;
+        border-radius: 30px;
+        font-weight: 600;
+        font-size: 12.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .mpo-tag-pct .num-mont { font-size: 13px; }
+
+    .mpo-chevron {
+        color: #8e8e93;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.25s ease;
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+    }
+    .mpo-orden-card.open .mpo-chevron { transform: rotate(180deg); background: #f0ece8; }
+
+    .mpo-orden-body {
+        padding: 16px 20px;
+        display: none;
+        border-top: 1px solid #f0ece8;
+    }
+    .mpo-orden-card.open .mpo-orden-body { display: block; }
+
+    /* ============================================================
+       TABLAS
+       ============================================================ */
+    .mpo-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table.mpo-lineas-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        min-width: 0;
+    }
+    table.mpo-lineas-table th {
+        font-family: 'Inter', sans-serif;
+        padding: 9px 10px;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        background: #fafaf9;
+        text-align: left;
+        white-space: nowrap;
+    }
+    table.mpo-lineas-table td {
+        padding: 10px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    table.mpo-lineas-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.mpo-lineas-table tr:last-child td { border-bottom: none; }
+    .mpo-merma-pos { color: #dc2626; }
+
+    /* Sub-tabla paños */
+    .mpo-paños-row td {
+        background: #fafaf9;
+        padding: 0 !important;
+    }
+    .mpo-paños-container {
+        padding: 14px 18px;
+        background: #fafaf9;
+    }
+    .mpo-paños-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .mpo-paños-title svg { color: #a8854f; flex-shrink: 0; }
+    table.mpo-paños-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e8e0da;
+    }
+    table.mpo-paños-table th {
+        font-family: 'Inter', sans-serif;
+        background: #f5f2ef;
+        font-size: 10px;
+        padding: 8px 10px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        text-align: left;
+        border-bottom: 1px solid #e8e0da;
+        white-space: nowrap;
+    }
+    table.mpo-paños-table td {
+        padding: 7px 10px;
+        border-bottom: 1px solid #f5f2ef;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    table.mpo-paños-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    table.mpo-paños-table tr:last-child td { border-bottom: none; }
+
+    .mpo-paños-empty {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #8e8e93;
+        font-style: italic;
+        padding: 10px 0;
+    }
+
+    /* ============================================================
+       EMPTY STATE
+       ============================================================ */
+    .mpo-empty {
+        text-align: center;
+        padding: 48px 24px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+    }
+    .mpo-empty .mpo-empty-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: #fafaf9;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 16px;
+        color: #b8b8c0;
+    }
+    .mpo-empty .mpo-empty-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-bottom: 6px;
+    }
+    .mpo-empty .mpo-empty-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #8e8e93;
+        line-height: 1.5;
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    /* ============================================================
+       CUSTOM SELECT (.cs-select-*)
+       ============================================================ */
+    .cs-select-wrap {
+        position: relative;
+        display: block;
+        width: 100%;
+    }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        background: #ffffff;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1c1c1e;
+        text-align: left;
+        min-height: 38px;
+        box-sizing: border-box;
+        transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 340px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0;
+        background: #ffffff;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1;
+        border: none; background: transparent; outline: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        padding: 0; height: 22px; min-width: 0;
+        font-weight: 500;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-options {
+        padding: 6px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+    .cs-select-empty {
+        padding: 14px 12px;
+        text-align: center;
+        color: #8e8e93;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #4a4a4a;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .mpo-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+    }
+    @media (max-width: 768px) {
+        .mpo-header { flex-direction: column; align-items: stretch; }
+        .mpo-header-actions { margin-left: 0; width: 100%; }
+        .mpo-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .mpo-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+        .mpo-kpi { padding: 12px 14px; }
+        .mpo-kpi .mpo-kpi-value { font-size: 20px; }
+        .mpo-kpi .mpo-kpi-label { font-size: 10px; }
+
+        .mpo-filters { flex-direction: column; align-items: stretch; padding: 14px; gap: 10px; }
+        .mpo-filter-group { width: 100%; }
+        .mpo-filter-group.mpo-filter-grow { flex: 0 0 auto; }
+        .mpo-filters input[type="date"],
+        .mpo-filters input[type="text"] {
+            width: 100%; min-width: 0;
+            font-size: 15px; height: 44px;
+        }
+        .mpo-filter-actions { margin-left: 0; width: 100%; flex-direction: column; }
+        .mpo-filter-actions .btn { width: 100%; justify-content: center; height: 44px; }
+
+        /* Orden card: header apilado */
+        .mpo-orden-header { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px 16px; }
+        .mpo-orden-total { width: 100%; justify-content: space-between; }
+        .mpo-orden-body { padding: 12px 14px; }
+
+        /* Tabla lineas → cards en móvil */
+        table.mpo-lineas-table,
+        table.mpo-lineas-table thead,
+        table.mpo-lineas-table tbody,
+        table.mpo-lineas-table tr,
+        table.mpo-lineas-table th,
+        table.mpo-lineas-table td { display: block; }
+        table.mpo-lineas-table thead { display: none; }
+        table.mpo-lineas-table tbody { display: flex; flex-direction: column; gap: 10px; }
+        table.mpo-lineas-table tr:not(.mpo-paños-row) {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #f0ece8;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+        }
+        table.mpo-lineas-table tr.mpo-paños-row {
+            border: none;
+            background: transparent;
+            padding: 0;
+        }
+        table.mpo-lineas-table td {
+            border: none;
+            padding: 4px 0 !important;
+            width: 100%;
+        }
+        table.mpo-lineas-table td:before {
+            content: attr(data-label);
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            color: #8e8e93;
+            font-size: 10.5px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block;
+            margin-bottom: 2px;
+        }
+        table.mpo-lineas-table td.mpo-paños-td:before { content: none; }
+        table.mpo-lineas-table tr.mpo-paños-row td:before { content: none; }
+
+        /* Tabla paños: scroll horizontal */
+        .mpo-paños-container { padding: 10px 12px; }
+        table.mpo-paños-table { font-size: 11px; }
+        table.mpo-paños-table th,
+        table.mpo-paños-table td { padding: 6px 8px; }
+    }
+    @media (max-width: 480px) {
+        .mpo-kpi-grid { grid-template-columns: 1fr !important; gap: 8px; }
+        .mpo-kpi .mpo-kpi-value { font-size: 18px; }
+        .mpo-tag-merma,
+        .mpo-tag-pct { font-size: 11.5px; padding: 3px 10px; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-    <div>
-        <p style="color:#8e8e93; margin:0;">Vista detallada de merma operativa agrupada por orden</p>
-    </div>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-outline"><i class="fas fa-clipboard-check"></i> Conteos</a>
-        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="mpo-wrap">
 
-<div class="card">
-    <form method="GET" class="filters-bar">
-        <div class="filter-group">
-            <label>Fecha inicio</label>
+    <!-- ============================================================
+         HEADER CON ACCIONES
+         ============================================================ -->
+    <div class="mpo-header">
+        <div class="mpo-header-info">
+            <p class="mpo-header-title">Desperdicio operativo por orden</p>
+            <p class="mpo-header-desc">Vista detallada de merma calculada desde las órdenes procesadas</p>
+        </div>
+        <div class="mpo-header-actions">
+            <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-warning">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Conteos
+            </a>
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         KPIs (4 columnas fijas en desktop)
+         ============================================================ -->
+    <div class="mpo-kpi-grid">
+        <div class="mpo-kpi">
+            <div class="mpo-kpi-value">{{ ordenes|length }}</div>
+            <div class="mpo-kpi-label">Órdenes con merma</div>
+        </div>
+        <div class="mpo-kpi verde">
+            <div class="mpo-kpi-value">{{ total_area }} m²</div>
+            <div class="mpo-kpi-label">Área facturada total</div>
+        </div>
+        <div class="mpo-kpi">
+            <div class="mpo-kpi-value">{{ total_material }} m²</div>
+            <div class="mpo-kpi-label">Material consumido</div>
+        </div>
+        <div class="mpo-kpi rojo">
+            <div class="mpo-kpi-value">{{ total_merma }} m²</div>
+            <div class="mpo-kpi-label">Merma operativa ({{ pct_global }}%)</div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         FILTROS
+         ============================================================ -->
+    <form method="GET" action="{{ url_for('inventario.merma_por_orden') }}" class="mpo-filters" id="filtrosForm">
+        <div class="mpo-filter-group">
+            <label class="mpo-filter-label">Fecha inicio</label>
             <input type="date" name="fecha_inicio" value="{{ fecha_inicio }}">
         </div>
-        <div class="filter-group">
-            <label>Fecha fin</label>
+        <div class="mpo-filter-group">
+            <label class="mpo-filter-label">Fecha fin</label>
             <input type="date" name="fecha_fin" value="{{ fecha_fin }}">
         </div>
-        <div class="filter-group">
-            <label>Nº Orden</label>
+        <div class="mpo-filter-group">
+            <label class="mpo-filter-label">Nº Orden</label>
             <input type="text" name="order_num" value="{{ order_num }}" placeholder="Ej. S03055">
         </div>
-        <div class="filter-group">
-            <label>Producto</label>
-            <select name="producto_id">
-                <option value="">Todos</option>
+        <div class="mpo-filter-group mpo-filter-grow">
+            <label class="mpo-filter-label">Producto</label>
+            <select name="producto_id" data-searchable="1">
+                <option value="">Todos los productos</option>
                 {% for p in productos %}
-                    <option value="{{ p.id }}" {% if producto_seleccionado == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                <option value="{{ p.id }}" {% if producto_seleccionado == p.id %}selected{% endif %}>{{ p.nombre }}</option>
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
-        <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline"><i class="fas fa-undo"></i> Limpiar</a>
+        <div class="mpo-filter-actions">
+            <button type="submit" class="btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                Filtrar
+            </button>
+            <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Limpiar
+            </a>
+        </div>
     </form>
-</div>
 
-<div class="kpi-grid">
-    <div class="kpi-card">
-        <div class="value">{{ ordenes|length }}</div>
-        <div class="label">Órdenes con merma</div>
-    </div>
-    <div class="kpi-card verde">
-        <div class="value">{{ total_area }} m²</div>
-        <div class="label">Área facturada total</div>
-    </div>
-    <div class="kpi-card">
-        <div class="value">{{ total_material }} m²</div>
-        <div class="label">Material consumido</div>
-    </div>
-    <div class="kpi-card rojo">
-        <div class="value">{{ total_merma }} m²</div>
-        <div class="label">Merma operativa ({{ pct_global }}%)</div>
-    </div>
-</div>
-
-{% if ordenes %}
-    {% for o in ordenes %}
-    <div class="orden-card">
-        <div class="orden-header" onclick="this.parentElement.classList.toggle('open')">
-            <div>
-                <div class="orden-title">
-                    Orden
-                    <a href="{{ url_for('ordenes.detalle_order', order_id=o.orden_id) }}" target="_blank" onclick="event.stopPropagation()">
-                        {{ o.orden_num }}
-                    </a>
+    <!-- ============================================================
+         LISTA DE ÓRDENES
+         ============================================================ -->
+    {% if ordenes %}
+        {% for o in ordenes %}
+        {% set pct_o = (o.total_merma_m2 / o.total_area_m2 * 100) if o.total_area_m2 > 0 else 0 %}
+        <div class="mpo-orden-card">
+            <div class="mpo-orden-header" onclick="toggleOrdenCard(this)">
+                <div class="mpo-orden-info">
+                    <div class="mpo-orden-title">
+                        <span class="mpo-orden-num-label">Orden</span>
+                        <a href="{{ url_for('ordenes.detalle_order', order_id=o.orden_id) }}" target="_blank" class="mpo-orden-link" onclick="event.stopPropagation()">
+                            {{ o.orden_num }}
+                        </a>
+                    </div>
+                    <div class="mpo-orden-meta">
+                        {{ o.cliente }} · {{ o.fecha.strftime('%d/%m/%Y') if o.fecha else '—' }}
+                        · <span class="num-mont">{{ o.lineas|length }}</span> línea{{ 's' if o.lineas|length != 1 else '' }}
+                    </div>
                 </div>
-                <div class="orden-meta">
-                    {{ o.cliente }} · {{ o.fecha.strftime('%d/%m/%Y') if o.fecha else '—' }}
-                    · {{ o.lineas|length }} línea{{ 's' if o.lineas|length != 1 else '' }}
+                <div class="mpo-orden-total">
+                    <span class="mpo-tag-merma">
+                        Merma: <span class="num-mont">{{ "%.2f"|format(o.total_merma_m2) }}</span> m²
+                    </span>
+                    <span class="mpo-tag-pct">
+                        <span class="num-mont">{{ "%.1f"|format(pct_o) }}</span>%
+                    </span>
+                    <span class="mpo-chevron">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </span>
                 </div>
             </div>
-            <div class="orden-total">
-                <span class="merma-tag">Merma: {{ "%.2f"|format(o.total_merma_m2) }} m²</span>
-                <span class="pct-tag">
-                    {{ "%.1f"|format((o.total_merma_m2 / o.total_area_m2 * 100) if o.total_area_m2 > 0 else 0) }}%
-                </span>
-                <i class="fas fa-chevron-down" style="color:#8e8e93;"></i>
+            <div class="mpo-orden-body">
+                <div class="mpo-table-scroll">
+                    <table class="mpo-lineas-table">
+                        <thead>
+                            <tr>
+                                <th>Línea</th>
+                                <th>Producto</th>
+                                <th>Etiqueta</th>
+                                <th>Área (m²)</th>
+                                <th>Material (m²)</th>
+                                <th>Merma (m²)</th>
+                                <th>%</th>
+                                <th>Paños</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for l in o.lineas %}
+                            <tr>
+                                <td data-label="Línea"><strong>{{ l.nombre }}</strong></td>
+                                <td data-label="Producto">{{ l.producto }}</td>
+                                <td data-label="Etiqueta" class="num-mont">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</td>
+                                <td data-label="Área (m²)" class="num-mont">{{ "%.2f"|format(l.area_m2) }} m²</td>
+                                <td data-label="Material (m²)" class="num-mont">{{ "%.2f"|format(l.material_m2) }} m²</td>
+                                <td data-label="Merma (m²)" class="num-mont mpo-merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
+                                <td data-label="%" class="num-mont">{{ "%.1f"|format(l.merma_pct) }}%</td>
+                                <td data-label="Paños">
+                                    <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
+                                        Ver <span class="num-mont">{{ l.n_paños }}</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="mpo-paños-row" style="display:none;">
+                                <td colspan="8" class="mpo-paños-td">
+                                    <div class="mpo-paños-container">
+                                        {% if l.desglose_paños %}
+                                        <div class="mpo-paños-title">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect x="3" y="3" width="7" height="7"></rect>
+                                                <rect x="14" y="3" width="7" height="7"></rect>
+                                                <rect x="14" y="14" width="7" height="7"></rect>
+                                                <rect x="3" y="14" width="7" height="7"></rect>
+                                            </svg>
+                                            Desglose por paño
+                                        </div>
+                                        <div style="overflow-x:auto;">
+                                            <table class="mpo-paños-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Paño</th>
+                                                        <th>Área</th>
+                                                        <th>Filas</th>
+                                                        <th>Largo etiq.</th>
+                                                        <th>Aire</th>
+                                                        <th>Gap orig.</th>
+                                                        <th>Gap efect.</th>
+                                                        <th>Cut</th>
+                                                        <th>Largo avance</th>
+                                                        <th>Material</th>
+                                                        <th>Sobrante</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for p in l.desglose_paños %}
+                                                    <tr>
+                                                        <td class="num-mont">#{{ p.n }}</td>
+                                                        <td class="num-mont">{{ "%.2f"|format(p.area_m2 or p.area or 0) }} m²</td>
+                                                        <td class="num-mont">{{ p.filas }}</td>
+                                                        <td class="num-mont">{{ "%.3f"|format(p.largo_etiquetas_m or 0) }} m</td>
+                                                        <td class="num-mont">{{ p.aire_total_mm or p.aire_mm or 0 }} mm</td>
+                                                        <td class="num-mont">{{ p.gap_original_mm or (l.gap_usado_cm * 10) }} mm</td>
+                                                        <td class="num-mont" style="color:{% if (p.gap_efectivo_mm or 0) < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};">
+                                                            {{ p.gap_efectivo_mm }} mm
+                                                        </td>
+                                                        <td class="num-mont">{{ p.cut_mm or 40 }} mm</td>
+                                                        <td class="num-mont">{{ "%.3f"|format(p.largo_avance_m or 0) }} m</td>
+                                                        <td class="num-mont">{{ "%.4f"|format(p.material_paño_m2 or 0) }} m²</td>
+                                                        <td class="num-mont" style="color:{% if (p.sobrante_salida_mm or 0) > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
+                                                            {{ p.sobrante_salida_mm or p.sobrante_mm or 0 }} mm
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                        <div class="mpo-paños-empty">
+                                            Sin desglose detallado (orden anterior a la implementación).
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
-        <div class="orden-body">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Línea</th>
-                        <th>Producto</th>
-                        <th>Etiqueta</th>
-                        <th>Área</th>
-                        <th>Material</th>
-                        <th>Merma</th>
-                        <th>%</th>
-                        <th>Detalle</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for l in o.lineas %}
-                    <tr>
-                        <td>{{ l.nombre }}</td>
-                        <td>{{ l.producto }}</td>
-                        <td class="num">{{ l.ancho_cm }}×{{ l.alto_cm }} cm</td>
-                        <td class="num">{{ "%.2f"|format(l.area_m2) }} m²</td>
-                        <td class="num">{{ "%.2f"|format(l.material_m2) }} m²</td>
-                        <td class="num merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
-                        <td class="num">{{ "%.1f"|format(l.merma_pct) }}%</td>
-                        <td>
-                            <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
-                                {{ l.n_paños }} paño{{ 's' if l.n_paños != 1 else '' }}
-                            </button>
-                        </td>
-                    </tr>
-                    <tr class="paños-row" style="display:none;">
-                        <td colspan="8" style="background:#fafaf9;">
-                            {% if l.desglose_paños %}
-                            <table class="paños-table">
-                                <thead>
-                                    <tr>
-                                        <th>Paño</th>
-                                        <th>Área</th>
-                                        <th>Filas</th>
-                                        <th>Largo etiquetas</th>
-                                        <th>Aire</th>
-                                        <th>Gap original</th>
-                                        <th>Gap efectivo</th>
-                                        <th>Cut</th>
-                                        <th>Largo avance</th>
-                                        <th>Material</th>
-                                        <th>Sobrante</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for p in l.desglose_paños %}
-                                    <tr>
-                                        <td class="num">#{{ p.n }}</td>
-                                        <td class="num">{{ "%.2f"|format(p.area_m2 or p.area or 0) }} m²</td>
-                                        <td class="num">{{ p.filas }}</td>
-                                        <td class="num">{{ "%.3f"|format(p.largo_etiquetas_m or 0) }} m</td>
-                                        <td class="num">{{ p.aire_total_mm or p.aire_mm or 0 }} mm</td>
-                                        <td class="num">{{ p.gap_original_mm or (l.gap_usado_cm * 10) }} mm</td>
-                                        <td class="num" style="color:{% if (p.gap_efectivo_mm or 0) < l.gap_usado_cm * 10 %}#10b981{% else %}#1c1c1e{% endif %};font-weight:600;">
-                                            {{ p.gap_efectivo_mm }} mm
-                                        </td>
-                                        <td class="num">{{ p.cut_mm or 40 }} mm</td>
-                                        <td class="num">{{ "%.3f"|format(p.largo_avance_m or 0) }} m</td>
-                                        <td class="num">{{ "%.4f"|format(p.material_paño_m2 or 0) }} m²</td>
-                                        <td class="num" style="color:{% if (p.sobrante_salida_mm or 0) > 0 %}#f59e0b{% else %}#8e8e93{% endif %};">
-                                            {{ p.sobrante_salida_mm or p.sobrante_mm or 0 }} mm
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                            {% else %}
-                            <em style="color:#8e8e93; font-size:12px;">Sin desglose detallado (orden anterior a la implementación).</em>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+        {% endfor %}
+
+    {% else %}
+    <div class="mpo-empty">
+        <div class="mpo-empty-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+        </div>
+        <div class="mpo-empty-title">No hay órdenes con merma operativa</div>
+        <div class="mpo-empty-desc">
+            Ajusta los filtros de fecha, producto u orden, o procesa órdenes para ver su desperdicio operativo.
         </div>
     </div>
-    {% endfor %}
-{% else %}
-<div class="card" style="text-align:center; padding:40px;">
-    <p style="color:#8e8e93; font-size:16px;">No hay órdenes con merma operativa en este período.</p>
-</div>
-{% endif %}
+    {% endif %}
 
+</div>
+{% endblock %}
+
+{% block extra_js %}
 <script>
+    // ============================================================
+    // CUSTOM SELECT
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : 'Todos';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.dataset.idx = idx;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            items.forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) {
+                highlightedIndex = delta > 0 ? 0 : n - 1;
+            } else {
+                highlightedIndex = (highlightedIndex + delta + n) % n;
+            }
+            updateHighlight();
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            if (items[highlightedIndex]) {
+                items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(340, menu.scrollHeight || 220);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 220) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        updateValue();
+    }
+
+    function initAllCustomSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
+    }
+
+    // ============================================================
+    // TOGGLE ORDEN CARD (acordeón principal)
+    // ============================================================
+    function toggleOrdenCard(headerEl) {
+        const card = headerEl.closest('.mpo-orden-card');
+        if (!card) return;
+        card.classList.toggle('open');
+    }
+
+    // ============================================================
+    // TOGGLE PAÑOS
+    // ============================================================
     function togglePaños(btn) {
         const row = btn.closest('tr').nextElementSibling;
-        if (row && row.classList.contains('paños-row')) {
-            row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+        if (row && row.classList.contains('mpo-paños-row')) {
+            const isOpen = row.style.display !== 'none';
+            row.style.display = isOpen ? 'none' : 'table-row';
+            const numSpan = btn.querySelector('.num-mont');
+            if (isOpen) {
+                btn.innerHTML = `Ver <span class="num-mont">${numSpan ? numSpan.textContent : ''}</span>`;
+            } else {
+                btn.innerHTML = `Ocultar`;
+            }
         }
     }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        initAllCustomSelects();
+
+        // Abrir la primera orden card automáticamente solo en desktop
+        const firstCard = document.querySelector('.mpo-orden-card');
+        if (firstCard && window.innerWidth >= 768) {
+            firstCard.classList.add('open');
+        }
+    });
 </script>
 {% endblock %}

@@ -2,138 +2,200 @@
 
 {% block title %}{{ 'Editar' if ubicacion else 'Nueva' }} Ubicación · Inventario{% endblock %}
 
-{% block page_title %}{{ '✏️ Editar' if ubicacion else '📄 Nueva' }} Ubicación{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">{{ 'Editar ubicación' if ubicacion else 'Nueva ubicación' }}</span>
+    <span class="page-subtitle">
+        {{ ubicacion.nombre if ubicacion else 'Gestiona las ubicaciones físicas del inventario' }}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width: 600px; margin: 0 auto; }
-    .form-section {
-        background: rgba(255, 255, 255, 0.85);
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+
+    .inv-form-wrap, .inv-form-wrap * { box-sizing: border-box; }
+    .inv-form-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .inv-form-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .inv-form-container { max-width: 620px; margin: 0 auto; }
+
+    .inv-form-card {
+        background: rgba(255,255,255,0.85);
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 28px 32px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
     }
-    .form-section h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 20px;
+    .inv-form-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
         color: #1c1c1e;
+        margin: 0 0 20px 0;
+        padding-bottom: 14px;
         border-bottom: 2px solid #f0ece8;
-        padding-bottom: 12px;
         display: flex;
         align-items: center;
         gap: 10px;
     }
-    .form-section h4 i { color: #a8854f; font-size: 22px; }
-    .form-group { margin-bottom: 18px; }
-    .form-group label {
+    .inv-form-card h4 svg { color: #a8854f; flex-shrink: 0; }
+
+    .inv-form-group { margin-bottom: 18px; }
+    .inv-form-group:last-of-type { margin-bottom: 0; }
+    .inv-form-group > label {
         display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
         font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 11.5px;
+        color: #6b6b7a;
+        margin-bottom: 7px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
-    .form-group input, .form-group textarea {
+    .inv-form-group input,
+    .inv-form-group textarea {
+        font-family: 'Inter', sans-serif;
         width: 100%;
-        padding: 12px 16px;
+        padding: 11px 14px;
         border: 1.5px solid #e0dcd8;
         border-radius: 10px;
-        font-size: 15px;
+        font-size: 14.5px;
         background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
         color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
     }
-    .form-group input:focus, .form-group textarea:focus {
+    .inv-form-group input:focus,
+    .inv-form-group textarea:focus {
         outline: none;
         border-color: #a8854f;
         background: white;
-        box-shadow: 0 0 0 4px rgba(168, 133, 79, 0.08);
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
-    .form-group textarea { resize: vertical; min-height: 80px; }
-    .form-group small {
+    .inv-form-group textarea { resize: vertical; min-height: 80px; line-height: 1.55; }
+    .inv-form-group small {
         display: block;
+        font-family: 'Inter', sans-serif;
         color: #8e8e93;
         font-size: 12px;
-        margin-top: 4px;
+        margin-top: 5px;
+        line-height: 1.45;
     }
-    .btn-group {
+
+    .inv-btn-group {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
-        margin-top: 24px;
-        padding-top: 16px;
+        margin-top: 26px;
+        padding-top: 18px;
         border-top: 1px solid #f0ece8;
     }
     .btn {
-        padding: 10px 28px;
+        font-family: 'Inter', sans-serif;
+        padding: 10px 24px;
         border-radius: 30px;
         border: none;
         font-weight: 600;
+        font-size: 14px;
         cursor: pointer;
         transition: all 0.2s;
         display: inline-flex;
         align-items: center;
         gap: 8px;
         text-decoration: none;
-        font-size: 14px;
-        font-family: 'Inter', sans-serif;
+        line-height: 1;
+        white-space: nowrap;
+        justify-content: center;
     }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
     .btn-success {
-        background: #10b981;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.25);
     }
     .btn-success:hover {
-        background: #059669;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 6px 16px rgba(16,185,129,0.35);
     }
-    .btn-outline {
-        background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
-    }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: none;
-        box-shadow: none;
-    }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+
     @media (max-width: 768px) {
-        .form-section { padding: 20px; }
-        .btn-group { flex-direction: column; }
-        .btn { justify-content: center; }
+        .inv-form-container { max-width: 100%; }
+        .inv-form-card { padding: 20px 18px; border-radius: 16px; }
+        .inv-form-card h4 { font-size: 15px; }
+        .inv-btn-group { flex-direction: column; }
+        .inv-btn-group .btn { width: 100%; }
+        .inv-form-group input,
+        .inv-form-group textarea { font-size: 16px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-section">
-        <h4><i class="fas fa-map-pin"></i> {{ 'Editar ubicación' if ubicacion else 'Nueva ubicación' }}</h4>
-        <form method="POST">
-            <div class="form-group">
-                <label>Nombre *</label>
-                <input type="text" name="nombre" value="{{ ubicacion.nombre if ubicacion else '' }}" required placeholder="Ej. Almacén Central, Garaje, Estante A-3...">
-                <small>Nombre descriptivo de la ubicación física.</small>
-            </div>
-            <div class="form-group">
-                <label>Descripción</label>
-                <textarea name="descripcion" rows="3" placeholder="Describe esta ubicación...">{{ ubicacion.descripcion if ubicacion else '' }}</textarea>
-                <small>Opcional. Ayuda a identificar esta ubicación.</small>
-            </div>
-            <div class="btn-group">
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-save"></i> {{ 'Actualizar' if ubicacion else 'Crear ubicación' }}
-                </button>
-                <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-outline">
-                    <i class="fas fa-times"></i> Cancelar
-                </a>
-            </div>
-        </form>
+<div class="inv-form-wrap">
+    <div class="inv-form-container">
+        <div class="inv-form-card">
+            <h4>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                </svg>
+                {{ 'Editar ubicación' if ubicacion else 'Nueva ubicación' }}
+            </h4>
+            <form method="POST">
+                <div class="inv-form-group">
+                    <label>Nombre *</label>
+                    <input type="text" name="nombre" value="{{ ubicacion.nombre if ubicacion else '' }}" required placeholder="Ej. Almacén Central, Garaje, Estante A-3...">
+                    <small>Nombre descriptivo de la ubicación física.</small>
+                </div>
+                <div class="inv-form-group">
+                    <label>Descripción</label>
+                    <textarea name="descripcion" rows="3" placeholder="Describe esta ubicación...">{{ ubicacion.descripcion if ubicacion else '' }}</textarea>
+                    <small>Opcional. Ayuda a identificar esta ubicación.</small>
+                </div>
+                <div class="inv-btn-group">
+                    <button type="submit" class="btn btn-success">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        {{ 'Actualizar' if ubicacion else 'Crear ubicación' }}
+                    </button>
+                    <a href="{{ url_for('inventario.listar_ubicaciones') }}" class="btn btn-outline">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 {% endblock %}
