@@ -2,62 +2,464 @@
 
 {% block title %}Importar Productos · Inventario{% endblock %}
 
-{% block page_title %}📤 Importar Productos{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Importar Productos</span>
+    <span class="page-subtitle">Sube un Excel para crear o actualizar productos en masa</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width:700px; margin:0 auto; }
-    .form-section { background:rgba(255,255,255,0.85); backdrop-filter:blur(10px); border-radius:20px; padding:28px 32px; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(0,0,0,0.04); }
-    .form-section h4 { font-family:'Playfair Display',serif; font-size:22px; margin-bottom:20px; color:#1c1c1e; border-bottom:2px solid #f0ece8; padding-bottom:12px; display:flex; align-items:center; gap:10px; }
-    .form-section h4 i { color:#a8854f; font-size:22px; }
-    .form-group { margin-bottom:16px; }
-    .form-group label { display:block; font-weight:600; font-size:14px; color:#333; margin-bottom:4px; font-family:'Inter',sans-serif; }
-    .form-group input[type="file"] { width:100%; padding:10px 14px; border:1.5px solid #e0dcd8; border-radius:10px; font-size:15px; background:#fafaf9; transition:border-color 0.2s; font-family:'Inter',sans-serif; color:#1c1c1e; }
-    .form-group input[type="file"]:focus { outline:none; border-color:#a8854f; background:white; box-shadow:0 0 0 4px rgba(168,133,79,0.08); }
-    .btn { padding:10px 28px; border-radius:30px; border:none; font-weight:600; cursor:pointer; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; text-decoration:none; font-size:14px; font-family:'Inter',sans-serif; }
-    .btn-success { background:#10b981; color:white; }
-    .btn-success:hover { background:#059669; transform:translateY(-2px); box-shadow:0 4px 16px rgba(16,185,129,0.2); }
-    .btn-outline { background:transparent; border:1.5px solid #d2d2d7; color:#1c1c1e; }
-    .btn-outline:hover { border-color:#8e8e93; background:#f5f5f5; transform:none; box-shadow:none; }
-    .btn-group { display:flex; gap:12px; flex-wrap:wrap; margin-top:24px; padding-top:16px; border-top:1px solid #f0ece8; }
-    .alert { padding:12px 16px; border-radius:8px; background:#fef3c7; border-left:4px solid #f59e0b; color:#78350f; margin-bottom:12px; font-size:14px; }
-    .alert strong { font-weight:700; }
-    .alert ul { margin:8px 0 0 16px; }
-    @media (max-width:768px) { .form-section { padding:20px; } .btn-group { flex-direction:column; } .btn { justify-content:center; } }
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+
+    .inv-import-wrap, .inv-import-wrap * { box-sizing: border-box; }
+    .inv-import-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
+        font-family: 'Inter', sans-serif;
+    }
+    .inv-import-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+    .inv-import-container { max-width: 720px; margin: 0 auto; }
+
+    /* ============================================================
+       CARD
+       ============================================================ */
+    .inv-import-card {
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 28px 32px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .inv-import-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .inv-import-card h4 svg { color: #a8854f; flex-shrink: 0; }
+    .inv-import-card .inv-import-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #6b6b7a;
+        line-height: 1.55;
+        margin: 0 0 22px 0;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #f0ece8;
+    }
+
+    /* ============================================================
+       ALERT INFORMATIVA
+       ============================================================ */
+    .inv-import-alert {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin-bottom: 22px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #78350f;
+        line-height: 1.6;
+    }
+    .inv-import-alert .inv-alert-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #78350f;
+        margin-bottom: 10px;
+    }
+    .inv-import-alert .inv-alert-header svg { color: #b45309; flex-shrink: 0; }
+    .inv-import-alert ul {
+        margin: 0 0 10px 20px;
+        padding: 0;
+        font-size: 12.5px;
+    }
+    .inv-import-alert li { margin-bottom: 4px; line-height: 1.5; }
+    .inv-import-alert li strong { color: #78350f; font-weight: 700; }
+    .inv-import-alert .inv-alert-note {
+        background: rgba(255,255,255,0.6);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 12.5px;
+        color: #78350f;
+        margin-top: 10px;
+        line-height: 1.5;
+    }
+
+    /* ============================================================
+       DROP ZONE
+       ============================================================ */
+    .inv-drop-zone {
+        position: relative;
+        border: 2px dashed #d2d2d7;
+        border-radius: 16px;
+        padding: 40px 24px;
+        text-align: center;
+        background: #fafaf9;
+        transition: all 0.2s;
+        cursor: pointer;
+        margin-bottom: 22px;
+    }
+    .inv-drop-zone:hover,
+    .inv-drop-zone.dragover {
+        border-color: #a8854f;
+        background: #faf6f0;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(168,133,79,0.1);
+    }
+    .inv-drop-zone.has-file {
+        border-style: solid;
+        border-color: #10b981;
+        background: #f0fdf4;
+    }
+    .inv-drop-zone.has-error {
+        border-style: solid;
+        border-color: #dc2626;
+        background: #fef2f2;
+    }
+    .inv-drop-zone .inv-drop-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: white;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 14px;
+        color: #a8854f;
+        border: 2px solid #f0ece8;
+    }
+    .inv-drop-zone .inv-drop-icon svg { width: 30px; height: 30px; }
+    .inv-drop-zone.has-file .inv-drop-icon {
+        color: #10b981;
+        border-color: #d1fae5;
+    }
+    .inv-drop-zone .inv-drop-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0 0 6px 0;
+    }
+    .inv-drop-zone .inv-drop-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    /* Nombre del archivo seleccionado */
+    .inv-drop-file {
+        display: none;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 12.5px;
+        color: #065f46;
+        background: white;
+        padding: 8px 14px;
+        border-radius: 30px;
+        border: 1px solid #6ee7b7;
+        margin-top: 14px;
+        align-items: center;
+        gap: 8px;
+        justify-content: center;
+        font-weight: 600;
+        word-break: break-all;
+    }
+    .inv-drop-zone.has-file .inv-drop-file { display: inline-flex; }
+    .inv-drop-file svg { flex-shrink: 0; color: #10b981; }
+
+    /* Input file oculto cubriendo toda la zona */
+    .inv-drop-zone input[type="file"] {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        opacity: 0;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .inv-import-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 26px;
+        padding-top: 20px;
+        border-top: 1px solid #f0ece8;
+    }
+    .btn {
+        font-family: 'Inter', sans-serif;
+        padding: 12px 26px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+        justify-content: center;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.25);
+    }
+    .btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        box-shadow: 0 6px 16px rgba(16,185,129,0.35);
+    }
+    .btn-success:disabled {
+        background: #d2d2d7;
+        color: #8e8e93;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+        opacity: 0.7;
+    }
+    .btn-success:disabled:hover {
+        background: #d2d2d7;
+        box-shadow: none;
+        transform: none;
+    }
+    .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 768px) {
+        .inv-import-container { max-width: 100%; }
+        .inv-import-card { padding: 20px 18px; border-radius: 16px; }
+        .inv-import-card h4 { font-size: 15px; }
+        .inv-import-alert { padding: 14px 16px; font-size: 12.5px; }
+        .inv-drop-zone { padding: 32px 20px; }
+        .inv-drop-zone .inv-drop-icon { width: 56px; height: 56px; }
+        .inv-drop-zone .inv-drop-icon svg { width: 26px; height: 26px; }
+        .inv-import-actions { flex-direction: column; }
+        .inv-import-actions .btn { width: 100%; }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
-    <div class="form-section">
-        <h4><i class="fas fa-file-import"></i> Importar productos</h4>
-        <p style="color:#666; margin-bottom:12px;">Sube un archivo Excel (.xlsx o .xls) con los datos de productos.</p>
+<div class="inv-import-wrap">
+    <div class="inv-import-container">
+        <div class="inv-import-card">
+            <h4>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Importar productos desde Excel
+            </h4>
+            <p class="inv-import-desc">
+                Sube un archivo Excel (.xlsx o .xls) con los datos de los productos.
+                Si el producto ya existe (por nombre), se <strong>actualizará</strong>. Si no existe, se <strong>creará</strong> nuevo.
+            </p>
 
-        <div class="alert">
-            <strong>📋 Columnas reconocibles:</strong>
-            <ul>
-                <li><strong>Nombre</strong> (obligatorio)</li>
-                <li>Descripción, Costo Unitario, Inversión Total</li>
-                <li>Stock (unidades), Stock (metros), Stock Mínimo</li>
-                <li>Comprometido (unidades), Comprometido (metros)</li>
-                <li>Fecha Vencimiento, Ancho Rollo, Largo Rollo</li>
-                <li>Categoría, Área (legacy), Unidad de Medida, Símbolo de Unidad</li>
-                <li>Material Impresión (Sí/No)</li>
-                <li>Atributos Extra (JSON)</li>
-            </ul>
-            <p style="margin-top:6px; font-size:13px;">Si el producto ya existe, se actualizará. Si no existe, se creará nuevo.</p>
+            <!-- ALERTA INFORMATIVA -->
+            <div class="inv-import-alert">
+                <div class="inv-alert-header">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    Columnas reconocibles en el Excel
+                </div>
+                <ul>
+                    <li><strong>Nombre</strong> (obligatorio)</li>
+                    <li>Descripción · Costo Unitario · Inversión Total</li>
+                    <li>Stock (unidades) · Stock (metros) · Stock Mínimo</li>
+                    <li>Comprometido (unidades) · Comprometido (metros)</li>
+                    <li>Fecha Vencimiento · Ancho Rollo · Largo Rollo</li>
+                    <li>Categoría · Área (legacy) · Unidad de Medida · Símbolo de Unidad</li>
+                    <li>Material Impresión (Sí/No) · Atributos Extra (JSON)</li>
+                </ul>
+                <div class="inv-alert-note">
+                    <strong>Tip:</strong> Puedes exportar primero el inventario actual, editarlo en Excel y volver a importarlo.
+                    Esto preserva el formato de columnas.
+                </div>
+            </div>
+
+            <!-- FORM -->
+            <form method="POST" enctype="multipart/form-data" id="importForm" novalidate>
+                <div class="inv-drop-zone" id="dropZone">
+                    <input type="file" name="archivo" id="archivoInput" accept=".xlsx,.xls">
+                    <div class="inv-drop-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                    </div>
+                    <h3 class="inv-drop-title">Arrastra tu Excel aquí o haz clic para seleccionar</h3>
+                    <p class="inv-drop-desc">Formatos soportados: .xlsx, .xls (máx. 10 MB)</p>
+                    <div class="inv-drop-file" id="dropFileName">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        <span id="dropFileNameText">—</span>
+                    </div>
+                </div>
+
+                <div class="inv-import-actions">
+                    <button type="submit" class="btn btn-success" id="importSubmitBtn" disabled>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        Importar productos
+                    </button>
+                    <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Cancelar
+                    </a>
+                </div>
+            </form>
         </div>
-
-        <form method="POST" enctype="multipart/form-data">
-            <div class="form-group">
-                <label>Archivo Excel</label>
-                <input type="file" name="archivo" accept=".xlsx,.xls" required>
-            </div>
-            <div class="btn-group">
-                <button type="submit" class="btn btn-success"><i class="fas fa-upload"></i> Importar</button>
-                <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-times"></i> Cancelar</a>
-            </div>
-        </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        const input = document.getElementById('archivoInput');
+        const fileNameText = document.getElementById('dropFileNameText');
+        const submitBtn = document.getElementById('importSubmitBtn');
+        const form = document.getElementById('importForm');
+
+        function actualizarDropZone() {
+            const file = input.files && input.files[0];
+            if (file) {
+                fileNameText.textContent = file.name;
+                dropZone.classList.add('has-file');
+                dropZone.classList.remove('has-error');
+                submitBtn.disabled = false;
+            } else {
+                fileNameText.textContent = '—';
+                dropZone.classList.remove('has-file');
+                submitBtn.disabled = true;
+            }
+        }
+
+        function validarArchivo(file) {
+            if (!file) return false;
+            const ext = file.name.split('.').pop().toLowerCase();
+            if (!['xlsx', 'xls'].includes(ext)) {
+                alert('Formato no soportado. Usa archivos .xlsx o .xls');
+                return false;
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo 10 MB.');
+                return false;
+            }
+            return true;
+        }
+
+        // Prevenir comportamiento por defecto del navegador
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        // Efecto hover
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'));
+        });
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'));
+        });
+
+        // Manejar drop
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files && files.length > 0) {
+                const file = files[0];
+                if (!validarArchivo(file)) return;
+                try {
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    input.files = dt.files;
+                } catch (err) {
+                    console.warn('No se pudo asignar el archivo al input:', err);
+                    return;
+                }
+                actualizarDropZone();
+            }
+        });
+
+        // Manejar cambio del input (click normal)
+        input.addEventListener('change', function() {
+            const file = this.files[0];
+            if (file && !validarArchivo(file)) {
+                this.value = '';
+            }
+            actualizarDropZone();
+        });
+
+        // Validación final antes de enviar
+        form.addEventListener('submit', function(e) {
+            if (!input.files || input.files.length === 0) {
+                e.preventDefault();
+                alert('Selecciona un archivo Excel antes de importar.');
+                return false;
+            }
+            if (!validarArchivo(input.files[0])) {
+                e.preventDefault();
+                return false;
+            }
+        });
+
+        actualizarDropZone();
+    });
+</script>
 {% endblock %}

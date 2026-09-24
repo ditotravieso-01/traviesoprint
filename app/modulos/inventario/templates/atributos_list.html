@@ -121,10 +121,45 @@
         gap: 8px;
         flex-wrap: wrap;
         margin-left: auto;
+        align-items: center;
     }
 
     /* ============================================================
-       INFO BOX del grupo
+       VIEW TOGGLE (Kanban | Lista)
+       ============================================================ */
+    .view-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid #e0dcd8;
+    }
+    .view-toggle .view-btn {
+        font-family: 'Inter', sans-serif;
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: #555;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .view-toggle .view-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .view-toggle .view-btn:hover { color: #1c1c1e; }
+    .view-toggle .view-btn svg { flex-shrink: 0; }
+
+    /* ============================================================
+       INFO del grupo
        ============================================================ */
     .inv-grupo-info {
         display: flex;
@@ -144,7 +179,13 @@
     .inv-grupo-info strong { color: #4c1d95; font-weight: 700; }
 
     /* ============================================================
-       CARD + TABLA
+       VISTAS
+       ============================================================ */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+
+    /* ============================================================
+       TABLA
        ============================================================ */
     .inv-list-card {
         background: white;
@@ -285,6 +326,166 @@
     .inv-icon-btn svg { width: 14px; height: 14px; }
 
     /* ============================================================
+       KANBAN
+       ============================================================ */
+    .kanban-wrapper {
+        background: rgba(255,255,255,0.3);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid rgba(0,0,0,0.04);
+        min-height: 400px;
+    }
+    .kanban-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 14px;
+    }
+    .kanban-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .kanban-column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 12px 12px 0 0;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 12.5px;
+        letter-spacing: -0.1px;
+        color: #1c1c1e;
+    }
+    .kanban-column-header .count {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 11.5px;
+        background: rgba(255,255,255,0.6);
+        padding: 2px 10px;
+        border-radius: 30px;
+        letter-spacing: -0.1px;
+    }
+    .kanban-column-body {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 0 0 12px 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 120px;
+        flex: 1;
+    }
+
+    /* Colores por tipo */
+    .kanban-column.texto    .kanban-column-header { background: #f0ece8; }
+    .kanban-column.numero   .kanban-column-header { background: #dbeafe; }
+    .kanban-column.fecha    .kanban-column-header { background: #ede9fe; }
+    .kanban-column.seleccion .kanban-column-header { background: #fef3c7; }
+    .kanban-column.booleano .kanban-column-header { background: #d1fae5; }
+
+    .kanban-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        border-color: rgba(168,133,79,0.3);
+    }
+    .kanban-card .product-name {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        letter-spacing: -0.1px;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+    .kanban-card .product-cat {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: #8e8e93;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .kanban-card .metric-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        margin-bottom: 10px;
+    }
+    .kanban-card .metric-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .kanban-card .metric-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .kanban-card .metric-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 13px;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-top: 2px;
+    }
+    .kanban-card .card-actions {
+        display: flex;
+        gap: 4px;
+        padding-top: 10px;
+        border-top: 1px solid #f0ece8;
+        justify-content: flex-end;
+    }
+    .kanban-card .icon-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid #e0dcd8;
+        background: white;
+        color: #555;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        text-decoration: none;
+        padding: 0;
+    }
+    .kanban-card .icon-btn:hover {
+        border-color: #a8854f;
+        color: #78350f;
+        background: #faf6f0;
+    }
+    .kanban-card .icon-btn.danger:hover {
+        border-color: #dc2626;
+        color: #991b1b;
+        background: #fef2f2;
+    }
+    .kanban-card .icon-btn svg { width: 14px; height: 14px; }
+
+    .kanban-empty {
+        padding: 20px 10px;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #b8b8c0;
+        font-style: italic;
+    }
+
+    /* ============================================================
        EMPTY STATE
        ============================================================ */
     .inv-list-empty {
@@ -325,10 +526,18 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
+    @media (max-width: 1200px) {
+        .kanban-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    }
+    @media (max-width: 992px) {
+        .kanban-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 768px) {
         .inv-list-header { flex-direction: column; align-items: stretch; }
-        .inv-list-header-actions { margin-left: 0; width: 100%; }
+        .inv-list-header-actions { margin-left: 0; width: 100%; justify-content: space-between; }
         .inv-list-header-actions .btn { flex: 1 1 auto; justify-content: center; }
+
+        .kanban-grid { grid-template-columns: 1fr; }
 
         table.inv-list-table,
         table.inv-list-table thead,
@@ -381,12 +590,35 @@
             <p class="inv-list-header-desc">Campos personalizados que verán los productos asociados</p>
         </div>
         <div class="inv-list-header-actions">
+            <div class="view-toggle" id="viewToggle">
+                <button type="button" class="view-btn" data-view="kanban" onclick="cambiarVista('kanban')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Kanban
+                </button>
+                <button type="button" class="view-btn" data-view="lista" onclick="cambiarVista('lista')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Lista
+                </button>
+            </div>
+
             <a href="{{ url_for('inventario.crear_atributo', grupo_id=grupo.id) }}" class="btn btn-success">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                Nuevo atributo
+                Nuevo
             </a>
             <a href="{{ url_for('inventario.listar_grupos') }}" class="btn btn-outline">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -407,9 +639,7 @@
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
         <div>
-            {% if grupo.descripcion %}
-                {{ grupo.descripcion }}
-            {% endif %}
+            {% if grupo.descripcion %}{{ grupo.descripcion }}{% endif %}
             {% if grupo.categoria %}
                 {% if grupo.descripcion %}<br>{% endif %}
                 <strong>Asociado a la categoría:</strong> {{ grupo.categoria.nombre }}
@@ -420,78 +650,149 @@
 
     {% if atributos %}
 
-    <!-- TABLA -->
-    <div class="inv-list-card">
-        <div class="inv-table-scroll">
-            <table class="inv-list-table">
-                <thead>
-                    <tr>
-                        <th style="width:60px;">Orden</th>
-                        <th>Nombre (clave)</th>
-                        <th>Etiqueta</th>
-                        <th>Tipo</th>
-                        <th>Requerido</th>
-                        <th>Opciones</th>
-                        <th style="text-align:right;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for attr in atributos %}
-                    <tr>
-                        <td data-label="Orden">
-                            <span class="inv-orden-badge num-mont">{{ attr.orden }}</span>
-                        </td>
-                        <td data-label="Nombre (clave)">
-                            <code style="font-family:'JetBrains Mono',monospace; font-size:12.5px; background:#fafaf9; padding:2px 8px; border-radius:5px; color:#1c1c1e; border:1px solid #f0ece8;">{{ attr.nombre }}</code>
-                        </td>
-                        <td data-label="Etiqueta"><strong>{{ attr.etiqueta }}</strong></td>
-                        <td data-label="Tipo">
-                            <span class="inv-tipo-badge {{ attr.tipo }}">{{ attr.tipo }}</span>
-                        </td>
-                        <td data-label="Requerido">
-                            {% if attr.requerido %}
-                                <span class="inv-req-badge si">Sí</span>
-                            {% else %}
-                                <span class="inv-req-badge no">No</span>
-                            {% endif %}
-                        </td>
-                        <td data-label="Opciones">
+    <!-- ============================================================
+         VISTA LISTA
+         ============================================================ -->
+    <div class="view-section" id="vistaLista">
+        <div class="inv-list-card">
+            <div class="inv-table-scroll">
+                <table class="inv-list-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px;">Orden</th>
+                            <th>Nombre (clave)</th>
+                            <th>Etiqueta</th>
+                            <th>Tipo</th>
+                            <th>Requerido</th>
+                            <th>Opciones</th>
+                            <th style="text-align:right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attr in atributos %}
+                        <tr>
+                            <td data-label="Orden"><span class="inv-orden-badge num-mont">{{ attr.orden }}</span></td>
+                            <td data-label="Nombre (clave)">
+                                <code style="font-family:'JetBrains Mono',monospace; font-size:12.5px; background:#fafaf9; padding:2px 8px; border-radius:5px; color:#1c1c1e; border:1px solid #f0ece8;">{{ attr.nombre }}</code>
+                            </td>
+                            <td data-label="Etiqueta"><strong>{{ attr.etiqueta }}</strong></td>
+                            <td data-label="Tipo"><span class="inv-tipo-badge {{ attr.tipo }}">{{ attr.tipo }}</span></td>
+                            <td data-label="Requerido">
+                                {% if attr.requerido %}
+                                    <span class="inv-req-badge si">Sí</span>
+                                {% else %}
+                                    <span class="inv-req-badge no">No</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Opciones">
+                                {% if attr.opciones %}
+                                    <span class="inv-opciones-preview">{{ attr.opciones }}</span>
+                                {% else %}
+                                    <span style="color:#b8b8c0;">—</span>
+                                {% endif %}
+                            </td>
+                            <td data-label="Acciones" style="text-align:right;">
+                                <div class="inv-actions-cell">
+                                    <a href="{{ url_for('inventario.editar_atributo', grupo_id=grupo.id, atributo_id=attr.id) }}" class="inv-icon-btn" title="Editar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('inventario.eliminar_atributo', grupo_id=grupo.id, atributo_id=attr.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este atributo?');">
+                                        <button type="submit" class="inv-icon-btn danger" title="Eliminar">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         VISTA KANBAN (agrupado por tipo)
+         ============================================================ -->
+    <div class="view-section active" id="vistaKanban">
+        <div class="kanban-wrapper">
+
+            {# Agrupar por tipo #}
+            {% set lista_texto = [] %}
+            {% set lista_numero = [] %}
+            {% set lista_fecha = [] %}
+            {% set lista_seleccion = [] %}
+            {% set lista_booleano = [] %}
+
+            {% for attr in atributos %}
+                {% if attr.tipo == 'texto' %}{% set _ = lista_texto.append(attr) %}
+                {% elif attr.tipo == 'numero' %}{% set _ = lista_numero.append(attr) %}
+                {% elif attr.tipo == 'fecha' %}{% set _ = lista_fecha.append(attr) %}
+                {% elif attr.tipo == 'seleccion' %}{% set _ = lista_seleccion.append(attr) %}
+                {% elif attr.tipo == 'booleano' %}{% set _ = lista_booleano.append(attr) %}
+                {% endif %}
+            {% endfor %}
+
+            {% set grupos_tipo = [
+                {'id': 'texto', 'label': 'Texto', 'items': lista_texto},
+                {'id': 'numero', 'label': 'Número', 'items': lista_numero},
+                {'id': 'fecha', 'label': 'Fecha', 'items': lista_fecha},
+                {'id': 'seleccion', 'label': 'Selección', 'items': lista_seleccion},
+                {'id': 'booleano', 'label': 'Sí/No', 'items': lista_booleano}
+            ] %}
+
+            <div class="kanban-grid">
+                {% for col in grupos_tipo %}
+                <div class="kanban-column {{ col.id }}">
+                    <div class="kanban-column-header">
+                        <span>{{ col.label }}</span>
+                        <span class="count">{{ col.items|length }}</span>
+                    </div>
+                    <div class="kanban-column-body">
+                        {% for attr in col.items %}
+                        <div class="kanban-card">
+                            <div class="product-name">{{ attr.etiqueta }}</div>
+                            <div class="product-cat">
+                                <code style="font-family:'JetBrains Mono',monospace; font-size:11px; background:#fafaf9; padding:1px 6px; border-radius:4px; color:#6b6b7a; border:1px solid #f0ece8;">{{ attr.nombre }}</code>
+                            </div>
+                            <div class="metric-row">
+                                <div class="metric-item">
+                                    <span class="metric-label">Orden</span>
+                                    <span class="metric-value">#{{ attr.orden }}</span>
+                                </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Requerido</span>
+                                    <span class="metric-value" style="color:{% if attr.requerido %}#dc2626{% else %}#8e8e93{% endif %};">{{ 'Sí' if attr.requerido else 'No' }}</span>
+                                </div>
+                            </div>
                             {% if attr.opciones %}
-                                <span class="inv-opciones-preview">{{ attr.opciones }}</span>
-                            {% else %}
-                                <span style="color:#b8b8c0;">—</span>
+                            <div style="font-size:11px; color:#6b6b7a; font-family:'JetBrains Mono',monospace; margin-bottom:8px; padding:4px 8px; background:#fafaf9; border-radius:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                {{ attr.opciones }}
+                            </div>
                             {% endif %}
-                        </td>
-                        <td data-label="Acciones" style="text-align:right;">
-                            <div class="inv-actions-cell">
-                                <a href="{{ url_for('inventario.editar_atributo', grupo_id=grupo.id, atributo_id=attr.id) }}" class="inv-icon-btn" title="Editar atributo">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M12 20h9"></path>
-                                        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
-                                    </svg>
+                            <div class="card-actions">
+                                <a href="{{ url_for('inventario.editar_atributo', grupo_id=grupo.id, atributo_id=attr.id) }}" class="icon-btn" title="Editar">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                                 </a>
                                 <form method="POST" action="{{ url_for('inventario.eliminar_atributo', grupo_id=grupo.id, atributo_id=attr.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este atributo?');">
-                                    <button type="submit" class="inv-icon-btn danger" title="Eliminar atributo">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                            <polyline points="3 6 5 6 21 6"></polyline>
-                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                            <line x1="10" y1="11" x2="10" y2="17"></line>
-                                            <line x1="14" y1="11" x2="14" y2="17"></line>
-                                        </svg>
+                                    <button type="submit" class="icon-btn danger" title="Eliminar">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                                     </button>
                                 </form>
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        </div>
+                        {% else %}
+                        <div class="kanban-empty">Sin atributos de tipo "{{ col.label }}"</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
         </div>
     </div>
 
     {% else %}
 
-    <!-- EMPTY STATE -->
     <div class="inv-list-empty">
         <div class="inv-list-empty-icon">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -515,4 +816,26 @@
     {% endif %}
 
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ============================================================
+    // VIEW TOGGLE (Kanban / Lista)
+    // ============================================================
+    function cambiarVista(vista) {
+        document.querySelectorAll('.view-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === vista);
+        });
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById(vista === 'kanban' ? 'vistaKanban' : 'vistaLista');
+        if (target) target.classList.add('active');
+        localStorage.setItem('atributos_view_preference', vista);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const vistaGuardada = localStorage.getItem('atributos_view_preference') || 'kanban';
+        cambiarVista(vistaGuardada);
+    });
+</script>
 {% endblock %}
