@@ -2,593 +2,1479 @@
 
 {% block title %}Calculadora de Etiquetas · CairoStudio{% endblock %}
 
-{% block page_title %}Calculadora de Etiquetas{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Calculadora de Etiquetas</span>
+    <span class="page-subtitle">Optimiza la distribución y calcula el costo por m²</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <style>
-    /* ===== ESTILO ESTUDIO BLANC ===== */
-    .toolbar {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        align-items: center;
-        padding: 12px 18px;
-        background: rgba(255,255,255,0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04);
-        margin-bottom: 20px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
     }
-    .toolbar button {
-        background: white;
-        border: 1px solid #d2d2d7;
-        border-radius: 30px;
-        padding: 6px 16px;
-        font-weight: 500;
-        font-size: 13px;
-        cursor: pointer;
-        transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #1c1c1e;
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
     }
-    .toolbar button:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.04);
-    }
-    .toolbar .separator {
-        width: 1px;
-        height: 28px;
-        background: #d2d2d7;
-        margin: 0 4px;
-    }
-    .favorites-dropdown select {
-        padding: 6px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 30px;
-        background: white;
-        font-size: 13px;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-        cursor: pointer;
-        transition: border-color 0.2s;
-    }
-    .favorites-dropdown select:focus {
-        outline: none;
-        border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
-    }
-    .file-upload-area {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-    .file-upload-area input[type="file"] { display: none; }
-    .file-name {
-        font-size: 13px;
-        color: #8e8e93;
-        font-style: italic;
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
     }
 
-    .two-col-calc {
-        display: flex;
-        gap: 32px;
-        margin-top: 8px;
-    }
-    .col-left-calc { flex: 1.5; }
-    .col-right-calc { flex: 1; }
-    @media (max-width: 768px) { .two-col-calc { flex-direction: column; } }
-
-    .tabs {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-        border-bottom: 1px solid #f0ece8;
-        padding-bottom: 8px;
-    }
-    .tab-btn {
-        background: transparent;
-        border: none;
-        padding: 8px 20px;
-        font-weight: 600;
-        font-size: 14px;
-        color: #8e8e93;
-        cursor: pointer;
-        border-radius: 30px;
-        transition: all 0.2s;
+    /* ============================================================
+       LAYOUT DEFENSIVO
+       ============================================================ */
+    .calc-wrap, .calc-wrap * { box-sizing: border-box; }
+    .calc-wrap {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0; margin: 0;
         font-family: 'Inter', sans-serif;
     }
-    .tab-btn.active {
-        background: #1c1c1e;
-        color: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
-    }
-    .tab-btn:hover:not(.active) { background: rgba(0,0,0,0.03); color: #1c1c1e; }
-    .tab-content { display: none; }
-    .tab-content.active { display: block; }
-
-    .result-box {
-        padding: 18px 22px;
-        background: rgba(255,255,255,0.7);
-        backdrop-filter: blur(10px);
-        border-radius: 12px;
-        border: 1px solid rgba(0,0,0,0.04);
-        line-height: 1.8;
-        font-size: 15px;
-        min-height: 150px;
-        margin-bottom: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .error-box {
-        padding: 14px 18px;
-        background: #fde8e5;
-        color: #991b1b;
-        border-radius: 8px;
-        border-left: 4px solid #dc2626;
-        font-size: 14px;
-        margin-top: 16px;
-        display: none;
+    .calc-wrap > * {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
-    .form-group {
-        margin-bottom: 18px;
-    }
-    .form-group label {
-        display: block;
-        font-weight: 600;
-        font-size: 14px;
-        color: #333;
-        margin-bottom: 4px;
-        font-family: 'Inter', sans-serif;
-    }
-    .form-group input, .form-group select {
-        width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
-        border-radius: 10px;
-        font-size: 15px;
-        background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
-    }
-    .form-group input:focus, .form-group select:focus {
-        outline: none;
-        border-color: #1a1a1a;
-        background: white;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
-    }
-    .form-group small {
-        display: block;
-        color: #8e8e93;
-        font-size: 12px;
-        margin-top: 4px;
-    }
-
-    .checkbox-group {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin: 16px 0 20px 0;
-    }
-    .checkbox-group label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-weight: 400;
-        font-size: 14px;
-        cursor: pointer;
-        color: #1c1c1e;
-        font-family: 'Inter', sans-serif;
-    }
-    .checkbox-group input[type="checkbox"] {
-        width: 18px;
-        height: 18px;
-        accent-color: #1a1a1a;
-    }
-
+    /* ============================================================
+       BOTONES
+       ============================================================ */
     .btn {
-        padding: 10px 28px;
+        font-family: 'Inter', sans-serif;
+        padding: 8px 16px;
         border-radius: 30px;
+        border: 1.5px solid transparent;
         font-weight: 600;
-        font-size: 15px;
+        font-size: 12.5px;
         cursor: pointer;
         transition: all 0.2s;
-        border: none;
-        font-family: 'Inter', sans-serif;
         display: inline-flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        text-decoration: none;
+        line-height: 1;
+        white-space: nowrap;
+        background: white;
+        color: #1c1c1e;
+        border-color: #d2d2d7;
     }
+    .btn:hover { border-color: #8e8e93; background: #f5f5f5; transform: translateY(-1px); }
+    .btn svg { flex-shrink: 0; }
     .btn-primary {
-        background: #1c1c1e;
+        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
         color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
     }
     .btn-primary:hover {
-        background: #333;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        background: linear-gradient(135deg, #2c2c30 0%, #3a3a3e 100%);
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
     }
-    .btn-outline {
+    .btn-warning {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(245,158,11,0.25);
+    }
+    .btn-warning:hover {
+        box-shadow: 0 6px 16px rgba(245,158,11,0.35);
+        border-color: transparent;
+    }
+    .btn-danger {
         background: transparent;
-        border: 1.5px solid #d2d2d7;
-        color: #1c1c1e;
+        border: 1.5px solid #dc2626;
+        color: #dc2626;
     }
-    .btn-outline:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
+    .btn-danger:hover {
+        background: #fef2f2;
+        border-color: #b91c1c;
+        color: #b91c1c;
         transform: none;
-        box-shadow: none;
     }
-    .btn-group { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
 
-    .canvas-wrapper {
-        border: 1px solid #f0ece8;
-        border-radius: 12px;
-        padding: 8px;
-        background: white;
-        margin-top: 16px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        position: relative;
-        overflow: hidden;
-    }
-    canvas {
-        display: block;
-        width: 100%;
-        height: auto;
-        border-radius: 8px;
-        background: #fcfcfc;
-        cursor: grab;
-    }
-    canvas:active { cursor: grabbing; }
-
-    .zoom-controls {
-        display: flex;
-        gap: 10px;
+    /* ============================================================
+       TOOLBAR COMPACTA
+       ============================================================ */
+    .calc-toolbar {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 8px;
         align-items: center;
-        margin-top: 10px;
+        padding: 10px 14px;
+        background: rgba(255,255,255,0.75);
+        backdrop-filter: blur(10px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .calc-toolbar .toolbar-sep {
+        width: 1px;
+        height: 22px;
+        background: #e0dcd8;
+        margin: 0 2px;
+        flex-shrink: 0;
+    }
+    .calc-toolbar .favorites-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
         flex-wrap: wrap;
     }
-    .zoom-controls button {
-        background: white;
-        border: 1px solid #d2d2d7;
-        border-radius: 30px;
-        padding: 4px 14px;
-        font-weight: 500;
-        font-size: 13px;
-        cursor: pointer;
-        transition: background 0.2s;
+    .calc-toolbar .favorites-label {
         font-family: 'Inter', sans-serif;
-        color: #1c1c1e;
+        font-size: 11px;
+        font-weight: 700;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
-    .zoom-controls button:hover {
-        border-color: #8e8e93;
-        background: #f5f5f5;
+    .calc-toolbar .favorites-select-wrap { min-width: 170px; }
+    .calc-toolbar .file-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     }
-    .zoom-controls input[type="range"] {
-        width: 150px;
-        accent-color: #1a1a1a;
+    .calc-toolbar .file-name {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #8e8e93;
+        font-style: italic;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
+    .calc-toolbar .file-name.has-file {
+        color: #065f46;
+        font-weight: 600;
+        font-style: normal;
+    }
+
     .badge {
         background: #1c1c1e;
         color: white;
         border-radius: 30px;
-        padding: 2px 10px;
-        font-size: 11px;
-        font-weight: 600;
+        padding: 2px 8px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 10.5px;
+        font-weight: 700;
         display: inline-block;
+        letter-spacing: -0.1px;
     }
 
-    /* ===== HISTORIAL ===== */
+    /* ============================================================
+       GRID PRINCIPAL (resultado + parámetros)
+       ============================================================ */
+    .calc-main-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) !important;
+        gap: 16px;
+        margin-bottom: 16px;
+        align-items: start;
+    }
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .calc-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        padding: 16px 18px;
+        min-width: 0;
+    }
+    .calc-card .card-header-row,
+    .calc-sim-card .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+    }
+    .calc-card .card-header-row h4,
+    .calc-sim-card .card-header-row h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .calc-card .card-header-row h4 svg,
+    .calc-sim-card .card-header-row h4 svg { color: #a8854f; flex-shrink: 0; }
+
+    /* ============================================================
+       KPI GRID (resultado)
+       ============================================================ */
+    .result-kpis {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .result-kpi {
+        background: linear-gradient(135deg, #fafaf9 0%, #f5f2ef 100%);
+        border-radius: 12px;
+        padding: 12px 14px;
+        border-left: 3px solid #a8854f;
+        min-width: 0;
+        transition: all 0.2s;
+        position: relative;
+        overflow: hidden;
+    }
+    .result-kpi:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+    .result-kpi.verde { border-left-color: #10b981; }
+    .result-kpi.azul { border-left-color: #3b82f6; }
+    .result-kpi.morado { border-left-color: #8b5cf6; }
+    .result-kpi.rosa { border-left-color: #ec4899; }
+
+    .result-kpi .kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1.2;
+        margin-bottom: 4px;
+    }
+    .result-kpi .kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .result-kpi.verde .kpi-value { color: #065f46; }
+    .result-kpi.azul .kpi-value { color: #1e40af; }
+    .result-kpi.morado .kpi-value { color: #5b21b6; }
+    .result-kpi.rosa .kpi-value { color: #9d174d; }
+    .result-kpi .kpi-sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
+        color: #6b6b7a;
+        margin-top: 2px;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* ============================================================
+       RESULT BOX (con tabs)
+       ============================================================ */
+    .calc-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    .calc-tab-btn {
+        background: transparent;
+        border: 1px solid transparent;
+        padding: 6px 14px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        color: #8e8e93;
+        cursor: pointer;
+        border-radius: 30px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .calc-tab-btn:hover { background: rgba(0,0,0,0.03); color: #1c1c1e; }
+    .calc-tab-btn.active {
+        background: #a8854f;
+        color: white;
+        box-shadow: 0 2px 8px rgba(168,133,79,0.25);
+    }
+    .calc-tab-btn svg { flex-shrink: 0; }
+    .calc-tab-content { display: none; }
+    .calc-tab-content.active { display: block; }
+
+    .result-box {
+        padding: 14px 16px;
+        background: #fafaf9;
+        border-radius: 10px;
+        border: 1px solid #f0ece8;
+        line-height: 1.65;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        min-height: 100px;
+        color: #1c1c1e;
+    }
+    .result-box strong {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+    }
+    .result-box p { margin: 0; color: #8e8e93; }
+    .result-box br { line-height: 1.65; }
+
+    .error-box {
+        padding: 10px 14px;
+        background: #fef2f2;
+        color: #991b1b;
+        border-radius: 10px;
+        border-left: 3px solid #dc2626;
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        margin-top: 12px;
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+    .error-box.visible { display: flex; }
+    .error-box svg { flex-shrink: 0; color: #dc2626; }
+
+    /* ============================================================
+       PARÁMETROS: GRID COMPACTO 2 COLUMNAS
+       ============================================================ */
+    .params-grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .params-grid .param-item {
+        min-width: 0;
+    }
+    .params-grid .param-item > label {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 10px;
+        color: #6b6b7a;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .params-grid .param-item input[type="number"] {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        width: 100%;
+        padding: 8px 11px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        font-size: 13.5px;
+        background: #fafaf9;
+        color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        box-sizing: border-box;
+    }
+    .params-grid .param-item input[type="number"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+
+    /* ============================================================
+       CHECKBOXES EN FILA
+       ============================================================ */
+    .params-checks {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 6px;
+        margin: 14px 0 12px 0;
+        padding-top: 12px;
+        border-top: 1px solid #f0ece8;
+    }
+    .params-checks label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 10px;
+        border-radius: 9px;
+        border: 1.5px solid #ebe6df;
+        background: #fcfaf8;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11.5px;
+        color: #4a4a4a;
+        cursor: pointer;
+        transition: all 0.15s;
+        text-align: center;
+        line-height: 1.2;
+        min-width: 0;
+    }
+    .params-checks label:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .params-checks label:has(input:checked) {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        border-color: #e5d4b8;
+        color: #78350f;
+    }
+    .params-checks input[type="checkbox"] {
+        width: 14px;
+        height: 14px;
+        accent-color: #a8854f;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin: 0;
+    }
+
+    /* ============================================================
+       BOTONES ACCIONES
+       ============================================================ */
+    .params-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+    }
+    .params-actions .btn {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* ============================================================
+       SIMULACIÓN COMPACTA — CANVAS + SIDEBAR
+       ============================================================ */
+    .calc-sim-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        padding: 14px 16px;
+    }
+    .calc-sim-card .sim-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+        gap: 16px;
+        align-items: stretch;
+    }
+
+    /* Canvas 2:1 (sin deformación interna) */
+    .canvas-wrapper {
+        aspect-ratio: 2 / 1;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        border: 1px solid #f0ece8;
+        border-radius: 12px;
+        padding: 6px;
+        background: white;
+        overflow: hidden;
+    }
+    canvas#simCanvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+        background: #fcfcfc;
+        cursor: grab;
+        touch-action: none;
+    }
+    canvas#simCanvas:active { cursor: grabbing; }
+
+    /* Panel lateral */
+    .sim-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-width: 0;
+        height: 100%;
+    }
+    .sim-sidebar .sim-info-box {
+        background: #fafaf9;
+        border: 1px solid #f0ece8;
+        border-radius: 10px;
+        padding: 10px 12px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+    .sim-sidebar .sim-info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px dashed #e8e0da;
+        font-family: 'Inter', sans-serif;
+        gap: 8px;
+    }
+    .sim-sidebar .sim-info-row:last-child { border-bottom: none; }
+    .sim-sidebar .sim-info-row .sim-info-label {
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #6b6b7a;
+        font-size: 11.5px;
+        white-space: nowrap;
+    }
+    .sim-sidebar .sim-info-row .sim-info-label svg {
+        color: #a8854f;
+        flex-shrink: 0;
+        opacity: 0.7;
+    }
+    .sim-sidebar .sim-info-row .sim-info-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #1c1c1e;
+        font-size: 13px;
+        letter-spacing: -0.2px;
+        text-align: right;
+        white-space: nowrap;
+    }
+    .sim-sidebar .sim-info-highlight {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: #ecfdf5;
+        border: 1px solid #a7f3d0;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .sim-sidebar .sim-info-highlight .sim-info-label {
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #065f46;
+    }
+    .sim-sidebar .sim-info-highlight .sim-info-label svg {
+        color: #065f46;
+        flex-shrink: 0;
+    }
+    .sim-sidebar .sim-info-highlight .sim-info-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 14px;
+        color: #065f46;
+        letter-spacing: -0.2px;
+    }
+
+    /* ============================================================
+       NUEVO: DESGLOSE DE PAÑOS (solo modo cantidad)
+       ============================================================ */
+    .sim-panos-summary {
+        display: none;
+        flex-direction: column;
+        gap: 2px;
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #bae6fd;
+        border-radius: 10px;
+        padding: 10px 12px;
+    }
+    .sim-panos-summary.visible { display: flex; }
+    .sim-panos-summary .panos-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        color: #075985;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 4px;
+    }
+    .sim-panos-summary .panos-title svg { color: #0284c7; flex-shrink: 0; }
+    .sim-panos-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        padding: 3px 0;
+        gap: 8px;
+    }
+    .sim-panos-row .panos-lbl {
+        color: #0c4a6e;
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .sim-panos-row .panos-val {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #0c4a6e;
+        font-size: 12px;
+        letter-spacing: -0.2px;
+        text-align: right;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+    .sim-panos-row.highlight .panos-val { color: #0369a1; font-size: 13px; }
+
+    /* Zoom controls */
+    .sim-zoom-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .sim-zoom-controls .zoom-row {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+    }
+    .sim-zoom-controls .zoom-btn {
+        background: white;
+        border: 1.5px solid #d2d2d7;
+        border-radius: 30px;
+        padding: 4px 8px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: #1c1c1e;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        flex: 1;
+    }
+    .sim-zoom-controls .zoom-btn:hover {
+        border-color: #a8854f;
+        background: #faf6f0;
+        color: #78350f;
+    }
+    .sim-zoom-controls .zoom-btn.export {
+        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
+        color: white;
+        border-color: transparent;
+        width: 100%;
+    }
+    .sim-zoom-controls .zoom-btn.export:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .sim-zoom-controls .zoom-slider-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: #fafaf9;
+        border: 1px solid #f0ece8;
+        border-radius: 30px;
+    }
+    .sim-zoom-controls .zoom-slider-row input[type="range"] {
+        flex: 1;
+        accent-color: #a8854f;
+        min-width: 0;
+    }
+    .sim-zoom-controls .zoom-label {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 12px;
+        font-weight: 700;
+        color: #1c1c1e;
+        min-width: 42px;
+        text-align: right;
+        letter-spacing: -0.2px;
+    }
+    .sim-hint {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        text-align: center;
+        padding: 6px 0 0 0;
+        line-height: 1.4;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+    }
+    .sim-hint svg { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+
+    /* ============================================================
+       HISTORY PANEL
+       ============================================================ */
     .history-panel {
         position: fixed;
         top: 0;
         right: -420px;
         width: 400px;
+        max-width: 92vw;
         height: 100%;
         background: rgba(255,255,255,0.98);
         backdrop-filter: blur(12px);
-        box-shadow: -4px 0 30px rgba(0,0,0,0.06);
-        padding: 30px 24px;
-        transition: right 0.3s ease;
+        box-shadow: -4px 0 30px rgba(0,0,0,0.08);
+        padding: 24px 20px;
+        transition: right 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
         z-index: 1000;
         overflow-y: auto;
-        border-left: 1px solid rgba(0,0,0,0.04);
+        border-left: 1px solid rgba(0,0,0,0.05);
     }
     .history-panel.open { right: 0; }
-    .history-panel h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        margin-bottom: 16px;
+    .history-panel .history-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        color: #1c1c1e;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+        border-bottom: 2px solid #f0ece8;
     }
-    .history-panel .close-btn {
+    .history-panel .history-header h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .history-panel .history-header h3 svg { color: #a8854f; flex-shrink: 0; }
+    .history-panel .history-close {
         background: none;
         border: none;
         font-size: 24px;
         cursor: pointer;
         color: #8e8e93;
         padding: 0 4px;
-        transition: color 0.2s;
+        line-height: 1;
+        transition: color 0.15s, transform 0.15s;
     }
-    .history-panel .close-btn:hover { color: #1c1c1e; }
+    .history-panel .history-close:hover { color: #1c1c1e; transform: rotate(90deg); }
     .history-item {
         border-bottom: 1px solid #f0ece8;
-        padding: 12px 0;
-        font-size: 14px;
+        padding: 10px 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
         cursor: pointer;
-        transition: background 0.2s;
+        transition: background 0.15s;
         border-radius: 8px;
-        padding-left: 8px;
+        margin: 0 -4px;
     }
-    .history-item:hover { background: rgba(0,0,0,0.02); }
+    .history-item:hover { background: #faf6f0; }
     .history-item .date {
         color: #8e8e93;
-        font-size: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
     }
     .history-item .result {
-        font-weight: 600;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
         color: #1c1c1e;
+        font-size: 12.5px;
+        margin-top: 2px;
+        letter-spacing: -0.2px;
     }
     .history-item .params {
-        font-size: 12px;
+        font-size: 11px;
         color: #8e8e93;
-        margin-top: 4px;
+        margin-top: 3px;
+    }
+    .history-panel .history-empty {
+        color: #8e8e93;
+        text-align: center;
+        padding: 30px 20px;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .history-panel .history-footer {
+        text-align: center;
+        color: #8e8e93;
+        font-size: 11px;
+        margin-top: 16px;
+        border-top: 1px solid #f0ece8;
+        padding-top: 12px;
     }
 
-    /* ===== MODALES ===== */
+    /* ============================================================
+       MODALES
+       ============================================================ */
     .modal-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.25);
+        inset: 0;
+        background: rgba(0,0,0,0.3);
         backdrop-filter: blur(6px);
         display: none;
         justify-content: center;
         align-items: center;
         z-index: 2000;
+        padding: 16px;
     }
     .modal-overlay.active { display: flex; }
     .modal-box {
         background: white;
-        border-radius: 20px;
-        padding: 30px 35px;
+        border-radius: 18px;
+        padding: 22px 24px;
         max-width: 420px;
-        width: 90%;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease;
-        border: 1px solid rgba(0,0,0,0.04);
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.15);
+        animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        border-top: 5px solid #a8854f;
+        box-sizing: border-box;
     }
     @keyframes modalIn {
-        from { transform: scale(0.95) translateY(12px); opacity: 0; }
+        from { transform: scale(0.94) translateY(10px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .modal-box h3 {
-        font-family: 'Playfair Display', serif;
-        margin-bottom: 8px;
-        color: #1c1c1e;
+    .modal-box .modal-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
     }
-    .modal-box .close-modal {
-        float: right;
+    .modal-box h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .modal-box h3 svg { color: #a8854f; flex-shrink: 0; }
+    .modal-box .modal-close {
         background: none;
         border: none;
-        font-size: 24px;
+        font-size: 22px;
         cursor: pointer;
         color: #8e8e93;
-        transition: color 0.2s;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s, transform 0.15s;
     }
-    .modal-box .close-modal:hover { color: #1c1c1e; }
-    .modal-box input {
+    .modal-box .modal-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .modal-box p.modal-desc {
+        font-family: 'Inter', sans-serif;
+        color: #6b6b7a;
+        font-size: 12.5px;
+        margin: 0 0 12px 0;
+        line-height: 1.5;
+    }
+    .modal-box input[type="text"] {
         width: 100%;
-        padding: 10px 14px;
-        border: 1px solid #d2d2d7;
+        padding: 10px 12px;
+        border: 1.5px solid #e0dcd8;
         border-radius: 10px;
-        font-size: 15px;
-        margin: 12px 0;
+        font-size: 14px;
         font-family: 'Inter', sans-serif;
         color: #1c1c1e;
-        transition: border-color 0.2s;
+        background: #fafaf9;
+        box-sizing: border-box;
+        margin-bottom: 12px;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .modal-box input:focus {
+    .modal-box input[type="text"]:focus {
         outline: none;
-        border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.03);
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
     }
     .detail-row {
         display: flex;
         justify-content: space-between;
-        padding: 6px 0;
+        padding: 7px 0;
         border-bottom: 1px solid #f5f2ef;
         font-family: 'Inter', sans-serif;
-        font-size: 14px;
+        font-size: 13px;
         color: #1c1c1e;
     }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-row .detail-lbl { color: #6b6b7a; font-weight: 500; }
+    .detail-row .detail-val {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.1px;
+    }
 
+    /* ============================================================
+       CUSTOM SELECT
+       ============================================================ */
+    .cs-select-wrap { position: relative; display: block; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; width: 100%; padding: 7px 14px;
+        border: 1.5px solid #d2d2d7; border-radius: 30px;
+        background: white; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 12.5px;
+        font-weight: 600; color: #1c1c1e; text-align: left;
+        min-height: 34px; box-sizing: border-box; transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #a8854f; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none; border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 500; }
+    .cs-select-trigger .cs-arrow { color: #a8854f; transition: transform 0.2s; flex-shrink: 0; }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 320px;
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+        box-sizing: border-box;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-options { padding: 2px; overflow-y: auto; flex: 1; min-height: 0; }
+    .cs-select-empty {
+        padding: 14px 12px; text-align: center;
+        color: #8e8e93; font-size: 13px; font-style: italic;
+    }
+    .cs-select-option {
+        padding: 8px 12px; border-radius: 8px; cursor: pointer;
+        font-size: 13px; font-weight: 500; color: #4a4a4a;
+        font-family: 'Inter', sans-serif; transition: background 0.1s;
+        display: flex; align-items: center; justify-content: space-between;
+        gap: 8px; text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       RESPONSIVE (Parte 23 — mejorado)
+       ============================================================ */
+    @media (max-width: 1280px) {
+        .calc-main-grid {
+            grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr) !important;
+        }
+    }
+    @media (max-width: 1100px) {
+        .calc-main-grid { grid-template-columns: 1fr !important; }
+        .calc-sim-card .sim-layout {
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .canvas-wrapper {
+            aspect-ratio: 2 / 1;
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .sim-sidebar {
+            max-width: 720px;
+            margin: 0 auto;
+            width: 100%;
+            height: auto;
+        }
+        .sim-sidebar .sim-info-box { flex: 0 0 auto; }
+    }
     @media (max-width: 768px) {
-        .history-panel { width: 300px; }
-        .toolbar { flex-direction: column; align-items: stretch; }
-        .favorites-dropdown { width: 100%; }
-        .favorites-dropdown select { width: 100%; }
-        .file-upload-area { flex-wrap: wrap; }
+        .calc-toolbar { flex-direction: column; align-items: stretch; }
+        .calc-toolbar .toolbar-sep { display: none; }
+        .calc-toolbar .btn { justify-content: center; }
+        .calc-toolbar .favorites-group,
+        .calc-toolbar .file-group { width: 100%; }
+        .calc-toolbar .favorites-select-wrap { min-width: 0; width: 100%; }
+
+        .result-kpis { grid-template-columns: repeat(2, 1fr) !important; }
+        .params-grid { grid-template-columns: repeat(2, 1fr) !important; }
+        .params-checks { grid-template-columns: 1fr; }
+        .params-actions { flex-direction: column; }
+
+        .history-panel { width: 320px; }
+
+        .result-kpi .kpi-value { font-size: 19px; }
+    }
+    @media (max-width: 640px) {
+        .calc-wrap { padding: 0; }
+        .calc-card { padding: 14px 14px; border-radius: 14px; }
+        .calc-sim-card { padding: 12px 12px; border-radius: 14px; }
+        .calc-toolbar { padding: 10px 12px; border-radius: 12px; }
+        .result-kpi { padding: 10px 12px; }
+        .result-kpi .kpi-value { font-size: 18px; }
+        .result-kpi .kpi-label { font-size: 9px; }
+        .result-kpi .kpi-sub { font-size: 10px; }
+        .canvas-wrapper { aspect-ratio: 1.7 / 1; }
+        .sim-sidebar .sim-info-row { padding: 6px 0; }
+        .sim-sidebar .sim-info-row .sim-info-label { font-size: 11px; }
+        .sim-sidebar .sim-info-row .sim-info-value { font-size: 12px; }
+    }
+    @media (max-width: 480px) {
+        .result-kpis { grid-template-columns: 1fr !important; }
+        .params-grid { grid-template-columns: 1fr !important; }
+        .history-panel { width: 100%; }
+        .canvas-wrapper { aspect-ratio: 1.4 / 1; }
+        .result-kpi .kpi-value { font-size: 20px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="card" style="padding: 28px 32px;">
+<div class="calc-wrap">
 
-    <!-- BARRA DE HERRAMIENTAS -->
-    <div class="toolbar">
-        <button onclick="openFavoriteModal()">Guardar favorito</button>
-        <div class="favorites-dropdown">
-            <span style="font-size:13px; color:#8e8e93; font-weight:500;">Favoritos:</span>
-            <select id="favoritesSelect" onchange="loadFavorite(this.value)">
-                <option value="">-- Seleccionar --</option>
-            </select>
+    <!-- ============================================================
+         TOOLBAR COMPACTA
+         ============================================================ -->
+    <div class="calc-toolbar">
+        <button type="button" class="btn btn-warning" onclick="openFavoriteModal()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            Guardar favorito
+        </button>
+
+        <div class="favorites-group">
+            <span class="favorites-label">Favoritos</span>
+            <div class="favorites-select-wrap">
+                <select id="favoritesSelect" onchange="loadFavorite(this.value)">
+                    <option value="">— Seleccionar —</option>
+                </select>
+            </div>
         </div>
-        <span class="separator"></span>
-        <button onclick="toggleHistory()">Historial <span class="badge" id="historyCount">0</span></button>
-        <span class="separator"></span>
-        <div class="file-upload-area">
-            <button onclick="document.getElementById('pdfUpload').click()" style="background:#f0ece8; border:none; border-radius:30px; padding:6px 16px; font-weight:500; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; display:inline-flex; align-items:center; gap:6px;">Subir PDF (auto-medidas)</button>
-            <input type="file" id="pdfUpload" accept=".pdf" onchange="handlePdfUpload(event)">
+
+        <span class="toolbar-sep"></span>
+
+        <button type="button" class="btn" onclick="toggleHistory()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Historial <span class="badge" id="historyCount">0</span>
+        </button>
+
+        <span class="toolbar-sep"></span>
+
+        <div class="file-group">
+            <button type="button" class="btn" onclick="document.getElementById('pdfUpload').click()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Subir PDF
+            </button>
+            <input type="file" id="pdfUpload" accept=".pdf" onchange="handlePdfUpload(event)" style="display:none;">
             <span class="file-name" id="fileName">Ningún archivo</span>
+            <button type="button" class="btn btn-danger" onclick="clearPdf()" title="Limpiar PDF">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="15" y1="9" x2="9" y2="15"></line>
+                    <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
+            </button>
         </div>
-        <span class="separator"></span>
-        <button onclick="clearPdf()" style="color:#dc2626;">✕ Limpiar PDF</button>
     </div>
 
-    <!-- DOS COLUMNAS -->
-    <div class="two-col-calc">
-        <!-- COLUMNA IZQUIERDA -->
-        <div class="col-left-calc">
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="tab-resumen">Resumen</button>
-                <button class="tab-btn" data-tab="tab-detalles">Detalles</button>
+    <!-- ============================================================
+         GRID PRINCIPAL: RESULTADO + PARÁMETROS
+         ============================================================ -->
+    <div class="calc-main-grid">
+
+        <!-- ===== COLUMNA IZQUIERDA: RESULTADO DESTACADO ===== -->
+        <div class="calc-card">
+
+            <!-- KPIs visuales -->
+            <div class="result-kpis">
+                <div class="result-kpi verde">
+                    <div class="kpi-label">Etiquetas/m²</div>
+                    <div class="kpi-value" id="kpiEtiquetasM2">—</div>
+                    <div class="kpi-sub" id="kpiDistribucion">—</div>
+                </div>
+                <div class="result-kpi azul">
+                    <div class="kpi-label">Etiquetas totales</div>
+                    <div class="kpi-value" id="kpiEtiquetasTotal">—</div>
+                    <div class="kpi-sub" id="kpiFilasUsadas">—</div>
+                </div>
+                <div class="result-kpi morado">
+                    <div class="kpi-label">Área total</div>
+                    <div class="kpi-value" id="kpiArea">—</div>
+                    <div class="kpi-sub" id="kpiAnchoRollo">—</div>
+                </div>
+                <div class="result-kpi rosa">
+                    <div class="kpi-label">Costo total</div>
+                    <div class="kpi-value" id="kpiCosto">—</div>
+                    <div class="kpi-sub" id="kpiPrecioM2">—</div>
+                </div>
             </div>
-            <div id="tab-resumen" class="tab-content active">
+
+            <!-- Tabs Resumen / Detalles -->
+            <div class="calc-tabs">
+                <button type="button" class="calc-tab-btn active" data-tab="tab-resumen">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"></line>
+                        <line x1="12" y1="20" x2="12" y2="4"></line>
+                        <line x1="6" y1="20" x2="6" y2="14"></line>
+                    </svg>
+                    Resumen
+                </button>
+                <button type="button" class="calc-tab-btn" data-tab="tab-detalles">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Detalles
+                </button>
+            </div>
+
+            <div id="tab-resumen" class="calc-tab-content active">
                 <div id="resultDisplay" class="result-box">
                     {% if resultado %}
                         {{ resultado|safe }}
                     {% else %}
-                        <p style="color:#8e8e93;">Introduce los datos y ajusta los parámetros.</p>
+                        <p>Introduce los datos en el panel derecho para ver el cálculo.</p>
                     {% endif %}
                 </div>
             </div>
-            <div id="tab-detalles" class="tab-content">
+            <div id="tab-detalles" class="calc-tab-content">
                 <div class="result-box" id="detallesDisplay">
                     {% if detalles %}
                         {{ detalles|safe }}
                     {% else %}
-                        <p style="color:#8e8e93;">Los detalles del cálculo aparecerán aquí.</p>
+                        <p>Los detalles del cálculo aparecerán aquí.</p>
                     {% endif %}
                 </div>
             </div>
-            <div id="errorDisplay" class="error-box"></div>
 
-            <!-- SIMULACIÓN -->
-            <div style="margin-top:24px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:8px;">
-                    <h4 style="font-family:'Playfair Display', serif; font-size:20px; color:#1c1c1e; margin:0;">Simulación</h4>
-                    <span class="badge" style="background:#f0ece8; color:#555; font-weight:500;">Área del paño: 1 m²</span>
-                </div>
-                <div class="canvas-wrapper">
-                    <canvas id="simCanvas" width="800" height="500"></canvas>
-                </div>
-                <div class="zoom-controls">
-                    <button onclick="zoomIn()">🔍+</button>
-                    <button onclick="zoomOut()">🔍−</button>
-                    <button onclick="resetZoom()">⟲ Restablecer</button>
-                    <input type="range" id="slider_zoom" min="0.1" max="20" step="0.1" value="1" oninput="updateZoom(this.value)">
-                    <span id="zoomLabel" style="font-size:14px; min-width:50px; color:#1c1c1e; font-weight:500;">1.0x</span>
-                    <button onclick="exportImage()" style="background:#1c1c1e; color:white; border:none; padding:4px 16px; border-radius:30px; cursor:pointer; font-family:'Inter',sans-serif; font-weight:500; font-size:13px;">⬇ Exportar PNG</button>
-                </div>
-                <p style="font-size:12px; color:#8e8e93; text-align:center; margin-top:8px;">
-                    Haz clic en una celda para ver sus detalles.
-                </p>
+            <div id="errorDisplay" class="error-box">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+                <span id="errorText"></span>
             </div>
         </div>
 
-        <!-- COLUMNA DERECHA -->
-        <div class="col-right-calc">
+        <!-- ===== COLUMNA DERECHA: PARÁMETROS ===== -->
+        <div class="calc-card">
+            <div class="card-header-row">
+                <h4>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Parámetros
+                </h4>
+            </div>
+
             <form id="calcForm" onsubmit="return false;">
-                <div class="form-group">
-                    <label for="ancho_rollo">Ancho del rollo (m)</label>
-                    <input type="number" step="0.01" min="0.1" id="ancho_rollo" name="ancho_rollo"
-                           value="{{ ancho_rollo_m|default(1.3) }}"
-                           placeholder="ej. 1.3"
-                           oninput="calcularEnVivo()">
-                    <small>El alto del paño se calcula como 1 m² ÷ ancho del rollo.</small>
+
+                <div class="params-grid">
+                    <div class="param-item">
+                        <label for="ancho_rollo">Ancho rollo (m)</label>
+                        <input type="number" step="0.01" min="0.1" id="ancho_rollo" name="ancho_rollo"
+                               value="{{ ancho_rollo_m|default(1.3) }}"
+                               placeholder="1.3"
+                               oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="precio">Precio (USD/m²)</label>
+                        <input type="number" step="0.01" id="precio" name="precio" value="{{ precio }}" placeholder="10.00" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="ancho">Ancho etiq. (cm)</label>
+                        <input type="number" step="1" id="ancho" name="ancho" value="{{ ancho }}" placeholder="10" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="alto">Alto etiq. (cm)</label>
+                        <input type="number" step="1" id="alto" name="alto" value="{{ alto }}" placeholder="15" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="cantidad">Cantidad (etiquetas)</label>
+                        <input type="number" step="1" id="cantidad" name="cantidad" value="{{ cantidad }}" placeholder="500" oninput="calcularEnVivo()">
+                    </div>
+
+                    <div class="param-item">
+                        <label for="area">Área (m²)</label>
+                        <input type="number" step="0.01" id="area" name="area" value="{{ area }}" placeholder="2.5" oninput="calcularEnVivo()">
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="ancho">Ancho (cm)</label>
-                    <input type="number" step="0.01" id="ancho" name="ancho" value="{{ ancho }}" placeholder="ej. 10" oninput="calcularEnVivo()">
+
+                <div class="params-checks">
+                    <label>
+                        <input type="checkbox" name="mesa" id="mesa" value="1" {{ mesa_checked }} onchange="calcularEnVivo()">
+                        Margen mesa
+                    </label>
+                    <label>
+                        <input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()">
+                        Girar 90°
+                    </label>
+                    <label>
+                        <input type="checkbox" name="auto_girar" id="auto_girar" value="1" {{ auto_girar_checked }} onchange="calcularEnVivo()">
+                        Auto-rotar
+                    </label>
                 </div>
-                <div class="form-group">
-                    <label for="alto">Alto (cm)</label>
-                    <input type="number" step="0.01" id="alto" name="alto" value="{{ alto }}" placeholder="ej. 15" oninput="calcularEnVivo()">
-                </div>
-                <div class="form-group">
-                    <label for="precio">Precio por m² (USD)</label>
-                    <input type="number" step="0.01" id="precio" name="precio" value="{{ precio }}" placeholder="10.00" oninput="calcularEnVivo()">
-                </div>
-                <div class="form-group">
-                    <label for="cantidad">Cantidad deseada</label>
-                    <input type="number" step="1" id="cantidad" name="cantidad" value="{{ cantidad }}" placeholder="ej. 500" oninput="calcularEnVivo()">
-                    <small>Déjalo vacío si usas área</small>
-                </div>
-                <div class="form-group">
-                    <label for="area">Área (m²)</label>
-                    <input type="number" step="0.01" id="area" name="area" value="{{ area }}" placeholder="ej. 2.5" oninput="calcularEnVivo()">
-                    <small>Déjalo vacío si usas cantidad</small>
-                </div>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" name="mesa" id="mesa" value="1" {{ mesa_checked }} onchange="calcularEnVivo()"> Margen de mesa (2 mm)</label>
-                    <label><input type="checkbox" name="girar" id="girar" value="1" {{ girar_checked }} onchange="calcularEnVivo()"> Girar 90° (manual)</label>
-                    <label><input type="checkbox" name="auto_girar" id="auto_girar" value="1" {{ auto_girar_checked }} onchange="calcularEnVivo()">Modo Inteligencia Artificial</label>
-                </div>
-                <div class="btn-group">
-                    <button type="button" class="btn btn-primary" onclick="calcularEnVivo()">Calcular</button>
-                    <button type="button" class="btn btn-outline" onclick="resetFields()">Limpiar</button>
+
+                <div class="params-actions">
+                    <button type="button" class="btn" onclick="resetFields()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        Limpiar campos
+                    </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         SIMULACIÓN — CANVAS + SIDEBAR
+         ============================================================ -->
+    <div class="calc-sim-card">
+        <div class="card-header-row">
+            <h4>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                Simulación de impresión
+            </h4>
+        </div>
+
+        <div class="sim-layout">
+            <!-- Canvas -->
+            <div class="canvas-wrapper">
+                <canvas id="simCanvas" width="800" height="400"></canvas>
+            </div>
+
+            <!-- Panel lateral -->
+            <div class="sim-sidebar">
+
+                <!-- Info de la simulación -->
+                <div class="sim-info-box">
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            </svg>
+                            Área del paño
+                        </span>
+                        <span class="sim-info-value">1 m²</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="23 4 23 10 17 10"></polyline>
+                                <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                            </svg>
+                            Orientación
+                        </span>
+                        <span class="sim-info-value" id="simOrientacion">—</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                            Filas usadas
+                        </span>
+                        <span class="sim-info-value" id="simFilasUsadas">—</span>
+                    </div>
+                    <div class="sim-info-row">
+                        <span class="sim-info-label">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                            Distribución
+                        </span>
+                        <span class="sim-info-value" id="simDistribucion">—</span>
+                    </div>
+                </div>
+
+                <!-- Área ocupada: franja destacada -->
+                <div class="sim-info-highlight">
+                    <span class="sim-info-label">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                        </svg>
+                        Área ocupada
+                    </span>
+                    <span class="sim-info-value" id="simAreaOcupada">—</span>
+                </div>
+
+                <!-- ==============================================
+                     NUEVO: DESGLOSE DE PAÑOS (solo modo cantidad)
+                     ============================================== -->
+                <div class="sim-panos-summary" id="simPanosBox">
+                    <div class="panos-title">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Desglose de paños
+                    </div>
+                    <div class="sim-panos-row highlight">
+                        <span class="panos-lbl">Paños totales</span>
+                        <span class="panos-val" id="panosTotal">—</span>
+                    </div>
+                    <div class="sim-panos-row">
+                        <span class="panos-lbl">Paños completos</span>
+                        <span class="panos-val" id="panosCompletos">—</span>
+                    </div>
+                    <div class="sim-panos-row">
+                        <span class="panos-lbl">Etiquetas por paño</span>
+                        <span class="panos-val" id="panosLabelsPorPano">—</span>
+                    </div>
+                    <div class="sim-panos-row">
+                        <span class="panos-lbl">Último paño (parcial)</span>
+                        <span class="panos-val" id="panosUltimo">—</span>
+                    </div>
+                </div>
+
+                <!-- Zoom controls -->
+                <div class="sim-zoom-controls">
+                    <div class="zoom-row">
+                        <button type="button" class="zoom-btn" onclick="zoomIn()" title="Acercar">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="11" y1="8" x2="11" y2="14"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="zoom-btn" onclick="zoomOut()" title="Alejar">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                <line x1="8" y1="11" x2="14" y2="11"></line>
+                            </svg>
+                        </button>
+                        <button type="button" class="zoom-btn" onclick="resetZoom()" title="Restablecer zoom">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="zoom-slider-row">
+                        <input type="range" id="slider_zoom" min="0.1" max="20" step="0.1" value="1" oninput="updateZoom(this.value)">
+                        <span class="zoom-label" id="zoomLabel">1.0x</span>
+                    </div>
+                    <button type="button" class="zoom-btn export" onclick="exportImage()">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Exportar PNG
+                    </button>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>
 
 <!-- ============================================
-PANEL DE HISTORIAL
-============================================ -->
+     PANEL DE HISTORIAL
+     ============================================ -->
 <div class="history-panel" id="historyPanel">
-    <h3>
-        Historial
-        <button class="close-btn" onclick="toggleHistory()">✕</button>
-    </h3>
-    <div id="historyList">
-        <p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay cálculos guardados aún.</p>
+    <div class="history-header">
+        <h3>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="1 4 1 10 7 10"></polyline>
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Historial
+        </h3>
+        <button class="history-close" onclick="toggleHistory()">×</button>
     </div>
-    <p style="text-align:center; color:#8e8e93; font-size:12px; margin-top:20px; border-top:1px solid #f0ece8; padding-top:12px;">
-        Haz clic en un cálculo para cargarlo de nuevo.
-    </p>
+    <div id="historyList">
+        <p class="history-empty">No hay cálculos guardados aún.</p>
+    </div>
+    <p class="history-footer">Haz clic en un cálculo para cargarlo de nuevo.</p>
 </div>
 
-<!-- MODAL DE FAVORITO -->
+<!-- ============================================
+     MODAL: GUARDAR FAVORITO
+     ============================================ -->
 <div class="modal-overlay" id="favoriteModal">
     <div class="modal-box">
-        <button class="close-modal" onclick="closeFavoriteModal()">✕</button>
-        <h3>Guardar como favorito</h3>
-        <p style="color:#8e8e93; font-size:14px;">Pon un nombre para esta configuración:</p>
-        <input type="text" id="favoriteName" placeholder="Ej. Cliente X - 10x15 cm">
-        <button class="btn btn-primary" style="width:100%;" onclick="saveFavorite()">Guardar</button>
-    </div>
-</div>
-
-<!-- MODAL DE DETALLE DE CELDA -->
-<div class="modal-overlay" id="cellModal">
-    <div class="modal-box">
-        <button class="close-modal" onclick="closeCellModal()">✕</button>
-        <h3>Detalle de celda</h3>
-        <div id="cellDetailContent">
-            <div class="detail-row"><span>Fila:</span> <span id="cellRow">-</span></div>
-            <div class="detail-row"><span>Columna:</span> <span id="cellCol">-</span></div>
-            <div class="detail-row"><span>Ancho (cm):</span> <span id="cellWidth">-</span></div>
-            <div class="detail-row"><span>Alto (cm):</span> <span id="cellHeight">-</span></div>
-            <div class="detail-row"><span>Posición X (mm):</span> <span id="cellX">-</span></div>
-            <div class="detail-row"><span>Posición Y (mm):</span> <span id="cellY">-</span></div>
+        <div class="modal-header-row">
+            <h3>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Guardar como favorito
+            </h3>
+            <button class="modal-close" onclick="closeFavoriteModal()">×</button>
         </div>
-        <button class="btn btn-primary" style="width:100%; margin-top:16px;" onclick="closeCellModal()">Cerrar</button>
+        <p class="modal-desc">Pon un nombre para identificar esta configuración:</p>
+        <input type="text" id="favoriteName" placeholder="Ej. Cliente X - 10x15 cm">
+        <button type="button" class="btn btn-primary" style="width:100%; justify-content:center;" onclick="saveFavorite()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Guardar
+        </button>
     </div>
 </div>
 
@@ -599,7 +1485,9 @@ PANEL DE HISTORIAL
     // ==========================================
     // CONFIGURACIÓN PDF.JS
     // ==========================================
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    if (typeof pdfjsLib !== 'undefined') {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    }
 
     // ==========================================
     // VARIABLES
@@ -619,7 +1507,199 @@ PANEL DE HISTORIAL
     let favoriteIdCounter = favorites.length ? Math.max(...favorites.map(f => f.id)) + 1 : 1;
 
     // ==========================================
-    // OBTENER Y CARGAR CONFIGURACIÓN
+    // SANITIZADOR DE EMOJIS (defensivo)
+    // ==========================================
+    function sanitizeServerHTML(html) {
+        if (!html) return html;
+        return html
+            .replace(/[\u{1F300}-\u{1F5FF}]/gu, '')
+            .replace(/[\u{1F600}-\u{1F64F}]/gu, '')
+            .replace(/[\u{1F680}-\u{1F6FF}]/gu, '')
+            .replace(/[\u{1F700}-\u{1F77F}]/gu, '')
+            .replace(/[\u{1F780}-\u{1F7FF}]/gu, '')
+            .replace(/[\u{1F800}-\u{1F8FF}]/gu, '')
+            .replace(/[\u{1F900}-\u{1F9FF}]/gu, '')
+            .replace(/[\u{1FA00}-\u{1FA6F}]/gu, '')
+            .replace(/[\u{1FA70}-\u{1FAFF}]/gu, '')
+            .replace(/[\u{2600}-\u{27BF}]/gu, '')
+            .replace(/[\u{FE00}-\u{FE0F}]/gu, '')
+            .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, '')
+            .replace(/[\u{2B00}-\u{2BFF}]/gu, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+    }
+
+    // ==========================================
+    // CUSTOM SELECT
+    // ==========================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `<span class="cs-value"></span><svg class="cs-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>`;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '— Seleccionar —';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions() {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const opts = Array.from(selectEl.options);
+            if (opts.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin favoritos guardados';
+                optionsContainer.appendChild(empty);
+                return;
+            }
+            opts.forEach((opt, idx) => {
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(320, menu.scrollHeight || 180);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 200) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            renderOptions();
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(-1); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (wrap.classList.contains('open')) selectHighlighted(); else open(); }
+            else if (e.key === 'Escape') { if (wrap.classList.contains('open')) { e.preventDefault(); close(); } }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        selectEl._csRefresh = updateValue;
+        updateValue();
+    }
+
+    function refreshCustomSelect(selectEl) {
+        if (selectEl && typeof selectEl._csRefresh === 'function') {
+            selectEl._csRefresh();
+        }
+    }
+
+    // ==========================================
+    // CONFIGURACIÓN
     // ==========================================
     function getCurrentConfig() {
         return {
@@ -649,23 +1729,156 @@ PANEL DE HISTORIAL
     }
 
     // ==========================================
-    // CÁLCULO EN VIVO (AJAX)
+    // DESGLOSE DE PAÑOS (modo cantidad)
+    // ==========================================
+    function computePanosInfo() {
+        const cantidadInput = document.getElementById('cantidad').value;
+        const cantidad = parseInt(cantidadInput, 10) || 0;
+        if (cantidad <= 0) return null;
+
+        const cols = simData.columnas || 0;
+        const filasPorPano = simData.filasPorMetro || 0;
+        if (cols <= 0 || filasPorPano <= 0) return null;
+
+        const labelsPorPano = cols * filasPorPano;
+        if (labelsPorPano <= 0) return null;
+
+        const panosCompletos = Math.floor(cantidad / labelsPorPano);
+        const etiquetasUltimo = cantidad - panosCompletos * labelsPorPano;
+        const panosTotal = panosCompletos + (etiquetasUltimo > 0 ? 1 : 0);
+        const ultimoEsParcial = etiquetasUltimo > 0 && etiquetasUltimo < labelsPorPano;
+
+        return {
+            cantidad,
+            labelsPorPano,
+            panosCompletos,
+            etiquetasUltimo,
+            panosTotal,
+            ultimoEsParcial
+        };
+    }
+
+    function actualizarPanosUI(info) {
+        const box = document.getElementById('simPanosBox');
+        if (!box) return;
+
+        if (!info) {
+            box.classList.remove('visible');
+            return;
+        }
+        box.classList.add('visible');
+        document.getElementById('panosTotal').textContent = info.panosTotal;
+        document.getElementById('panosCompletos').textContent = info.panosCompletos;
+        document.getElementById('panosLabelsPorPano').textContent = info.labelsPorPano;
+        document.getElementById('panosUltimo').textContent =
+            info.etiquetasUltimo > 0 ? info.etiquetasUltimo + ' etq' : '—';
+    }
+
+    // ==========================================
+    // ACTUALIZAR KPIs
+    // ==========================================
+    function actualizarKPIs(data) {
+        const cols = data.columnas || 0;
+        const filasPorMetro = data.filasPorMetro || 0;
+        const filasUsadas = data.filasUsadas || 0;
+        const celdasTotales = data.celdasTotales || 0;
+        const areaTotal = data.areaTotal || 0;
+        const anchoCm = data.anchoCm || 0;
+        const altoCm = data.altoCm || 0;
+        const orientacion = data.orientacion || 'normal';
+        const anchoRolloM = data.anchoRolloM || 1.3;
+
+        const etiquetasM2 = cols * filasPorMetro;
+        const precioM2 = parseFloat(document.getElementById('precio').value) || 10;
+        const costoTotal = round2(areaTotal * precioM2);
+
+        const kpiEtiquetasM2 = document.getElementById('kpiEtiquetasM2');
+        const kpiDistribucion = document.getElementById('kpiDistribucion');
+        const kpiEtiquetasTotal = document.getElementById('kpiEtiquetasTotal');
+        const kpiFilasUsadas = document.getElementById('kpiFilasUsadas');
+        const kpiArea = document.getElementById('kpiArea');
+        const kpiAnchoRollo = document.getElementById('kpiAnchoRollo');
+        const kpiCosto = document.getElementById('kpiCosto');
+        const kpiPrecioM2 = document.getElementById('kpiPrecioM2');
+
+        if (etiquetasM2 > 0) {
+            kpiEtiquetasM2.textContent = etiquetasM2;
+            kpiDistribucion.textContent = `${cols}×${filasPorMetro} · ${orientacion}`;
+        } else {
+            kpiEtiquetasM2.textContent = '—';
+            kpiDistribucion.textContent = '—';
+        }
+
+        // KPI 2: sub-texto muestra paños si estamos en modo cantidad
+        const panosInfo = computePanosInfo();
+        if (celdasTotales > 0) {
+            kpiEtiquetasTotal.textContent = celdasTotales;
+            if (panosInfo && panosInfo.panosTotal > 0) {
+                kpiFilasUsadas.textContent = `${panosInfo.panosTotal} paño${panosInfo.panosTotal !== 1 ? 's' : ''} · ${panosInfo.labelsPorPano}/paño`;
+            } else {
+                kpiFilasUsadas.textContent = `${filasUsadas} fila${filasUsadas !== 1 ? 's' : ''} usada${filasUsadas !== 1 ? 's' : ''}`;
+            }
+        } else {
+            kpiEtiquetasTotal.textContent = '—';
+            kpiFilasUsadas.textContent = '—';
+        }
+
+        if (areaTotal > 0) {
+            kpiArea.textContent = `${areaTotal.toFixed(2)} m²`;
+            kpiAnchoRollo.textContent = `Rollo ${anchoRolloM.toFixed(2)} m · ${anchoCm.toFixed(1)}×${altoCm.toFixed(1)} cm`;
+        } else {
+            kpiArea.textContent = '—';
+            kpiAnchoRollo.textContent = '—';
+        }
+
+        if (costoTotal > 0) {
+            kpiCosto.textContent = `$${costoTotal.toFixed(2)}`;
+            kpiPrecioM2.textContent = `$${precioM2.toFixed(2)}/m²`;
+        } else {
+            kpiCosto.textContent = '—';
+            kpiPrecioM2.textContent = '—';
+        }
+
+        // Info de la simulación
+        const simOrientacion = document.getElementById('simOrientacion');
+        const simFilasUsadas = document.getElementById('simFilasUsadas');
+        const simDistribucion = document.getElementById('simDistribucion');
+        const simAreaOcupada = document.getElementById('simAreaOcupada');
+
+        if (simOrientacion) simOrientacion.textContent = orientacion;
+        if (simFilasUsadas) simFilasUsadas.textContent = `${filasUsadas} / ${filasPorMetro}`;
+        if (simDistribucion) simDistribucion.textContent = `${cols}×${filasPorMetro}`;
+        if (simAreaOcupada) simAreaOcupada.textContent = `${areaTotal.toFixed(2)} m²`;
+
+        // Actualizar desglose de paños
+        actualizarPanosUI(panosInfo);
+    }
+
+    function round2(n) {
+        return Math.round(n * 100) / 100;
+    }
+
+    // ==========================================
+    // CÁLCULO EN VIVO
     // ==========================================
     function calcularEnVivo() {
         const form = document.getElementById('calcForm');
         const formData = new FormData(form);
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorText = document.getElementById('errorText');
 
         const cantidad = formData.get('cantidad') || '';
         const area = formData.get('area') || '';
         if (!cantidad && !area) {
-            document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce una cantidad o un área.</p>';
-            document.getElementById('detallesDisplay').innerHTML = '';
-            document.getElementById('errorDisplay').style.display = 'none';
+            document.getElementById('resultDisplay').innerHTML = '<p>Introduce una cantidad o un área para calcular.</p>';
+            document.getElementById('detallesDisplay').innerHTML = '<p>Los detalles del cálculo aparecerán aquí.</p>';
+            errorDisplay.classList.remove('visible');
             simData = {
                 columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
                 areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
                 orientacion: 'normal', mesa: false, anchoRolloM: 1.3
             };
+            actualizarKPIs(simData);
             drawSimulation();
             return;
         }
@@ -677,21 +1890,23 @@ PANEL DE HISTORIAL
         .then(response => response.json())
         .then(data => {
             if (data.error) {
-                document.getElementById('errorDisplay').style.display = 'block';
-                document.getElementById('errorDisplay').textContent = '❌ ' + data.error;
-                document.getElementById('resultDisplay').innerHTML = '';
+                errorDisplay.classList.add('visible');
+                errorText.textContent = data.error;
+                document.getElementById('resultDisplay').innerHTML = '<p>No se pudo calcular. Revisa el error abajo.</p>';
                 document.getElementById('detallesDisplay').innerHTML = '';
                 simData = {
                     columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
                     areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
                     orientacion: 'normal', mesa: false, anchoRolloM: 1.3
                 };
+                actualizarKPIs(simData);
                 drawSimulation();
             } else {
-                document.getElementById('errorDisplay').style.display = 'none';
-                document.getElementById('resultDisplay').innerHTML = data.resultado;
-                document.getElementById('detallesDisplay').innerHTML = data.detalles;
+                errorDisplay.classList.remove('visible');
+                document.getElementById('resultDisplay').innerHTML = sanitizeServerHTML(data.resultado);
+                document.getElementById('detallesDisplay').innerHTML = sanitizeServerHTML(data.detalles);
                 simData = data.simData;
+                actualizarKPIs(simData);
                 drawSimulation();
 
                 const config = getCurrentConfig();
@@ -701,8 +1916,8 @@ PANEL DE HISTORIAL
         })
         .catch(error => {
             console.error('Error:', error);
-            document.getElementById('errorDisplay').style.display = 'block';
-            document.getElementById('errorDisplay').textContent = '❌ Error de conexión con el servidor.';
+            errorDisplay.classList.add('visible');
+            errorText.textContent = 'Error de conexión con el servidor.';
         });
     }
 
@@ -726,14 +1941,14 @@ PANEL DE HISTORIAL
     function updateHistoryUI() {
         const list = document.getElementById('historyList');
         if (history.length === 0) {
-            list.innerHTML = '<p style="color:#8e8e93; text-align:center; padding:20px 0;">No hay cálculos guardados aún.</p>';
+            list.innerHTML = '<p class="history-empty">No hay cálculos guardados aún.</p>';
             return;
         }
         list.innerHTML = history.map(item => `
             <div class="history-item" onclick="loadHistoryItem(${item.id})">
                 <div class="date">${item.date}</div>
                 <div class="result">${item.resultado}</div>
-                <div class="params">${item.config.ancho || '?'}x${item.config.alto || '?'} cm · ${item.config.cantidad || item.config.area || '?'} unidades</div>
+                <div class="params">${item.config.ancho || '?'}×${item.config.alto || '?'} cm · ${item.config.cantidad || item.config.area || '?'} und</div>
             </div>
         `).join('');
     }
@@ -760,7 +1975,7 @@ PANEL DE HISTORIAL
     function openFavoriteModal() {
         document.getElementById('favoriteModal').classList.add('active');
         document.getElementById('favoriteName').value = '';
-        document.getElementById('favoriteName').focus();
+        setTimeout(() => document.getElementById('favoriteName').focus(), 100);
     }
 
     function closeFavoriteModal() {
@@ -783,18 +1998,18 @@ PANEL DE HISTORIAL
         localStorage.setItem('etiquetas_favorites', JSON.stringify(favorites));
         updateFavoritesUI();
         closeFavoriteModal();
-        alert(`⭐ Favorito "${name}" guardado correctamente.`);
     }
 
     function updateFavoritesUI() {
         const select = document.getElementById('favoritesSelect');
-        select.innerHTML = '<option value="">-- Seleccionar --</option>';
+        select.innerHTML = '<option value="">— Seleccionar —</option>';
         favorites.forEach(f => {
             const opt = document.createElement('option');
             opt.value = f.id;
             opt.textContent = f.name;
             select.appendChild(opt);
         });
+        refreshCustomSelect(select);
     }
 
     function loadFavorite(id) {
@@ -803,16 +2018,18 @@ PANEL DE HISTORIAL
         if (item) {
             loadConfig(item.config);
             document.getElementById('favoritesSelect').value = '';
+            refreshCustomSelect(document.getElementById('favoritesSelect'));
         }
     }
 
     // ==========================================
-    // PDF: EXTRACCIÓN + RENDERIZADO
+    // PDF
     // ==========================================
     function handlePdfUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
-        document.getElementById('fileName').textContent = file.name;
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = file.name;
 
         const fileReader = new FileReader();
         fileReader.onload = function() {
@@ -826,7 +2043,8 @@ PANEL DE HISTORIAL
                     document.getElementById('alto').value = heightCm.toFixed(2);
                     renderPdfToImage(pdf, 1);
                     calcularEnVivo();
-                    document.getElementById('fileName').textContent = `${file.name} (${widthCm.toFixed(2)}x${heightCm.toFixed(2)} cm)`;
+                    fileNameEl.textContent = `${file.name} · ${widthCm.toFixed(2)}×${heightCm.toFixed(2)} cm`;
+                    fileNameEl.classList.add('has-file');
                 });
             }).catch(function(error) {
                 console.error('Error al cargar PDF:', error);
@@ -842,17 +2060,11 @@ PANEL DE HISTORIAL
             const targetWidth = 300;
             const scale = targetWidth / viewport.width;
             const scaledViewport = page.getViewport({ scale: scale });
-
             const offscreen = document.createElement('canvas');
             offscreen.width = scaledViewport.width;
             offscreen.height = scaledViewport.height;
             const ctxOff = offscreen.getContext('2d');
-
-            const renderContext = {
-                canvasContext: ctxOff,
-                viewport: scaledViewport
-            };
-            page.render(renderContext).promise.then(function() {
+            page.render({ canvasContext: ctxOff, viewport: scaledViewport }).promise.then(function() {
                 pdfImage = offscreen;
                 pdfLoaded = true;
                 drawSimulation();
@@ -863,9 +2075,73 @@ PANEL DE HISTORIAL
     function clearPdf() {
         pdfImage = null;
         pdfLoaded = false;
-        document.getElementById('fileName').textContent = 'Ningún archivo';
+        const fileNameEl = document.getElementById('fileName');
+        fileNameEl.textContent = 'Ningún archivo';
+        fileNameEl.classList.remove('has-file');
         document.getElementById('pdfUpload').value = '';
         drawSimulation();
+    }
+
+    // ==========================================
+    // DIBUJAR MINI-PAÑOS EN CANVAS
+    // ==========================================
+    function drawMiniPanos(ctx, info, x, y, width, height) {
+        const n = info.panosTotal;
+        const gap = 8;
+        const eachW = (width - gap * (n - 1)) / n;
+
+        for (let i = 0; i < n; i++) {
+            const px = x + i * (eachW + gap);
+            const isLast = i === n - 1;
+            const isPartial = isLast && info.ultimoEsParcial;
+
+            // Fondo
+            ctx.fillStyle = isPartial ? '#fef3c7' : '#ecfdf5';
+            ctx.fillRect(px, y, eachW, height);
+
+            // Borde
+            ctx.strokeStyle = isPartial ? '#f59e0b' : '#10b981';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(px, y, eachW, height);
+
+            // Etiqueta P1, P2, ...
+            ctx.fillStyle = isPartial ? '#78350f' : '#065f46';
+            ctx.font = 'bold 11px Montserrat, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`P${i + 1}`, px + eachW / 2, y + 16);
+
+            // Contador
+            const count = isPartial ? info.etiquetasUltimo : info.labelsPorPano;
+            ctx.font = 'bold 15px Montserrat, sans-serif';
+            ctx.fillText(String(count), px + eachW / 2, y + 36);
+
+            // "etq"
+            ctx.font = '9px Inter, sans-serif';
+            ctx.fillStyle = isPartial ? '#92400e' : '#047857';
+            ctx.fillText('etq', px + eachW / 2, y + 52);
+        }
+    }
+
+    function drawPanosSummaryBadge(ctx, info, x, y, width, height) {
+        ctx.fillStyle = '#f0f9ff';
+        ctx.fillRect(x, y, width, height);
+        ctx.strokeStyle = '#bae6fd';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, width, height);
+
+        ctx.fillStyle = '#075985';
+        ctx.font = 'bold 14px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(`Se necesitan ${info.panosTotal} paños en total`, x + width / 2, y + height / 2 - 8);
+
+        ctx.font = '12px Inter, sans-serif';
+        ctx.fillStyle = '#0369a1';
+        ctx.fillText(
+            `${info.panosCompletos} completos de ${info.labelsPorPano} etq · último con ${info.etiquetasUltimo} etq`,
+            x + width / 2, y + height / 2 + 14
+        );
     }
 
     // ==========================================
@@ -880,6 +2156,7 @@ PANEL DE HISTORIAL
         ctx.clearRect(0, 0, w, h);
         ctx.fillStyle = '#f8f6f4';
         ctx.fillRect(0, 0, w, h);
+        ctx.textBaseline = 'alphabetic';
 
         const data = simData;
         const cols = data.columnas || 0;
@@ -889,22 +2166,46 @@ PANEL DE HISTORIAL
         const altoEfCm = data.altoCm || 0;
         const anchoRolloM = data.anchoRolloM || 1.3;
 
+        const panosInfo = computePanosInfo();
+
+        // -------- Franja superior de mini-paños --------
+        let topOffset = 0;
+        const margin = 20;
+        const miniStripH = 66;
+        const miniStripGap = 12;
+
+        if (panosInfo && panosInfo.panosTotal > 1) {
+            if (panosInfo.panosTotal <= 8) {
+                drawMiniPanos(ctx, panosInfo, margin, 14, w - margin * 2, miniStripH);
+            } else {
+                drawPanosSummaryBadge(ctx, panosInfo, margin, 14, w - margin * 2, miniStripH);
+            }
+            topOffset = 14 + miniStripH + miniStripGap;
+        }
+
+        // -------- Verificación de datos --------
         if (cols === 0 || filasPorMetro === 0 || filasUsadas === 0 || anchoEfCm === 0 || altoEfCm === 0) {
             ctx.fillStyle = '#8e8e93';
-            ctx.font = '16px Inter, sans-serif';
+            ctx.font = '15px Inter, sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText('Calcula primero para ver la simulación', w/2, h/2);
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Introduce los datos para ver la simulación', w / 2, topOffset + (h - topOffset) / 2);
+            ctx.textBaseline = 'alphabetic';
             return;
         }
 
-        // El paño: ancho_mm = anchoRolloM * 1000, largo_mm = 1000 / anchoRolloM
+        // -------- Área útil para el paño detallado --------
+        const areaTop = topOffset + margin;
+        const areaBottom = h - margin;
+        const areaLeft = margin;
+        const areaRight = w - margin;
+        const areaW = areaRight - areaLeft;
+        const areaH = areaBottom - areaTop;
+
         const papelAncho = anchoRolloM * 1000;
         const papelAlto = 1000 / anchoRolloM;
-        const margin = 20;
-        const areaWidth = w - 2 * margin;
-        const areaHeight = h - 2 * margin;
-        const scaleX = areaWidth / papelAncho;
-        const scaleY = areaHeight / papelAlto;
+        const scaleX = areaW / papelAncho;
+        const scaleY = areaH / papelAlto;
         const baseScale = Math.min(scaleX, scaleY);
         const scale = baseScale * currentScale;
 
@@ -916,87 +2217,62 @@ PANEL DE HISTORIAL
         const totalWidth = cols * etiqAnchoPx;
         const totalHeight = totalFilasMax * etiqAltoPx;
 
-        const baseX = (w - totalWidth) / 2 + offsetX;
-        const baseY = (h - totalHeight) / 2 + offsetY;
+        const baseX = areaLeft + (areaW - totalWidth) / 2 + offsetX;
+        const baseY = areaTop + (areaH - totalHeight) / 2 + offsetY;
 
         ctx.save();
 
+        // Fondo del paño
         ctx.fillStyle = '#f0ece8';
         ctx.fillRect(baseX, baseY, totalWidth, totalHeight);
 
+        // Zona no usada
         if (filasAImprimir < totalFilasMax) {
             ctx.fillStyle = '#e0d8d0';
             const yNoUsadas = baseY + filasAImprimir * etiqAltoPx;
             ctx.fillRect(baseX, yNoUsadas, totalWidth, (totalFilasMax - filasAImprimir) * etiqAltoPx);
         }
 
+        const orientacionGirada = (data.orientacion || '').indexOf('gira') !== -1;
+
         for (let r = 0; r < filasAImprimir; r++) {
             for (let c = 0; c < cols; c++) {
                 const x = baseX + c * etiqAnchoPx;
                 const y = baseY + r * etiqAltoPx;
                 if (pdfLoaded && pdfImage) {
-                    ctx.drawImage(pdfImage, x, y, etiqAnchoPx, etiqAltoPx);
+                    if (orientacionGirada) {
+                        ctx.save();
+                        ctx.translate(x + etiqAnchoPx / 2, y + etiqAltoPx / 2);
+                        ctx.rotate(Math.PI / 2);
+                        ctx.drawImage(pdfImage, -etiqAltoPx / 2, -etiqAnchoPx / 2, etiqAltoPx, etiqAnchoPx);
+                        ctx.restore();
+                    } else {
+                        ctx.drawImage(pdfImage, x, y, etiqAnchoPx, etiqAltoPx);
+                    }
                 } else {
                     ctx.fillStyle = '#e8e0d8';
-                    ctx.fillRect(x+1, y+1, etiqAnchoPx-2, etiqAltoPx-2);
+                    ctx.fillRect(x + 1, y + 1, etiqAnchoPx - 2, etiqAltoPx - 2);
                 }
                 ctx.strokeStyle = '#8e8e93';
                 ctx.lineWidth = 1;
                 ctx.strokeRect(x, y, etiqAnchoPx, etiqAltoPx);
                 ctx.fillStyle = '#8e8e93';
                 ctx.font = '8px Inter, sans-serif';
-                ctx.fillText(`${r+1}-${c+1}`, x+3, y+12);
+                ctx.fillText(`${r + 1}-${c + 1}`, x + 3, y + 12);
             }
         }
 
+        // Borde exterior
         ctx.strokeStyle = '#1c1c1e';
         ctx.lineWidth = 2;
         ctx.strokeRect(baseX, baseY, totalWidth, totalHeight);
-
-        const areaTotal = data.areaTotal || 0;
-        const areaPorcentaje = (areaTotal / 1.0 * 100).toFixed(1);
-        ctx.fillStyle = '#1c1c1e';
-        ctx.font = '12px Inter, sans-serif';
-        ctx.fillText(`Área ocupada: ${areaTotal.toFixed(2)} m² (${areaPorcentaje}%)`, 10, h - 10);
-        ctx.fillText(`Filas usadas: ${filasAImprimir} de ${totalFilasMax}`, 10, h - 25);
 
         ctx.restore();
 
         window.cellData = { cols, filas: filasAImprimir, anchoPx: etiqAnchoPx, altoPx: etiqAltoPx, baseX, baseY, totalFilasMax };
     }
 
-    // ==========================================
-    // CLIC EN CELDA (DETALLE)
-    // ==========================================
-    const canvas = document.getElementById('simCanvas');
-    canvas.addEventListener('click', function(e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const mx = (e.clientX - rect.left) * scaleX;
-        const my = (e.clientY - rect.top) * scaleY;
-
-        const data = window.cellData;
-        if (!data) return;
-        const { cols, filas, anchoPx, altoPx, baseX, baseY } = data;
-
-        for (let r = 0; r < filas; r++) {
-            for (let c = 0; c < cols; c++) {
-                const x = baseX + c * anchoPx;
-                const y = baseY + r * altoPx;
-                if (mx >= x && mx <= x + anchoPx && my >= y && my <= y + altoPx) {
-                    document.getElementById('cellRow').textContent = r + 1;
-                    document.getElementById('cellCol').textContent = c + 1;
-                    document.getElementById('cellWidth').textContent = (simData.anchoCm || 0).toFixed(2);
-                    document.getElementById('cellHeight').textContent = (simData.altoCm || 0).toFixed(2);
-                    document.getElementById('cellX').textContent = (c * (simData.anchoCm || 0) * 10).toFixed(0);
-                    document.getElementById('cellY').textContent = (r * (simData.altoCm || 0) * 10).toFixed(0);
-                    document.getElementById('cellModal').classList.add('active');
-                    return;
-                }
-            }
-        }
-    });
+    const canvasEl = document.getElementById('simCanvas');
 
     // ==========================================
     // ZOOM Y PAN
@@ -1030,11 +2306,11 @@ PANEL DE HISTORIAL
         drawSimulation();
     }
 
-    canvas.addEventListener('mousedown', function(e) {
+    canvasEl.addEventListener('mousedown', function(e) {
         isDragging = true;
         dragStartX = e.clientX - offsetX;
         dragStartY = e.clientY - offsetY;
-        canvas.style.cursor = 'grabbing';
+        canvasEl.style.cursor = 'grabbing';
     });
 
     window.addEventListener('mousemove', function(e) {
@@ -1046,10 +2322,10 @@ PANEL DE HISTORIAL
 
     window.addEventListener('mouseup', function() {
         isDragging = false;
-        canvas.style.cursor = 'grab';
+        canvasEl.style.cursor = 'grab';
     });
 
-    canvas.addEventListener('wheel', function(e) {
+    canvasEl.addEventListener('wheel', function(e) {
         e.preventDefault();
         if (e.deltaY < 0) zoomIn();
         else zoomOut();
@@ -1081,24 +2357,21 @@ PANEL DE HISTORIAL
         document.getElementById('auto_girar').checked = false;
         resetZoom();
         clearPdf();
-        document.getElementById('resultDisplay').innerHTML = '<p style="color:#8e8e93;">Introduce los datos y ajusta los parámetros.</p>';
-        document.getElementById('detallesDisplay').innerHTML = '';
-        document.getElementById('errorDisplay').style.display = 'none';
+        document.getElementById('resultDisplay').innerHTML = '<p>Introduce los datos en el panel derecho para ver el cálculo.</p>';
+        document.getElementById('detallesDisplay').innerHTML = '<p>Los detalles del cálculo aparecerán aquí.</p>';
+        document.getElementById('errorDisplay').classList.remove('visible');
         simData = {
             columnas: 0, filasPorMetro: 0, filasUsadas: 0, celdasTotales: 0,
             areaTotal: 0, esCompleto: false, anchoCm: 0, altoCm: 0,
             orientacion: 'normal', mesa: false, anchoRolloM: 1.3
         };
+        actualizarKPIs(simData);
         drawSimulation();
     }
 
     // ==========================================
     // MODALES
     // ==========================================
-    function closeCellModal() {
-        document.getElementById('cellModal').classList.remove('active');
-    }
-
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function(e) {
             if (e.target === this) {
@@ -1107,15 +2380,22 @@ PANEL DE HISTORIAL
         });
     });
 
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+            document.getElementById('historyPanel').classList.remove('open');
+        }
+    });
+
     // ==========================================
     // PESTAÑAS
     // ==========================================
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    document.querySelectorAll('.calc-tab-btn').forEach(btn => {
         btn.addEventListener('click', function() {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.calc-tab-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             const tabId = this.dataset.tab;
-            document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+            document.querySelectorAll('.calc-tab-content').forEach(tc => tc.classList.remove('active'));
             document.getElementById(tabId).classList.add('active');
         });
     });
@@ -1124,16 +2404,24 @@ PANEL DE HISTORIAL
     // INICIALIZACIÓN
     // ==========================================
     document.addEventListener('DOMContentLoaded', function() {
+        initCustomSelect(document.getElementById('favoritesSelect'));
+
         updateHistoryUI();
         updateHistoryCount();
         updateFavoritesUI();
+        actualizarKPIs(simData);
         drawSimulation();
         document.getElementById('zoomLabel').textContent = '1.0x';
 
+        const resultDisplay = document.getElementById('resultDisplay');
+        const detallesDisplay = document.getElementById('detallesDisplay');
+        if (resultDisplay) resultDisplay.innerHTML = sanitizeServerHTML(resultDisplay.innerHTML);
+        if (detallesDisplay) detallesDisplay.innerHTML = sanitizeServerHTML(detallesDisplay.innerHTML);
+
         const errorText = "{{ error|default('') }}";
         if (errorText) {
-            document.getElementById('errorDisplay').style.display = 'block';
-            document.getElementById('errorDisplay').textContent = '❌ ' + errorText;
+            document.getElementById('errorDisplay').classList.add('visible');
+            document.getElementById('errorText').textContent = errorText;
         }
     });
 </script>
