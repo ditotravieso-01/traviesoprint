@@ -767,6 +767,10 @@ def create_order():
                 servicios.append(key[5:])
         otros = request.form.get('servicios_otros', '').strip()
         if otros:
+            # Evitar el duplicado: si el usuario marcó el check "Otros" y escribió
+            # una especificación, solo guardamos la versión con spec.
+            if 'Otros' in servicios:
+                servicios.remove('Otros')
             servicios.append(f'Otros: {otros}')
 
         order = Order(
