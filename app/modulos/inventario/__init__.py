@@ -324,7 +324,8 @@ def todos_productos():
     sort = request.args.get('sort', 'nombre')
     order = request.args.get('order', 'asc')
     page = request.args.get('page', 1, type=int)
-    per_page = 20
+    per_page = request.args.get('per_page', 20, type=int)
+    per_page = max(10, min(per_page, 500))
 
     query = Producto.query
     if categoria_id:

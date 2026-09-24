@@ -2,37 +2,70 @@
 
 {% block title %}{{ categoria.nombre }} · Inventario{% endblock %}
 
-{% block page_title %}📦 {{ categoria.nombre }}{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">{{ categoria.nombre }}</span>
+    <span class="page-subtitle">
+        {{ productos|length }} producto{{ 's' if productos|length != 1 else '' }}
+        {% if categoria.descripcion %} · {{ categoria.descripcion }}{% endif %}
+    </span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== GENERAL ===== */
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
+    .inventario-wrap,
+    .inventario-wrap *:not(.num-mont):not(.metric-item .value):not(code):not(.mono) {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ============================================================
+       FILTROS
+       ============================================================ */
     .filters-bar {
         display: flex;
         gap: 12px;
         flex-wrap: wrap;
         align-items: center;
-        padding: 12px 16px;
+        padding: 14px 18px;
         background: rgba(255,255,255,0.6);
         backdrop-filter: blur(10px);
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid rgba(0,0,0,0.04);
         margin-bottom: 16px;
     }
-    .filters-bar input, .filters-bar select {
-        padding: 6px 12px;
-        border: 1px solid #d2d2d7;
-        border-radius: 8px;
+    .filters-bar input[type="text"] {
+        font-family: 'Inter', sans-serif;
+        padding: 7px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
         font-size: 13px;
         background: white;
         color: #1c1c1e;
         min-width: 140px;
-        font-family: 'Inter', sans-serif;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
-    .filters-bar input:focus, .filters-bar select:focus {
+    .filters-bar input[type="text"]:focus {
         outline: none;
-        border-color: #1a1a1a;
-        box-shadow: 0 0 0 3px rgba(0,0,0,0.05);
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
     .filters-bar .filter-group {
         display: flex;
@@ -41,12 +74,19 @@
         flex-wrap: wrap;
     }
     .filters-bar .filter-label {
+        font-family: 'Inter', sans-serif;
         font-weight: 600;
-        font-size: 13px;
-        color: #8e8e93;
+        font-size: 12px;
+        color: #6b6b7a;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
     }
 
+    /* ============================================================
+       BOTONES
+       ============================================================ */
     .btn {
+        font-family: 'Inter', sans-serif;
         padding: 8px 18px;
         border-radius: 30px;
         border: none;
@@ -59,11 +99,12 @@
         gap: 6px;
         background: #1c1c1e;
         color: white;
-        font-family: 'Inter', sans-serif;
         text-decoration: none;
+        line-height: 1;
         touch-action: manipulation;
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
     .btn-outline {
         background: transparent;
         border: 1px solid #d2d2d7;
@@ -75,8 +116,8 @@
     .btn-success:hover { background: #059669; }
     .btn-warning { background: #f59e0b; color: white; }
     .btn-warning:hover { background: #d97706; }
-    .btn-danger { background: #dc2626; color: white; }
-    .btn-danger:hover { background: #b91c1c; }
+    .btn-danger { background: transparent; border: 1px solid #dc2626; color: #dc2626; }
+    .btn-danger:hover { background: #fef2f2; border-color: #b91c1c; color: #b91c1c; transform: none; box-shadow: none; }
     .btn-copy { background: #8b5cf6; color: white; }
     .btn-copy:hover { background: #7c3aed; }
     .btn-export { background: #10b981; color: white; }
@@ -84,6 +125,110 @@
     .btn-import { background: #3b82f6; color: white; }
     .btn-import:hover { background: #2563eb; }
 
+    /* ============================================================
+       BARRA DE ACCIONES
+       ============================================================ */
+    .actions-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px 20px;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(8px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
+        margin-bottom: 16px;
+    }
+    .actions-bar .left-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .actions-bar .right-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-left: auto;
+    }
+
+    /* View toggle (Kanban | Lista) */
+    .view-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid #e0dcd8;
+    }
+    .view-toggle .view-btn {
+        font-family: 'Inter', sans-serif;
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 13px;
+        color: #555;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .view-toggle .view-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .view-toggle .view-btn:hover { color: #1c1c1e; }
+    .view-toggle .view-btn svg { flex-shrink: 0; }
+
+    /* Unit toggle — solo visible en Lista */
+    .unit-toggle-wrapper {
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+    .unit-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid #e0dcd8;
+    }
+    .unit-toggle .unit-btn {
+        font-family: 'Inter', sans-serif;
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 12px;
+        color: #555;
+        transition: all 0.2s;
+        touch-action: manipulation;
+    }
+    .unit-toggle .unit-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .unit-toggle .unit-btn:hover { color: #1c1c1e; }
+    .unit-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        font-weight: 500;
+    }
+
+    /* ============================================================
+       VISTAS
+       ============================================================ */
     .card {
         background: rgba(255,255,255,0.7);
         backdrop-filter: blur(10px);
@@ -93,537 +238,1196 @@
         box-shadow: 0 2px 12px rgba(0,0,0,0.02);
         margin-bottom: 16px;
     }
+    .view-section { display: none; }
+    .view-section.active { display: block; }
 
-    /* ===== TOGGLE UNIDADES (SOLO ESCRITORIO) ===== */
-    .unit-toggle-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-    .unit-toggle {
-        display: inline-flex;
-        background: #f0ece8;
-        border-radius: 30px;
-        padding: 4px;
-        gap: 2px;
-        border: 1px solid #d2d2d7;
-    }
-    .unit-toggle .unit-btn {
-        padding: 4px 16px;
-        border-radius: 30px;
-        border: none;
-        background: transparent;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 12px;
-        color: #555;
-        transition: all 0.2s;
-        font-family: 'Inter', sans-serif;
-        touch-action: manipulation;
-    }
-    .unit-toggle .unit-btn.active {
-        background: white;
-        color: #1c1c1e;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-    }
-    .unit-toggle .unit-btn:hover { color: #1c1c1e; }
-    .unit-label {
-        font-size: 14px;
-        color: #8e8e93;
-        font-weight: 400;
-    }
-
-    /* ===== TABLA (ESCRITORIO) ===== */
-    .table-wrap {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-    table {
+    /* ============================================================
+       TABLA
+       ============================================================ */
+    .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table.productos-table {
         width: 100%;
         border-collapse: collapse;
-        font-size: 14px;
         font-family: 'Inter', sans-serif;
+        font-size: 14px;
         min-width: 700px;
     }
-    th {
+    table.productos-table th {
         text-align: left;
-        padding: 8px 10px;
-        font-weight: 600;
-        color: #8e8e93;
-        border-bottom: 1px solid rgba(0,0,0,0.04);
-        font-size: 12px;
+        padding: 10px 12px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        color: #6b6b7a;
+        border-bottom: 2px solid #f0ece8;
+        font-size: 11px;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         cursor: pointer;
         user-select: none;
         position: relative;
+        white-space: nowrap;
     }
-    th:hover { color: #1c1c1e; }
-    th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
-    th.sortable.asc::after { content: ' ↑'; color: #1a1a1a; }
-    th.sortable.desc::after { content: ' ↓'; color: #1a1a1a; }
-    td {
-        padding: 8px 10px;
-        border-bottom: 1px solid rgba(0,0,0,0.02);
+    table.productos-table th:hover { color: #1c1c1e; }
+    table.productos-table th.sortable::after { content: ' ⇅'; font-size: 10px; color: #bbb; }
+    table.productos-table th.sortable.asc::after { content: ' ↑'; color: #a8854f; }
+    table.productos-table th.sortable.desc::after { content: ' ↓'; color: #a8854f; }
+    table.productos-table td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(0,0,0,0.04);
         vertical-align: middle;
-    }
-    .badge {
-        font-size: 12px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 30px;
-        display: inline-block;
         font-family: 'Inter', sans-serif;
     }
+    table.productos-table td.num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    .badge-estado {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        font-weight: 700;
+        padding: 3px 12px;
+        border-radius: 30px;
+        display: inline-block;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+    }
     .badge-critico { background: #fde8e5; color: #dc2626; }
-    .badge-bajo { background: #fef3c7; color: #d97706; }
-    .badge-normal { background: #d1fae5; color: #10b981; }
+    .badge-bajo { background: #fef3c7; color: #b45309; }
+    .badge-normal { background: #d1fae5; color: #065f46; }
+    .badge-sin-stock { background: #fecaca; color: #7f1d1d; }
+
     .stock-bar {
         width: 100%;
         height: 6px;
         background: rgba(0,0,0,0.04);
         border-radius: 4px;
         overflow: hidden;
+        margin-top: 6px;
     }
     .stock-bar .fill {
         height: 100%;
         border-radius: 4px;
         transition: width 0.3s;
     }
-    .fill-green { background: #10b981; }
-    .fill-yellow { background: #f59e0b; }
-    .fill-red { background: #dc2626; }
 
-    /* Columnas de métricas (controladas por JS en escritorio) */
-    .col-unidad,
-    .col-stock-u,
-    .col-stock-m,
-    .col-stock-m2,
-    .col-comp-u,
-    .col-comp-m,
-    .col-comp-m2,
-    .col-disponible-u,
-    .col-disponible-m,
-    .col-disponible-m2 {
-        display: table-cell;
+    /* ============================================================
+       KANBAN
+       ============================================================ */
+    .kanban-wrapper {
+        background: rgba(255,255,255,0.3);
+        border-radius: 20px;
+        padding: 16px;
+        border: 1px solid rgba(0,0,0,0.04);
+        min-height: 400px;
+    }
+    .kanban-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+    }
+    .kanban-column {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .kanban-column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 14px;
+        border-radius: 12px 12px 0 0;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 13px;
+        letter-spacing: -0.1px;
+        color: #1c1c1e;
+    }
+    .kanban-column-header .count {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 12px;
+        background: rgba(255,255,255,0.55);
+        padding: 2px 10px;
+        border-radius: 30px;
+    }
+    .kanban-column-body {
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(10px);
+        border-radius: 0 0 12px 12px;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 120px;
+        flex: 1;
     }
 
-    /* ================================================================ */
-    /* ===== VISTA MÓVIL (TARJETAS) ===== */
-    /* ================================================================ */
+    .kanban-column.sin-stock .kanban-column-header { background: #fecaca; }
+    .kanban-column.critico  .kanban-column-header { background: #fde8e5; }
+    .kanban-column.bajo     .kanban-column-header { background: #fef3c7; }
+    .kanban-column.normal   .kanban-column-header { background: #d1fae5; }
+
+    .kanban-card {
+        background: white;
+        border-radius: 12px;
+        padding: 12px 14px;
+        border: 1px solid rgba(0,0,0,0.05);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        border-color: rgba(168,133,79,0.3);
+    }
+    .kanban-card .product-name {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        letter-spacing: -0.1px;
+        line-height: 1.25;
+        word-break: break-word;
+    }
+    .kanban-card .product-cat {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: #8e8e93;
+        font-weight: 500;
+        margin-bottom: 10px;
+    }
+    .kanban-card .metric-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 12px;
+        margin-bottom: 10px;
+    }
+    .kanban-card .metric-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .kanban-card .metric-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        color: #8e8e93;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .kanban-card .metric-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        font-size: 14px;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-top: 2px;
+    }
+    .kanban-card .metric-value.negativo { color: #dc2626; }
+    .kanban-card .metric-value.positivo { color: #10b981; }
+    .kanban-card .card-actions {
+        display: flex;
+        gap: 4px;
+        padding-top: 10px;
+        border-top: 1px solid #f0ece8;
+    }
+    .kanban-card .icon-btn {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        border: 1px solid #e0dcd8;
+        background: white;
+        color: #555;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        text-decoration: none;
+        padding: 0;
+    }
+    .kanban-card .icon-btn:hover {
+        border-color: #a8854f;
+        color: #78350f;
+        background: #faf6f0;
+    }
+    .kanban-card .icon-btn svg { width: 14px; height: 14px; }
+
+    .kanban-empty {
+        padding: 20px 10px;
+        text-align: center;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #b8b8c0;
+        font-style: italic;
+    }
+
+    /* ============================================================
+       TARJETAS MÓVILES
+       ============================================================ */
+    .mobile-card-list { display: none; }
+    .mobile-card {
+        background: white;
+        border-radius: 16px;
+        padding: 16px 14px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+    }
+    .mobile-card .card-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 10px;
+        border-bottom: 1px solid #f0ece8;
+        padding-bottom: 10px;
+        gap: 8px;
+    }
+    .mobile-card .product-name {
+        font-family: 'Inter', sans-serif;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1c1c1e;
+        line-height: 1.2;
+        letter-spacing: -0.2px;
+    }
+    .mobile-card .product-cat {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #8e8e93;
+        font-weight: 500;
+        margin-top: 2px;
+    }
+    .mobile-card .card-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 8px 12px;
+        margin-bottom: 10px;
+    }
+    .mobile-card .metric-item {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+    }
+    .mobile-card .metric-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: #8e8e93;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+    .mobile-card .metric-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        margin-top: 2px;
+    }
+    .mobile-card .metric-value.negativo { color: #dc2626; }
+    .mobile-card .metric-value.positivo { color: #10b981; }
+    .mobile-card .metric-value.zero { color: #888; }
+    .mobile-card .card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top: 1px solid #f0ece8;
+        padding-top: 10px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .mobile-card .card-footer .acciones {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+    .mobile-card .card-footer .acciones .btn {
+        padding: 10px 14px;
+        font-size: 14px;
+        min-width: 46px;
+        justify-content: center;
+        flex: 1 0 auto;
+    }
+
+    /* ============================================================
+       PAGINACIÓN
+       ============================================================ */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 18px;
+        padding-top: 14px;
+        border-top: 1px solid #f0ece8;
+    }
+    .pagination .btn {
+        padding: 4px 12px;
+        font-size: 12px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        background: transparent;
+        color: #1c1c1e;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .pagination .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
+    .pagination .btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+    .pagination .btn.disabled { opacity: 0.3; pointer-events: none; }
+    .pagination .info { font-family: 'Inter', sans-serif; font-size: 12.5px; color: #8e8e93; padding: 0 8px; }
+
+    /* ============================================================
+       MODAL COMPRA
+       ============================================================ */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top:0; left:0; right:0; bottom:0;
+        background: rgba(0,0,0,0.25);
+        backdrop-filter: blur(6px);
+        z-index:999;
+        justify-content:center;
+        align-items:center;
+        padding: 16px;
+        box-sizing: border-box;
+    }
+    .modal-overlay.active { display:flex; }
+    .modal {
+        background: white;
+        border-radius: 20px;
+        padding: 0;
+        max-width: 520px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.12);
+        animation: modalIn 0.3s ease;
+        overflow: hidden;
+        border-top: 5px solid #10b981;
+    }
+    @keyframes modalIn {
+        from { transform:scale(0.95) translateY(12px); opacity:0; }
+        to { transform:scale(1) translateY(0); opacity:1; }
+    }
+    .modal-header {
+        display:flex; justify-content:space-between; align-items:center;
+        padding:18px 26px 14px;
+        border-bottom:1px solid #f0ece8;
+        background:#fafaf9;
+    }
+    .modal-header .modal-title {
+        font-family:'Inter',sans-serif !important;
+        font-size:17px; font-weight:700;
+        letter-spacing:-0.2px;
+        margin:0; color:#10b981;
+        display:flex; align-items:center; gap:10px;
+    }
+    .modal-close {
+        background:none; border:none; font-size:26px;
+        color:#8e8e93; cursor:pointer; padding:0 4px; line-height:1;
+    }
+    .modal-close:hover { color:#1c1c1e; }
+    .modal-body { padding:20px 26px 26px; }
+    .modal-body .form-group { margin-bottom:14px; }
+    .modal-body .form-group label {
+        font-family:'Inter',sans-serif;
+        display:block; font-weight:600; font-size:12px;
+        color:#6b6b7a; margin-bottom:6px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .modal-body .form-group input,
+    .modal-body .form-group select {
+        font-family:'Inter',sans-serif;
+        width:100%; padding:10px 14px;
+        border:1.5px solid #e0dcd8; border-radius:10px;
+        font-size:14px; background:#fafaf9; color:#1c1c1e;
+        transition: border-color 0.2s;
+        box-sizing: border-box;
+    }
+    .modal-body .form-group input:focus,
+    .modal-body .form-group select:focus {
+        outline:none; border-color:#10b981;
+        background: white;
+        box-shadow:0 0 0 4px rgba(16,185,129,0.08);
+    }
+    .modal-actions {
+        display:flex; gap:12px; margin-top:20px;
+        justify-content:flex-end; border-top:1px solid #f0ece8;
+        padding-top:16px;
+    }
+
+    /* ============================================================
+       CUSTOM SELECT (.cs-select-*)
+       ============================================================ */
+    .cs-select-wrap {
+        position: relative;
+        display: inline-block;
+        min-width: 220px;
+    }
+    .filters-bar .cs-select-wrap { min-width: 220px; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        background: #ffffff;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1c1c1e;
+        text-align: left;
+        min-height: 36px;
+        box-sizing: border-box;
+        transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #d5c9b0; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.1);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1; min-width: 0;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .cs-select-trigger .cs-value.placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 340px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0;
+        background: #ffffff;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1;
+        border: none; background: transparent; outline: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        padding: 0; height: 22px; min-width: 0;
+        font-weight: 500;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; font-weight: 400; }
+    .cs-select-options {
+        padding: 6px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+    .cs-select-empty {
+        padding: 14px 12px;
+        text-align: center;
+        color: #8e8e93;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #4a4a4a;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        text-align: left;
+    }
+    .cs-select-option:hover { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f; font-weight: 700;
+    }
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.disabled { color: #b8b8c0; cursor: not-allowed; opacity: 0.6; }
+
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
+    @media (max-width: 992px) {
+        .kanban-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
     @media (max-width: 768px) {
-        /* Ocultar tabla en móvil */
-        .table-wrap {
-            display: none;
-        }
+        .kanban-grid { grid-template-columns: 1fr; }
+        .kanban-column-body { min-height: 60px; }
 
-        /* Mostrar tarjetas en móvil */
-        .mobile-card-list {
-            display: flex !important;
-            flex-direction: column;
-            gap: 16px;
-        }
+        .table-wrap { display: none; }
+        .view-section.active .mobile-card-list { display: flex; flex-direction: column; gap: 14px; }
+        .view-section.active .table-wrap { display: none; }
 
-        .mobile-card {
-            background: white;
-            border-radius: 20px;
-            padding: 18px 16px;
-            border: 1px solid #f0ece8;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.02);
-            transition: all 0.2s;
-        }
-        .mobile-card .card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 10px;
-            border-bottom: 1px solid #f0ece8;
-            padding-bottom: 8px;
-        }
-        .mobile-card .product-name {
-            font-size: 18px;
-            font-weight: 700;
-            color: #1c1c1e;
-            font-family: 'Playfair Display', serif;
-            line-height: 1.2;
-        }
-        .mobile-card .product-category {
-            font-size: 13px;
-            color: #8e8e93;
-            font-weight: 500;
-        }
-        /* === ELIMINAR "—" DE LA UNIDAD: solo mostrar si existe === */
-        .mobile-card .product-unidad {
-            font-size: 13px;
-            background: #f0ece8;
-            padding: 2px 12px;
-            border-radius: 30px;
-            color: #555;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        .mobile-card .product-unidad:empty {
-            display: none;
-        }
+        .unit-toggle-wrapper { display: none !important; }
 
-        .mobile-card .card-body {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px 12px;
-            margin-bottom: 10px;
-        }
-        .mobile-card .metric-item {
-            display: flex;
-            flex-direction: column;
-        }
-        .mobile-card .metric-item .label {
-            font-size: 10px;
-            text-transform: uppercase;
-            color: #8e8e93;
-            font-weight: 600;
-            letter-spacing: 0.3px;
-        }
-        .mobile-card .metric-item .value {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1c1c1e;
-        }
-        .mobile-card .metric-item .value.negative { color: #dc2626; }
-        .mobile-card .metric-item .value.positive { color: #10b981; }
-        .mobile-card .metric-item .value.zero { color: #888; }
+        .filters-bar { flex-direction: column; align-items: stretch; }
+        .filters-bar input[type="text"] { width: 100%; min-width: 0; font-size: 15px; height: 44px; }
+        .filters-bar .filter-group { flex-direction: column; align-items: stretch; }
+        .filters-bar .cs-select-wrap { min-width: 0; width: 100%; }
 
-        .mobile-card .card-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid #f0ece8;
-            padding-top: 10px;
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .mobile-card .card-footer .estado {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .mobile-card .card-footer .estado .badge {
-            font-size: 12px;
-            padding: 4px 14px;
-        }
-        .mobile-card .card-footer .acciones {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        /* ===== BOTONES MÁS GRANDES EN MÓVIL ===== */
+        .actions-bar { flex-direction: column; align-items: stretch; }
+        .actions-bar .left-group,
+        .actions-bar .right-group { justify-content: center; width: 100%; }
+        .actions-bar .right-group { margin-left: 0; }
+        .actions-bar .btn { flex: 1 1 auto; justify-content: center; }
+
+        .pagination { display: none; }
+    }
+    @media (max-width: 480px) {
+        .mobile-card .card-body { grid-template-columns: 1fr 1fr; }
+        .mobile-card .product-name { font-size: 15px; }
         .mobile-card .card-footer .acciones .btn {
-            padding: 14px 18px;
-            font-size: 16px;
-            border-radius: 30px;
-            min-width: 56px;
-            justify-content: center;
-            flex: 1 0 auto;
+            padding: 10px 12px;
+            font-size: 13px;
+            min-width: 42px;
         }
-        .mobile-card .card-footer .acciones .btn-sm {
-            padding: 14px 18px;
-            font-size: 16px;
-            min-width: 56px;
-            justify-content: center;
-            flex: 1 0 auto;
-        }
-
-        /* Ocultar toggle en móvil */
-        .unit-toggle-wrapper {
-            display: none !important;
-        }
-
-        /* Ajustes de filtros en móvil */
-        .filters-bar {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .filters-bar input, .filters-bar select {
-            width: 100%;
-            min-width: 0;
-            font-size: 16px;
-            padding: 10px 14px;
-            height: 46px;
-        }
-        .filters-bar .filter-group {
-            flex-direction: column;
-            align-items: stretch;
-        }
-        .filters-bar .filter-label {
-            margin-bottom: 2px;
-        }
-
-        /* Botones superiores en móvil */
-        .acciones-superior {
-            flex-wrap: wrap;
-            gap: 8px;
-        }
-        .acciones-superior .btn {
-            padding: 10px 16px;
-            font-size: 15px;
-            flex: 1 1 auto;
-            justify-content: center;
-            min-width: 60px;
-        }
-        .acciones-superior .btn-outline {
-            border-width: 1.5px;
-        }
-
-        /* Stock bar en móvil */
-        .stock-bar {
-            max-width: 120px;
-        }
+        .modal { border-radius: 16px; }
+        .modal-header { padding: 14px 18px 10px; }
+        .modal-body { padding: 16px 18px 20px; }
     }
 
-    /* ================================================================ */
-    /* ===== PANTALLAS MUY PEQUEÑAS ( < 400px ) ===== */
-    /* ================================================================ */
-    @media (max-width: 480px) {
-        .mobile-card .card-body {
-            grid-template-columns: 1fr 1fr;
-        }
-        .mobile-card .product-name {
-            font-size: 16px;
-        }
-        /* Botones un poco más pequeños en pantallas muy pequeñas, pero aún grandes */
-        .mobile-card .card-footer .acciones .btn,
-        .mobile-card .card-footer .acciones .btn-sm {
-            padding: 12px 14px;
-            font-size: 15px;
-            min-width: 48px;
-        }
+    @media (min-width: 769px) {
+        .mobile-card-list { display: none !important; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-    <div>
-        {% if categoria.descripcion %}
-            <span style="font-size:14px; color:#8e8e93;">{{ categoria.descripcion }}</span>
-        {% endif %}
-        <p style="color:#8e8e93; margin:4px 0 0 0;">{{ productos|length }} productos en esta categoría</p>
-    </div>
-    <div class="acciones-superior" style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <!-- Toggle de unidades (solo visible en escritorio) -->
-        <div class="unit-toggle-wrapper">
-            <div class="unit-toggle" id="unitToggle">
-                <button class="unit-btn active" data-unit="unidades" onclick="cambiarUnidad('unidades')">Unidades</button>
-                <button class="unit-btn" data-unit="metros-lineales" onclick="cambiarUnidad('metros-lineales')">Metros lineales</button>
-                <button class="unit-btn" data-unit="metros-cuadrados" onclick="cambiarUnidad('metros-cuadrados')">m²</button>
-            </div>
-            <span class="unit-label" id="unitLabel">(mostrando en unidades)</span>
-        </div>
-        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo</a>
-        <a href="{{ url_for('inventario.exportar_productos', categoria_id=categoria.id) }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
-        <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-import"><i class="fas fa-file-import"></i> Importar</a>
-        <a href="{{ url_for('inventario.index') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver</a>
-    </div>
-</div>
+<div class="inventario-wrap">
 
-<div class="card">
-    <form method="GET" action="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="filters-bar">
-        {% if subcategorias %}
-        <div class="filter-group">
-            <span class="filter-label">Subcategoría:</span>
-            <select name="subcategoria" onchange="this.form.submit()">
-                <option value="">Todas</option>
-                {% for sub in subcategorias %}
-                    <option value="{{ sub.id }}" {% if subcategoria_seleccionada == sub.id %}selected{% endif %}>{{ sub.nombre }}</option>
-                {% endfor %}
-            </select>
+    <!-- ============================================================
+         FILTROS
+         ============================================================ -->
+    <div class="card">
+        <form method="GET" action="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="filters-bar" id="filtrosForm">
+            <input type="hidden" name="view" id="viewInput" value="{{ view }}">
+            <input type="hidden" name="per_page" id="perPageInput" value="{{ per_page }}">
+
+            {% if subcategorias %}
+            <div class="filter-group">
+                <span class="filter-label">Subcategoría:</span>
+                <select name="subcategoria" id="subcategoriaSelect" data-searchable="1" onchange="this.form.submit()">
+                    <option value="">Todas las subcategorías</option>
+                    {% for sub in subcategorias %}
+                        <option value="{{ sub.id }}" {% if subcategoria_seleccionada == sub.id %}selected{% endif %}>{{ sub.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="filter-group">
+                <span class="filter-label">Buscar:</span>
+                <input type="text" name="search" value="{{ search }}" placeholder="Nombre..." onkeyup="if(event.key==='Enter') this.form.submit()">
+            </div>
+            <button type="submit" class="btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                </svg>
+                Filtrar
+            </button>
+            {% if search or subcategoria_seleccionada %}
+                <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="btn btn-outline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Limpiar
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- ============================================================
+         BARRA DE ACCIONES + VIEW TOGGLE
+         ============================================================ -->
+    <div class="actions-bar">
+        <div class="left-group">
+            <div class="unit-toggle-wrapper" id="unitToggleWrapper">
+                <div class="unit-toggle" id="unitToggle">
+                    <button type="button" class="unit-btn active" data-unit="unidades" onclick="cambiarUnidad('unidades')">Unidades</button>
+                    <button type="button" class="unit-btn" data-unit="metros-lineales" onclick="cambiarUnidad('metros-lineales')">Metros lineales</button>
+                    <button type="button" class="unit-btn" data-unit="metros-cuadrados" onclick="cambiarUnidad('metros-cuadrados')">m²</button>
+                </div>
+                <span class="unit-label" id="unitLabel">(mostrando en unidades)</span>
+            </div>
         </div>
-        {% endif %}
-        <div class="filter-group">
-            <span class="filter-label">Buscar:</span>
-            <input type="text" name="search" value="{{ search }}" placeholder="Nombre..." onkeyup="if(event.key==='Enter') this.form.submit()">
+        <div class="right-group">
+            <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Nuevo
+            </a>
+            <a href="{{ url_for('inventario.exportar_productos', categoria_id=categoria.id) }}" class="btn btn-export">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Exportar
+            </a>
+            <a href="{{ url_for('inventario.importar_productos') }}" class="btn btn-import">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                Importar
+            </a>
+
+            <div class="view-toggle" id="viewToggle">
+                <button type="button" class="view-btn" data-view="kanban" onclick="cambiarVista('kanban')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    Kanban
+                </button>
+                <button type="button" class="view-btn" data-view="lista" onclick="cambiarVista('lista')">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    Lista
+                </button>
+            </div>
+
+            <a href="{{ url_for('inventario.index') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
+            </a>
         </div>
-        <button type="submit" class="btn"><i class="fas fa-filter"></i> Filtrar</button>
-        {% if search or subcategoria_seleccionada %}
-            <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id) }}" class="btn btn-outline"><i class="fas fa-times"></i> Limpiar</a>
-        {% endif %}
-    </form>
+    </div>
 
     {% if productos %}
-    <!-- ===== TABLA (ESCRITORIO) ===== -->
-    <div class="table-wrap" id="tablaWrap">
-        <table id="tablaProductos">
-            <thead>
-                <tr>
-                    <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">Producto</th>
-                    <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
-                    <th class="sortable col-unidad" onclick="ordenar('unidad')">Unidad</th>
-                    <!-- Stock -->
-                    <th class="sortable col-stock-u" onclick="ordenar('stock')">Stock (u)</th>
-                    <th class="sortable col-stock-m" style="display:none;" onclick="ordenar('stock')">Stock (m lineales)</th>
-                    <th class="sortable col-stock-m2" style="display:none;" onclick="ordenar('stock')">Stock (m²)</th>
-                    <!-- Comprometido -->
-                    <th class="sortable col-comp-u" onclick="ordenar('comprometido')">Comprometido (u)</th>
-                    <th class="sortable col-comp-m" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m lineales)</th>
-                    <th class="sortable col-comp-m2" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m²)</th>
-                    <!-- Disponible -->
-                    <th class="sortable col-disponible-u" onclick="ordenar('disponible')">Disponible (u)</th>
-                    <th class="sortable col-disponible-m" style="display:none;" onclick="ordenar('disponible')">Disponible (m lineales)</th>
-                    <th class="sortable col-disponible-m2" style="display:none;" onclick="ordenar('disponible')">Disponible (m²)</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tablaProductosBody">
-                {% for p in productos %}
-                {% set critico = p.stock < p.stock_minimo %}
-                {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
-                {% set badgeClass = 'badge-critico' if critico else ('badge-bajo' if bajo else 'badge-normal') %}
-                {% set pct = (p.stock / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo > 0 else 100 %}
-                {% set color = '#dc2626' if critico else ('#f59e0b' if bajo else '#10b981') %}
-                <tr>
-                    <td data-label="Producto"><strong>{{ p.nombre }}</strong>{% if p.fecha_vencimiento %}<br><span style="font-size:11px;color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}</td>
-                    <td data-label="Categoría">{{ p.categoria.nombre if p.categoria else '—' }}</td>
-                    <td class="col-unidad" data-label="Unidad">{{ p.unidad_rel.nombre if p.unidad_rel else '—' }}</td>
-                    <!-- Stock -->
-                    <td class="col-stock-u" data-label="Stock (u)">{{ p.stock|round(2) }}</td>
-                    <td class="col-stock-m" style="display:none;" data-label="Stock (m lineales)">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</td>
-                    <td class="col-stock-m2" style="display:none;" data-label="Stock (m²)">{{ p.stock_metros_m2|round(2) if p.stock_metros_m2 else 0 }}</td>
-                    <!-- Comprometido -->
-                    <td class="col-comp-u" data-label="Comprometido (u)">{{ p.stock_comprometido|round(2) or 0 }}</td>
-                    <td class="col-comp-m" style="display:none;" data-label="Comprometido (m lineales)">{{ p.stock_comprometido_metros|round(2) or 0 }}</td>
-                    <td class="col-comp-m2" style="display:none;" data-label="Comprometido (m²)">{{ p.comprometido_metros_m2|round(2) or 0 }}</td>
-                    <!-- Disponible -->
-                    <td class="col-disponible-u" data-label="Disponible (u)" style="color: {{ 'red' if p.disponible < 0 else 'green' if p.disponible > 0 else '#888' }};">
-                        {{ p.disponible|round(2) }}
-                        {% if p.disponible < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
-                    </td>
-                    <td class="col-disponible-m" style="display:none;" data-label="Disponible (m lineales)" style="color: {{ 'red' if p.disponible_metros < 0 else 'green' if p.disponible_metros > 0 else '#888' }};">
-                        {{ p.disponible_metros|round(2) }}
-                        {% if p.disponible_metros < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
-                    </td>
-                    <td class="col-disponible-m2" style="display:none;" data-label="Disponible (m²)" style="color: {{ 'red' if p.disponible_metros_m2 < 0 else 'green' if p.disponible_metros_m2 > 0 else '#888' }};">
-                        {{ p.disponible_metros_m2|round(2) }}
-                        {% if p.disponible_metros_m2 < 0 %}<span style="font-size:11px; color:#dc2626;"> ⚠️</span>{% endif %}
-                    </td>
-                    <td data-label="Estado">
-                        <span class="badge {{ badgeClass }}">{{ 'Crítico' if critico else ('Bajo' if bajo else 'Normal') }}</span>
-                        <div class="stock-bar"><div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div></div>
-                    </td>
-                    <td data-label="Acciones">
-                        <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
-                        <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                        <a href="{{ url_for('inventario.duplicar_producto', producto_id=p.id) }}" class="btn btn-sm btn-copy" title="Duplicar"><i class="fas fa-copy"></i></a>
-                        <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
-                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                        <button class="btn btn-sm btn-success" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
 
-    <!-- ===== TARJETAS MÓVIL (con botones más grandes y sin "—") ===== -->
-    <div class="mobile-card-list" style="display: none;">
-        {% for p in productos %}
-        {% set critico = p.stock < p.stock_minimo %}
-        {% set bajo = p.stock <= p.stock_minimo * 1.5 and p.stock >= p.stock_minimo %}
-        {% set badgeClass = 'badge-critico' if critico else ('badge-bajo' if bajo else 'badge-normal') %}
-        {% set badgeText = 'Crítico' if critico else ('Bajo' if bajo else 'Normal') %}
-        <div class="mobile-card">
-            <div class="card-header">
-                <div>
-                    <div class="product-name">{{ p.nombre }}</div>
-                    <div class="product-category">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
-                </div>
-                <!-- SOLO MOSTRAR UNIDAD SI EXISTE, SIN "—" -->
-                {% if p.unidad_rel and p.unidad_rel.nombre %}
-                    <div class="product-unidad">{{ p.unidad_rel.nombre }}</div>
-                {% endif %}
+    <!-- ============================================================
+         VISTA LISTA
+         ============================================================ -->
+    <div class="view-section" id="vistaLista">
+        <div class="card" style="padding: 14px 16px;">
+            <div class="table-wrap" id="tablaWrap">
+                <table class="productos-table" id="tablaProductos">
+                    <thead>
+                        <tr>
+                            <th class="sortable {% if sort == 'nombre' %}{{ order }}{% endif %}" onclick="ordenar('nombre')">Producto</th>
+                            <th class="sortable {% if sort == 'categoria' %}{{ order }}{% endif %}" onclick="ordenar('categoria')">Categoría</th>
+                            <th class="sortable col-unidad" onclick="ordenar('unidad')">Unidad</th>
+                            <th class="sortable col-stock-u" onclick="ordenar('stock')">Stock (u)</th>
+                            <th class="sortable col-stock-m" style="display:none;" onclick="ordenar('stock')">Stock (m)</th>
+                            <th class="sortable col-stock-m2" style="display:none;" onclick="ordenar('stock')">Stock (m²)</th>
+                            <th class="sortable col-comp-u" onclick="ordenar('comprometido')">Comprometido (u)</th>
+                            <th class="sortable col-comp-m" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m)</th>
+                            <th class="sortable col-comp-m2" style="display:none;" onclick="ordenar('comprometido')">Comprometido (m²)</th>
+                            <th class="sortable col-disponible-u" onclick="ordenar('disponible')">Disponible (u)</th>
+                            <th class="sortable col-disponible-m" style="display:none;" onclick="ordenar('disponible')">Disponible (m)</th>
+                            <th class="sortable col-disponible-m2" style="display:none;" onclick="ordenar('disponible')">Disponible (m²)</th>
+                            <th>Estado</th>
+                            <th style="text-align:right;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in productos %}
+                        {% set stock_disp = p.stock or 0 %}
+                        {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                        {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                        {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                        {% set disp_m = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0) %}
+                        {% set disp_m2 = (disp_m * p.ancho_rollo) if es_material_imp else disp_m %}
+                        {% set comp_m2 = ((p.stock_comprometido_metros or 0) * p.ancho_rollo) if es_material_imp else (p.stock_comprometido_metros or 0) %}
+
+                        {% set sin_stock = stock_disp <= 0 %}
+                        {% set critico = not sin_stock and p.stock_minimo and stock_disp < p.stock_minimo %}
+                        {% set bajo = not sin_stock and not critico and p.stock_minimo and stock_disp <= p.stock_minimo * 1.5 %}
+
+                        {% if sin_stock %}{% set badgeClass = 'badge-sin-stock' %}{% set badgeText = 'Sin stock' %}{% set color = '#dc2626' %}
+                        {% elif critico %}{% set badgeClass = 'badge-critico' %}{% set badgeText = 'Crítico' %}{% set color = '#f87171' %}
+                        {% elif bajo %}{% set badgeClass = 'badge-bajo' %}{% set badgeText = 'Bajo' %}{% set color = '#f59e0b' %}
+                        {% else %}{% set badgeClass = 'badge-normal' %}{% set badgeText = 'Normal' %}{% set color = '#10b981' %}{% endif %}
+
+                        {% set pct = (stock_disp / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo and p.stock_minimo > 0 else 100 %}
+                        {% set pct = 100 if pct > 100 else pct %}
+
+                        <tr>
+                            <td>
+                                <strong>{{ p.nombre }}</strong>
+                                {% if p.fecha_vencimiento %}<br><span style="font-size:11px; color:#8e8e93;">Vence: {{ p.fecha_vencimiento }}</span>{% endif %}
+                            </td>
+                            <td>{{ p.categoria.nombre if p.categoria else '—' }}</td>
+                            <td class="col-unidad">{{ p.unidad_rel.nombre if p.unidad_rel else '—' }}</td>
+                            <td class="col-stock-u num-mont">{{ p.stock|round(2) }}</td>
+                            <td class="col-stock-m num-mont" style="display:none;">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</td>
+                            <td class="col-stock-m2 num-mont" style="display:none;">{{ stock_m2|round(2) }}</td>
+                            <td class="col-comp-u num-mont">{{ p.stock_comprometido|round(2) or 0 }}</td>
+                            <td class="col-comp-m num-mont" style="display:none;">{{ p.stock_comprometido_metros|round(2) or 0 }}</td>
+                            <td class="col-comp-m2 num-mont" style="display:none;">{{ comp_m2|round(2) }}</td>
+                            <td class="col-disponible-u num-mont" style="color: {{ '#dc2626' if disp_u < 0 else '#10b981' if disp_u > 0 else '#888' }};">
+                                {{ disp_u|round(2) }}
+                            </td>
+                            <td class="col-disponible-m num-mont" style="display:none; color: {{ '#dc2626' if disp_m < 0 else '#10b981' if disp_m > 0 else '#888' }};">
+                                {{ disp_m|round(2) }}
+                            </td>
+                            <td class="col-disponible-m2 num-mont" style="display:none; color: {{ '#dc2626' if disp_m2 < 0 else '#10b981' if disp_m2 > 0 else '#888' }};">
+                                {{ disp_m2|round(2) }}
+                            </td>
+                            <td>
+                                <span class="badge-estado {{ badgeClass }}">{{ badgeText }}</span>
+                                <div class="stock-bar"><div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div></div>
+                            </td>
+                            <td style="text-align:right;">
+                                <div style="display:flex; gap:4px; justify-content:flex-end; flex-wrap:wrap;">
+                                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-outline btn-sm" title="Ver">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-warning btn-sm" title="Editar">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.duplicar_producto', producto_id=p.id) }}" class="btn btn-copy btn-sm" title="Duplicar">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                    </a>
+                                    <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                        </button>
+                                    </form>
+                                    <button type="button" class="btn btn-success btn-sm" onclick="abrirModalCompra({{ p.id }})" title="Comprar">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-            <div class="card-body">
-                <div class="metric-item">
-                    <span class="label">Stock (u)</span>
-                    <span class="value">{{ p.stock|round(2) }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Stock (m lineales)</span>
-                    <span class="value">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Stock (m²)</span>
-                    <span class="value">{{ p.stock_metros_m2|round(2) if p.stock_metros_m2 else 0 }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Comprometido (u)</span>
-                    <span class="value">{{ p.stock_comprometido|round(2) or 0 }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Comprometido (m lineales)</span>
-                    <span class="value">{{ p.stock_comprometido_metros|round(2) or 0 }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Comprometido (m²)</span>
-                    <span class="value">{{ p.comprometido_metros_m2|round(2) or 0 }}</span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Disponible (u)</span>
-                    <span class="value {% if p.disponible < 0 %}negative{% elif p.disponible > 0 %}positive{% else %}zero{% endif %}">
-                        {{ p.disponible|round(2) }}
-                        {% if p.disponible < 0 %} ⚠️{% endif %}
-                    </span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Disponible (m lineales)</span>
-                    <span class="value {% if p.disponible_metros < 0 %}negative{% elif p.disponible_metros > 0 %}positive{% else %}zero{% endif %}">
-                        {{ p.disponible_metros|round(2) }}
-                        {% if p.disponible_metros < 0 %} ⚠️{% endif %}
-                    </span>
-                </div>
-                <div class="metric-item">
-                    <span class="label">Disponible (m²)</span>
-                    <span class="value {% if p.disponible_metros_m2 < 0 %}negative{% elif p.disponible_metros_m2 > 0 %}positive{% else %}zero{% endif %}">
-                        {{ p.disponible_metros_m2|round(2) }}
-                        {% if p.disponible_metros_m2 < 0 %} ⚠️{% endif %}
-                    </span>
-                </div>
-            </div>
-            <div class="card-footer">
-                <div class="estado">
-                    <span class="badge {{ badgeClass }}">{{ badgeText }}</span>
-                    <div class="stock-bar" style="max-width:100px;">
-                        <div class="fill" style="width:{{ pct }}%;background:{{ color }};"></div>
+
+            <div class="mobile-card-list">
+                {% for p in productos %}
+                {% set stock_disp = p.stock or 0 %}
+                {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                {% set disp_m = (p.stock_metros or 0) - (p.stock_comprometido_metros or 0) %}
+                {% set disp_m2 = (disp_m * p.ancho_rollo) if es_material_imp else disp_m %}
+
+                {% set sin_stock = stock_disp <= 0 %}
+                {% set critico = not sin_stock and p.stock_minimo and stock_disp < p.stock_minimo %}
+                {% set bajo = not sin_stock and not critico and p.stock_minimo and stock_disp <= p.stock_minimo * 1.5 %}
+
+                {% if sin_stock %}{% set badgeClass = 'badge-sin-stock' %}{% set badgeText = 'Sin stock' %}{% set color = '#dc2626' %}
+                {% elif critico %}{% set badgeClass = 'badge-critico' %}{% set badgeText = 'Crítico' %}{% set color = '#f87171' %}
+                {% elif bajo %}{% set badgeClass = 'badge-bajo' %}{% set badgeText = 'Bajo' %}{% set color = '#f59e0b' %}
+                {% else %}{% set badgeClass = 'badge-normal' %}{% set badgeText = 'Normal' %}{% set color = '#10b981' %}{% endif %}
+
+                <div class="mobile-card">
+                    <div class="card-header-row">
+                        <div>
+                            <div class="product-name">{{ p.nombre }}</div>
+                            <div class="product-cat">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
+                        </div>
+                        <span class="badge-estado {{ badgeClass }}">{{ badgeText }}</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="metric-item">
+                            <span class="metric-label">Stock (u)</span>
+                            <span class="metric-value">{{ p.stock|round(2) }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Stock (m)</span>
+                            <span class="metric-value">{{ p.stock_metros|round(2) if p.stock_metros else 0 }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Stock (m²)</span>
+                            <span class="metric-value">{{ stock_m2|round(2) }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Disponible (u)</span>
+                            <span class="metric-value {% if disp_u < 0 %}negativo{% elif disp_u > 0 %}positivo{% else %}zero{% endif %}">{{ disp_u|round(2) }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Disponible (m)</span>
+                            <span class="metric-value {% if disp_m < 0 %}negativo{% elif disp_m > 0 %}positivo{% else %}zero{% endif %}">{{ disp_m|round(2) }}</span>
+                        </div>
+                        <div class="metric-item">
+                            <span class="metric-label">Disponible (m²)</span>
+                            <span class="metric-value {% if disp_m2 < 0 %}negativo{% elif disp_m2 > 0 %}positivo{% else %}zero{% endif %}">{{ disp_m2|round(2) }}</span>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="acciones">
+                            <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-outline">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                            </a>
+                            <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-warning">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                            </a>
+                            <button type="button" class="btn btn-success" onclick="abrirModalCompra({{ p.id }})">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div class="acciones">
-                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
-                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                    <a href="{{ url_for('inventario.duplicar_producto', producto_id=p.id) }}" class="btn btn-sm btn-copy" title="Duplicar"><i class="fas fa-copy"></i></a>
-                    <form method="POST" action="{{ url_for('inventario.eliminar_producto', producto_id=p.id) }}" style="display:inline;" onsubmit="return confirm('¿Eliminar este producto?')">
-                        <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                    </form>
-                    <button class="btn btn-sm btn-success" onclick="abrirModalCompra({{ p.id }})"><i class="fas fa-plus"></i></button>
-                </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
+
+        {% if total_pages > 1 %}
+        <div class="card" style="padding: 8px 14px;">
+            <div class="pagination">
+                <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id, page=1, subcategoria=subcategoria_seleccionada, search=search, sort=sort, order=order, view=view) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
+                <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id, page=page-1 if page>1 else 1, subcategoria=subcategoria_seleccionada, search=search, sort=sort, order=order, view=view) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                        <span class="btn active">{{ p }}</span>
+                    {% elif p <= 3 or p > total_pages - 3 or (p >= page - 2 and p <= page + 2) %}
+                        <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id, page=p, subcategoria=subcategoria_seleccionada, search=search, sort=sort, order=order, view=view) }}" class="btn">{{ p }}</a>
+                    {% elif p == 4 and page > 5 %}
+                        <span class="info">…</span>
+                    {% elif p == total_pages - 3 and page < total_pages - 4 %}
+                        <span class="info">…</span>
+                    {% endif %}
+                {% endfor %}
+                <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id, page=page+1 if page<total_pages else total_pages, subcategoria=subcategoria_seleccionada, search=search, sort=sort, order=order, view=view) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
+                <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=categoria.id, page=total_pages, subcategoria=subcategoria_seleccionada, search=search, sort=sort, order=order, view=view) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
+                <span class="info">Página {{ page }} de {{ total_pages }}</span>
+            </div>
+        </div>
+        {% endif %}
     </div>
+
+    <!-- ============================================================
+         VISTA KANBAN
+         ============================================================ -->
+    <div class="view-section active" id="vistaKanban">
+        <div class="kanban-wrapper">
+
+            {% set lista_sin_stock = [] %}
+            {% set lista_critico = [] %}
+            {% set lista_bajo = [] %}
+            {% set lista_normal = [] %}
+
+            {% for p in productos %}
+                {% set stock_disp = p.stock or 0 %}
+                {% if stock_disp <= 0 %}
+                    {% set _ = lista_sin_stock.append(p) %}
+                {% elif p.stock_minimo and stock_disp < p.stock_minimo %}
+                    {% set _ = lista_critico.append(p) %}
+                {% elif p.stock_minimo and stock_disp <= p.stock_minimo * 1.5 %}
+                    {% set _ = lista_bajo.append(p) %}
+                {% else %}
+                    {% set _ = lista_normal.append(p) %}
+                {% endif %}
+            {% endfor %}
+
+            <div class="kanban-grid">
+
+                {# ===== SIN STOCK ===== #}
+                <div class="kanban-column sin-stock">
+                    <div class="kanban-column-header">
+                        <span>Sin stock</span>
+                        <span class="count">{{ lista_sin_stock|length }}</span>
+                    </div>
+                    <div class="kanban-column-body">
+                        {% for p in lista_sin_stock %}
+                            {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                            {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                            {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                            <div class="kanban-card" onclick="window.location.href='{{ url_for('inventario.detalle_producto', producto_id=p.id) }}'">
+                                <div class="card-header-row">
+                                    <div>
+                                        <div class="product-name">{{ p.nombre }}</div>
+                                        <div class="product-cat">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
+                                    </div>
+                                </div>
+                                <div class="metric-row">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Stock</span>
+                                        <span class="metric-value">{{ p.stock|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Disponible</span>
+                                        <span class="metric-value {% if disp_u < 0 %}negativo{% endif %}">{{ disp_u|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m lineales</span>
+                                        <span class="metric-value">{{ p.stock_metros|round(2) if p.stock_metros else 0 }} m</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m²</span>
+                                        <span class="metric-value">{{ stock_m2|round(2) }} m²</span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="icon-btn" title="Ver" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="icon-btn" title="Editar" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <button type="button" class="icon-btn" title="Comprar" onclick="event.stopPropagation(); abrirModalCompra({{ p.id }});" style="color:#10b981;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="kanban-empty">No hay productos sin stock</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ===== CRÍTICO ===== #}
+                <div class="kanban-column critico">
+                    <div class="kanban-column-header">
+                        <span>Crítico</span>
+                        <span class="count">{{ lista_critico|length }}</span>
+                    </div>
+                    <div class="kanban-column-body">
+                        {% for p in lista_critico %}
+                            {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                            {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                            {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                            <div class="kanban-card" onclick="window.location.href='{{ url_for('inventario.detalle_producto', producto_id=p.id) }}'">
+                                <div class="card-header-row">
+                                    <div>
+                                        <div class="product-name">{{ p.nombre }}</div>
+                                        <div class="product-cat">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
+                                    </div>
+                                </div>
+                                <div class="metric-row">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Stock</span>
+                                        <span class="metric-value">{{ p.stock|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Mínimo</span>
+                                        <span class="metric-value">{{ p.stock_minimo|round(2) if p.stock_minimo else 0 }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Disponible</span>
+                                        <span class="metric-value {% if disp_u < 0 %}negativo{% elif disp_u > 0 %}positivo{% endif %}">{{ disp_u|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m²</span>
+                                        <span class="metric-value">{{ stock_m2|round(2) }} m²</span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="icon-btn" title="Ver" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="icon-btn" title="Editar" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <button type="button" class="icon-btn" title="Comprar" onclick="event.stopPropagation(); abrirModalCompra({{ p.id }});" style="color:#10b981;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="kanban-empty">Sin productos críticos</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ===== BAJO ===== #}
+                <div class="kanban-column bajo">
+                    <div class="kanban-column-header">
+                        <span>Bajo</span>
+                        <span class="count">{{ lista_bajo|length }}</span>
+                    </div>
+                    <div class="kanban-column-body">
+                        {% for p in lista_bajo %}
+                            {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                            {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                            {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                            <div class="kanban-card" onclick="window.location.href='{{ url_for('inventario.detalle_producto', producto_id=p.id) }}'">
+                                <div class="card-header-row">
+                                    <div>
+                                        <div class="product-name">{{ p.nombre }}</div>
+                                        <div class="product-cat">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
+                                    </div>
+                                </div>
+                                <div class="metric-row">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Stock</span>
+                                        <span class="metric-value">{{ p.stock|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Mínimo</span>
+                                        <span class="metric-value">{{ p.stock_minimo|round(2) if p.stock_minimo else 0 }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Disponible</span>
+                                        <span class="metric-value {% if disp_u < 0 %}negativo{% elif disp_u > 0 %}positivo{% endif %}">{{ disp_u|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m²</span>
+                                        <span class="metric-value">{{ stock_m2|round(2) }} m²</span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="icon-btn" title="Ver" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="icon-btn" title="Editar" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <button type="button" class="icon-btn" title="Comprar" onclick="event.stopPropagation(); abrirModalCompra({{ p.id }});" style="color:#10b981;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="kanban-empty">Sin productos bajos</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ===== NORMAL ===== #}
+                <div class="kanban-column normal">
+                    <div class="kanban-column-header">
+                        <span>Normal</span>
+                        <span class="count">{{ lista_normal|length }}</span>
+                    </div>
+                    <div class="kanban-column-body">
+                        {% for p in lista_normal %}
+                            {% set es_material_imp = p.es_material_impresion and p.ancho_rollo and p.ancho_rollo > 0 %}
+                            {% set stock_m2 = (p.stock_metros * p.ancho_rollo) if es_material_imp else (p.stock_metros or 0) %}
+                            {% set disp_u = (p.stock or 0) - (p.stock_comprometido or 0) %}
+                            <div class="kanban-card" onclick="window.location.href='{{ url_for('inventario.detalle_producto', producto_id=p.id) }}'">
+                                <div class="card-header-row">
+                                    <div>
+                                        <div class="product-name">{{ p.nombre }}</div>
+                                        <div class="product-cat">{{ p.categoria.nombre if p.categoria else 'Sin categoría' }}</div>
+                                    </div>
+                                </div>
+                                <div class="metric-row">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Stock</span>
+                                        <span class="metric-value">{{ p.stock|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Disponible</span>
+                                        <span class="metric-value {% if disp_u < 0 %}negativo{% elif disp_u > 0 %}positivo{% endif %}">{{ disp_u|round(2) }} u</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m lineales</span>
+                                        <span class="metric-value">{{ p.stock_metros|round(2) if p.stock_metros else 0 }} m</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">m²</span>
+                                        <span class="metric-value">{{ stock_m2|round(2) }} m²</span>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    <a href="{{ url_for('inventario.detalle_producto', producto_id=p.id) }}" class="icon-btn" title="Ver" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    </a>
+                                    <a href="{{ url_for('inventario.editar_producto', producto_id=p.id) }}" class="icon-btn" title="Editar" onclick="event.stopPropagation();">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                                    </a>
+                                    <button type="button" class="icon-btn" title="Comprar" onclick="event.stopPropagation(); abrirModalCompra({{ p.id }});" style="color:#10b981;">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="kanban-empty">Sin productos normales</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
     {% else %}
-    <div style="text-align:center; padding:40px 20px; color:#8e8e93;">
-        <p style="font-size:18px;">📭 No hay productos en esta categoría</p>
-        <p>Haz clic en "Nuevo producto" para comenzar.</p>
+    <div class="card" style="text-align:center; padding:40px 20px;">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#8e8e93" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3; margin:0 auto 12px; display:block;">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        </svg>
+        <p style="color:#8e8e93; font-size:16px; margin:0;">No hay productos en esta categoría.</p>
+        <a href="{{ url_for('inventario.crear_producto') }}" class="btn btn-success" style="margin-top:14px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Crear primer producto
+        </a>
     </div>
     {% endif %}
+
 </div>
 
-<!-- Modal Compra -->
+<!-- ============================================================
+     MODAL COMPRA
+     ============================================================ -->
 <div class="modal-overlay" id="modalCompra">
-    <div class="modal modal-compra">
+    <div class="modal">
         <div class="modal-header">
-            <span class="modal-title"><i class="fas fa-shopping-cart"></i> Registrar compra</span>
-            <button class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
+            <h3 class="modal-title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                Registrar compra
+            </h3>
+            <button type="button" class="modal-close" onclick="cerrarModal('modalCompra')">&times;</button>
         </div>
         <div class="modal-body">
             <form method="POST" action="{{ url_for('inventario.comprar') }}">
@@ -646,7 +1450,7 @@
                 <div class="form-group">
                     <label>Proveedor</label>
                     <select name="proveedor_id">
-                        <option value="">-- Sin proveedor --</option>
+                        <option value="">— Sin proveedor —</option>
                         {% for prov in proveedores %}
                         <option value="{{ prov.id }}">{{ prov.nombre }}</option>
                         {% endfor %}
@@ -658,94 +1462,264 @@
                 </div>
                 <div class="modal-actions">
                     <button type="button" class="btn btn-outline" onclick="cerrarModal('modalCompra')">Cancelar</button>
-                    <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Guardar compra</button>
+                    <button type="submit" class="btn btn-success">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Guardar compra
+                    </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<style>
-    .modal-overlay {
-        display: none;
-        position: fixed;
-        top:0; left:0; right:0; bottom:0;
-        background: rgba(0,0,0,0.25);
-        backdrop-filter: blur(6px);
-        z-index:999;
-        justify-content:center;
-        align-items:center;
-    }
-    .modal-overlay.active { display:flex; }
-    .modal {
-        background: white;
-        border-radius: 20px;
-        padding: 0;
-        max-width: 520px;
-        width: 92%;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.12);
-        animation: modalIn 0.3s ease;
-        overflow: hidden;
-    }
-    @keyframes modalIn {
-        from { transform:scale(0.95) translateY(12px); opacity:0; }
-        to { transform:scale(1) translateY(0); opacity:1; }
-    }
-    .modal-header {
-        display:flex; justify-content:space-between; align-items:center;
-        padding:18px 28px 14px 28px;
-        border-bottom:1px solid #f0ece8;
-        background:#fafaf9;
-    }
-    .modal-header .modal-title {
-        font-family:'Playfair Display',serif;
-        font-size:22px; font-weight:700;
-        margin:0; color:#10b981;
-        display:flex; align-items:center; gap:10px;
-    }
-    .modal-header .modal-title i { color:#10b981; }
-    .modal-close {
-        background:none; border:none; font-size:28px;
-        color:#8e8e93; cursor:pointer; padding:0 4px;
-    }
-    .modal-close:hover { color:#1c1c1e; }
-    .modal-body { padding:20px 28px 28px 28px; }
-    .modal-body .form-group { margin-bottom:16px; }
-    .modal-body .form-group label {
-        display:block; font-weight:600; font-size:13px;
-        color:#333; margin-bottom:4px;
-        font-family:'Inter',sans-serif;
-    }
-    .modal-body .form-group input, .modal-body .form-group select {
-        width:100%; padding:10px 14px;
-        border:1px solid #d2d2d7; border-radius:10px;
-        font-size:15px; background:#fafaf9;
-        font-family:'Inter',sans-serif; color:#1c1c1e;
-    }
-    .modal-body .form-group input:focus, .modal-body .form-group select:focus {
-        outline:none; border-color:#10b981;
-        box-shadow:0 0 0 4px rgba(16,185,129,0.08);
-    }
-    .modal-actions {
-        display:flex; gap:12px; margin-top:20px;
-        justify-content:flex-end; border-top:1px solid #f0ece8;
-        padding-top:16px;
-    }
-</style>
-
+{% block extra_js %}
 <script>
-    // =============================================
-    // TOGGLE DE UNIDADES (SOLO ESCRITORIO)
-    // =============================================
+    // ============================================================
+    // CUSTOM SELECT
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
+        }
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : 'Todas';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.disabled) item.classList.add('disabled');
+                if (opt.value === selectEl.value && opt.value !== '') item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.dataset.idx = idx;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) return;
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            items.forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) {
+                highlightedIndex = delta > 0 ? 0 : n - 1;
+            } else {
+                highlightedIndex = (highlightedIndex + delta + n) % n;
+            }
+            updateHighlight();
+            const items = optionsContainer.querySelectorAll('.cs-select-option');
+            if (items[highlightedIndex]) {
+                items[highlightedIndex].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt || opt.disabled) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(340, menu.scrollHeight || 220);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 240) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
+            });
+        }
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        updateValue();
+    }
+
+    function initAllCustomSelects(root) {
+        const scope = root || document;
+        scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
+    }
+
+    // ============================================================
+    // VIEW TOGGLE
+    // ============================================================
+    function cambiarVista(vista) {
+        document.querySelectorAll('.view-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.view === vista);
+        });
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById(vista === 'kanban' ? 'vistaKanban' : 'vistaLista');
+        if (target) target.classList.add('active');
+        localStorage.setItem('inventario_view_preference', vista);
+
+        const unitWrapper = document.getElementById('unitToggleWrapper');
+        if (unitWrapper) {
+            unitWrapper.style.display = (vista === 'lista') ? 'flex' : 'none';
+        }
+
+        const viewInput = document.getElementById('viewInput');
+        if (viewInput) viewInput.value = vista;
+        const perPageInput = document.getElementById('perPageInput');
+        if (perPageInput) perPageInput.value = (vista === 'kanban') ? '200' : '20';
+    }
+
+    // ============================================================
+    // UNIT TOGGLE
+    // ============================================================
     function cambiarUnidad(unidad) {
-        console.log('Cambiando a unidad:', unidad);
-        
-        // Actualizar botones
         document.querySelectorAll('.unit-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.unit === unidad);
         });
-
-        // Actualizar etiqueta
         const labelMap = {
             'unidades': '(mostrando en unidades)',
             'metros-lineales': '(mostrando en metros lineales)',
@@ -757,21 +1731,10 @@
         if (!table) return;
 
         let columnasMostrar = [];
-        if (unidad === 'unidades') {
-            columnasMostrar = [
-                '.col-stock-u', '.col-comp-u', '.col-disponible-u'
-            ];
-        } else if (unidad === 'metros-lineales') {
-            columnasMostrar = [
-                '.col-stock-m', '.col-comp-m', '.col-disponible-m'
-            ];
-        } else if (unidad === 'metros-cuadrados') {
-            columnasMostrar = [
-                '.col-stock-m2', '.col-comp-m2', '.col-disponible-m2'
-            ];
-        }
+        if (unidad === 'unidades') columnasMostrar = ['.col-stock-u', '.col-comp-u', '.col-disponible-u'];
+        else if (unidad === 'metros-lineales') columnasMostrar = ['.col-stock-m', '.col-comp-m', '.col-disponible-m'];
+        else if (unidad === 'metros-cuadrados') columnasMostrar = ['.col-stock-m2', '.col-comp-m2', '.col-disponible-m2'];
 
-        // Ocultar columna Unidad si no es unidades
         const unidadHeaders = table.querySelectorAll('thead .col-unidad');
         const unidadCells = table.querySelectorAll('tbody .col-unidad');
         if (unidad === 'unidades') {
@@ -782,40 +1745,22 @@
             unidadCells.forEach(el => el.style.display = 'none');
         }
 
-        // Ocultar TODAS las métricas
-        const todasMetricas = [
-            '.col-stock-u', '.col-stock-m', '.col-stock-m2',
-            '.col-comp-u', '.col-comp-m', '.col-comp-m2',
-            '.col-disponible-u', '.col-disponible-m', '.col-disponible-m2'
-        ];
-        todasMetricas.forEach(selector => {
-            const headers = table.querySelectorAll('thead ' + selector);
-            const cells = table.querySelectorAll('tbody ' + selector);
-            headers.forEach(el => el.style.display = 'none');
-            cells.forEach(el => el.style.display = 'none');
+        const todas = ['.col-stock-u','.col-stock-m','.col-stock-m2','.col-comp-u','.col-comp-m','.col-comp-m2','.col-disponible-u','.col-disponible-m','.col-disponible-m2'];
+        todas.forEach(sel => {
+            table.querySelectorAll('thead ' + sel).forEach(el => el.style.display = 'none');
+            table.querySelectorAll('tbody ' + sel).forEach(el => el.style.display = 'none');
         });
-
-        // Mostrar las correspondientes
-        columnasMostrar.forEach(selector => {
-            const headers = table.querySelectorAll('thead ' + selector);
-            const cells = table.querySelectorAll('tbody ' + selector);
-            headers.forEach(el => el.style.display = '');
-            cells.forEach(el => el.style.display = '');
+        columnasMostrar.forEach(sel => {
+            table.querySelectorAll('thead ' + sel).forEach(el => el.style.display = '');
+            table.querySelectorAll('tbody ' + sel).forEach(el => el.style.display = '');
         });
 
         localStorage.setItem('unit_preference', unidad);
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const pref = localStorage.getItem('unit_preference') || 'unidades';
-        setTimeout(() => {
-            cambiarUnidad(pref);
-        }, 100);
-    });
-
-    // =============================================
+    // ============================================================
     // ORDENACIÓN
-    // =============================================
+    // ============================================================
     function ordenar(columna) {
         const url = new URL(window.location.href);
         const currentSort = url.searchParams.get('sort');
@@ -827,9 +1772,9 @@
         window.location.href = url.toString();
     }
 
-    // =============================================
+    // ============================================================
     // MODAL COMPRA
-    // =============================================
+    // ============================================================
     function abrirModalCompra(id) {
         document.getElementById('compraProductoSelect').value = id;
         document.getElementById('modalCompra').classList.add('active');
@@ -852,6 +1797,22 @@
                 document.body.style.overflow = '';
             }
         });
+    });
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        initAllCustomSelects();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const vistaUrl = urlParams.get('view');
+        const vistaGuardada = localStorage.getItem('inventario_view_preference') || 'kanban';
+        const vistaFinal = vistaUrl || vistaGuardada;
+        cambiarVista(vistaFinal);
+
+        const prefUnidad = localStorage.getItem('unit_preference') || 'unidades';
+        setTimeout(() => cambiarUnidad(prefUnidad), 50);
     });
 </script>
 {% endblock %}

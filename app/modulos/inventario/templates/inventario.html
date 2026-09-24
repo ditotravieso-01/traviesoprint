@@ -2,46 +2,173 @@
 
 {% block title %}Inventario · Dashboard{% endblock %}
 
-{% block page_title %}Inventario{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Inventario</span>
+    <span class="page-subtitle">Resumen general · {{ total_productos }} productos · {{ criticos }} críticos</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
+    /* ============================================================
+       HOMOGENEIDAD TIPOGRÁFICA GLOBAL (Parte 22)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #1c1c1e;
+        line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 400;
+        color: #8e8e93;
+        letter-spacing: 0.5px;
+    }
+    .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+    .inventario-wrap,
+    .inventario-wrap *:not(.num-mont):not(.kpi-value):not(code) {
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* ===== KPI ===== */
     .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-    .kpi-card { background: white; border-radius: 16px; padding: 16px 18px; border-top: 4px solid #a8854f; box-shadow: 0 2px 12px rgba(0,0,0,0.02); transition: all 0.2s; }
+    .kpi-card {
+        background: white; border-radius: 16px; padding: 16px 18px;
+        border-top: 4px solid #a8854f;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02); transition: all 0.2s;
+    }
     .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
-    .kpi-card .kpi-value { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 700; color: #1c1c1e; }
-    .kpi-card .kpi-label { font-size: 13px; color: #8e8e93; font-weight: 500; margin-top: 2px; }
-    .kpi-card .kpi-icon { float: right; font-size: 24px; color: #a8854f; opacity: 0.4; }
+    .kpi-card .kpi-value {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 28px; font-weight: 700; color: #1c1c1e;
+        letter-spacing: -0.5px; line-height: 1.1;
+    }
+    .kpi-card .kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px; color: #8e8e93; font-weight: 500; margin-top: 4px;
+    }
+    .kpi-card .kpi-icon { float: right; color: #a8854f; opacity: 0.4; }
+    .kpi-card .kpi-icon svg { display: block; }
     .kpi-card.verde { border-top-color: #10b981; } .kpi-card.verde .kpi-icon { color: #10b981; }
     .kpi-card.rojo { border-top-color: #dc2626; } .kpi-card.rojo .kpi-icon { color: #dc2626; }
+    .kpi-card.rojo .kpi-value { color: #dc2626; }
     .kpi-card.amarillo { border-top-color: #f59e0b; } .kpi-card.amarillo .kpi-icon { color: #f59e0b; }
     .kpi-card.morado { border-top-color: #8b5cf6; } .kpi-card.morado .kpi-icon { color: #8b5cf6; }
 
-    .chart-container { position: relative; height: 240px; margin-top: 8px; width: 100%; }
-    .categoria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 12px; }
-    .categoria-card { background: white; border-radius: 16px; padding: 14px 16px; border-left: 4px solid #a8854f; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s; cursor: pointer; text-decoration: none; color: #1c1c1e; }
+    /* ===== CARD ===== */
+    .card {
+        background: rgba(255,255,255,0.7); backdrop-filter: blur(10px);
+        border-radius: 16px; padding: 20px 22px;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 20px;
+    }
+    .card-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 15px; font-weight: 700;
+        color: #1c1c1e; letter-spacing: -0.2px;
+        margin: 0 0 14px 0;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .card-title svg { color: #a8854f; flex-shrink: 0; }
+
+    /* ===== CHART ===== */
+    .chart-container { position: relative; height: 240px; width: 100%; }
+
+    /* ===== CATEGORÍAS ===== */
+    .categoria-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; margin-top: 4px; }
+    .categoria-card {
+        background: white; border-radius: 16px; padding: 16px 18px;
+        border-left: 4px solid #a8854f;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+        cursor: pointer; text-decoration: none; color: #1c1c1e;
+    }
     .categoria-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.04); }
-    .categoria-card .cat-name { font-weight: 600; font-size: 16px; font-family: 'Playfair Display', serif; }
-    .categoria-card .cat-stats { display: flex; gap: 16px; margin-top: 6px; font-size: 13px; color: #8e8e93; }
-    .categoria-card .cat-stats span strong { color: #1c1c1e; }
+    .categoria-card .cat-name {
+        font-family: 'Inter', sans-serif !important;
+        font-weight: 700; font-size: 15px;
+        color: #1c1c1e; letter-spacing: -0.2px;
+    }
+    .categoria-card .cat-stats {
+        display: flex; gap: 16px; margin-top: 8px;
+        font-size: 13px; color: #8e8e93;
+    }
+    .categoria-card .cat-stats strong {
+        font-family: 'Montserrat', sans-serif !important;
+        color: #1c1c1e; font-weight: 700;
+    }
 
-    .btn-admin { background: #6b7280; color: white; } .btn-admin:hover { background: #4b5563; }
+    /* ===== BOTONES ===== */
+    .btn {
+        padding: 8px 18px; border-radius: 30px; border: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600; font-size: 13px;
+        cursor: pointer; transition: all 0.2s;
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #1c1c1e; color: white;
+        text-decoration: none; line-height: 1;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-warning { background: #f59e0b; color: white; }
+    .btn-warning:hover { background: #d97706; }
+    .btn-admin { background: #6b7280; color: white; }
+    .btn-admin:hover { background: #4b5563; }
 
+    /* ===== UNIDAD TOGGLE ===== */
     .unit-toggle { display: inline-flex; background: #f0ece8; border-radius: 30px; padding: 4px; gap: 2px; border: 1px solid #d2d2d7; }
-    .unit-toggle .unit-btn { padding: 4px 16px; border-radius: 30px; border: none; background: transparent; cursor: pointer; font-weight: 600; font-size: 12px; color: #555; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+    .unit-toggle .unit-btn {
+        padding: 4px 16px; border-radius: 30px; border: none;
+        background: transparent; cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600; font-size: 12px; color: #555;
+        transition: all 0.2s;
+    }
     .unit-toggle .unit-btn.active { background: white; color: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .unit-toggle .unit-btn:hover { color: #1c1c1e; }
-    .unit-label { font-size: 14px; color: #8e8e93; margin-left: 8px; font-weight: 400; }
+    .unit-label { font-size: 13px; color: #8e8e93; margin-left: 8px; font-weight: 500; }
 
-    .movimientos-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 12px; }
-    .movimientos-header h4 { font-family: 'Playfair Display', serif; font-size: 18px; margin: 0; color: #1c1c1e; }
-    .movimientos-header .toggle-group { display: flex; align-items: center; gap: 8px; }
-
+    /* ===== MOVIMIENTOS ===== */
+    .movimientos-header {
+        display: flex; justify-content: space-between; align-items: center;
+        flex-wrap: wrap; gap: 12px; margin-bottom: 14px;
+    }
     .movimientos-table-wrap { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .movimientos-table-wrap table { width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Inter', sans-serif; min-width: 0; }
-    .movimientos-table-wrap th, .movimientos-table-wrap td { padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.04); white-space: nowrap; text-align: center; vertical-align: middle; }
-    .movimientos-table-wrap th { font-weight: 600; color: #8e8e93; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 2px solid #f0ece8; }
+    .movimientos-table-wrap table {
+        width: 100%; border-collapse: collapse;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px; min-width: 0;
+    }
+    .movimientos-table-wrap th, .movimientos-table-wrap td {
+        padding: 10px 12px; border-bottom: 1px solid rgba(0,0,0,0.04);
+        white-space: nowrap; text-align: center; vertical-align: middle;
+    }
+    .movimientos-table-wrap th {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700; color: #6b6b7a;
+        font-size: 11px; text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #f0ece8;
+    }
+    .movimientos-table-wrap td.num,
+    .movimientos-table-wrap td .num-mont {
+        font-family: 'Montserrat', sans-serif !important;
+        font-weight: 700; letter-spacing: -0.2px;
+    }
 
+    /* Columnas por unidad */
     .movimientos-table-wrap .col-cantidad-u { display: none; }
     .movimientos-table-wrap .col-cantidad-m { display: table-cell; }
     .movimientos-table-wrap .col-cantidad-m2 { display: table-cell; }
@@ -55,23 +182,59 @@
     .movimientos-table-wrap.show-metros-cuadrados .col-cantidad-m { display: none; }
     .movimientos-table-wrap.show-metros-cuadrados .col-cantidad-m2 { display: table-cell; }
 
+    .badge {
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px; font-weight: 600;
+        padding: 3px 12px; border-radius: 30px;
+        display: inline-block;
+    }
+    .orden-link { color: #3b82f6; text-decoration: none; font-weight: 600; }
+    .orden-link:hover { text-decoration: underline; }
+
+    /* ===== RESPONSIVE ===== */
     @media (max-width: 768px) {
         .movimientos-table-wrap { overflow-x: visible; }
-        .movimientos-table-wrap table, .movimientos-table-wrap thead, .movimientos-table-wrap tbody, .movimientos-table-wrap tr, .movimientos-table-wrap th, .movimientos-table-wrap td { display: block; }
+        .movimientos-table-wrap table,
+        .movimientos-table-wrap thead,
+        .movimientos-table-wrap tbody,
+        .movimientos-table-wrap tr,
+        .movimientos-table-wrap th,
+        .movimientos-table-wrap td { display: block; }
         .movimientos-table-wrap thead { display: none; }
         .movimientos-table-wrap tbody { display: flex; flex-direction: column; gap: 10px; }
-        .movimientos-table-wrap tr { background: white; border-radius: 14px; padding: 12px 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.02); border: 1px solid #f0ece8; display: flex; flex-direction: column; gap: 4px; width: 100%; box-sizing: border-box; }
-        .movimientos-table-wrap td { border: none; padding: 2px 0; white-space: normal; word-break: break-word; text-align: left; font-size: 14px; width: 100%; }
-        .movimientos-table-wrap td:before { content: attr(data-label); font-weight: 600; color: #8e8e93; font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; display: block; margin-bottom: 2px; }
-        .movimientos-table-wrap td:nth-child(4) { display: inline-block !important; }
-        .movimientos-table-wrap td:nth-child(5) { display: inline-block !important; }
-        .movimientos-table-wrap td:nth-child(6) { display: inline-block !important; }
+        .movimientos-table-wrap tr {
+            background: white; border-radius: 14px; padding: 12px 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.02);
+            border: 1px solid #f0ece8;
+            display: flex; flex-direction: column; gap: 4px;
+            width: 100%; box-sizing: border-box;
+        }
+        .movimientos-table-wrap td {
+            border: none; padding: 2px 0;
+            white-space: normal; word-break: break-word;
+            text-align: left; font-size: 13.5px; width: 100%;
+        }
+        .movimientos-table-wrap td:before {
+            content: attr(data-label);
+            font-weight: 600; color: #8e8e93;
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: block; margin-bottom: 2px;
+        }
+        .movimientos-table-wrap td:nth-child(4),
+        .movimientos-table-wrap td:nth-child(5),
+        .movimientos-table-wrap td:nth-child(6) {
+            display: inline-block !important;
+            width: auto; margin-right: 12px;
+        }
         .movimientos-header .toggle-group { display: none; }
         .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         .kpi-card .kpi-value { font-size: 22px; }
         .categoria-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
         .chart-container { height: 180px; }
         .btn { font-size: 12px; padding: 6px 14px; }
+        .page-main-title { font-size: 22px; }
+        .page-subtitle { font-size: 13px; }
     }
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -84,156 +247,261 @@
 {% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-    <div><p style="color:#8e8e93; margin:0;">Resumen general del inventario</p></div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline"><i class="fas fa-list"></i> Todos los productos</a>
-        <a href="{{ url_for('inventario.movimientos') }}" class="btn btn-outline"><i class="fas fa-history"></i> Movimientos</a>
-        <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline"><i class="fas fa-chart-line"></i> Merma</a>
-        <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline"><i class="fas fa-list-alt"></i> Merma por orden</a>
-        <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-warning"><i class="fas fa-clipboard-check"></i> Conteos semanales</a>
-        {% if current_user.role == 'admin' %}
-            <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-admin"><i class="fas fa-cog"></i> Administración</a>
-        {% endif %}
-    </div>
-</div>
+<div class="inventario-wrap">
 
-<div class="kpi-grid">
-    <div class="kpi-card">
-        <i class="fas fa-cubes kpi-icon"></i>
-        <div class="kpi-value">{{ total_productos }}</div>
-        <div class="kpi-label">Productos totales</div>
-    </div>
-    <div class="kpi-card verde">
-        <i class="fas fa-boxes kpi-icon"></i>
-        <div class="kpi-value">{{ stock_total }}</div>
-        <div class="kpi-label">Stock (unidades)</div>
-    </div>
-    <div class="kpi-card amarillo">
-        <i class="fas fa-ruler-combined kpi-icon"></i>
-        <div class="kpi-value">{{ stock_metros_total }}</div>
-        <div class="kpi-label">Stock (metros lineales)</div>
-    </div>
-    <div class="kpi-card morado">
-        <i class="fas fa-vector-square kpi-icon"></i>
-        <div class="kpi-value">{{ stock_m2_total }}</div>
-        <div class="kpi-label">Stock (m²)</div>
-    </div>
-    <div class="kpi-card">
-        <i class="fas fa-dollar-sign kpi-icon"></i>
-        <div class="kpi-value">${{ valor_total }}</div>
-        <div class="kpi-label">Valor inventario</div>
-    </div>
-    <div class="kpi-card rojo">
-        <i class="fas fa-exclamation-triangle kpi-icon"></i>
-        <div class="kpi-value">{{ criticos }}</div>
-        <div class="kpi-label">Productos críticos</div>
-    </div>
-    <!-- ===== KPI MERMA DEL MES (combina conteos + órdenes) ===== -->
-    <div class="kpi-card rojo" style="border-top-color:#dc2626;">
-        <i class="fas fa-calculator kpi-icon"></i>
-        <div class="kpi-value">{{ merma_estimada_mes_m2 }}</div>
-        <div class="kpi-label" title="{% if merma_mes_origen == 'conteo' %}Merma real detectada en los conteos semanales del mes{% else %}Merma operativa calculada de las órdenes del mes{% endif %}">
-            Merma mes (m²) · {{ merma_estimada_mes_pct }}%
-            <span style="display:block; font-size:10px; color:#8e8e93; margin-top:2px;">
-                {% if merma_mes_origen == 'conteo' %}
-                    📋 real · {{ merma_bruta_conteos_m2 }} m²
-                {% else %}
-                    📐 operativa · {{ merma_operativa_ordenes_m2 }} m²
-                {% endif %}
-            </span>
+    <!-- Acciones superiores -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px;">
+        <div>
+            <p style="color:#8e8e93; margin:0; font-size:13.5px;">Resumen general del inventario</p>
+        </div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+            <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                Todos
+            </a>
+            <a href="{{ url_for('inventario.movimientos') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Movimientos
+            </a>
+            <a href="{{ url_for('inventario.merma') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                    <polyline points="17 6 23 6 23 12"></polyline>
+                </svg>
+                Merma
+            </a>
+            <a href="{{ url_for('inventario.merma_por_orden') }}" class="btn btn-outline">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                </svg>
+                Merma por orden
+            </a>
+            <a href="{{ url_for('inventario.listar_conteos') }}" class="btn btn-warning">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 11 12 14 22 4"></polyline>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Conteos
+            </a>
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('inventario.admin_panel') }}" class="btn btn-admin">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Administración
+                </a>
+            {% endif %}
         </div>
     </div>
-</div>
 
-<div class="card" style="margin-bottom:20px;">
-    <h4 class="serif" style="font-size:18px; margin-bottom:8px;">📈 Evolución del stock (últimos 30 días)</h4>
-    <div class="chart-container"><canvas id="stockChart"></canvas></div>
-</div>
-
-<div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
-        <h4 class="serif" style="font-size:18px; margin:0;">📂 Categorías principales</h4>
-        <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline btn-sm"><i class="fas fa-list"></i> Ver todos</a>
-    </div>
-    <div class="categoria-grid">
-        {% for item in categorias_data %}
-        <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=item.categoria.id) }}" class="categoria-card">
-            <div class="cat-name">{{ item.categoria.nombre }}</div>
-            <div class="cat-stats">
-                <span><strong>{{ item.total_productos }}</strong> productos</span>
-                <span><strong>{{ "%.2f"|format(item.stock_total) }}</strong> stock</span>
-                <span>$<strong>{{ "%.2f"|format(item.inversion_total) }}</strong></span>
+    <!-- KPIs -->
+    <div class="kpi-grid">
+        <div class="kpi-card">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <div class="kpi-value">{{ total_productos }}</div>
+            <div class="kpi-label">Productos totales</div>
+        </div>
+        <div class="kpi-card verde">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+            <div class="kpi-value">{{ stock_total }}</div>
+            <div class="kpi-label">Stock (unidades)</div>
+        </div>
+        <div class="kpi-card amarillo">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 12h20"></path>
+                <path d="M12 2v20"></path>
+                <line x1="5" y1="5" x2="5.01" y2="5"></line>
+                <line x1="19" y1="19" x2="19.01" y2="19"></line>
+                <line x1="5" y1="19" x2="5.01" y2="19"></line>
+                <line x1="19" y1="5" x2="19.01" y2="5"></line>
+            </svg>
+            <div class="kpi-value">{{ stock_metros_total }}</div>
+            <div class="kpi-label">Stock (metros lineales)</div>
+        </div>
+        <div class="kpi-card morado">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+            <div class="kpi-value">{{ stock_m2_total }}</div>
+            <div class="kpi-label">Stock (m²)</div>
+        </div>
+        <div class="kpi-card">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"></line>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            <div class="kpi-value">${{ valor_total }}</div>
+            <div class="kpi-label">Valor inventario</div>
+        </div>
+        <div class="kpi-card rojo">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div class="kpi-value">{{ criticos }}</div>
+            <div class="kpi-label">Productos críticos</div>
+        </div>
+        <div class="kpi-card rojo" style="border-top-color:#dc2626;">
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+                <line x1="8" y1="6" x2="16" y2="6"></line>
+                <line x1="8" y1="10" x2="16" y2="10"></line>
+                <line x1="8" y1="14" x2="12" y2="14"></line>
+            </svg>
+            <div class="kpi-value">{{ merma_estimada_mes_m2 }}</div>
+            <div class="kpi-label">
+                Merma mes (m²) · {{ merma_estimada_mes_pct }}%
+                <span style="display:block; font-size:10px; color:#8e8e93; margin-top:2px; font-weight:400;">
+                    {% if merma_mes_origen == 'conteo' %}
+                        real · {{ merma_bruta_conteos_m2 }} m²
+                    {% else %}
+                        operativa · {{ merma_operativa_ordenes_m2 }} m²
+                    {% endif %}
+                </span>
             </div>
-        </a>
-        {% else %}
-        <p class="text-muted">No hay categorías creadas. <a href="{{ url_for('inventario.crear_categoria') }}">Crear una</a></p>
-        {% endfor %}
-    </div>
-</div>
-
-<div class="card">
-    <div class="movimientos-header">
-        <h4>🔄 Últimos movimientos</h4>
-        <div class="toggle-group">
-            <div class="unit-toggle" id="unitToggleMovimientos">
-                <button class="unit-btn" data-unit="unidades" onclick="cambiarUnidadMovimientos('unidades')">Unidades</button>
-                <button class="unit-btn active" data-unit="metros-lineales" onclick="cambiarUnidadMovimientos('metros-lineales')">Metros lineales</button>
-                <button class="unit-btn" data-unit="metros-cuadrados" onclick="cambiarUnidadMovimientos('metros-cuadrados')">m²</button>
-            </div>
-            <span class="unit-label" id="unitLabelMovimientos">(mostrando en metros lineales)</span>
         </div>
     </div>
-    <div class="movimientos-table-wrap" id="movimientosTableWrap">
-        <table>
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Producto</th>
-                    <th>Tipo</th>
-                    <th class="col-cantidad-u">Cantidad (u)</th>
-                    <th class="col-cantidad-m">Cantidad (m lineales)</th>
-                    <th class="col-cantidad-m2">Área (m²)</th>
-                    <th>Comentario / Orden</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for m in ultimos_movimientos %}
-                {% set metros_lineales = (m.cantidad_metros or 0) %}
-                {% set area_m2 = m.cantidad_m2 if m.cantidad_m2 else None %}
-                <tr>
-                    <td data-label="Fecha">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
-                    <td data-label="Producto"><strong>{{ m.producto.nombre if m.producto else '—' }}</strong></td>
-                    <td data-label="Tipo">
-                        <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'merma' %}#fde8e5{% elif m.tipo == 'sobrante' %}#e0f2fe{% elif m.tipo == 'correccion_baja' %}#fef3c7{% elif m.tipo == 'correccion_alta' %}#e0e7ff{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'merma' %}#dc2626{% elif m.tipo == 'sobrante' %}#0ea5e9{% elif m.tipo == 'correccion_baja' %}#92400e{% elif m.tipo == 'correccion_alta' %}#3730a3{% else %}#555{% endif %}; padding: 4px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;">
-                            {{ m.tipo.replace('_', ' ').title() }}
-                        </span>
-                    </td>
-                    <td class="col-cantidad-u" data-label="Cantidad (u)">{{ "%.2f"|format(m.cantidad) }}</td>
-                    <td class="col-cantidad-m" data-label="Cantidad (m lineales)">{{ "%.2f"|format(metros_lineales) }}</td>
-                    <td class="col-cantidad-m2" data-label="Área (m²)">{% if area_m2 is not none %}{{ "%.2f"|format(area_m2) }}{% else %}—{% endif %}</td>
-                    <td data-label="Comentario / Orden">
-                        {% if m.orden %}
-                            <a href="{{ url_for('ordenes.detalle_order', order_id=m.orden.id) }}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 500;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
-                                {{ m.orden.order_num }}
-                            </a>
-                            {% if m.orden.cliente %}
-                                <span style="color:#555; font-size:13px;">({{ m.orden.cliente.nombre }})</span>
-                            {% endif %}
-                            {% if m.comentario and m.comentario not in ['Compra', 'Ajuste por conteo físico (merma)', 'Ajuste por conteo físico (sobrante)'] %}
-                                <span style="color:#8e8e93; font-size:12px; display:block;">{{ m.comentario }}</span>
-                            {% endif %}
-                        {% else %}
-                            {{ m.comentario or '-' }}
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7" class="text-muted text-center">No hay movimientos recientes.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <!-- Gráfico evolución -->
+    <div class="card">
+        <h4 class="card-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            Evolución del stock · últimos 30 días
+        </h4>
+        <div class="chart-container"><canvas id="stockChart"></canvas></div>
     </div>
+
+    <!-- Categorías -->
+    <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:14px;">
+            <h4 class="card-title" style="margin:0;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                </svg>
+                Categorías principales
+            </h4>
+            <a href="{{ url_for('inventario.todos_productos') }}" class="btn btn-outline" style="padding:5px 14px; font-size:12px;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                    <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+                Ver todos
+            </a>
+        </div>
+        <div class="categoria-grid">
+            {% for item in categorias_data %}
+            <a href="{{ url_for('inventario.productos_por_categoria', categoria_id=item.categoria.id) }}" class="categoria-card">
+                <div class="cat-name">{{ item.categoria.nombre }}</div>
+                <div class="cat-stats">
+                    <span><strong>{{ item.total_productos }}</strong> productos</span>
+                    <span><strong>{{ "%.2f"|format(item.stock_total) }}</strong> stock</span>
+                    <span>$<strong>{{ "%.2f"|format(item.inversion_total) }}</strong></span>
+                </div>
+            </a>
+            {% else %}
+            <p style="color:#8e8e93; font-size:13px;">No hay categorías creadas.
+                <a href="{{ url_for('inventario.crear_categoria') }}" style="color:#a8854f; font-weight:700;">Crear una →</a>
+            </p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Movimientos -->
+    <div class="card">
+        <div class="movimientos-header">
+            <h4 class="card-title" style="margin:0;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Últimos movimientos
+            </h4>
+            <div class="toggle-group">
+                <div class="unit-toggle" id="unitToggleMovimientos">
+                    <button class="unit-btn" data-unit="unidades" onclick="cambiarUnidadMovimientos('unidades')">Unidades</button>
+                    <button class="unit-btn active" data-unit="metros-lineales" onclick="cambiarUnidadMovimientos('metros-lineales')">Metros lineales</button>
+                    <button class="unit-btn" data-unit="metros-cuadrados" onclick="cambiarUnidadMovimientos('metros-cuadrados')">m²</button>
+                </div>
+                <span class="unit-label" id="unitLabelMovimientos">(mostrando en metros lineales)</span>
+            </div>
+        </div>
+        <div class="movimientos-table-wrap" id="movimientosTableWrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Producto</th>
+                        <th>Tipo</th>
+                        <th class="col-cantidad-u">Cantidad (u)</th>
+                        <th class="col-cantidad-m">Cantidad (m lineales)</th>
+                        <th class="col-cantidad-m2">Área (m²)</th>
+                        <th>Comentario / Orden</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in ultimos_movimientos %}
+                    {% set metros_lineales = (m.cantidad_metros or 0) %}
+                    {% set area_m2 = m.cantidad_m2 if m.cantidad_m2 else None %}
+                    <tr>
+                        <td data-label="Fecha" class="num">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td data-label="Producto"><strong>{{ m.producto.nombre if m.producto else '—' }}</strong></td>
+                        <td data-label="Tipo">
+                            <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'merma' %}#fde8e5{% elif m.tipo == 'sobrante' %}#e0f2fe{% elif m.tipo == 'correccion_baja' %}#fef3c7{% elif m.tipo == 'correccion_alta' %}#e0e7ff{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#10b981{% elif m.tipo == 'consumo' %}#d97706{% elif m.tipo == 'reserva' %}#3b82f6{% elif m.tipo == 'merma' %}#dc2626{% elif m.tipo == 'sobrante' %}#0ea5e9{% elif m.tipo == 'correccion_baja' %}#92400e{% elif m.tipo == 'correccion_alta' %}#3730a3{% else %}#555{% endif %};">
+                                {{ m.tipo.replace('_', ' ').title() }}
+                            </span>
+                        </td>
+                        <td class="col-cantidad-u num" data-label="Cantidad (u)">{{ "%.2f"|format(m.cantidad) }}</td>
+                        <td class="col-cantidad-m num" data-label="Cantidad (m lineales)">{{ "%.2f"|format(metros_lineales) }}</td>
+                        <td class="col-cantidad-m2 num" data-label="Área (m²)">{% if area_m2 is not none %}{{ "%.2f"|format(area_m2) }}{% else %}—{% endif %}</td>
+                        <td data-label="Comentario / Orden">
+                            {% if m.orden %}
+                                <a href="{{ url_for('ordenes.detalle_order', order_id=m.orden.id) }}" target="_blank" class="orden-link">
+                                    {{ m.orden.order_num }}
+                                </a>
+                                {% if m.orden.cliente %}
+                                    <span style="color:#555; font-size:13px;">({{ m.orden.cliente.nombre }})</span>
+                                {% endif %}
+                                {% if m.comentario and m.comentario not in ['Compra', 'Ajuste por conteo físico (merma)', 'Ajuste por conteo físico (sobrante)'] %}
+                                    <span style="color:#8e8e93; font-size:12px; display:block;">{{ m.comentario }}</span>
+                                {% endif %}
+                            {% else %}
+                                {{ m.comentario or '-' }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" style="text-align:center; color:#8e8e93; padding:20px;">No hay movimientos recientes.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 
@@ -244,11 +512,33 @@
         const ctx = document.getElementById('stockChart').getContext('2d');
         const fechas = {{ fechas_json|safe }};
         const valores = {{ valores_json|safe }};
+        const fontFamily = "'Inter', sans-serif";
 
         new Chart(ctx, {
             type: 'line',
-            data: { labels: fechas, datasets: [{ label: 'Stock total (unidades)', data: valores, borderColor: '#a8854f', backgroundColor: 'rgba(168,133,79,0.08)', borderWidth: 2, pointBackgroundColor: '#a8854f', pointRadius: 2, tension: 0.3, fill: true }] },
-            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { font: { size: 10 } } }, y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10 } } } } }
+            data: {
+                labels: fechas,
+                datasets: [{
+                    label: 'Stock total (unidades)',
+                    data: valores,
+                    borderColor: '#a8854f',
+                    backgroundColor: 'rgba(168,133,79,0.08)',
+                    borderWidth: 2,
+                    pointBackgroundColor: '#a8854f',
+                    pointRadius: 2,
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { font: { size: 10, family: fontFamily } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { size: 10, family: fontFamily } } }
+                }
+            }
         });
 
         const pref = localStorage.getItem('movimientos_unit_preference') || 'metros-lineales';
