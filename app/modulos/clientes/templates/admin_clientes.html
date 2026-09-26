@@ -2,69 +2,120 @@
 
 {% block title %}Administración de Clientes · CairoStudio{% endblock %}
 
-{% block page_title %}⚙️ Administración de Clientes{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Administración de Clientes</span>
+    <span class="page-subtitle">Configuración y estadísticas</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .admin-container { max-width: 100%; padding: 0 20px; }
-    .admin-header {
+    /* ============================================================
+       TIPOGRAFÍA
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.5px;
+    }
+
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .cli-admin-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+    .cli-admin-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
         gap: 12px;
-        margin-bottom: 28px;
-    }
-    .admin-header .sub {
-        font-size: 14px;
-        color: #8e8e93;
-        font-weight: 400;
-        margin: 0;
+        margin-bottom: 24px;
     }
 
-    .admin-grid {
+    /* ============================================================
+       GRID
+       ============================================================ */
+    .cli-admin-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 24px;
-        margin-top: 8px;
+        gap: 20px;
     }
-    .admin-card {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(12px);
-        border-radius: 20px;
-        padding: 24px 24px 20px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-        transition: all 0.3s ease;
+
+    /* ============================================================
+       CARDS
+       ============================================================ */
+    .cli-admin-card {
+        background: white;
+        border-radius: 16px;
+        padding: 20px 22px 18px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        transition: all 0.25s ease;
         display: flex;
         flex-direction: column;
+        border-top: 4px solid #a8854f;
+        min-width: 0;
     }
-    .admin-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 40px rgba(0,0,0,0.06);
-        border-color: rgba(168,133,79,0.2);
+    .cli-admin-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 32px rgba(0,0,0,0.05);
     }
-    .admin-card.niveles { border-top: 5px solid #8b5cf6; }
-    .admin-card.estadisticas { border-top: 5px solid #3b82f6; }
-    .admin-card.visual { border-top: 5px solid #10b981; }
-    .admin-card.columnas { border-top: 5px solid #f59e0b; }
-    .admin-card.etiquetas { border-top: 5px solid #dc2626; }
-    .admin-card.dashboard { border-top: 5px solid #a8854f; }
+    .cli-admin-card.niveles      { border-top-color: #8b5cf6; }
+    .cli-admin-card.estadisticas { border-top-color: #3b82f6; }
+    .cli-admin-card.visual       { border-top-color: #10b981; }
+    .cli-admin-card.columnas     { border-top-color: #f59e0b; }
+    .cli-admin-card.etiquetas    { border-top-color: #dc2626; }
+    .cli-admin-card.dashboard    { border-top-color: #a8854f; }
 
-    .admin-card .card-icon { font-size: 28px; margin-bottom: 8px; color: #a8854f; opacity: 0.7; }
-    .admin-card h4 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
+    .cli-admin-card .card-icon {
+        width: 40px; height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f5f2ef;
+        color: #a8854f;
+        margin-bottom: 12px;
+        flex-shrink: 0;
+    }
+    .cli-admin-card.niveles      .card-icon { background: #f5f3ff; color: #8b5cf6; }
+    .cli-admin-card.estadisticas .card-icon { background: #eff6ff; color: #3b82f6; }
+    .cli-admin-card.visual       .card-icon { background: #ecfdf5; color: #10b981; }
+    .cli-admin-card.columnas     .card-icon { background: #fffbeb; color: #f59e0b; }
+    .cli-admin-card.etiquetas    .card-icon { background: #fef2f2; color: #dc2626; }
+
+    .cli-admin-card h4 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
         margin: 0 0 4px 0;
         color: #1c1c1e;
+        letter-spacing: -0.2px;
     }
-    .admin-card .card-desc {
-        font-size: 14px;
+    .cli-admin-card .card-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
         color: #8e8e93;
         margin: 0 0 16px 0;
         flex: 1;
+        line-height: 1.5;
     }
-    .admin-card .card-stats {
+
+    /* ============================================================
+       CARD STATS (contadores)
+       ============================================================ */
+    .cli-admin-card .card-stats {
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -74,128 +125,51 @@
         flex-wrap: wrap;
         gap: 8px;
     }
-    .admin-card .stat-item { text-align: center; min-width: 60px; }
-    .admin-card .count {
-        font-size: 28px;
+    .cli-admin-card .stat-item {
+        text-align: center;
+        min-width: 60px;
+        flex: 1;
+    }
+    .cli-admin-card .count {
+        font-family: 'Montserrat', sans-serif !important;
+        font-size: 26px;
         font-weight: 700;
         color: #1c1c1e;
-        font-family: 'Playfair Display', serif;
-        line-height: 1.2;
+        letter-spacing: -0.5px;
+        line-height: 1.1;
     }
-    .admin-card .count-label {
-        font-size: 11px;
+    .cli-admin-card .count.black    { color: #1a1a1a; }
+    .cli-admin-card .count.golden   { color: #b45309; }
+    .cli-admin-card .count.standard { color: #6b7280; }
+    .cli-admin-card .count-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
         color: #8e8e93;
         text-transform: uppercase;
         letter-spacing: 0.3px;
         font-weight: 600;
-    }
-    .admin-card .count.black { color: #1a1a1a; }
-    .admin-card .count.golden { color: #d4a574; }
-    .admin-card .count.standard { color: #8e8e93; }
-
-    .admin-card .card-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
-    .admin-card .card-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
-
-    /* Toggle switch */
-    .toggle-group { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
-    .toggle-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 4px 0;
-        border-bottom: 1px solid #f5f2ef;
-    }
-    .toggle-item .toggle-label { font-size: 14px; color: #1c1c1e; font-weight: 500; }
-    .toggle-item .toggle-label small { display: block; font-weight: 400; color: #8e8e93; font-size: 12px; }
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 44px;
-        height: 24px;
-        flex-shrink: 0;
-    }
-    .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #d2d2d7;
-        transition: 0.3s;
-        border-radius: 24px;
-    }
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 18px;
-        width: 18px;
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: 0.3s;
-        border-radius: 50%;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    }
-    .switch input:checked + .slider { background-color: #10b981; }
-    .switch input:checked + .slider:before { transform: translateX(20px); }
-
-    /* Checkbox grid */
-    .checkbox-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 6px 12px;
-        margin-top: 4px;
-    }
-    .checkbox-grid label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 13px;
-        color: #1c1c1e;
-        cursor: pointer;
-    }
-    .checkbox-grid input[type="checkbox"] {
-        width: 16px;
-        height: 16px;
-        accent-color: #a8854f;
+        margin-top: 2px;
     }
 
-    /* Color pickers */
-    .color-group {
+    /* ============================================================
+       ACCIONES DE CARD
+       ============================================================ */
+    .cli-admin-card .card-actions {
         display: flex;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-top: 8px;
-    }
-    .color-item {
-        display: flex;
-        align-items: center;
         gap: 8px;
-        font-size: 13px;
-        font-weight: 500;
+        margin-top: 16px;
+        flex-wrap: wrap;
     }
-    .color-item input[type="color"] {
-        width: 32px;
-        height: 32px;
-        border: 2px solid #e0dcd8;
-        border-radius: 6px;
-        padding: 2px;
-        cursor: pointer;
-        background: white;
-    }
-    .color-item input[type="color"]:hover { border-color: #a8854f; }
-    .color-item input[type="text"] {
-        width: 80px;
-        padding: 4px 6px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 13px;
-        font-family: 'Inter', sans-serif;
-    }
+    .cli-admin-card .card-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
 
+    /* ============================================================
+       BOTONES
+       ============================================================ */
     .btn {
         padding: 8px 18px;
         border-radius: 30px;
         border: none;
+        font-family: 'Inter', sans-serif;
         font-weight: 600;
         font-size: 13px;
         cursor: pointer;
@@ -205,13 +179,29 @@
         gap: 6px;
         background: #1c1c1e;
         color: white;
-        font-family: 'Inter', sans-serif;
         text-decoration: none;
+        white-space: nowrap;
+        line-height: 1;
     }
     .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+    .btn-success {
+        background: transparent !important;
+        border: 1px solid #10b981 !important;
+        color: #059669 !important;
+    }
+    .btn-success:hover {
+        background: #ecfdf5 !important;
+        border-color: #059669 !important;
+        color: #065f46 !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
     .btn-outline {
         background: transparent;
-        border: 1px solid #d2d2d7;
+        border: 1.5px solid #d2d2d7;
         color: #1c1c1e;
     }
     .btn-outline:hover {
@@ -220,215 +210,659 @@
         transform: none;
         box-shadow: none;
     }
-    .btn-sm { padding: 4px 12px; font-size: 12px; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; }
-    .btn-primary { background: #1c1c1e; color: white; }
-    .btn-primary:hover { background: #333; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
 
-    /* Select para tipo de gráfico */
-    .form-select {
-        padding: 4px 8px;
-        border: 1.5px solid #e0dcd8;
-        border-radius: 8px;
-        font-size: 13px;
-        background: white;
+    /* ============================================================
+       TOGGLE SWITCH
+       ============================================================ */
+    .cli-admin-toggle-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 4px;
+    }
+    .cli-admin-toggle-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0;
+        border-bottom: 1px solid #f5f2ef;
+        gap: 10px;
+    }
+    .cli-admin-toggle-item:last-child { border-bottom: none; }
+    .cli-admin-toggle-item .toggle-label {
         font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        font-weight: 500;
+        flex: 1;
+        min-width: 0;
+    }
+    .cli-admin-toggle-item .toggle-label small {
+        display: block;
+        font-weight: 400;
+        color: #8e8e93;
+        font-size: 11.5px;
+        margin-top: 2px;
+    }
+    .cli-admin-switch {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 24px;
+        flex-shrink: 0;
+    }
+    .cli-admin-switch input { opacity: 0; width: 0; height: 0; }
+    .cli-admin-switch .slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #d2d2d7;
+        transition: 0.25s;
+        border-radius: 24px;
+    }
+    .cli-admin-switch .slider::before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background: white;
+        transition: 0.25s;
+        border-radius: 50%;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+    }
+    .cli-admin-switch input:checked + .slider { background: #10b981; }
+    .cli-admin-switch input:checked + .slider::before { transform: translateX(18px); }
+
+    /* ============================================================
+       CHECKBOX GRID
+       ============================================================ */
+    .cli-admin-checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+        gap: 6px 14px;
+        margin-top: 4px;
+    }
+    .cli-admin-checkbox-grid label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #1c1c1e;
+        cursor: pointer;
+        padding: 4px 0;
+    }
+    .cli-admin-checkbox-grid input[type="checkbox"] {
+        width: 15px;
+        height: 15px;
+        accent-color: #a8854f;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    /* ============================================================
+       COLOR PICKERS
+       ============================================================ */
+    .cli-admin-color-group {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 8px;
+    }
+    .cli-admin-color-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
         color: #1c1c1e;
     }
-    .form-select:focus {
+    .cli-admin-color-item .color-label {
+        min-width: 70px;
+        font-weight: 600;
+        color: #6b6b7a;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .cli-admin-color-item input[type="color"] {
+        width: 36px;
+        height: 32px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 8px;
+        padding: 2px;
+        cursor: pointer;
+        background: white;
+        flex-shrink: 0;
+    }
+    .cli-admin-color-item input[type="color"]:hover { border-color: #a8854f; }
+    .cli-admin-color-item input[type="text"] {
+        flex: 1;
+        min-width: 0;
+        padding: 7px 11px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #1c1c1e;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cli-admin-color-item input[type="text"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+
+    /* ============================================================
+       SELECT (nativo del dashboard config)
+       ============================================================ */
+    .cli-admin-select {
+        padding: 6px 34px 6px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        background-color: white;
+        color: #1c1c1e;
+        cursor: pointer;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        width: 100%;
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8854f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+    }
+    .cli-admin-select:focus {
         outline: none;
         border-color: #a8854f;
         box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
 
-    /* Toast */
-    .toast-container {
+    /* Inputs numéricos y de color pequeños dentro del dashboard */
+    .cli-admin-inline-input {
+        padding: 6px 11px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        background: white;
+        color: #1c1c1e;
+        width: 70px;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .cli-admin-inline-input:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .cli-admin-inline-color {
+        width: 36px;
+        height: 32px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 8px;
+        padding: 2px;
+        cursor: pointer;
+        background: white;
+    }
+    .cli-admin-inline-color:hover { border-color: #a8854f; }
+
+    /* Sub-headers dentro de las cards */
+    .cli-admin-card h5 {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        letter-spacing: -0.1px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .cli-admin-card .divider {
+        border-top: 1px solid #f0ece8;
+        padding-top: 12px;
+        margin-top: 14px;
+    }
+
+    /* ============================================================
+       TOAST
+       ============================================================ */
+    .cli-admin-toast-container {
         position: fixed;
-        bottom: 30px;
-        right: 30px;
+        bottom: 24px;
+        right: 24px;
         z-index: 99999;
         display: flex;
         flex-direction: column;
         gap: 10px;
-        max-width: 420px;
-        width: 100%;
+        max-width: 400px;
+        width: calc(100% - 48px);
         pointer-events: none;
     }
-    .toast {
-        background: rgba(255,255,255,0.95);
-        backdrop-filter: blur(12px);
-        border-radius: 16px;
-        padding: 16px 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.08);
-        border: 1px solid rgba(0,0,0,0.04);
+    .cli-admin-toast {
+        background: white;
+        border-radius: 14px;
+        padding: 14px 18px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        border: 1px solid #f0ece8;
+        border-left: 4px solid #a8854f;
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: 12px;
         pointer-events: all;
-        animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-        transform-origin: bottom right;
+        animation: cli-admin-toast-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
-    .toast.out { animation: toastOut 0.3s ease forwards; }
-    @keyframes toastIn {
+    .cli-admin-toast.out { animation: cli-admin-toast-out 0.3s ease forwards; }
+    @keyframes cli-admin-toast-in {
         from { transform: scale(0.9) translateY(20px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
-    @keyframes toastOut {
+    @keyframes cli-admin-toast-out {
         from { transform: scale(1); opacity: 1; }
         to { transform: scale(0.9) translateY(10px); opacity: 0; }
     }
-    .toast .toast-icon {
-        font-size: 24px;
-        flex-shrink: 0;
-        width: 36px;
-        height: 36px;
+    .cli-admin-toast.success { border-left-color: #10b981; }
+    .cli-admin-toast.error   { border-left-color: #dc2626; }
+    .cli-admin-toast.info    { border-left-color: #3b82f6; }
+
+    .cli-admin-toast .toast-icon {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
+        flex-shrink: 0;
+        background: #f5f2ef;
+        color: #a8854f;
     }
-    .toast.success .toast-icon { background: #d1fae5; color: #065f46; }
-    .toast.error .toast-icon { background: #fde8e5; color: #991b1b; }
-    .toast.info .toast-icon { background: #e0f2fe; color: #1e3a8a; }
-    .toast .toast-content { flex: 1; }
-    .toast .toast-title { font-weight: 600; font-size: 14px; color: #1c1c1e; }
-    .toast .toast-message { font-size: 13px; color: #8e8e93; margin-top: 2px; }
-    .toast .toast-close {
+    .cli-admin-toast.success .toast-icon { background: #ecfdf5; color: #10b981; }
+    .cli-admin-toast.error   .toast-icon { background: #fef2f2; color: #dc2626; }
+    .cli-admin-toast.info    .toast-icon { background: #eff6ff; color: #3b82f6; }
+    .cli-admin-toast .toast-content { flex: 1; min-width: 0; }
+    .cli-admin-toast .toast-title {
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 13.5px;
+        color: #1c1c1e;
+        letter-spacing: -0.1px;
+    }
+    .cli-admin-toast .toast-message {
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        color: #6b6b7a;
+        margin-top: 2px;
+    }
+    .cli-admin-toast .toast-close {
         background: none;
         border: none;
-        font-size: 18px;
+        font-size: 20px;
         color: #8e8e93;
         cursor: pointer;
-        padding: 4px;
+        padding: 0 2px;
         line-height: 1;
-        transition: color 0.2s;
+        transition: color 0.15s;
+        flex-shrink: 0;
     }
-    .toast .toast-close:hover { color: #1c1c1e; }
+    .cli-admin-toast .toast-close:hover { color: #1c1c1e; }
 
-    /* Modal */
-    .modal-overlay {
+    /* ============================================================
+       MODAL
+       ============================================================ */
+    .cli-admin-modal-overlay {
         display: none;
         position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(0,0,0,0.2);
-        z-index: 999;
-        backdrop-filter: blur(4px);
+        inset: 0;
+        background: rgba(20,20,25,0.4);
+        backdrop-filter: blur(6px);
+        z-index: 9999;
         justify-content: center;
         align-items: center;
+        padding: 16px;
     }
-    .modal-overlay.active { display: flex; }
-    .modal {
+    .cli-admin-modal-overlay.active { display: flex; }
+    .cli-admin-modal {
         background: white;
-        border-radius: 24px;
-        padding: 28px 32px;
-        max-width: 500px;
-        width: 90%;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
-        animation: modalIn 0.3s ease;
-        font-family: 'Inter', sans-serif;
-    }
-    @keyframes modalIn {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
-    }
-    .modal .modal-close { background: none; border: none; font-size: 28px; cursor: pointer; color: #8e8e93; float: right; line-height: 1; }
-    .modal .modal-close:hover { color: #1c1c1e; }
-    .modal h2 { font-family: 'Playfair Display', serif; font-size: 22px; margin-bottom: 16px; color: #1c1c1e; }
-    .modal .form-group { margin-bottom: 16px; }
-    .modal .form-group label { display: block; font-weight: 600; font-size: 14px; color: #333; margin-bottom: 4px; }
-    .modal .form-group input {
+        border-radius: 18px;
+        padding: 24px 26px;
+        max-width: 480px;
         width: 100%;
-        padding: 10px 14px;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.2);
+        animation: cli-admin-modal-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-sizing: border-box;
+    }
+    @keyframes cli-admin-modal-in {
+        from { transform: scale(0.94) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .cli-admin-modal .modal-header-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f0ece8;
+    }
+    .cli-admin-modal h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.2px;
+    }
+    .cli-admin-modal h3 svg { color: #a8854f; flex-shrink: 0; }
+    .cli-admin-modal .modal-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #8e8e93;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s, transform 0.15s;
+    }
+    .cli-admin-modal .modal-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .cli-admin-modal p.modal-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #6b6b7a;
+        margin: 0 0 16px 0;
+        line-height: 1.5;
+    }
+    .cli-admin-modal .form-group { margin-bottom: 14px; }
+    .cli-admin-modal .form-group label {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 10.5px;
+        color: #6b6b7a;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+    }
+    .cli-admin-modal .form-group input[type="number"] {
+        width: 100%;
+        padding: 10px 12px;
         border: 1.5px solid #e0dcd8;
         border-radius: 10px;
-        font-size: 15px;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 600;
+        font-size: 14px;
         background: #fafaf9;
+        color: #1c1c1e;
         transition: border-color 0.2s, box-shadow 0.2s;
-        font-family: 'Inter', sans-serif;
+        box-sizing: border-box;
     }
-    .modal .form-group input:focus {
+    .cli-admin-modal .form-group input[type="number"]:focus {
         outline: none;
         border-color: #a8854f;
         background: white;
-        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
     }
-    .modal .modal-actions { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
-    .modal .btn { padding: 8px 20px; border-radius: 30px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-    .modal .btn-outline { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
-    .modal .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; }
-    .modal .btn-success { background: #10b981; color: white; }
-    .modal .btn-success:hover { background: #059669; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+    .cli-admin-modal .form-group small {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: #8e8e93;
+        margin-top: 4px;
+    }
+    .cli-admin-modal .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
 
-    /* RESPONSIVE */
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
     @media (max-width: 768px) {
-        .admin-grid { grid-template-columns: 1fr; }
-        .admin-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-        .checkbox-grid { grid-template-columns: 1fr 1fr; }
-        .toast-container { max-width: 90%; right: 16px; bottom: 16px; }
-        .color-group { flex-direction: column; gap: 10px; }
-        .toggle-item { flex-wrap: wrap; gap: 8px; }
-        .admin-card { padding: 18px; }
-        .admin-card .card-actions .btn { min-width: 60px; font-size: 12px; padding: 6px 12px; }
+        .cli-admin-container { padding: 0 12px; }
+        .cli-admin-grid { grid-template-columns: 1fr; gap: 14px; }
+        .cli-admin-card { padding: 18px; border-radius: 14px; }
+        .cli-admin-checkbox-grid { grid-template-columns: 1fr 1fr; }
+        .cli-admin-toast-container {
+            right: 12px;
+            bottom: 12px;
+            width: calc(100% - 24px);
+        }
+        .cli-admin-modal { padding: 20px; border-radius: 16px; }
+        .cli-admin-modal .modal-actions { flex-direction: column; }
+        .cli-admin-modal .modal-actions .btn { width: 100%; justify-content: center; }
     }
     @media (max-width: 480px) {
-        .checkbox-grid { grid-template-columns: 1fr; }
-        .admin-header .sub { font-size: 13px; }
-        .admin-card h4 { font-size: 17px; }
+        .cli-admin-checkbox-grid { grid-template-columns: 1fr; }
+        .cli-admin-card .card-actions .btn { min-width: 0; font-size: 12px; padding: 6px 12px; }
+    }
+    /* ============================================================
+       CUSTOM SELECT (menú estilizado, no nativo del OS)
+       ============================================================ */
+    .cs-select-wrap { position: relative; display: block; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 12px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 9px;
+        background: white;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1c1c1e;
+        text-align: left;
+        min-height: 34px;
+        box-sizing: border-box;
+        transition: all 0.15s;
+    }
+    .cs-select-trigger:hover { border-color: #a8854f; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 320px;
+        padding: 6px;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+        box-sizing: border-box;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-options {
+        overflow-y: auto;
+        min-height: 0;
+    }
+    .cs-select-option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4a4a4a;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.1s;
+        text-align: left;
+    }
+    .cs-select-option:hover,
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f;
+        font-weight: 700;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="admin-container">
+<div class="cli-admin-container">
 
-    <div class="admin-header">
-        <div><p class="sub">Configuración y estadísticas del módulo de clientes</p></div>
-        <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Volver a clientes</a>
+    <div class="cli-admin-header">
+        <div>
+            <span class="page-subtitle">Configuración y estadísticas del módulo de clientes</span>
+        </div>
+        <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Volver a clientes
+        </a>
     </div>
 
-    <div class="admin-grid">
+    <div class="cli-admin-grid">
 
-        <!-- Tarjeta: Niveles -->
-        <div class="admin-card niveles">
-            <div class="card-icon"><i class="fas fa-layer-group"></i></div>
+        <!-- ============================================================
+             CARD: Niveles
+             ============================================================ -->
+        <div class="cli-admin-card niveles">
+            <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                    <polyline points="2 17 12 22 22 17"></polyline>
+                    <polyline points="2 12 12 17 22 12"></polyline>
+                </svg>
+            </div>
             <h4>Niveles de clientes</h4>
             <div class="card-desc">Configura los porcentajes para los niveles Black y Golden</div>
             <div class="card-stats">
-                <div class="stat-item"><div class="count black">{{ top_black_pct }}%</div><div class="count-label">Black (top)</div></div>
-                <div class="stat-item"><div class="count golden">{{ top_golden_pct }}%</div><div class="count-label">Golden (top)</div></div>
-                <div class="stat-item"><div class="count standard">{{ 100 - top_golden_pct|int }}%</div><div class="count-label">Standard</div></div>
+                <div class="stat-item">
+                    <div class="count black">{{ top_black_pct }}%</div>
+                    <div class="count-label">Black (top)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="count golden">{{ top_golden_pct }}%</div>
+                    <div class="count-label">Golden (top)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="count standard">{{ 100 - top_golden_pct|int }}%</div>
+                    <div class="count-label">Standard</div>
+                </div>
             </div>
             <div class="card-actions">
-                <button class="btn btn-primary btn-sm" onclick="abrirModalNiveles()"><i class="fas fa-cog"></i> Configurar</button>
+                <button class="btn btn-primary btn-sm" onclick="abrirModalNiveles()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Configurar
+                </button>
             </div>
         </div>
 
-        <!-- Tarjeta: Estadísticas -->
-        <div class="admin-card estadisticas">
-            <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+        <!-- ============================================================
+             CARD: Estadísticas actuales
+             ============================================================ -->
+        <div class="cli-admin-card estadisticas">
+            <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path>
+                    <path d="M22 12A10 10 0 0 0 12 2v10z"></path>
+                </svg>
+            </div>
             <h4>Estadísticas actuales</h4>
             <div class="card-desc">Resumen de la clasificación de clientes</div>
             <div class="card-stats">
-                <div class="stat-item"><div class="count black">{{ black_count }}</div><div class="count-label">Black</div></div>
-                <div class="stat-item"><div class="count golden">{{ golden_count }}</div><div class="count-label">Golden</div></div>
-                <div class="stat-item"><div class="count standard">{{ standard_count }}</div><div class="count-label">Standard</div></div>
+                <div class="stat-item">
+                    <div class="count black">{{ black_count }}</div>
+                    <div class="count-label">Black</div>
+                </div>
+                <div class="stat-item">
+                    <div class="count golden">{{ golden_count }}</div>
+                    <div class="count-label">Golden</div>
+                </div>
+                <div class="stat-item">
+                    <div class="count standard">{{ standard_count }}</div>
+                    <div class="count-label">Standard</div>
+                </div>
             </div>
             <div class="card-stats" style="border-top: none; padding-top: 4px; margin-top: 0;">
-                <div class="stat-item"><span class="count-label">Total clientes</span><div class="count" style="font-size:20px;">{{ total_clientes }}</div></div>
-                <div class="stat-item"><span class="count-label">Total órdenes</span><div class="count" style="font-size:20px;">{{ total_ordenes }}</div></div>
+                <div class="stat-item">
+                    <div class="count-label">Total clientes</div>
+                    <div class="count" style="font-size:20px;">{{ total_clientes }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="count-label">Total órdenes</div>
+                    <div class="count" style="font-size:20px;">{{ total_ordenes }}</div>
+                </div>
             </div>
             <div class="card-actions">
-                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline btn-sm"><i class="fas fa-users"></i> Ver clientes</a>
+                <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline btn-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    Ver clientes
+                </a>
             </div>
         </div>
 
-        <!-- Tarjeta: Columnas visibles -->
-        <div class="admin-card columnas">
-            <div class="card-icon"><i class="fas fa-table"></i></div>
+        <!-- ============================================================
+             CARD: Columnas visibles
+             ============================================================ -->
+        <div class="cli-admin-card columnas">
+            <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="3" y1="9" x2="21" y2="9"></line>
+                    <line x1="9" y1="21" x2="9" y2="9"></line>
+                </svg>
+            </div>
             <h4>Columnas visibles</h4>
             <div class="card-desc">Selecciona qué columnas mostrar en la vista de tabla</div>
-            <div class="checkbox-grid" id="columnasGrid">
+            <div class="cli-admin-checkbox-grid" id="columnasGrid">
                 {% for col in columnas_disponibles %}
                 <label>
                     <input type="checkbox" value="{{ col.id }}" {% if col.id in columnas_visibles %}checked{% endif %}>
@@ -437,106 +871,138 @@
                 {% endfor %}
             </div>
             <div class="card-actions">
-                <button class="btn btn-success btn-sm" onclick="guardarColumnas()"><i class="fas fa-save"></i> Guardar columnas</button>
+                <button class="btn btn-success btn-sm" onclick="guardarColumnas()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Guardar columnas
+                </button>
             </div>
         </div>
 
-        <!-- Tarjeta: Colores y nombres de niveles -->
-        <div class="admin-card etiquetas">
-            <div class="card-icon"><i class="fas fa-palette"></i></div>
+        <!-- ============================================================
+             CARD: Colores y etiquetas
+             ============================================================ -->
+        <div class="cli-admin-card etiquetas">
+            <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="13.5" cy="6.5" r=".5"></circle>
+                    <circle cx="17.5" cy="10.5" r=".5"></circle>
+                    <circle cx="8.5" cy="7.5" r=".5"></circle>
+                    <circle cx="6.5" cy="12.5" r=".5"></circle>
+                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path>
+                </svg>
+            </div>
             <h4>Colores y etiquetas</h4>
             <div class="card-desc">Personaliza colores y nombres de los niveles</div>
-            <div class="color-group">
-                <div class="color-item">
-                    <span>Black</span>
+            <div class="cli-admin-color-group">
+                <div class="cli-admin-color-item">
+                    <span class="color-label">Black</span>
                     <input type="color" id="colorBlack" value="{{ colores.get('black', '#1a1a1a') }}">
                     <input type="text" id="nombreBlack" value="{{ nombres.get('black', 'Black') }}">
                 </div>
-                <div class="color-item">
-                    <span>Golden</span>
+                <div class="cli-admin-color-item">
+                    <span class="color-label">Golden</span>
                     <input type="color" id="colorGolden" value="{{ colores.get('golden', '#d4a574') }}">
                     <input type="text" id="nombreGolden" value="{{ nombres.get('golden', 'Golden') }}">
                 </div>
-                <div class="color-item">
-                    <span>Standard</span>
+                <div class="cli-admin-color-item">
+                    <span class="color-label">Standard</span>
                     <input type="color" id="colorStandard" value="{{ colores.get('standard', '#8e8e93') }}">
                     <input type="text" id="nombreStandard" value="{{ nombres.get('standard', 'Standard') }}">
                 </div>
             </div>
             <div class="card-actions">
-                <button class="btn btn-success btn-sm" onclick="guardarColoresNombres()"><i class="fas fa-save"></i> Guardar colores</button>
+                <button class="btn btn-success btn-sm" onclick="guardarColoresNombres()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Guardar colores
+                </button>
             </div>
         </div>
 
-        <!-- Tarjeta: Dashboard personalizable -->
-        <div class="admin-card dashboard">
-            <div class="card-icon"><i class="fas fa-chart-simple"></i></div>
+        <!-- ============================================================
+             CARD: Dashboard personalizable
+             ============================================================ -->
+        <div class="cli-admin-card dashboard">
+            <div class="card-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="20" x2="12" y2="10"></line>
+                    <line x1="18" y1="20" x2="18" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="16"></line>
+                </svg>
+            </div>
             <h4>Dashboard personalizable</h4>
             <div class="card-desc">Configura qué gráficos y widgets mostrar en la página de clientes</div>
 
             <div style="margin-top:8px;">
-                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Gráficos</h5>
-                <div class="toggle-group">
-                    <div class="toggle-item">
+                <h5>Gráficos</h5>
+                <div class="cli-admin-toggle-group">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Mostrar "Nuevos clientes por mes"</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleGraficoNuevos" {% if dashboard_config.graficos.nuevos_clientes %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-item">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Mostrar "Distribución de niveles"</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleGraficoNiveles" {% if dashboard_config.graficos.niveles %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div style="display:flex; gap:12px; flex-wrap:wrap; margin-top:4px;">
-                        <div style="flex:1; min-width:120px;">
-                            <label style="font-size:12px; color:#8e8e93; font-weight:500;">Tipo (Nuevos)</label>
-                            <select id="tipoGraficoNuevos" class="form-select" style="width:100%;">
-                                <option value="bar" {% if dashboard_config.graficos.tipo_nuevos == 'bar' %}selected{% endif %}>Barras</option>
-                                <option value="line" {% if dashboard_config.graficos.tipo_nuevos == 'line' %}selected{% endif %}>Línea</option>
-                            </select>
-                        </div>
-                        <div style="flex:1; min-width:120px;">
-                            <label style="font-size:12px; color:#8e8e93; font-weight:500;">Tipo (Niveles)</label>
-                            <select id="tipoGraficoNiveles" class="form-select" style="width:100%;">
-                                <option value="doughnut" {% if dashboard_config.graficos.tipo_niveles == 'doughnut' %}selected{% endif %}>Dona</option>
-                                <option value="pie" {% if dashboard_config.graficos.tipo_niveles == 'pie' %}selected{% endif %}>Pastel</option>
-                            </select>
-                        </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px;">
+                    <div>
+                        <label style="font-size:11px; color:#8e8e93; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:4px;">Tipo (Nuevos)</label>
+                        <select id="tipoGraficoNuevos" class="cli-admin-select">
+                            <option value="bar" {% if dashboard_config.graficos.tipo_nuevos == 'bar' %}selected{% endif %}>Barras</option>
+                            <option value="line" {% if dashboard_config.graficos.tipo_nuevos == 'line' %}selected{% endif %}>Línea</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#8e8e93; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:4px;">Tipo (Niveles)</label>
+                        <select id="tipoGraficoNiveles" class="cli-admin-select">
+                            <option value="doughnut" {% if dashboard_config.graficos.tipo_niveles == 'doughnut' %}selected{% endif %}>Dona</option>
+                            <option value="pie" {% if dashboard_config.graficos.tipo_niveles == 'pie' %}selected{% endif %}>Pastel</option>
+                        </select>
                     </div>
                 </div>
             </div>
 
-            <div style="margin-top:16px; border-top:1px solid #f0ece8; padding-top:12px;">
-                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Widgets</h5>
-                <div class="toggle-group">
-                    <div class="toggle-item">
+            <div class="divider">
+                <h5>Widgets</h5>
+                <div class="cli-admin-toggle-group">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Nuevos este mes</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleWidgetNuevosMes" {% if dashboard_config.widgets.nuevos_mes %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-item">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Tasa de retención</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleWidgetRetencion" {% if dashboard_config.widgets.retencion %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-item">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Top 5 clientes</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleWidgetTopClientes" {% if dashboard_config.widgets.top_clientes %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
                     </div>
-                    <div class="toggle-item">
+                    <div class="cli-admin-toggle-item">
                         <span class="toggle-label">Clientes recientes</span>
-                        <label class="switch">
+                        <label class="cli-admin-switch">
                             <input type="checkbox" id="toggleWidgetRecientes" {% if dashboard_config.widgets.recientes %}checked{% endif %}>
                             <span class="slider"></span>
                         </label>
@@ -544,74 +1010,111 @@
                 </div>
             </div>
 
-            <div style="margin-top:16px; border-top:1px solid #f0ece8; padding-top:12px;">
-                <h5 style="font-size:14px; font-weight:600; color:#1c1c1e; margin:0 0 6px 0;">Estilo</h5>
-                <div style="display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+            <div class="divider">
+                <h5>Estilo</h5>
+                <div style="display:flex; gap:14px; flex-wrap:wrap; align-items:flex-end;">
                     <div>
-                        <label style="font-size:12px; color:#8e8e93; font-weight:500;">Altura de gráficos (px)</label>
-                        <input type="number" id="alturaGraficos" value="{{ dashboard_config.estilo.altura_graficos }}" style="width:70px; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                        <label style="font-size:11px; color:#8e8e93; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:4px;">Altura gráficos (px)</label>
+                        <input type="number" id="alturaGraficos" class="cli-admin-inline-input" value="{{ dashboard_config.estilo.altura_graficos }}" min="40" max="400">
                     </div>
                     <div>
-                        <label style="font-size:12px; color:#8e8e93; font-weight:500;">Color gráfico de nuevos</label>
-                        <input type="color" id="colorGraficoNuevos" value="{{ dashboard_config.colores.grafico_nuevos }}" style="width:36px; height:36px; border:2px solid #e0dcd8; border-radius:6px; padding:2px; cursor:pointer;">
+                        <label style="font-size:11px; color:#8e8e93; font-weight:600; text-transform:uppercase; letter-spacing:0.4px; display:block; margin-bottom:4px;">Color gráfico nuevos</label>
+                        <input type="color" id="colorGraficoNuevos" class="cli-admin-inline-color" value="{{ dashboard_config.colores.grafico_nuevos }}">
                     </div>
                 </div>
             </div>
 
             <div class="card-actions" style="margin-top:16px;">
-                <button class="btn btn-success btn-sm" onclick="guardarDashboardConfig()"><i class="fas fa-save"></i> Guardar dashboard</button>
+                <button class="btn btn-success btn-sm" onclick="guardarDashboardConfig()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    Guardar dashboard
+                </button>
             </div>
         </div>
 
     </div>
 </div>
 
-<!-- ===== MODAL NIVELES ===== -->
-<div class="modal-overlay" id="modalNiveles">
-    <div class="modal">
-        <button class="modal-close" onclick="cerrarModal('modalNiveles')">&times;</button>
-        <h2><i class="fas fa-sliders-h"></i> Configurar porcentajes</h2>
-        <p style="color:#8e8e93; font-size:14px; margin-bottom:16px;">
+<!-- ============================================================
+     MODAL: Configurar niveles
+     ============================================================ -->
+<div class="cli-admin-modal-overlay" id="modalNiveles">
+    <div class="cli-admin-modal">
+        <div class="modal-header-row">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="21" x2="4" y2="14"></line>
+                    <line x1="4" y1="10" x2="4" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="3"></line>
+                    <line x1="20" y1="21" x2="20" y2="16"></line>
+                    <line x1="20" y1="12" x2="20" y2="3"></line>
+                    <line x1="1" y1="14" x2="7" y2="14"></line>
+                    <line x1="9" y1="8" x2="15" y2="8"></line>
+                    <line x1="17" y1="16" x2="23" y2="16"></line>
+                </svg>
+                Configurar porcentajes
+            </h3>
+            <button type="button" class="modal-close" onclick="cerrarModal('modalNiveles')">&times;</button>
+        </div>
+        <p class="modal-desc">
             Porcentaje de clientes que pertenecen a cada nivel (basado en metros consumidos).
         </p>
         <div class="form-group">
             <label>Black (top %)</label>
             <input type="number" id="configTopBlack" step="0.5" min="0.5" max="50" value="{{ top_black_pct }}">
-            <small style="color:#8e8e93;">Ej: 5% = el 5% superior de clientes</small>
+            <small>Ej: 5% = el 5% superior de clientes</small>
         </div>
         <div class="form-group">
             <label>Golden (top %)</label>
-            <input type="number" id="configTopGolden" step="0.5" min="1" max="80" value="{{ top_golden_pct }}">
-            <small style="color:#8e8e93;">El rango desde el % de Black hasta este % es Golden</small>
+            <input type="number" id="configTopGolden" step="1" min="1" max="80" value="{{ top_golden_pct }}">
+            <small>El rango desde el % de Black hasta este % es Golden</small>
         </div>
         <div class="modal-actions">
-            <button class="btn btn-outline" onclick="cerrarModal('modalNiveles')">Cancelar</button>
-            <button class="btn btn-success" onclick="guardarNiveles()"><i class="fas fa-save"></i> Guardar</button>
+            <button type="button" class="btn btn-outline" onclick="cerrarModal('modalNiveles')">Cancelar</button>
+            <button type="button" class="btn btn-primary" onclick="guardarNiveles()">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                Guardar
+            </button>
         </div>
     </div>
 </div>
 
-<!-- ===== TOAST CONTAINER ===== -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="cli-admin-toast-container" id="toastContainer"></div>
 
 <script>
-    // ===== TOAST =====
+    // ============================================================
+    // TOAST (con iconos SVG)
+    // ============================================================
     function showToast(title, message, type = 'info') {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+        toast.className = `cli-admin-toast ${type}`;
+
         const icons = {
-            success: 'fa-check-circle',
-            error: 'fa-exclamation-circle',
-            info: 'fa-info-circle'
+            success: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+            error:   '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>',
+            info:    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
         };
+
         toast.innerHTML = `
-            <div class="toast-icon"><i class="fas ${icons[type] || icons.info}"></i></div>
+            <div class="toast-icon">${icons[type] || icons.info}</div>
             <div class="toast-content">
                 <div class="toast-title">${title}</div>
                 <div class="toast-message">${message}</div>
             </div>
-            <button class="toast-close" onclick="this.closest('.toast').remove()">&times;</button>
+            <button class="toast-close" onclick="this.closest('.cli-admin-toast').remove()">&times;</button>
         `;
         container.appendChild(toast);
         setTimeout(() => {
@@ -620,12 +1123,16 @@
         }, 4000);
     }
 
-    // ===== MODAL =====
+    // ============================================================
+    // MODAL
+    // ============================================================
     function cerrarModal(id) {
         document.getElementById(id).classList.remove('active');
     }
 
-    // ===== NIVELES =====
+    // ============================================================
+    // NIVELES
+    // ============================================================
     function abrirModalNiveles() {
         fetch('/clientes/configuracion')
             .then(r => r.json())
@@ -634,7 +1141,7 @@
                 document.getElementById('configTopGolden').value = data.top_golden_pct;
                 document.getElementById('modalNiveles').classList.add('active');
             })
-            .catch(err => showToast('Error', 'No se pudo cargar la configuración', 'error'));
+            .catch(() => showToast('Error', 'No se pudo cargar la configuración', 'error'));
     }
 
     function guardarNiveles() {
@@ -652,22 +1159,22 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showToast('✅ Guardado', 'Porcentajes actualizados. Recargando...', 'success');
+                showToast('Guardado', 'Porcentajes actualizados. Recargando...', 'success');
                 setTimeout(() => window.location.reload(), 800);
             } else {
                 showToast('Error', data.error || 'Error al guardar', 'error');
             }
         })
-        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+        .catch(() => showToast('Error', 'Error de conexión', 'error'));
     }
 
-    // ===== COLUMNAS =====
+    // ============================================================
+    // COLUMNAS
+    // ============================================================
     function guardarColumnas() {
         const checkboxes = document.querySelectorAll('#columnasGrid input[type="checkbox"]');
         const columnas = [];
-        checkboxes.forEach(cb => {
-            if (cb.checked) columnas.push(cb.value);
-        });
+        checkboxes.forEach(cb => { if (cb.checked) columnas.push(cb.value); });
         fetch('/clientes/configuracion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -676,25 +1183,27 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showToast('✅ Columnas guardadas', 'La tabla se actualizará al recargar', 'success');
+                showToast('Columnas guardadas', 'La tabla se actualizará al recargar', 'success');
                 setTimeout(() => window.location.reload(), 800);
             } else {
                 showToast('Error', data.error || 'Error al guardar columnas', 'error');
             }
         })
-        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+        .catch(() => showToast('Error', 'Error de conexión', 'error'));
     }
 
-    // ===== COLORES Y NOMBRES =====
+    // ============================================================
+    // COLORES Y NOMBRES
+    // ============================================================
     function guardarColoresNombres() {
         const colores = {
-            black: document.getElementById('colorBlack').value,
-            golden: document.getElementById('colorGolden').value,
+            black:    document.getElementById('colorBlack').value,
+            golden:   document.getElementById('colorGolden').value,
             standard: document.getElementById('colorStandard').value
         };
         const nombres = {
-            black: document.getElementById('nombreBlack').value.trim() || 'Black',
-            golden: document.getElementById('nombreGolden').value.trim() || 'Golden',
+            black:    document.getElementById('nombreBlack').value.trim() || 'Black',
+            golden:   document.getElementById('nombreGolden').value.trim() || 'Golden',
             standard: document.getElementById('nombreStandard').value.trim() || 'Standard'
         };
         fetch('/clientes/configuracion', {
@@ -705,16 +1214,18 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showToast('✅ Colores guardados', 'Los cambios se aplicarán al recargar', 'success');
+                showToast('Colores guardados', 'Los cambios se aplicarán al recargar', 'success');
                 setTimeout(() => window.location.reload(), 800);
             } else {
                 showToast('Error', data.error || 'Error al guardar colores', 'error');
             }
         })
-        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+        .catch(() => showToast('Error', 'Error de conexión', 'error'));
     }
 
-    // ===== DASHBOARD CONFIGURACIÓN =====
+    // ============================================================
+    // DASHBOARD CONFIG
+    // ============================================================
     function guardarDashboardConfig() {
         const config = {
             graficos: {
@@ -743,7 +1254,6 @@
                 mostrar_etiquetas: true
             }
         };
-
         fetch('/clientes/configuracion', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -752,25 +1262,189 @@
         .then(r => r.json())
         .then(data => {
             if (data.success) {
-                showToast('✅ Dashboard guardado', 'Los cambios se aplicarán al recargar', 'success');
+                showToast('Dashboard guardado', 'Los cambios se aplicarán al recargar', 'success');
                 setTimeout(() => window.location.reload(), 800);
             } else {
                 showToast('Error', data.error || 'Error al guardar dashboard', 'error');
             }
         })
-        .catch(err => showToast('Error', 'Error de conexión', 'error'));
+        .catch(() => showToast('Error', 'Error de conexión', 'error'));
     }
 
-    // ===== CARGAR PREFERENCIAS =====
+    // ============================================================
+    // MODALES
+    // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
-        // Cargar valores actuales para el dashboard (ya están en los inputs)
+        const modal = document.getElementById('modalNiveles');
+        if (modal) {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) modal.classList.remove('active');
+            });
+        }
+
+        // Custom selects del dashboard
+        initCustomSelect(document.getElementById('tipoGraficoNuevos'));
+        initCustomSelect(document.getElementById('tipoGraficoNiveles'));
     });
 
-    // Cerrar modales con escape
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay.active').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.cli-admin-modal-overlay.active').forEach(el => el.classList.remove('active'));
         }
     });
+    // ================================================================
+    //  CUSTOM SELECT
+    // ================================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
+
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
+
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            valueEl.textContent = opt ? opt.textContent : '—';
+        }
+
+        function renderOptions() {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.value === selectEl.value) item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                item.addEventListener('mouseenter', () => {
+                    highlightedIndex = filteredIndexes.length - 1;
+                    updateHighlight();
+                });
+                optionsContainer.appendChild(item);
+            });
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(320, menu.scrollHeight || 200);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 180) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
+                }
+            });
+            renderOptions();
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+        }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
+
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(1); }
+            else if (e.key === 'ArrowUp') { e.preventDefault(); if (!wrap.classList.contains('open')) open(); else moveHighlight(-1); }
+            else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (wrap.classList.contains('open')) selectHighlighted(); else open(); }
+            else if (e.key === 'Escape') { if (wrap.classList.contains('open')) { e.preventDefault(); close(); } }
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        selectEl._csRefresh = updateValue;
+        updateValue();
+    }
 </script>
 {% endblock %}

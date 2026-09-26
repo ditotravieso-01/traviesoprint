@@ -4,19 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ empresa_nombre }}{% endblock %}</title>
-    <!-- Google Fonts -->
+    <!-- Google Fonts — Inter única · Montserrat solo valores técnicos · Playfair solo PDF -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- Font Awesome 6 -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <!-- ===== FAVICON DINÁMICO ===== -->
     <link rel="icon" href="{{ url_for('static', filename=favicon_url) }}" type="image/x-icon">
     <link rel="shortcut icon" href="{{ url_for('static', filename=favicon_url) }}" type="image/x-icon">
     {% block extra_css %}{% endblock %}
 
-    <!-- ===== CSS VARIABLES DINÁMICAS ===== -->
     <style>
         :root {
             --color-primary: {{ color_primario }};
@@ -24,7 +20,6 @@
             --color-text: #1c1c1e;
             --color-bg: #faf8f6;
         }
-        /* ===== RESET Y BASE ===== */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body {
             background: var(--color-bg);
@@ -33,7 +28,20 @@
             min-height: 100vh;
         }
 
-        /* ===== OVERLAY DE CARGA (sin cambios) ===== */
+        /* ===== ICONOS SVG GLOBALES ===== */
+        .icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            stroke-width: 2;
+            vertical-align: middle;
+            display: inline-block;
+        }
+        .icon-sm { width: 15px; height: 15px; }
+        .icon-md { width: 20px; height: 20px; }
+        .icon-lg { width: 22px; height: 22px; }
+
+        /* ===== OVERLAY DE CARGA ===== */
         .transition-overlay {
             position: fixed;
             top: 0;
@@ -74,7 +82,7 @@
             border-top-color: var(--color-secondary);
             border-radius: 50%;
             animation: spin 0.8s linear infinite;
-            margin-top: 12px;
+            margin: 12px auto 0;
         }
         .transition-overlay .overlay-text {
             color: var(--color-text);
@@ -111,20 +119,17 @@
             box-shadow: 2px 0 20px rgba(0,0,0,0.02);
             overflow: hidden;
             z-index: 1000;
-            transition: none;
         }
         .sidebar.collapsed { width: 70px; }
         .sidebar-brand {
             padding: 0 20px 20px 20px;
             text-align: center;
             border-bottom: 1px solid #f0ece8;
-            transition: none;
         }
         .sidebar.collapsed .sidebar-brand { padding: 0 10px 20px 10px; }
         .sidebar-brand img {
             max-height: 50px;
             width: auto;
-            transition: none;
         }
         .sidebar.collapsed .sidebar-brand img { max-width: 40px; }
         .sidebar-nav {
@@ -133,6 +138,7 @@
             display: flex;
             flex-direction: column;
             gap: 4px;
+            overflow-y: auto;
         }
         .nav-item {
             display: flex;
@@ -144,16 +150,21 @@
             text-decoration: none;
             font-weight: 500;
             font-size: 14px;
-            transition: all 0.2s;
             font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
             white-space: nowrap;
         }
-        .nav-item i { width: 20px; text-align: center; font-size: 16px; flex-shrink: 0; }
+        .nav-item .icon {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            stroke-width: 2;
+        }
         .nav-item span { transition: opacity 0.2s; }
         .nav-item:hover { background: rgba(0,0,0,0.03); color: var(--color-text); }
-        .nav-item.active { 
-            background: var(--color-primary); 
-            color: white; 
+        .nav-item.active {
+            background: var(--color-primary);
+            color: white;
             box-shadow: 0 4px 12px rgba(0,0,0,0.06);
         }
         .nav-item.logout { margin-top: auto; color: #dc2626; }
@@ -165,7 +176,7 @@
             gap: 0;
         }
         .sidebar.collapsed .nav-item span { display: none !important; }
-        .sidebar.collapsed .nav-item i { margin: 0; font-size: 20px; }
+        .sidebar.collapsed .nav-item .icon { width: 20px; height: 20px; }
         .sidebar.collapsed .sidebar-footer .version { display: none !important; }
 
         .sidebar-footer {
@@ -174,11 +185,10 @@
             text-align: center;
             font-size: 12px;
             color: #8e8e93;
-            transition: none;
+            font-family: 'Inter', sans-serif;
         }
         .sidebar.collapsed .sidebar-footer { padding: 16px 10px; }
 
-        /* Overlay para móvil (sin cambios) */
         .sidebar-overlay {
             display: none;
             position: fixed;
@@ -188,6 +198,7 @@
             height: 100%;
             background: rgba(0,0,0,0.25);
             backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
             z-index: 999;
             transition: opacity 0.3s;
         }
@@ -199,7 +210,6 @@
             padding: 24px 32px;
             overflow-y: auto;
             background: var(--color-bg);
-            transition: padding 0.3s;
             min-width: 0;
         }
         .topbar {
@@ -207,28 +217,38 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 24px;
+            gap: 12px;
+            flex-wrap: wrap;
         }
         .topbar-left {
             display: flex;
             align-items: center;
             gap: 16px;
+            min-width: 0;
+            flex: 1;
         }
         .sidebar-toggle {
             background: none;
             border: none;
-            font-size: 22px;
             color: var(--color-text);
             cursor: pointer;
             padding: 4px;
-            transition: transform 0.3s;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
         .sidebar-toggle:hover { color: var(--color-secondary); }
+        .sidebar-toggle .icon { width: 22px; height: 22px; }
+
+        /* page_title SIEMPRE Inter (regla Parte 22) */
         .page-title {
-            font-family: 'Playfair Display', serif;
+            font-family: 'Inter', sans-serif;
             font-size: 28px;
             font-weight: 700;
             color: var(--color-text);
             margin: 0;
+            letter-spacing: -0.4px;
         }
         .topbar-right {
             display: flex;
@@ -242,13 +262,14 @@
             font-size: 14px;
             color: var(--color-text);
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
             text-decoration: none;
-            padding: 4px 8px;
-            border-radius: 8px;
+            padding: 4px 10px;
+            border-radius: 10px;
             transition: background 0.2s;
         }
         .user-badge:hover { background: rgba(0,0,0,0.03); }
-        .user-badge i { font-size: 22px; color: var(--color-secondary); }
+        .user-badge .icon { width: 22px; height: 22px; color: var(--color-secondary); }
         .role-badge {
             background: #f0ece8;
             padding: 2px 10px;
@@ -258,9 +279,10 @@
             color: #555;
             text-transform: uppercase;
             letter-spacing: 0.3px;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* ===== NOTIFICACIONES (Dropdown) ===== */
+        /* ===== NOTIFICACIONES ===== */
         .notificacion-wrapper {
             position: relative;
             display: inline-block;
@@ -269,13 +291,17 @@
             cursor: pointer;
             position: relative;
             padding: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
-        .notificacion-wrapper .campana-container i {
-            font-size: 22px;
+        .notificacion-wrapper .campana-container .icon {
+            width: 22px;
+            height: 22px;
             color: var(--color-text);
             transition: color 0.2s;
         }
-        .notificacion-wrapper .campana-container:hover i {
+        .notificacion-wrapper .campana-container:hover .icon {
             color: var(--color-secondary);
         }
         .notificacion-badge {
@@ -286,6 +312,7 @@
             color: white;
             font-size: 10px;
             font-weight: 700;
+            font-family: 'Inter', sans-serif;
             padding: 2px 6px;
             border-radius: 30px;
             line-height: 1.2;
@@ -303,8 +330,9 @@
             width: 360px;
             max-height: 400px;
             overflow-y: auto;
-            background: rgba(255,255,255,0.96);
+            background: rgba(255,255,255,0.97);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 16px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.08);
             border: 1px solid rgba(0,0,0,0.04);
@@ -323,6 +351,7 @@
         .notificacion-dropdown .dropdown-header {
             padding: 12px 16px;
             font-weight: 600;
+            font-family: 'Inter', sans-serif;
             border-bottom: 1px solid #f0ece8;
             display: flex;
             justify-content: space-between;
@@ -331,6 +360,7 @@
             top: 0;
             background: inherit;
             backdrop-filter: inherit;
+            -webkit-backdrop-filter: inherit;
             border-radius: 16px 16px 0 0;
             z-index: 1;
         }
@@ -340,6 +370,7 @@
             color: var(--color-secondary);
             font-size: 12px;
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
             transition: color 0.2s;
         }
@@ -364,11 +395,13 @@
         .notificacion-item .mensaje {
             font-size: 13px;
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
         }
         .notificacion-item .fecha {
             font-size: 11px;
             color: #8e8e93;
             margin-top: 2px;
+            font-family: 'Inter', sans-serif;
         }
         .sin-notificaciones {
             padding: 20px 16px;
@@ -376,18 +409,11 @@
             color: #8e8e93;
             font-size: 14px;
             display: block;
+            font-family: 'Inter', sans-serif;
         }
-        .notificacion-dropdown::-webkit-scrollbar {
-            width: 4px;
-        }
-        .notificacion-dropdown::-webkit-scrollbar-track {
-            background: #f5f2ef;
-        }
-        .notificacion-dropdown::-webkit-scrollbar-thumb {
-            background: #d2d2d7;
-            border-radius: 4px;
-        }
-        /* ===== BOTÓN "VER TODAS" ===== */
+        .notificacion-dropdown::-webkit-scrollbar { width: 4px; }
+        .notificacion-dropdown::-webkit-scrollbar-track { background: #f5f2ef; }
+        .notificacion-dropdown::-webkit-scrollbar-thumb { background: #d2d2d7; border-radius: 4px; }
         .dropdown-footer {
             padding: 10px 16px;
             border-top: 1px solid #f0ece8;
@@ -397,11 +423,10 @@
             color: var(--color-secondary);
             font-size: 13px;
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
             text-decoration: none;
         }
-        .dropdown-footer a:hover {
-            text-decoration: underline;
-        }
+        .dropdown-footer a:hover { text-decoration: underline; }
 
         /* ===== FLASH MESSAGES ===== */
         .flash-messages { margin-bottom: 20px; }
@@ -413,12 +438,13 @@
             gap: 12px;
             font-size: 14px;
             font-weight: 500;
+            font-family: 'Inter', sans-serif;
             margin-bottom: 8px;
             animation: flashIn 0.3s ease;
             border-left: 4px solid transparent;
             transition: opacity 0.3s;
         }
-        .flash-message i { font-size: 18px; }
+        .flash-message .icon { width: 18px; height: 18px; }
         .flash-close {
             margin-left: auto;
             background: none;
@@ -428,24 +454,26 @@
             color: inherit;
             opacity: 0.6;
             padding: 0 4px;
+            font-family: 'Inter', sans-serif;
         }
         .flash-close:hover { opacity: 1; }
-        .flash-success { background: #d1fae5; color: #065f46; border-left-color: #10b981; }
-        .flash-danger { background: #fde8e5; color: #991b1b; border-left-color: #dc2626; }
-        .flash-warning { background: #fef3c7; color: #78350f; border-left-color: #f59e0b; }
-        .flash-info { background: #e0f2fe; color: #1e3a8a; border-left-color: #3b82f6; }
+        .flash-success { background: #ecfdf5; color: #065f46; border-left-color: #10b981; }
+        .flash-danger  { background: #fde8e5; color: #991b1b; border-left-color: #dc2626; }
+        .flash-warning { background: #fffbeb; color: #78350f; border-left-color: #f59e0b; }
+        .flash-info    { background: #e0f2fe; color: #075985; border-left-color: #3b82f6; }
         @keyframes flashIn { from { transform: translateY(-12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
         /* ===== CARDS Y ELEMENTOS COMUNES ===== */
         .card {
-            background: rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.85);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border-radius: 16px;
             padding: 20px 24px;
             border: 1px solid rgba(0,0,0,0.04);
             box-shadow: 0 4px 20px rgba(0,0,0,0.02);
             margin-bottom: 20px;
-            transition: all 0.2s;
+            transition: box-shadow 0.2s;
         }
         .card:hover { box-shadow: 0 8px 30px rgba(0,0,0,0.04); }
         .btn {
@@ -466,21 +494,19 @@
             background: var(--color-primary);
             color: white;
         }
-        .btn-primary:hover { 
-            transform: translateY(-1px); 
+        .btn-primary:hover {
+            transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             filter: brightness(1.05);
         }
-        .btn-outline { 
-            background: transparent; 
-            border: 1px solid #d2d2d7; 
-            color: var(--color-text); 
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #d2d2d7;
+            color: var(--color-text);
         }
-        .btn-outline:hover { 
-            border-color: var(--color-secondary); 
-            background: #f5f5f5; 
-            transform: none; 
-            box-shadow: none; 
+        .btn-outline:hover {
+            border-color: var(--color-secondary);
+            background: #f5f5f5;
         }
         .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
         .btn-success { background: #10b981; color: white; }
@@ -489,15 +515,8 @@
         .btn-warning:hover { background: #d97706; }
         .btn-danger { background: #dc2626; color: white; }
         .btn-danger:hover { background: #b91c1c; }
-        /* Botón secundario con color secondary */
-        .btn-secondary {
-            background: var(--color-secondary);
-            color: white;
-        }
-        .btn-secondary:hover {
-            filter: brightness(0.9);
-            transform: translateY(-1px);
-        }
+        .btn-secondary { background: var(--color-secondary); color: white; }
+        .btn-secondary:hover { filter: brightness(0.9); transform: translateY(-1px); }
         .badge {
             font-size: 12px;
             font-weight: 600;
@@ -568,7 +587,6 @@
     <!-- ===== OVERLAY DE CARGA ===== -->
     <div class="transition-overlay" id="transitionOverlay">
         <div class="overlay-content">
-            <!-- Logo dinámico con fallback -->
             <img src="{{ url_for('static', filename=logo_url) }}" alt="{{ empresa_nombre }}" onerror="this.src='{{ url_for('static', filename='img/logo_default.png') }}'">
             <div class="spinner"></div>
             <div class="overlay-text">Cargando...</div>
@@ -577,7 +595,6 @@
 
     <!-- ===== CONTENEDOR PRINCIPAL ===== -->
     <div class="app-container">
-        <!-- Overlay para móvil -->
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
         <!-- Sidebar -->
@@ -589,83 +606,80 @@
             </div>
             <nav class="sidebar-nav">
                 <a href="{{ url_for('home.index') }}" class="nav-item nav-link {% if request.endpoint == 'home.index' %}active{% endif %}">
-                    <i class="fas fa-home"></i><span>Inicio</span>
+                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    <span>Inicio</span>
                 </a>
                 {% if current_user.is_authenticated %}
-                    <!-- Órdenes -->
                     {% if current_user.role in ['comercial', 'admin', 'economico'] %}
                     <a href="{{ url_for('ordenes.list_orders') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('ordenes.') %}active{% endif %}">
-                        <i class="fas fa-clipboard-list"></i><span>Órdenes</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+                        <span>Órdenes</span>
                     </a>
                     {% endif %}
 
-                    <!-- Workflow -->
                     <a href="{{ url_for('workflow.board') }}" class="nav-item nav-link {% if request.endpoint == 'workflow.board' %}active{% endif %}">
-                        <i class="fas fa-columns"></i><span>Workflow</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                        <span>Workflow</span>
                     </a>
 
-                    <!-- Inventario -->
                     {% if current_user.role in ['economico', 'admin'] %}
                     <a href="{{ url_for('inventario.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('inventario.') %}active{% endif %}">
-                        <i class="fas fa-warehouse"></i><span>Inventario</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                        <span>Inventario</span>
                     </a>
                     {% endif %}
 
-                    <!-- Etiquetas -->
                     {% if current_user.role in ['comercial', 'admin'] %}
                     <a href="{{ url_for('etiquetas.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('etiquetas.') %}active{% endif %}">
-                        <i class="fas fa-tag"></i><span>Etiquetas</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                        <span>Etiquetas</span>
                     </a>
-                    {% endif %}
-
-                    <!-- Carteles -->
-                    {% if current_user.role in ['comercial', 'admin'] %}
                     <a href="{{ url_for('carteles.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('carteles.') %}active{% endif %}">
-                        <i class="fas fa-image"></i><span>Carteles</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <span>Carteles</span>
                     </a>
-                    {% endif %}
-
-                    <!-- Clientes -->
-                    {% if current_user.role in ['comercial', 'admin'] %}
                     <a href="{{ url_for('clientes.listar_clientes') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('clientes.') %}active{% endif %}">
-                        <i class="fas fa-users"></i><span>Clientes</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        <span>Clientes</span>
                     </a>
                     {% endif %}
 
-                    <!-- Empleados -->
                     {% if current_user.role in ['admin', 'economico'] %}
                     <a href="{{ url_for('empleados.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('empleados.') %}active{% endif %}">
-                        <i class="fas fa-user-clock"></i><span>Empleados</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/><circle cx="18" cy="6" r="3"/></svg>
+                        <span>Empleados</span>
                     </a>
                     {% endif %}
 
                     {% if has_perm('calendario', 'view') %}
                     <a href="{{ url_for('calendario.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('calendario.') %}active{% endif %}">
-                        <i class="fas fa-calendar-alt"></i><span>Calendario</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span>Calendario</span>
                     </a>
                     {% endif %}
 
-                    <!-- Usuarios (solo admin) -->
                     {% if current_user.role == 'admin' %}
                     <a href="{{ url_for('auth.admin_users') }}" class="nav-item nav-link {% if request.endpoint == 'auth.admin_users' %}active{% endif %}">
-                        <i class="fas fa-user-cog"></i><span>Usuarios</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><circle cx="19" cy="11" r="2"/><path d="M19 15a3 3 0 0 0-3 3v1"/></svg>
+                        <span>Usuarios</span>
                     </a>
-                    <!-- Configuración (solo admin) -->
                     <a href="{{ url_for('admin.configuracion') }}" class="nav-item nav-link {% if request.endpoint == 'admin.configuracion' %}active{% endif %}">
-                        <i class="fas fa-sliders-h"></i><span>Configuración</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                        <span>Configuración</span>
                     </a>
                     {% endif %}
 
-                    <!-- Cerrar sesión -->
                     <a href="#" class="nav-item logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
-                        <i class="fas fa-sign-out-alt"></i><span>Cerrar sesión</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        <span>Cerrar sesión</span>
                     </a>
                     <form id="logout-form" action="{{ url_for('auth.logout') }}" method="POST" style="display:none;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() if csrf_token else '' }}">
                     </form>
                 {% else %}
                     <a href="{{ url_for('auth.login') }}" class="nav-item nav-link">
-                        <i class="fas fa-sign-in-alt"></i><span>Iniciar sesión</span>
+                        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Iniciar sesión</span>
                     </a>
                 {% endif %}
             </nav>
@@ -678,17 +692,16 @@
         <main class="main-content" id="mainContent">
             <header class="topbar">
                 <div class="topbar-left">
-                    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
-                        <i class="fas fa-bars" id="sidebarIcon"></i>
+                    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Menú">
+                        <svg class="icon" id="sidebarIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
                     </button>
                     <h1 class="page-title">{% block page_title %}{{ empresa_nombre }}{% endblock %}</h1>
                 </div>
                 <div class="topbar-right">
-                    <!-- ===== NOTIFICACIONES ===== -->
                     {% if current_user.is_authenticated %}
                     <div class="notificacion-wrapper">
                         <div class="campana-container" id="campanaContainer">
-                            <i class="fas fa-bell" id="campanaIcon"></i>
+                            <svg class="icon" id="campanaIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                             <span class="notificacion-badge" id="notificacionesBadge">0</span>
                         </div>
                         <div class="notificacion-dropdown" id="notificacionesDropdown">
@@ -699,7 +712,6 @@
                             <div id="notificacionesList">
                                 <span class="sin-notificaciones">Cargando...</span>
                             </div>
-                            <!-- Footer con enlace a historial -->
                             <div class="dropdown-footer">
                                 <a href="{{ url_for('notificaciones.historial') }}">Ver todas</a>
                             </div>
@@ -709,8 +721,8 @@
 
                     {% if current_user.is_authenticated %}
                         <a href="{{ url_for('auth.profile') }}" class="user-badge nav-link">
-                            <i class="fas fa-user-circle"></i>
-                            {{ current_user.username }}
+                            <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>{{ current_user.username }}</span>
                             <span class="role-badge">{{ current_user.role }}</span>
                         </a>
                     {% endif %}
@@ -723,8 +735,16 @@
                     {% if messages %}
                         {% for category, message in messages %}
                             <div class="flash-message flash-{{ category }}">
-                                <i class="fas {% if category == 'success' %}fa-check-circle{% elif category == 'danger' %}fa-exclamation-circle{% elif category == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
-                                {{ message }}
+                                {% if category == 'success' %}
+                                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                {% elif category == 'danger' %}
+                                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                {% elif category == 'warning' %}
+                                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                {% else %}
+                                    <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                {% endif %}
+                                <span>{{ message }}</span>
                                 <button class="flash-close" onclick="this.parentElement.remove()">&times;</button>
                             </div>
                         {% endfor %}
@@ -732,7 +752,6 @@
                 {% endwith %}
             </div>
 
-            <!-- Content -->
             <div class="content" id="pageContent">
                 {% block content %}{% endblock %}
             </div>
@@ -749,13 +768,17 @@
             const icon = document.getElementById('sidebarIcon');
             const overlayMob = document.getElementById('sidebarOverlay');
 
+            // Iconos SVG para toggle
+            const SVG_MENU = '<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>';
+            const SVG_X    = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
+
             const isCollapsed = document.documentElement.classList.contains('sidebar-collapsed');
             if (isCollapsed) {
                 sidebar.classList.add('collapsed');
-                if (icon) icon.className = 'fas fa-times';
+                if (icon) icon.innerHTML = SVG_X;
             } else {
                 sidebar.classList.remove('collapsed');
-                if (icon) icon.className = 'fas fa-bars';
+                if (icon) icon.innerHTML = SVG_MENU;
             }
 
             window.toggleSidebar = function() {
@@ -763,10 +786,10 @@
                 if (isMobile) {
                     const isOpen = sidebar.classList.toggle('open');
                     overlayMob.classList.toggle('active', isOpen);
-                    icon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
+                    icon.innerHTML = isOpen ? SVG_X : SVG_MENU;
                 } else {
                     const isCollapsed = sidebar.classList.toggle('collapsed');
-                    icon.className = isCollapsed ? 'fas fa-times' : 'fas fa-bars';
+                    icon.innerHTML = isCollapsed ? SVG_X : SVG_MENU;
                     localStorage.setItem('sidebar_collapsed', isCollapsed ? 'true' : 'false');
                     document.documentElement.classList.toggle('sidebar-collapsed', isCollapsed);
                 }
@@ -779,17 +802,10 @@
 
             function showOverlay() {
                 overlay.classList.add('active');
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                    timeoutId = null;
-                }
+                if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
             }
-
             function hideOverlay() {
-                if (timeoutId) {
-                    clearTimeout(timeoutId);
-                    timeoutId = null;
-                }
+                if (timeoutId) { clearTimeout(timeoutId); timeoutId = null; }
                 timeoutId = setTimeout(function() {
                     overlay.classList.remove('active');
                     timeoutId = null;
@@ -818,9 +834,7 @@
                 if (isNavigating) return;
                 isNavigating = true;
                 showOverlay();
-                setTimeout(function() {
-                    window.location.href = href;
-                }, 150);
+                setTimeout(function() { window.location.href = href; }, 150);
             });
 
             window.addEventListener('load', function() {
@@ -829,12 +843,9 @@
             });
 
             setTimeout(function() {
-                if (overlay.classList.contains('active')) {
-                    hideOverlay();
-                }
+                if (overlay.classList.contains('active')) hideOverlay();
             }, 4000);
 
-            // Cerrar flashes automáticamente
             setTimeout(function() {
                 document.querySelectorAll('.flash-message').forEach(function(el) {
                     el.style.opacity = '0';
@@ -855,9 +866,7 @@
                 campanaContainer.addEventListener('click', function(e) {
                     e.stopPropagation();
                     dropdown.classList.toggle('open');
-                    if (dropdown.classList.contains('open')) {
-                        cargarNotificaciones();
-                    }
+                    if (dropdown.classList.contains('open')) cargarNotificaciones();
                 });
             }
 
@@ -881,9 +890,7 @@
                             badge.style.display = 'none';
                         }
                     })
-                    .catch(error => {
-                        console.error('Error al contar notificaciones:', error);
-                    });
+                    .catch(error => console.error('Error al contar notificaciones:', error));
 
                 fetch('/notificaciones/lista')
                     .then(response => {
@@ -892,7 +899,7 @@
                     })
                     .then(data => {
                         if (!data || data.length === 0) {
-                            listContainer.innerHTML = `<span class="sin-notificaciones">No tienes notificaciones</span>`;
+                            listContainer.innerHTML = '<span class="sin-notificaciones">No tienes notificaciones</span>';
                             return;
                         }
                         let html = '';
@@ -910,7 +917,7 @@
                     })
                     .catch(error => {
                         console.error('Error al obtener notificaciones:', error);
-                        listContainer.innerHTML = `<span class="sin-notificaciones">Error al cargar notificaciones</span>`;
+                        listContainer.innerHTML = '<span class="sin-notificaciones">Error al cargar notificaciones</span>';
                     });
             }
 
@@ -919,9 +926,7 @@
                 if (!item) return;
                 if (item.classList.contains('leida')) {
                     const enlace = item.dataset.enlace;
-                    if (enlace && enlace !== '#') {
-                        window.location.href = enlace;
-                    }
+                    if (enlace && enlace !== '#') window.location.href = enlace;
                     return;
                 }
                 const id = item.dataset.id;
@@ -935,16 +940,12 @@
                     .then(() => {
                         cargarNotificaciones();
                         const enlace = item.dataset.enlace;
-                        if (enlace && enlace !== '#') {
-                            window.location.href = enlace;
-                        }
+                        if (enlace && enlace !== '#') window.location.href = enlace;
                     })
                     .catch(error => {
                         console.error('Error al marcar como leída:', error);
                         const enlace = item.dataset.enlace;
-                        if (enlace && enlace !== '#') {
-                            window.location.href = enlace;
-                        }
+                        if (enlace && enlace !== '#') window.location.href = enlace;
                     });
             });
 
@@ -956,12 +957,8 @@
                             if (!response.ok) throw new Error('Error al marcar todas');
                             return response.json();
                         })
-                        .then(() => {
-                            cargarNotificaciones();
-                        })
-                        .catch(error => {
-                            console.error('Error al marcar todas:', error);
-                        });
+                        .then(() => cargarNotificaciones())
+                        .catch(error => console.error('Error al marcar todas:', error));
                 });
             }
 
@@ -969,7 +966,6 @@
                 cargarNotificaciones();
                 setInterval(cargarNotificaciones, 10000);
             {% endif %}
-
         })();
     </script>
 

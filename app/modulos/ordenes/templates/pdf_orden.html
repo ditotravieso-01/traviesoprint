@@ -333,21 +333,29 @@
                 </td>
                 <td class="detalle">
                     {% if tipo == 'etiqueta' %}
+                        {% set _a = params.area_m2|round(1) %}
+                        {% set _p = params.precio|float %}
+                        {% set _costo = (_a * _p)|round(2) %}
                         {{ params.ancho }}×{{ params.alto }} cm
                         · útil <span class="strong">{{ params.ancho_util_usado|round(2) if params.ancho_util_usado else '—' }} m</span>
                         · <span class="strong">{{ params.n_etiquetas or 0 }}</span> etiquetas ({{ params.filas or 0 }}×{{ params.columnas or 0 }})
                         <span class="line2">
-                            Costo <span class="strong">${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span>
+                            Costo <span class="strong">${{ _costo }}</span>
                             · Merma <span class="gold">{{ params.merma_operativa_pct|round(1) if params.merma_operativa_pct is defined else '0' }}%</span>
                         </span>
                     {% elif tipo == 'cartel' %}
+                        {% set _ap = params.area_piezas_m2|round(1) %}
+                        {% set _mf = params.merma_facturada_m2|round(1) %}
+                        {% set _c_impr = (_ap * (params.precio_impresion_m2|float))|round(2) %}
+                        {% set _c_mer = (_mf * (params.precio_merma_m2|float))|round(2) %}
+                        {% set _c_tot = (_c_impr + _c_mer)|round(2) %}
                         {{ params.ancho }}×{{ params.alto }} cm
                         · <span class="strong">{{ params.cantidad }}</span> piezas
                         · {{ params.filas }}×{{ params.cols }}
                         <span class="line2">
                             {{ params.tipo_material }}
-                            · Impresión <span class="strong">${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span>
-                            · Total <span class="strong">${{ params.costo_estimado|round(2) if params.costo_estimado else '—' }}</span>
+                            · Impresión <span class="strong">${{ _c_impr }}</span>
+                            · Total <span class="strong">${{ _c_tot }}</span>
                         </span>
                     {% else %}
                         <span style="color:#b8b8c0;">—</span>

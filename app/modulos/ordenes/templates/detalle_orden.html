@@ -1435,14 +1435,15 @@
                                 Vista COMERCIAL (cliente)
                             </h5>
                             <div class="panel-rows">
-                                <div class="panel-row"><span class="lbl">Área solicitada</span><span class="val">{{ params.area_m2|round(2) }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Área solicitada</span><span class="val">{{ params.area_m2|round(1) }} m²</span></div>
                                 <div class="panel-row"><span class="lbl">Etiquetas que caben</span><span class="val">{{ params.n_etiquetas or 0 }} ({{ params.filas or 0 }} × {{ params.columnas or 0 }})</span></div>
-                                <div class="panel-row"><span class="lbl">Ancho útil</span><span class="val">{{ params.ancho_util_usado|round(2) }} m</span></div>
-                                <div class="panel-row"><span class="lbl">Orientación</span><span class="val">
+                                <div class="panel-row"><span class="lbl">Ancho útil</span><span class="val">{{ params.ancho_util_usado|round(2) }} m</span></div>                                <div class="panel-row"><span class="lbl">Orientación</span><span class="val">
                                     {% if params.auto_girar %}Inteligente{% elif params.girar %}Girada{% else %}Normal{% endif %}
                                 </span></div>
                                 <div class="panel-row"><span class="lbl">Alineación</span><span class="val">{% if params.centrar is not defined or params.centrar %}Centrado{% else %}Izquierda{% endif %}</span></div>
-                                <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ params.costo_estimado|round(2) }}</span></div>
+                                                                {% set _area_etiq = params.area_m2|round(1) %}
+                                {% set _precio_etiq = params.precio|float %}
+                                <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ (_area_etiq * _precio_etiq)|round(2) }}</span></div>
                             </div>
                         </div>
                         <div class="panel panel-internal">
@@ -1461,10 +1462,10 @@
                                 <div class="panel-row"><span class="lbl">Largo etiquetas</span><span class="val">{{ params.largo_etiquetas_m|round(2) }} m</span></div>
                                 <div class="panel-row"><span class="lbl">+ Cut mark</span><span class="val">+ {{ params.cut_largo_m|round(2) }} m</span></div>
                                 <div class="panel-row"><span class="lbl">Largo total consumido</span><span class="val">{{ params.largo_total_m|round(2) }} m</span></div>
-                                <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.material_consumido_m2|round(2) }} m²</span></div>
-                                <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span></div>
-                                <div class="panel-row"><span class="lbl">Área de etiquetas</span><span class="val">{{ params.area_etiquetas_m2|round(2) if params.area_etiquetas_m2 else '—' }} m²</span></div>
-                                <div class="panel-row"><span class="lbl">Merma operativa</span><span class="val merma">{{ params.merma_operativa_m2|round(2) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
+                                <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.material_consumido_m2|round(1) }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(1) if params.area_util_rollo_m2 else '—' }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Área de etiquetas</span><span class="val">{{ params.area_etiquetas_m2|round(1) if params.area_etiquetas_m2 else '—' }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Merma operativa</span><span class="val merma">{{ params.merma_operativa_m2|round(1) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
                                 <div class="panel-row"><span class="lbl">↳ Borde del rollo</span><span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span></div>
                             </div>
                         </div>
@@ -1569,11 +1570,18 @@
                                 <div class="panel-row"><span class="lbl">Tipo de material</span><span class="val">{{ params.tipo_material or '—' }}</span></div>
                                 <div class="panel-row"><span class="lbl">Precio impresión</span><span class="val">${{ params.precio_impresion_m2|round(2) }}/m²</span></div>
                                 <div class="panel-row"><span class="lbl">Precio sobrante</span><span class="val">${{ params.precio_merma_m2|round(2) }}/m²</span></div>
-                                <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
-                                <div class="panel-row"><span class="lbl">Costo impresión</span><span class="val">${{ params.costo_impresion|round(2) if params.costo_impresion else '—' }}</span></div>
-                                <div class="panel-row"><span class="lbl">Sobrante facturado</span><span class="val merma">${{ params.costo_merma|round(2) if params.costo_merma else '—' }}</span></div>
-                                <div class="panel-row"><span class="lbl">↳ Área sobrante</span><span class="val">{{ params.merma_facturada_m2|round(2) if params.merma_facturada_m2 else '—' }} m²</span></div>
-                                <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ params.costo_estimado|round(2) }}</span></div>
+                                {% set _area_pz = params.area_piezas_m2|round(1) %}
+                                {% set _merma_fact = params.merma_facturada_m2|round(1) %}
+                                {% set _p_impr = params.precio_impresion_m2|float %}
+                                {% set _p_mer = params.precio_merma_m2|float %}
+                                {% set _c_impr = (_area_pz * _p_impr)|round(2) %}
+                                {% set _c_mer = (_merma_fact * _p_mer)|round(2) %}
+                                {% set _c_tot = (_c_impr + _c_mer)|round(2) %}
+                                <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ _area_pz }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Costo impresión</span><span class="val">${{ _c_impr }}</span></div>
+                                <div class="panel-row"><span class="lbl">Sobrante facturado</span><span class="val merma">${{ _c_mer }}</span></div>
+                                <div class="panel-row"><span class="lbl">↳ Área sobrante</span><span class="val">{{ _merma_fact }} m²</span></div>
+                                <div class="panel-row highlight"><span class="lbl">Costo al cliente</span><span class="val">${{ _c_tot }}</span></div>
                             </div>
                         </div>
 
@@ -1594,9 +1602,9 @@
                                 <div class="panel-row"><span class="lbl">Alto impresión</span><span class="val">{{ params.alto_impresion_cm|round(1) if params.alto_impresion_cm else '—' }} cm</span></div>
                                 <div class="panel-row"><span class="lbl">+ Gap final</span><span class="val">+ {{ params.gap_final_cm|round(1) if params.gap_final_cm else 6.5 }} cm</span></div>
                                 <div class="panel-row"><span class="lbl">Alto total consumido</span><span class="val">{{ params.alto_total_cm|round(1) }} cm · {{ params.largo_total_m|round(2) }} m</span></div>
-                                <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(2) }} m²</span></div>
-                                <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.area_rollo_m2|round(2) }} m²</span></div>
-                                <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(2) if params.area_util_rollo_m2 else '—' }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Área piezas</span><span class="val">{{ params.area_piezas_m2|round(1) }} m²</span></div>
+                                <div class="panel-row highlight"><span class="lbl">Material consumido</span><span class="val">{{ params.area_rollo_m2|round(1) }} m²</span></div>
+                                <div class="panel-row"><span class="lbl">Área útil del rollo</span><span class="val">{{ params.area_util_rollo_m2|round(1) if params.area_util_rollo_m2 else '—' }} m²</span></div>
                                 <div class="panel-row"><span class="lbl">Merma operativa (gap)</span><span class="val merma">{{ params.merma_operativa_m2|round(3) }} m² · {{ params.merma_operativa_pct|round(1) }}%</span></div>
                                 <div class="panel-row"><span class="lbl">↳ Borde del rollo</span><span class="val">{{ params.merma_borde_rollo_m2|round(3) if params.merma_borde_rollo_m2 else '—' }} m²</span></div>
                             </div>

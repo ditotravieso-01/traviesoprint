@@ -529,7 +529,7 @@ def _procesar_linea_etiqueta(
             'precio': precio, 'mesa': mesa, 'girar': girar, 'auto_girar': auto_girar,
             'es_rotado': es_rotado, 'filas_minimas': filas_minimas,
             'area_m2': area_total, 'etiquetas_por_m2': etiquetas_por_m2,
-            'costo_estimado': round(area_total, 2) * precio,
+            'costo_estimado': round(round(area_total, 1) * precio, 2),
             'metros_completos': metros_completos, 'resto_etiquetas': resto_etiquetas,
             'columnas': columnas, 'filas': merma_data['filas'],
             'n_etiquetas': merma_data['n_etiquetas'],
@@ -621,9 +621,13 @@ def _procesar_linea_cartel(
     merma_operativa_pct = (merma_operativa_m2 / material_consumido_m2 * 100) if material_consumido_m2 > 0 else 0
     area_borde_rollo_m2 = max(0.0, (ancho_real - ancho_util_efectivo) * alto_total_m)
 
-    costo_impresion = area_piezas_m2 * precio_impresion_m2
-    costo_merma = merma_facturada_m2 * precio_merma_m2
-    costo_total = costo_impresion + costo_merma
+    # Redondear áreas a 1 decimal ANTES de calcular costos,
+    # para que coincidan con lo que se muestra en la UI.
+    area_piezas_red = round(area_piezas_m2, 1)
+    merma_facturada_red = round(merma_facturada_m2, 1)
+    costo_impresion = round(area_piezas_red * precio_impresion_m2, 2)
+    costo_merma = round(merma_facturada_red * precio_merma_m2, 2)
+    costo_total = round(costo_impresion + costo_merma, 2)
 
     consumo_reserva = alto_total_m
     disponible_metros = producto.get_stock_metros_disponible()

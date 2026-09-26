@@ -3756,14 +3756,15 @@ function calcularLinea(paramsRow) {
         const areaEtiquetasM2 = filasTotales * altoCellM * columnas * anchoCellM;
         const mermaOperativaM2 = Math.max(0, areaUtilRolloM2 - areaEtiquetasM2);
         const mermaPct = areaUtilRolloM2 > 0 ? (mermaOperativaM2 / areaUtilRolloM2) * 100 : 0;
-        const areaRedondeada = Math.round(areaTotalFinal * 100) / 100;
+        // Redondear área a 1 decimal ANTES de calcular costo (coherencia con UI)
+        const areaRedondeada = Math.round(areaTotalFinal * 10) / 10;
         let costoEstimado = Math.round(areaRedondeada * precioUnitario * 100) / 100;
         const eP2 = paramsDiv.querySelector(`.etiquetas_por_m2_display${prefix}`);
         if (eP2) eP2.textContent = nEtiquetas;
         const eFilasCols = paramsDiv.querySelector(`.filas_cols_display${prefix}`);
         if (eFilasCols) eFilasCols.textContent = `${filasTotales} filas × ${columnas} cols · ${nPaños} paño${nPaños > 1 ? 's' : ''}`;
         const eArea = paramsDiv.querySelector(`.area_total_display${prefix}`);
-        if (eArea) eArea.textContent = areaTotalFinal.toFixed(2) + ' m²';
+        if (eArea) eArea.textContent = areaTotalFinal.toFixed(1) + ' m²';
         const eFormula = paramsDiv.querySelector(`.area_formula_display${prefix}`);
         if (eFormula) {
             eFormula.textContent = esUnidades ? `solicitado: ${cantidad} · entregar: ${nEtiquetas}` : `solicitado: ${parseFloat(cantidad).toFixed(2)} m²`;
@@ -3895,13 +3896,22 @@ function calcularLineaCartel(cartelesRow) {
             };
             set('piezas_cartel_display', s.cantidad);
             set('distribucion_cartel_display', `${s.filas} filas × ${s.cols} cols · ${s.alto_impresion_cm}cm + gap`);
-            set('area_piezas_cartel_display', s.area_piezas_m2.toFixed(2) + ' m²');
-            set('material_consumido_cartel_display', s.area_rollo_m2.toFixed(2) + ' m²');
-            set('largo_total_cartel_display', `${s.largo_total_m.toFixed(2)} m × ${s.ancho_real.toFixed(2)} m`);
-            set('costo_impresion_cartel_display', '$' + s.costo_impresion.toFixed(2));
-            set('costo_merma_cartel_display', '$' + s.costo_merma.toFixed(2));
-            set('sobrante_m2_cartel_display', (s.merma_facturada_m2 || 0).toFixed(2) + ' m²');
-            set('costo_total_cartel_display', '$' + s.costo_total.toFixed(2));
+            // Áreas a 1 decimal (coherente con lo que ve el usuario)
+            set('area_piezas_cartel_display', s.area_piezas_m2.toFixed(1) + ' m²');
+            set('material_consumido_cartel_display', s.area_rollo_m2.toFixed(1) + ' m²');
+            set('largo_total_cartel_display', `${s.largo_total_m.toFixed(1)} m × ${s.ancho_real.toFixed(2)} m`);
+            // Costos: usar el área ya redondeada → 7.2 × 10 = 72.00
+            const areaPiezasRed = Math.round(s.area_piezas_m2 * 10) / 10;
+            const mermaFactRed = Math.round((s.merma_facturada_m2 || 0) * 10) / 10;
+            const precioImpr = parseFloat(precioImpresion) || 10;
+            const precioMer = parseFloat(precioMerma) || 5;
+            const costoImprCalc = Math.round(areaPiezasRed * precioImpr * 100) / 100;
+            const costoMerCalc = Math.round(mermaFactRed * precioMer * 100) / 100;
+            const costoTotalCalc = Math.round((costoImprCalc + costoMerCalc) * 100) / 100;
+            set('costo_impresion_cartel_display', '$' + costoImprCalc.toFixed(2));
+            set('costo_merma_cartel_display', '$' + costoMerCalc.toFixed(2));
+            set('sobrante_m2_cartel_display', (s.merma_facturada_m2 || 0).toFixed(1) + ' m²');
+            set('costo_total_cartel_display', '$' + costoTotalCalc.toFixed(2));
             set('merma_pct_cartel_display', s.merma_operativa_pct.toFixed(1) + '%');
             set('merma_m2_cartel_display', s.merma_operativa_m2.toFixed(3) + ' m²');
             const nombreInput = mainRow.querySelector('input[name^="nombre_visible"]') || mainRow.querySelector('input[name="nombres_visibles[]"]');

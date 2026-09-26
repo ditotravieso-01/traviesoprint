@@ -2,335 +2,839 @@
 
 {% block title %}Clientes · CairoStudio{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">Clientes</span>
+    <span class="page-subtitle">Gestión · {{ total }} registros</span>
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    /* ===== ESPACIADO Y BLOQUES ===== */
-    .content-card { max-width: 100%; padding: 0 20px; }
-
-    /* ===== TÍTULO ===== */
-    .page-header-outside {
-        display: flex; align-items: center; justify-content: space-between;
-        flex-wrap: wrap; gap: 12px; margin-bottom: 24px; padding: 0 20px;
+    /* ============================================================
+       TIPOGRAFÍA (Inter todo, Montserrat solo en valores numéricos)
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        color: #1c1c1e;
+        line-height: 1.2;
     }
-    .page-header-outside .title-group { display: flex; align-items: baseline; gap: 12px; }
-    .page-header-outside h1 {
-        font-family: 'Playfair Display', serif; font-size: 24px;
-        font-weight: 700; color: #1c1c1e; margin: 0;
+    .page-subtitle {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        color: #8e8e93;
+        letter-spacing: 0.5px;
     }
-    .page-header-outside .sub { font-size: 14px; color: #8e8e93; font-weight: 400; }
-
-    /* ===== KPIs ===== */
-    .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .kpi-card {
-        background: white; border-radius: 12px; padding: 12px 14px;
-        border-top: 3px solid #a8854f; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        display: flex; align-items: center; justify-content: space-between;
-    }
-    .kpi-card .kpi-info { display: flex; flex-direction: column; }
-    .kpi-card .kpi-value { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; color: #1c1c1e; line-height: 1.2; }
-    .kpi-card .kpi-label { font-size: 11px; color: #8e8e93; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
-    .kpi-card .kpi-icon { font-size: 18px; color: #a8854f; opacity: 0.4; }
-    .kpi-card.verde { border-top-color: #10b981; } .kpi-card.verde .kpi-icon { color: #10b981; }
-    .kpi-card.azul { border-top-color: #3b82f6; } .kpi-card.azul .kpi-icon { color: #3b82f6; }
-    .kpi-card.morado { border-top-color: #8b5cf6; } .kpi-card.morado .kpi-icon { color: #8b5cf6; }
-
-    /* ===== GRÁFICOS ===== */
-    .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-    .chart-box {
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        border-radius: 16px; padding: 16px 18px; border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s;
-    }
-    .chart-box:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.04); border-color: rgba(168,133,79,0.1); }
-    .chart-box .chart-title { font-size: 13px; font-weight: 600; color: #1c1c1e; margin: 0 0 10px 0; display: flex; align-items: center; gap: 6px; }
-    .chart-box .chart-title i { color: #a8854f; font-size: 14px; }
-    .chart-box .chart-container { height: {{ dashboard_config.estilo.altura_graficos }}px; position: relative; }
-
-    /* ===== WIDGETS ===== */
-    .widgets-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .widget-mini {
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        border-radius: 14px; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.02); display: flex; align-items: center; gap: 12px;
-    }
-    .widget-mini .icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
-    .widget-mini .icon.green { background: #d1fae5; color: #065f46; }
-    .widget-mini .icon.blue { background: #e0f2fe; color: #1e3a8a; }
-    .widget-mini .icon.amber { background: #fef3c7; color: #78350f; }
-    .widget-mini .info { display: flex; flex-direction: column; }
-    .widget-mini .info .value { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; color: #1c1c1e; line-height: 1.2; }
-    .widget-mini .info .label { font-size: 11px; color: #8e8e93; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
-
-    .top-clientes-mini {
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        border-radius: 14px; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.02); grid-column: span 2;
-        display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
-    }
-    .top-clientes-mini .label { font-size: 12px; font-weight: 600; color: #8e8e93; display: flex; align-items: center; gap: 6px; margin-right: 4px; }
-    .top-clientes-mini .label i { color: #f59e0b; }
-    .top-cliente-item { display: flex; align-items: center; gap: 6px; font-size: 13px; background: #fafaf9; padding: 2px 10px 2px 8px; border-radius: 20px; border: 1px solid #f0ece8; }
-    .top-cliente-item .name { font-weight: 500; color: #1c1c1e; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-    .top-cliente-item .metros { font-weight: 600; color: #a8854f; font-size: 12px; }
-
-    .recientes-mini {
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        border-radius: 14px; padding: 12px 16px; border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.02); margin-bottom: 24px;
-        display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
-    }
-    .recientes-mini .label { font-size: 12px; font-weight: 600; color: #8e8e93; display: flex; align-items: center; gap: 6px; }
-    .reciente-item { display: flex; align-items: center; gap: 6px; font-size: 13px; background: #fafaf9; padding: 2px 10px; border-radius: 20px; border: 1px solid #f0ece8; }
-    .reciente-item .nombre { font-weight: 500; color: #1c1c1e; white-space: nowrap; max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
-    .reciente-item .fecha { font-size: 11px; color: #8e8e93; }
-    .reciente-item .btn-ver { color: #a8854f; text-decoration: none; font-size: 12px; padding: 0 2px; }
-    .reciente-item .btn-ver:hover { color: #1c1c1e; }
-
-    /* ===== RESUMEN DE NIVELES ===== */
-    .nivel-resumen { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
-    .nivel-resumen .label { font-weight: 600; font-size: 13px; color: #8e8e93; }
-    .badge-nivel { font-size: 12px; font-weight: 700; padding: 2px 12px; border-radius: 30px; text-transform: uppercase; letter-spacing: 0.3px; }
-    .badge-nivel.black { background: #1a1a1a; color: #d4a574; border: 1px solid #d4a574; }
-    .badge-nivel.golden { background: #d4a574; color: white; }
-    .badge-nivel.standard { background: #f0ece8; color: #555; }
-
-    /* ===== BARRA DE ACCIONES ===== */
-    .actions-bar {
-        display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px;
-        margin-bottom: 24px; padding: 10px 16px;
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
-        border-radius: 14px; border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .actions-bar .left-group { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
-    .actions-bar .center-group { display: flex; align-items: center; gap: 6px; flex: 1 1 auto; justify-content: center; flex-wrap: wrap; }
-    .actions-bar .right-group { display: flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-left: auto; }
-
-    .btn {
-        padding: 6px 16px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 13px; cursor: pointer;
-        display: inline-flex; align-items: center; gap: 5px;
-        background: #1c1c1e; color: white; transition: all 0.2s;
-        font-family: 'Inter', sans-serif; text-decoration: none; white-space: nowrap;
-    }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
-    .btn-sm { padding: 4px 10px; font-size: 12px; }
-    .btn-success { background: #10b981; color: white; } .btn-success:hover { background: #059669; }
-    .btn-warning { background: #f59e0b; color: white; } .btn-warning:hover { background: #d97706; }
-    .btn-export { background: #10b981; color: white; } .btn-export:hover { background: #059669; }
-    .btn-import { background: #3b82f6; color: white; } .btn-import:hover { background: #2563eb; }
-
-    .filters-group { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-    .filters-group input, .filters-group select {
-        padding: 4px 10px; border: 1.5px solid #e0dcd8; border-radius: 30px;
-        font-size: 12px; background: white; color: #1c1c1e;
-        font-family: 'Inter', sans-serif; transition: border-color 0.2s, box-shadow 0.2s;
-        height: 30px; min-width: 120px;
-    }
-    .filters-group input:focus, .filters-group select:focus { outline: none; border-color: #a8854f; box-shadow: 0 0 0 3px rgba(168,133,79,0.08); }
-    .filters-group input { min-width: 130px; }
-    .filters-group .filter-icon { color: #8e8e93; font-size: 12px; }
-    .filters-group .btn-limpiar { background: none; border: none; color: #8e8e93; font-size: 12px; cursor: pointer; padding: 0 4px; }
-    .filters-group .btn-limpiar:hover { color: #1c1c1e; }
-
-    .view-toggle { display: inline-flex; background: #f0ece8; border-radius: 30px; padding: 3px; gap: 2px; border: 1px solid #e0dcd8; }
-    .view-toggle .view-btn {
-        padding: 4px 10px; border-radius: 30px; border: none; background: transparent;
-        cursor: pointer; font-weight: 500; font-size: 13px; color: #555;
-        transition: all 0.2s; font-family: 'Inter', sans-serif;
-        display: flex; align-items: center; gap: 4px;
-    }
-    .view-toggle .view-btn i { font-size: 15px; }
-    .view-toggle .view-btn.active { background: white; color: #1c1c1e; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .view-toggle .view-btn:hover { color: #1c1c1e; }
-    .view-toggle .view-btn .label { display: none; }
-    @media (min-width: 600px) { .view-toggle .view-btn .label { display: inline; font-size: 12px; margin-left: 2px; } }
-
-    .view-section { display: none; } .view-section.active { display: block; }
-
-    /* ===== TABLA ===== */
-    .table-wrapper {
-        overflow-x: auto; border-radius: 14px; border: 1px solid #f0ece8;
-        background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        -webkit-overflow-scrolling: touch;
-    }
-    .table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 700px; }
-    .table th {
-        background: #f8f6f4; text-align: left; padding: 8px 12px;
-        font-weight: 600; font-size: 10px; color: #555;
-        text-transform: uppercase; letter-spacing: 0.5px;
-        border-bottom: 2px solid #e8e0da; cursor: pointer; user-select: none;
-    }
-    .table th:hover { background: #f0ece8; }
-    .table th .sort-icon { margin-left: 4px; font-size: 10px; opacity: 0.3; }
-    .table th.sorted-asc .sort-icon { opacity: 1; color: #a8854f; }
-    .table th.sorted-desc .sort-icon { opacity: 1; color: #a8854f; transform: rotate(180deg); }
-    .table td { padding: 6px 12px; border-bottom: 1px solid #f0ece8; vertical-align: middle; }
-    .table tr:hover td { background: #fafaf9; }
-
-    .badge-nivel-personalizado {
-        display: inline-block; padding: 2px 8px; border-radius: 30px;
-        font-size: 10px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.3px; border: 1px solid rgba(0,0,0,0.1);
-    }
-    .badge { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 30px; display: inline-block; font-family: 'Inter', sans-serif; }
-    .badge-info { background: #e0e7ff; color: #3b82f6; }
-
-    /* ===== KANBAN ===== */
-    .kanban-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 8px; }
-    .kanban-card {
-        background: white; border-radius: 14px; padding: 14px 16px;
-        border: 1px solid #f0ece8; box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-        transition: all 0.2s; position: relative;
-    }
-    .kanban-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
-    .kanban-card .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; gap: 8px; }
-    .kanban-card .name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 700; color: #1c1c1e; }
-    .kanban-card .sub { font-size: 12px; color: #8e8e93; font-weight: 400; margin-top: 2px; }
-    .kanban-card .sub .highlight { font-weight: 600; color: #1c1c1e; }
-    .kanban-card .card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px 0; }
-    .kanban-card .card-tags .tag { background: #f0ece8; padding: 2px 8px; border-radius: 20px; font-size: 10px; color: #555; font-weight: 500; }
-    .kanban-card .card-tags .tag.blue { background: #e0f2fe; color: #1e3a8a; }
-    .kanban-card .card-tags .tag.green { background: #d1fae5; color: #065f46; }
-    .kanban-card .card-tags .tag.amber { background: #fef3c7; color: #78350f; }
-    .kanban-card .actions {
-        display: flex; gap: 4px; flex-wrap: wrap;
-        margin-top: 6px; padding-top: 6px; border-top: 1px solid #f0ece8;
-    }
-    .kanban-card .actions .btn {
-        padding: 4px 12px; border-radius: 20px; border: 1px solid #d2d2d7;
-        background: transparent; font-weight: 600; font-size: 12px;
-        cursor: pointer; transition: all 0.2s;
-        font-family: 'Inter', sans-serif; color: #1c1c1e;
-        text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
-    }
-    .kanban-card .actions .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
-    .kanban-card .actions .btn-warning { border-color: #f59e0b; color: #d97706; }
-    .kanban-card .actions .btn-danger { border-color: #dc2626; color: #dc2626; }
-
-    /* ===== PAGINACIÓN ===== */
-    .pagination { display: flex; justify-content: center; align-items: center; gap: 4px; margin-top: 16px; padding: 6px 0; flex-wrap: wrap; }
-    .pagination .btn {
-        padding: 4px 12px; font-size: 13px; border-radius: 30px;
-        border: 1px solid #d2d2d7; background: transparent; color: #1c1c1e;
-        cursor: pointer; transition: 0.2s; font-family: 'Inter', sans-serif; text-decoration: none;
-    }
-    .pagination .btn:hover { border-color: #8e8e93; background: #f5f5f5; }
-    .pagination .btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
-    .pagination .btn.disabled { opacity: 0.3; pointer-events: none; }
-    .pagination .info { font-size: 12px; color: #8e8e93; padding: 0 6px; }
 
     /* ============================================================
-       MODAL DE CONFIRMACIÓN PERSONALIZADO
+       LAYOUT
        ============================================================ */
-    @keyframes csFade { from { opacity: 0; } to { opacity: 1; } }
+    .content-card {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
+    }
+
+    /* ============================================================
+       KPIs (mismo estilo que list_ordenes)
+       ============================================================ */
+    .kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .kpi-card {
+        background: white;
+        border-radius: 12px;
+        padding: 10px 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        border-top: 3px solid #a8854f;
+        transition: 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        min-width: 0;
+    }
+    .kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.04); }
+    .kpi-card .kpi-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+    .kpi-card .kpi-value {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        line-height: 1.2;
+        letter-spacing: -0.3px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .kpi-card .kpi-value.text {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        letter-spacing: -0.1px;
+        line-height: 1.3;
+    }
+    .kpi-card .kpi-label {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .kpi-card .kpi-icon {
+        color: #a8854f;
+        opacity: 0.4;
+        flex-shrink: 0;
+    }
+    .kpi-card .kpi-icon svg { display: block; }
+    .kpi-card.total { border-top-color: #a8854f; }
+    .kpi-card.pedidos { border-top-color: #10b981; }
+    .kpi-card.pedidos .kpi-icon { color: #10b981; }
+    .kpi-card.activos { border-top-color: #3b82f6; }
+    .kpi-card.activos .kpi-icon { color: #3b82f6; }
+    .kpi-card.top { border-top-color: #8b5cf6; }
+    .kpi-card.top .kpi-icon { color: #8b5cf6; }
+
+    /* ============================================================
+       BARRA DE ACCIONES (misma estructura que list_ordenes)
+       ============================================================ */
+    .actions-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px 20px;
+        margin-bottom: 20px;
+        padding: 10px 16px;
+        background: rgba(255,255,255,0.6);
+        backdrop-filter: blur(8px);
+        border-radius: 14px;
+        border: 1px solid rgba(0,0,0,0.04);
+    }
+    .actions-bar .left-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+        flex-wrap: wrap;
+    }
+    .actions-bar .center-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1 1 auto;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .actions-bar .right-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .btn {
+        padding: 6px 16px;
+        border-radius: 30px;
+        border: none;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 13px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #1c1c1e;
+        color: white;
+        transition: all 0.2s;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+    .btn svg { flex-shrink: 0; }
+    .btn-primary { background: #1c1c1e; color: white; }
+    .btn-primary:hover { background: #333; }
+    .btn-outline {
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+    }
+    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .btn-export {
+        background: transparent !important;
+        border: 1px solid #10b981 !important;
+        color: #059669 !important;
+    }
+    .btn-export:hover {
+        background: #ecfdf5 !important;
+        border-color: #059669 !important;
+        color: #065f46 !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    .btn-import {
+        background: transparent !important;
+        border: 1px solid #3b82f6 !important;
+        color: #1e40af !important;
+    }
+    .btn-import:hover {
+        background: #eff6ff !important;
+        border-color: #2563eb !important;
+        color: #1e3a8a !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    /* ============================================================
+       BOTONES DE ACCIÓN SECUNDARIA — outline, sin relleno
+       (mismo patrón que list_ordenes.html)
+       ============================================================ */
+    .btn-warning {
+        background: transparent !important;
+        border: 1px solid #f59e0b !important;
+        color: #d97706 !important;
+    }
+    .btn-warning:hover {
+        background: #fef3c7 !important;
+        border-color: #d97706 !important;
+        color: #78350f !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    .btn-danger {
+        background: transparent !important;
+        border: 1px solid #dc2626 !important;
+        color: #dc2626 !important;
+    }
+    .btn-danger:hover {
+        background: #fef2f2 !important;
+        border-color: #b91c1c !important;
+        color: #b91c1c !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    /* ============================================================
+       FILTROS
+       ============================================================ */
+    .filters-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .filters-group .filter-icon {
+        color: #8e8e93;
+        display: inline-flex;
+        align-items: center;
+    }
+    .filters-group input[type="text"] {
+        font-family: 'Inter', sans-serif;
+        padding: 4px 14px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 30px;
+        font-size: 12px;
+        background: white;
+        color: #1c1c1e;
+        transition: border-color 0.2s, box-shadow 0.2s;
+        height: 30px;
+        min-width: 200px;
+    }
+    .filters-group input[type="text"]:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .filters-group .btn-limpiar {
+        background: none;
+        border: none;
+        color: #8e8e93;
+        cursor: pointer;
+        padding: 0 4px;
+        display: inline-flex;
+        align-items: center;
+    }
+    .filters-group .btn-limpiar:hover { color: #1c1c1e; }
+
+    /* ============================================================
+       VIEW TOGGLE
+       ============================================================ */
+    .view-toggle {
+        display: inline-flex;
+        background: #f0ece8;
+        border-radius: 30px;
+        padding: 3px;
+        gap: 2px;
+        border: 1px solid #e0dcd8;
+    }
+    .view-toggle .view-btn {
+        font-family: 'Inter', sans-serif;
+        padding: 4px 8px;
+        border-radius: 30px;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #555;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .view-toggle .view-btn svg { flex-shrink: 0; }
+    .view-toggle .view-btn.active {
+        background: white;
+        color: #1c1c1e;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .view-toggle .view-btn:hover { color: #1c1c1e; }
+    .view-toggle .view-btn .label { display: none; }
+    @media (min-width: 600px) {
+        .view-toggle .view-btn .label { display: inline; font-size: 12px; margin-left: 2px; }
+    }
+
+    /* ============================================================
+       VISTA: TOGGLE
+       ============================================================ */
+    .view-section { display: none !important; }
+    .view-section.active { display: block !important; }
+
+    /* ============================================================
+       TABLA
+       ============================================================ */
+    .table-wrapper {
+        overflow-x: auto;
+        border-radius: 14px;
+        border: 1px solid #f0ece8;
+        background: white;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        min-width: 860px;
+    }
+    .table th {
+        font-family: 'Inter', sans-serif;
+        background: #f8f6f4;
+        text-align: left;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 11px;
+        color: #555;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #e8e0da;
+        white-space: nowrap;
+    }
+    .table td {
+        padding: 8px 14px;
+        border-bottom: 1px solid #f0ece8;
+        vertical-align: middle;
+        font-family: 'Inter', sans-serif;
+    }
+    .table tr:hover td { background: #fafaf9; }
+    .table .col-num {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+    }
+    .table .col-ref {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        color: #6b6b7a;
+        letter-spacing: -0.2px;
+    }
+    .table .actions-cell {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    /* ============================================================
+       BADGES
+       ============================================================ */
+    .badge-nivel {
+        display: inline-block;
+        padding: 3px 12px;
+        border-radius: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+    /* Black → sigue siendo oscuro pero elegante, no pesado */
+    .badge-nivel.black {
+        background: #1a1a1a;
+        color: #e8c98a;
+        border-color: #d4a574;
+    }
+    /* Golden → muy suave, pastel ámbar, texto marrón oscuro */
+    .badge-nivel.golden {
+        background: #fdf7ea;
+        color: #92400e;
+        border-color: #e8c98a;
+    }
+    /* Standard → gris neutro, ni se nota */
+    .badge-nivel.standard {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #d1d5db;
+    }
+    /* Versión outline-only si el usuario lo prefiere muy sutil */
+    .badge-nivel.outline {
+        background: transparent !important;
+        border: 1.5px solid currentColor;
+    }
+    .badge-count {
+        display: inline-block;
+        padding: 2px 10px;
+        border-radius: 30px;
+        background: #eff6ff;
+        color: #1e40af;
+        font-family: 'Montserrat', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    /* ============================================================
+       KANBAN
+       ============================================================ */
+    .kanban-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 6px;
+    }
+    .kanban-card {
+        background: white;
+        border-radius: 14px;
+        padding: 14px 16px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+        transition: all 0.25s ease;
+        border-top: 4px solid #8e8e93;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+    .kanban-card .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .kanban-card .header .info { min-width: 0; flex: 1; }
+    .kanban-card .nombre {
+        font-family: 'Inter', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+        line-height: 1.25;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .kanban-card .ref {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        color: #8e8e93;
+        letter-spacing: -0.1px;
+        margin-top: 3px;
+    }
+    .kanban-card .sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #8e8e93;
+        margin-top: 6px;
+    }
+    .kanban-card .sub .num {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+    }
+    .kanban-card .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 8px;
+    }
+    .kanban-card .tag {
+        background: #f3f4f6;
+        padding: 2px 8px;
+        border-radius: 20px;
+        font-family: 'Inter', sans-serif;
+        font-size: 10.5px;
+        color: #4b5563;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .kanban-card .tag svg { flex-shrink: 0; }
+    .kanban-card .tag.blue { background: #eff6ff; color: #1e40af; }
+    .kanban-card .tag.green { background: #ecfdf5; color: #065f46; }
+    .kanban-card .actions {
+        display: flex;
+        gap: 4px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #f0ece8;
+    }
+    .kanban-card .actions .btn {
+        flex: 1;
+        justify-content: center;
+        min-width: 0;
+        padding: 4px 8px;
+        font-size: 11px;
+        border-radius: 20px;
+        background: transparent;
+        border: 1px solid #d2d2d7;
+        color: #1c1c1e;
+        font-weight: 600;
+        box-shadow: none;
+    }
+    .kanban-card .actions .btn:hover {
+        transform: none;
+        box-shadow: none;
+        background: #f5f5f5;
+        border-color: #8e8e93;
+    }
+    /* Colores específicos por tipo dentro del kanban (solo borde + texto) */
+    .kanban-card .actions .btn-outline {
+        border-color: #d2d2d7;
+        color: #1c1c1e;
+    }
+    .kanban-card .actions .btn-outline:hover {
+        background: #f5f5f5;
+        border-color: #8e8e93;
+    }
+    .kanban-card .actions .btn-warning {
+        border-color: #f59e0b !important;
+        color: #d97706 !important;
+        background: transparent !important;
+    }
+    .kanban-card .actions .btn-warning:hover {
+        background: #fef3c7 !important;
+        border-color: #d97706 !important;
+    }
+    .kanban-card .actions .btn-danger {
+        border-color: #dc2626 !important;
+        color: #dc2626 !important;
+        background: transparent !important;
+    }
+    .kanban-card .actions .btn-danger:hover {
+        background: #fef2f2 !important;
+        border-color: #b91c1c !important;
+    }
+
+    /* ============================================================
+       PAGINACIÓN
+       ============================================================ */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin-top: 20px;
+        padding: 8px 0;
+        flex-wrap: wrap;
+    }
+    .pagination .btn {
+        padding: 4px 12px;
+        font-size: 13px;
+        border-radius: 30px;
+        border: 1px solid #d2d2d7;
+        background: transparent;
+        color: #1c1c1e;
+        cursor: pointer;
+        transition: 0.2s;
+        text-decoration: none;
+    }
+    .pagination .btn:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
+    .pagination .btn.active { background: #1c1c1e; color: white; border-color: #1c1c1e; }
+    .pagination .btn.disabled { opacity: 0.3; pointer-events: none; }
+    .pagination .info {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        padding: 0 8px;
+    }
+
+    /* ============================================================
+       CUSTOM SELECT (con búsqueda interna)
+       ============================================================ */
+    .cs-select-wrap { position: relative; width: 100%; }
+    .cs-select-native {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        width: 1px !important;
+        height: 1px !important;
+        top: 0; left: 0; z-index: -1;
+    }
+    .cs-select-trigger {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        padding: 6px 14px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 30px;
+        background: white;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 500;
+        color: #1c1c1e;
+        text-align: left;
+        height: 30px;
+        box-sizing: border-box;
+        transition: all 0.15s;
+        min-width: 150px;
+    }
+    .cs-select-trigger:hover { border-color: #a8854f; background: #faf6f0; }
+    .cs-select-wrap.open .cs-select-trigger,
+    .cs-select-trigger:focus {
+        outline: none;
+        border-color: #a8854f;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+        background: #ffffff;
+    }
+    .cs-select-trigger .cs-value {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .cs-select-trigger .cs-arrow {
+        color: #a8854f;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+    }
+    .cs-select-wrap.open .cs-arrow { transform: rotate(180deg); }
+    .cs-select-menu {
+        position: fixed;
+        background: #ffffff;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+        z-index: 9999;
+        max-height: 320px;
+        padding: 0;
+        display: none;
+        flex-direction: column;
+        animation: csSelectIn 0.15s ease;
+        box-sizing: border-box;
+    }
+    .cs-select-menu.open { display: flex; }
+    @keyframes csSelectIn {
+        from { opacity: 0; transform: translateY(-4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .cs-select-search-wrap {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border-bottom: 1px solid #f0ece8;
+        flex-shrink: 0;
+        background: #ffffff;
+        border-radius: 12px 12px 0 0;
+    }
+    .cs-search-icon { color: #a8854f; flex-shrink: 0; opacity: 0.7; }
+    .cs-select-search {
+        flex: 1;
+        border: none;
+        background: transparent;
+        outline: none;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #1c1c1e;
+        padding: 0;
+        height: 22px;
+        min-width: 0;
+    }
+    .cs-select-search::placeholder { color: #b8b8c0; }
+    .cs-select-options {
+        padding: 6px;
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+    }
+    .cs-select-empty {
+        padding: 14px 12px;
+        text-align: center;
+        color: #8e8e93;
+        font-size: 13px;
+        font-style: italic;
+    }
+    .cs-select-option {
+        padding: 9px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        color: #4a4a4a;
+        font-family: 'Inter', sans-serif;
+        transition: background 0.1s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+    .cs-select-option:hover,
+    .cs-select-option.highlighted { background: #faf6f0; color: #78350f; }
+    .cs-select-option.selected {
+        background: linear-gradient(135deg, #faf6f0 0%, #f5ede0 100%);
+        color: #78350f;
+        font-weight: 700;
+    }
+
+    /* ============================================================
+       MODAL DE CONFIRMACIÓN
+       ============================================================ */
     @keyframes csPop {
         from { transform: scale(0.95) translateY(10px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
     .cs-confirm-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
-        z-index: 10000; justify-content: center; align-items: center;
-        padding: 16px; animation: csFade 0.18s ease;
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(6px);
+        z-index: 10000;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
     }
     .cs-confirm-overlay.active { display: flex; }
     .cs-confirm-box {
-        background: white; border-radius: 20px;
-        padding: 26px 28px 22px; max-width: 460px; width: 100%;
+        background: white;
+        border-radius: 20px;
+        padding: 26px 28px 22px;
+        max-width: 460px;
+        width: 100%;
         box-shadow: 0 30px 80px rgba(0,0,0,0.22);
         animation: csPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-        text-align: center; border-top: 5px solid #dc2626; box-sizing: border-box;
+        text-align: center;
+        border-top: 5px solid #dc2626;
+        box-sizing: border-box;
     }
-    .cs-confirm-box.warning { border-top-color: #f59e0b; }
-    .cs-confirm-box.danger  { border-top-color: #dc2626; }
-    .cs-confirm-box.success { border-top-color: #10b981; }
     .cs-confirm-icon {
-        width: 64px; height: 64px; border-radius: 50%;
-        margin: 0 auto 14px; display: flex;
-        align-items: center; justify-content: center;
-        font-size: 30px; background: #fef2f2; color: #dc2626;
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fef2f2;
+        color: #dc2626;
     }
-    .cs-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
     .cs-confirm-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px; font-weight: 700; color: #1c1c1e;
-        margin: 0 0 8px 0; line-height: 1.25;
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        line-height: 1.3;
     }
     .cs-confirm-message {
-        font-size: 14px; color: #555; line-height: 1.55;
-        margin: 0 0 22px 0; white-space: pre-line; word-break: break-word;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #6b6b7a;
+        line-height: 1.55;
+        margin: 0 0 22px 0;
+        white-space: pre-line;
+        word-break: break-word;
     }
-    .cs-confirm-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .cs-confirm-actions {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
     .cs-confirm-btn {
-        padding: 10px 24px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 14px; cursor: pointer;
-        transition: all 0.15s; font-family: 'Inter', sans-serif;
-        min-width: 120px; display: inline-flex; align-items: center;
-        justify-content: center; gap: 6px;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'Inter', sans-serif;
+        min-width: 110px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
     }
     .cs-confirm-btn.danger { background: #dc2626; color: white; }
-    .cs-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,0.3); }
+    .cs-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); }
     .cs-confirm-btn.cancel { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
     .cs-confirm-btn.cancel:hover { border-color: #8e8e93; background: #f5f5f5; }
 
-    /* ===== RESPONSIVE ===== */
-    @media (max-width: 992px) { .charts-row { grid-template-columns: 1fr; } .widgets-row { grid-template-columns: 1fr 1fr; } .top-clientes-mini { grid-column: span 1; } }
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
     @media (max-width: 768px) {
-        .actions-bar { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px; }
-        .actions-bar .left-group, .actions-bar .center-group, .actions-bar .right-group { width: 100%; justify-content: center; gap: 6px; flex-wrap: wrap; }
-        .filters-group { flex-direction: column; align-items: stretch; width: 100%; gap: 6px; }
-        .filters-group input, .filters-group select { min-width: 100% !important; width: 100% !important; box-sizing: border-box; padding: 8px 12px; font-size: 14px; height: 40px; }
-        .filters-group .filter-icon { display: none; }
-        .btn { padding: 10px 16px; font-size: 14px; width: 100%; justify-content: center; }
-        .view-toggle { width: 100%; justify-content: center; margin-top: 4px; }
-        .view-toggle .view-btn { padding: 8px 14px; font-size: 14px; }
-        .content-card { padding: 0 10px; }
-        .page-header-outside { padding: 0 10px; flex-direction: column; align-items: flex-start; gap: 8px; }
-        .page-header-outside .title-group { width: 100%; }
-        .charts-row { grid-template-columns: 1fr; gap: 12px; }
-        .chart-box { padding: 12px; overflow: hidden; }
-        .chart-box .chart-container { height: 60px !important; max-width: 100%; }
-        .chart-box .chart-container canvas { max-width: 100% !important; height: 100% !important; }
-        .widgets-row { grid-template-columns: 1fr; }
-        .top-clientes-mini { grid-column: span 1; flex-direction: column; align-items: stretch; }
-        .top-cliente-item { justify-content: space-between; }
-        .recientes-mini { flex-direction: column; align-items: stretch; }
-        .reciente-item { justify-content: space-between; }
+        .content-card { padding: 0 12px; }
+        .actions-bar { flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; }
+        .actions-bar .left-group,
+        .actions-bar .center-group,
+        .actions-bar .right-group {
+            justify-content: center;
+            width: 100%;
+            margin-left: 0;
+        }
+        .filters-group { width: 100%; justify-content: center; }
+        .filters-group input[type="text"] { min-width: 0; flex: 1; }
+        .filters-group .cs-select-wrap { flex: 1; min-width: 140px; }
+        .cs-select-trigger { width: 100%; }
+        .kpi-grid { grid-template-columns: repeat(2, 1fr); }
         .kanban-grid { grid-template-columns: 1fr; }
-        .kpi-grid { grid-template-columns: 1fr 1fr !important; }
-        .pagination { margin-top: 12px; margin-bottom: 12px; }
-        .pagination .btn { padding: 6px 14px; font-size: 14px; }
-        .cs-confirm-box { padding: 22px 20px 18px; border-radius: 16px; }
-        .cs-confirm-icon { width: 54px; height: 54px; font-size: 26px; }
-        .cs-confirm-title { font-size: 18px; }
-        .cs-confirm-message { font-size: 13px; }
+        .kanban-card .actions .btn { flex: 1; }
         .cs-confirm-actions { flex-direction: column; }
         .cs-confirm-btn { width: 100%; }
     }
     @media (max-width: 480px) {
+        .kpi-grid { grid-template-columns: 1fr; }
         .view-toggle .view-btn .label { display: none; }
-        .kpi-grid { grid-template-columns: 1fr !important; }
-        .page-header-outside h1 { font-size: 20px; }
-        .page-header-outside .sub { font-size: 12px; }
-        .chart-box .chart-container { height: 50px !important; }
-        .btn { padding: 12px 20px; font-size: 15px; }
-        .filters-group input, .filters-group select { padding: 10px 14px; font-size: 15px; height: 44px; min-width: 100% !important; }
-        .view-toggle .view-btn { padding: 10px 16px; font-size: 15px; }
-        .kpi-card .kpi-value { font-size: 18px; }
-        .kpi-card .kpi-label { font-size: 10px; }
-        .pagination .btn { padding: 6px 10px; font-size: 13px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-
-{# ===== MACRO DE PAGINACIÓN ===== #}
+{# ===== MACRO DE PAGINACIÓN (debe ir ANTES del primer uso) ===== #}
 {% macro render_pagination(page, total_pages, search, sort, order) %}
 {% if total_pages > 1 %}
 <div class="pagination">
@@ -350,204 +854,321 @@
 {% endif %}
 {% endmacro %}
 
-<!-- ===== TÍTULO ===== -->
-<div class="page-header-outside">
-    <div class="title-group">
-        <h1>Clientes</h1>
-        <span class="sub">{{ total }} registros</span>
-    </div>
-    {% if current_user.role == 'admin' %}
-        <a href="{{ url_for('clientes.admin_panel') }}" class="btn btn-outline btn-sm">
-            <i class="fas fa-cog"></i> Personalización
-        </a>
-    {% endif %}
-</div>
-
 <div class="content-card">
 
     <!-- ===== KPIs ===== -->
     <div class="kpi-grid">
-        <div class="kpi-card">
-            <div class="kpi-info"><span class="kpi-value">{{ total_clientes }}</span><span class="kpi-label">Total clientes</span></div>
-            <i class="fas fa-users kpi-icon"></i>
+        <div class="kpi-card total">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ total_clientes }}</span>
+                <span class="kpi-label">Total clientes</span>
+            </div>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
         </div>
-        <div class="kpi-card verde">
-            <div class="kpi-info"><span class="kpi-value">{{ total_ordenes }}</span><span class="kpi-label">Pedidos totales</span></div>
-            <i class="fas fa-clipboard-list kpi-icon"></i>
+        <div class="kpi-card pedidos">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ total_ordenes }}</span>
+                <span class="kpi-label">Pedidos totales</span>
+            </div>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+            </svg>
         </div>
-        <div class="kpi-card azul">
-            <div class="kpi-info"><span class="kpi-value">{{ clientes_activos }}</span><span class="kpi-label">Activos (30 días)</span></div>
-            <i class="fas fa-user-check kpi-icon"></i>
+        <div class="kpi-card activos">
+            <div class="kpi-info">
+                <span class="kpi-value">{{ clientes_activos }}</span>
+                <span class="kpi-label">Activos (30 días)</span>
+            </div>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="8.5" cy="7" r="4"></circle>
+                <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
         </div>
-        <div class="kpi-card morado">
-            <div class="kpi-info"><span class="kpi-value" style="font-size:18px;">{{ top_cliente_nombre }}</span><span class="kpi-label">Top · {{ top_cliente_metros }} m</span></div>
-            <i class="fas fa-trophy kpi-icon"></i>
+        <div class="kpi-card top">
+            <div class="kpi-info">
+                <span class="kpi-value text">{{ top_cliente_nombre }}</span>
+                <span class="kpi-label">Top · {{ top_cliente_metros }} m²</span>
+            </div>
+            <svg class="kpi-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+                <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+                <path d="M4 22h16"></path>
+                <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path>
+                <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path>
+                <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path>
+            </svg>
         </div>
-    </div>
-
-    <!-- ===== GRÁFICOS ===== -->
-    {% if dashboard_config.graficos.nuevos_clientes or dashboard_config.graficos.niveles %}
-    <div class="charts-row">
-        {% if dashboard_config.graficos.nuevos_clientes %}
-        <div class="chart-box">
-            <div class="chart-title"><i class="fas fa-user-plus"></i> Nuevos clientes por mes</div>
-            <div class="chart-container"><canvas id="nuevosClientesChart"></canvas></div>
-        </div>
-        {% endif %}
-        {% if dashboard_config.graficos.niveles %}
-        <div class="chart-box">
-            <div class="chart-title"><i class="fas fa-layer-group"></i> Distribución por niveles</div>
-            <div class="chart-container"><canvas id="nivelesChart"></canvas></div>
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- ===== WIDGETS ===== -->
-    {% if dashboard_config.widgets.nuevos_mes or dashboard_config.widgets.retencion or dashboard_config.widgets.top_clientes %}
-    <div class="widgets-row">
-        {% if dashboard_config.widgets.nuevos_mes %}
-        <div class="widget-mini">
-            <div class="icon green"><i class="fas fa-calendar-plus"></i></div>
-            <div class="info"><span class="value">{{ valores_nuevos[-1] if valores_nuevos else 0 }}</span><span class="label">Nuevos este mes</span></div>
-        </div>
-        {% endif %}
-        {% if dashboard_config.widgets.retencion %}
-        <div class="widget-mini">
-            <div class="icon blue"><i class="fas fa-users"></i></div>
-            <div class="info"><span class="value">{{ tasa_retencion }}%</span><span class="label">Recurrentes</span></div>
-        </div>
-        {% endif %}
-        {% if dashboard_config.widgets.top_clientes %}
-        <div class="top-clientes-mini">
-            <span class="label"><i class="fas fa-trophy"></i> Top 5 por metros</span>
-            {% for nombre, metros in top_clientes_data %}
-            <span class="top-cliente-item">
-                <span class="name">{{ nombre }}</span>
-                <span class="metros">{{ metros }}m</span>
-            </span>
-            {% endfor %}
-        </div>
-        {% endif %}
-    </div>
-    {% endif %}
-
-    <!-- ===== CLIENTES RECIENTES ===== -->
-    {% if dashboard_config.widgets.recientes %}
-    <div class="recientes-mini">
-        <span class="label"><i class="fas fa-clock"></i> Últimos clientes</span>
-        {% for c in clientes_recientes %}
-        <span class="reciente-item">
-            <span class="nombre">{{ c.nombre }}</span>
-            <span class="fecha">{{ c.created_at.strftime('%d/%m') if c.created_at else '' }}</span>
-            <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn-ver"><i class="fas fa-eye"></i></a>
-        </span>
-        {% endfor %}
-    </div>
-    {% endif %}
-
-    <!-- ===== RESUMEN DE NIVELES ===== -->
-    <div class="nivel-resumen">
-        <span class="label">🏆 Clasificación:</span>
-        <span class="badge-nivel black">Black <span style="font-weight:400;">{{ black_count }}</span></span>
-        <span class="badge-nivel golden">Golden <span style="font-weight:400;">{{ golden_count }}</span></span>
-        <span class="badge-nivel standard">Standard <span style="font-weight:400;">{{ standard_count }}</span></span>
     </div>
 
     <!-- ===== BARRA DE ACCIONES ===== -->
     <div class="actions-bar">
         <div class="left-group">
             {% if current_user.role in ['comercial', 'admin'] %}
-                <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-success"><i class="fas fa-plus"></i> Nuevo</a>
-                <a href="{{ url_for('clientes.exportar_clientes') }}" class="btn btn-export"><i class="fas fa-file-export"></i> Exportar</a>
-                <a href="{{ url_for('clientes.importar_clientes') }}" class="btn btn-import"><i class="fas fa-file-import"></i> Importar</a>
+                <a href="{{ url_for('clientes.crear_cliente') }}" class="btn btn-primary">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Nuevo
+                </a>
+                <a href="{{ url_for('clientes.exportar_clientes') }}" class="btn btn-export">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    Exportar
+                </a>
+                <a href="{{ url_for('clientes.importar_clientes') }}" class="btn btn-import">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Importar
+                </a>
+            {% endif %}
+            {% if current_user.role == 'admin' %}
+                <a href="{{ url_for('clientes.admin_panel') }}" class="btn btn-outline">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
+                    Config
+                </a>
             {% endif %}
         </div>
+
         <div class="center-group">
             <form method="GET" action="{{ url_for('clientes.listar_clientes') }}" id="filterForm" class="filters-group">
-                <i class="fas fa-search filter-icon"></i>
+                <span class="filter-icon">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
                 <input type="text" name="search" id="searchInput" value="{{ search }}" placeholder="Buscar cliente..." autocomplete="off">
-                <select name="sort" id="sortSelect">
-                    <option value="metros" {% if sort == 'metros' and order == 'desc' %}selected{% endif %}>Más metros</option>
-                    <option value="metros" {% if sort == 'metros' and order == 'asc' %}selected{% endif %}>Menos metros</option>
-                    <option value="pedidos" {% if sort == 'pedidos' and order == 'desc' %}selected{% endif %}>Más pedidos</option>
-                    <option value="pedidos" {% if sort == 'pedidos' and order == 'asc' %}selected{% endif %}>Menos pedidos</option>
-                    <option value="nombre" {% if sort == 'nombre' and order == 'asc' %}selected{% endif %}>Nombre (A-Z)</option>
-                    <option value="nombre" {% if sort == 'nombre' and order == 'desc' %}selected{% endif %}>Nombre (Z-A)</option>
+                <select name="sort" id="sortSelect" style="display:none;">
+                    <option value="metros|desc" {% if sort == 'metros' and order == 'desc' %}selected{% endif %}>Más metros</option>
+                    <option value="metros|asc"  {% if sort == 'metros' and order == 'asc'  %}selected{% endif %}>Menos metros</option>
+                    <option value="pedidos|desc" {% if sort == 'pedidos' and order == 'desc' %}selected{% endif %}>Más pedidos</option>
+                    <option value="pedidos|asc"  {% if sort == 'pedidos' and order == 'asc'  %}selected{% endif %}>Menos pedidos</option>
+                    <option value="nombre|asc"  {% if sort == 'nombre' and order == 'asc'  %}selected{% endif %}>Nombre (A-Z)</option>
+                    <option value="nombre|desc" {% if sort == 'nombre' and order == 'desc' %}selected{% endif %}>Nombre (Z-A)</option>
                 </select>
-                <button type="submit" style="display:none;"></button>
                 {% if search %}
-                    <a href="{{ url_for('clientes.listar_clientes') }}" class="btn-limpiar" title="Limpiar filtros"><i class="fas fa-times-circle"></i></a>
+                    <a href="{{ url_for('clientes.listar_clientes') }}" class="btn-limpiar" title="Limpiar filtros">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="15" y1="9" x2="9" y2="15"></line>
+                            <line x1="9" y1="9" x2="15" y2="15"></line>
+                        </svg>
+                    </a>
                 {% endif %}
             </form>
         </div>
+
         <div class="right-group">
             <div class="view-toggle" id="viewToggle">
-                <button class="view-btn active" data-view="kanban" onclick="cambiarVista('kanban')"><i class="fas fa-th"></i><span class="label">Kanban</span></button>
-                <button class="view-btn" data-view="lista" onclick="cambiarVista('lista')"><i class="fas fa-list"></i><span class="label">Lista</span></button>
+                <button type="button" class="view-btn active" data-view="kanban" onclick="cambiarVista('kanban')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                    </svg>
+                    <span class="label">Kanban</span>
+                </button>
+                <button type="button" class="view-btn" data-view="lista" onclick="cambiarVista('lista')">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6" x2="21" y2="6"></line>
+                        <line x1="8" y1="12" x2="21" y2="12"></line>
+                        <line x1="8" y1="18" x2="21" y2="18"></line>
+                        <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                        <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                        <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                    </svg>
+                    <span class="label">Lista</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- ===== PAGINACIÓN SUPERIOR ===== -->
-    <div class="pagination-top">
+    <!-- ===== VISTA KANBAN ===== -->
+    <div class="view-section active" id="vistaKanban">
+        <div class="kanban-grid">
+            {% for c in clients %}
+            <div class="kanban-card kanban-{{ c.nivel or 'standard' }}">
+                <div class="header">
+                    <div class="info">
+                        <div class="nombre">{{ c.nombre }}</div>
+                        <div class="ref">Ref: {{ c.referencia }}</div>
+                    </div>
+                    <span class="badge-nivel {{ c.nivel or 'standard' }}">
+                        {{ c.nivel_info.nombre if c.nivel_info else 'Standard' }}
+                    </span>
+                </div>
+
+                <div class="sub">
+                    <span class="num">{{ c.total_pedidos }}</span> pedido{{ 's' if c.total_pedidos != 1 else '' }}
+                    · <span class="num">{{ c.total_metros }}</span> m²
+                    {% if c.frecuencia and c.frecuencia != 'eventual' %}
+                        · <span style="text-transform:capitalize;">{{ c.frecuencia }}</span>
+                    {% endif %}
+                </div>
+
+                {% if c.top_servicios or c.top_materiales %}
+                <div class="tags">
+                    {% for servicio, count in (c.top_servicios or [])[:2] %}
+                    <span class="tag blue">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+                        </svg>
+                        {{ servicio }} ({{ count }})
+                    </span>
+                    {% endfor %}
+                    {% for material, count in (c.top_materiales or [])[:2] %}
+                    <span class="tag green">
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                            <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                        {{ material }} ({{ count }})
+                    </span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <div class="actions">
+                    <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn btn-outline">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                        Ver
+                    </a>
+                    {% if current_user.role in ['comercial', 'admin'] %}
+                        <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-warning">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                            </svg>
+                            Editar
+                        </a>
+                    {% endif %}
+                    {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}"
+                              class="form-cs-confirm"
+                              data-confirm-title="Eliminar cliente"
+                              data-confirm-message="¿Eliminar el cliente &quot;{{ c.nombre }}&quot; permanentemente?&#10;&#10;Esta acción no se puede deshacer."
+                              data-confirm-ok="Sí, eliminar"
+                              style="display:inline; flex:1;">
+                            <button type="submit" class="btn btn-danger" style="width:100%; justify-content:center;">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="3 6 5 6 21 6"></polyline>
+                                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                    <path d="M10 11v6"></path>
+                                    <path d="M14 11v6"></path>
+                                    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                </svg>
+                                Eliminar
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div style="grid-column:1/-1; text-align:center; padding:40px; color:#8e8e93;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3; display:block; margin: 0 auto 12px;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                No hay clientes que coincidan con los filtros.
+            </div>
+            {% endfor %}
+        </div>
         {{ render_pagination(page, total_pages, search, sort, order) }}
     </div>
 
     <!-- ===== VISTA LISTA ===== -->
     <div class="view-section" id="vistaLista">
         <div class="table-wrapper">
-            <table class="table" id="clientesTable">
+            <table class="table">
                 <thead>
                     <tr>
-                        {% if 'referencia' in columnas_visibles %}<th class="sortable" onclick="ordenar('referencia')">Ref. <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'nombre' in columnas_visibles %}<th class="sortable" onclick="ordenar('nombre')">Nombre <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'telefono' in columnas_visibles %}<th class="sortable" onclick="ordenar('telefono')">Teléfono <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'email' in columnas_visibles %}<th class="sortable" onclick="ordenar('email')">Email <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'pedidos' in columnas_visibles %}<th class="sortable" onclick="ordenar('pedidos')">Pedidos <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'metros' in columnas_visibles %}<th class="sortable" onclick="ordenar('metros')">Metros <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'nivel' in columnas_visibles %}<th class="sortable" onclick="ordenar('nivel')">Nivel <span class="sort-icon">⇅</span></th>{% endif %}
-                        {% if 'acciones' in columnas_visibles %}<th>Acciones</th>{% endif %}
+                        <th>Ref.</th>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Pedidos</th>
+                        <th>Área facturada</th>
+                        <th>Nivel</th>
+                        <th style="min-width:160px;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for c in clients %}
                     <tr>
-                        {% if 'referencia' in columnas_visibles %}<td><strong>{{ c.referencia }}</strong></td>{% endif %}
-                        {% if 'nombre' in columnas_visibles %}<td>{{ c.nombre }}</td>{% endif %}
-                        {% if 'telefono' in columnas_visibles %}<td>{{ c.telefono or '—' }}</td>{% endif %}
-                        {% if 'email' in columnas_visibles %}<td>{{ c.email or '—' }}</td>{% endif %}
-                        {% if 'pedidos' in columnas_visibles %}<td><span class="badge badge-info">{{ c.total_pedidos }}</span></td>{% endif %}
-                        {% if 'metros' in columnas_visibles %}<td>{{ c.total_metros }} m</td>{% endif %}
-                        {% if 'nivel' in columnas_visibles %}
+                        <td class="col-ref">{{ c.referencia }}</td>
+                        <td>{{ c.nombre }}</td>
+                        <td>{{ c.telefono or '—' }}</td>
+                        <td>{{ c.email or '—' }}</td>
+                        <td><span class="badge-count">{{ c.total_pedidos }}</span></td>
+                        <td class="col-num">{{ c.total_metros }} m²</td>
                         <td>
-                            <span class="badge-nivel-personalizado" style="background:{{ c.nivel_info.color }}; color:{% if c.nivel == 'black' %}#ffffff{% elif c.nivel == 'golden' %}#ffffff{% else %}#1c1c1e{% endif %}; border-color:{{ c.nivel_info.color }};">
-                                {{ c.nivel_info.nombre }}
+                            <span class="badge-nivel {{ c.nivel or 'standard' }}">
+                                {{ c.nivel_info.nombre if c.nivel_info else 'Standard' }}
                             </span>
                         </td>
-                        {% endif %}
-                        {% if 'acciones' in columnas_visibles %}
                         <td>
-                            <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn btn-sm btn-outline"><i class="fas fa-eye"></i></a>
-                            {% if current_user.role in ['comercial', 'admin'] %}
-                                <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a>
-                            {% endif %}
-                            {% if current_user.role == 'admin' %}
-                                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}"
-                                      class="form-cs-confirm"
-                                      data-confirm-title="Eliminar cliente"
-                                      data-confirm-message="¿Eliminar el cliente &quot;{{ c.nombre }}&quot; permanentemente?&#10;&#10;También se eliminarán sus etiquetas favoritas. Esta acción no se puede deshacer."
-                                      data-confirm-ok="Sí, eliminar"
-                                      data-confirm-variant="danger"
-                                      style="display:inline;">
-                                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash-alt"></i></button>
-                                </form>
-                            {% endif %}
+                            <div class="actions-cell">
+                                <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn btn-outline btn-sm" title="Ver detalle">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                        <circle cx="12" cy="12" r="3"></circle>
+                                    </svg>
+                                </a>
+                                {% if current_user.role in ['comercial', 'admin'] %}
+                                    <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-warning btn-sm" title="Editar">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
+                                    </a>
+                                {% endif %}
+                                {% if current_user.role == 'admin' %}
+                                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}"
+                                          class="form-cs-confirm"
+                                          data-confirm-title="Eliminar cliente"
+                                          data-confirm-message="¿Eliminar el cliente &quot;{{ c.nombre }}&quot; permanentemente?&#10;&#10;Esta acción no se puede deshacer."
+                                          data-confirm-ok="Sí, eliminar"
+                                          style="display:inline;">
+                                        <button type="submit" class="btn btn-danger btn-sm" title="Eliminar">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="3 6 5 6 21 6"></polyline>
+                                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                                <path d="M10 11v6"></path>
+                                                <path d="M14 11v6"></path>
+                                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                                            </svg>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
                         </td>
-                        {% endif %}
                     </tr>
                     {% else %}
-                    <tr><td colspan="{{ columnas_visibles|length }}" class="text-muted text-center">No hay clientes.</td></tr>
+                    <tr><td colspan="8" style="text-align:center; padding:30px; color:#8e8e93;">No hay clientes que coincidan con los filtros.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -555,71 +1176,20 @@
         {{ render_pagination(page, total_pages, search, sort, order) }}
     </div>
 
-    <!-- ===== VISTA KANBAN ===== -->
-    <div class="view-section active" id="vistaKanban">
-        <div class="kanban-grid">
-            {% for c in clients %}
-            <div class="kanban-card">
-                <div class="header">
-                    <div>
-                        <div class="name">{{ c.nombre }}</div>
-                        <div class="sub">
-                            <span class="highlight">{{ c.total_pedidos }}</span> pedidos ·
-                            <span class="highlight">{{ c.total_metros }}</span> m
-                            {% if c.frecuencia and c.frecuencia != 'eventual' %}
-                                · <span style="text-transform:capitalize;">{{ c.frecuencia }}</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    <span class="badge-nivel-personalizado" style="background:{{ c.nivel_info.color }}; color:{% if c.nivel == 'black' %}#ffffff{% elif c.nivel == 'golden' %}#ffffff{% else %}#1c1c1e{% endif %}; border-color:{{ c.nivel_info.color }};">
-                        {{ c.nivel_info.nombre }}
-                    </span>
-                </div>
-                <div class="card-tags">
-                    {% if c.top_servicios %}
-                        {% for servicio, count in c.top_servicios %}<span class="tag blue"><i class="fas fa-tools"></i> {{ servicio }} ({{ count }})</span>{% endfor %}
-                    {% endif %}
-                    {% if c.top_materiales %}
-                        {% for material, count in c.top_materiales %}<span class="tag green"><i class="fas fa-box"></i> {{ material }} ({{ count }})</span>{% endfor %}
-                    {% endif %}
-                    {% if not c.top_servicios and not c.top_materiales %}<span class="tag">Sin datos</span>{% endif %}
-                </div>
-                <div class="actions">
-                    <a href="{{ url_for('clientes.detalle_cliente', cliente_id=c.id) }}" class="btn"><i class="fas fa-eye"></i> Ver</a>
-                    {% if current_user.role in ['comercial', 'admin'] %}
-                        <a href="{{ url_for('clientes.editar_cliente', cliente_id=c.id) }}" class="btn btn-warning"><i class="fas fa-edit"></i> Editar</a>
-                    {% endif %}
-                    {% if current_user.role == 'admin' %}
-                        <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=c.id) }}"
-                              class="form-cs-confirm"
-                              data-confirm-title="Eliminar cliente"
-                              data-confirm-message="¿Eliminar el cliente &quot;{{ c.nombre }}&quot; permanentemente?&#10;&#10;También se eliminarán sus etiquetas favoritas. Esta acción no se puede deshacer."
-                              data-confirm-ok="Sí, eliminar"
-                              data-confirm-variant="danger"
-                              style="display:inline;">
-                            <button type="submit" class="btn btn-danger"><i class="fas fa-trash-alt"></i></button>
-                        </form>
-                    {% endif %}
-                </div>
-            </div>
-            {% else %}
-            <div style="grid-column:1/-1; text-align:center; padding:30px; color:#8e8e93;">
-                <i class="fas fa-users" style="font-size:32px; opacity:0.3; display:block; margin-bottom:8px;"></i>
-                No hay clientes.
-            </div>
-            {% endfor %}
-        </div>
-        {{ render_pagination(page, total_pages, search, sort, order) }}
-    </div>
-
 </div>
 
-<!-- ============================================================
-     MODAL DE CONFIRMACIÓN PERSONALIZADO
-     ============================================================ -->
+<!-- ===== MODAL DE CONFIRMACIÓN ===== -->
 <div class="cs-confirm-overlay" id="csConfirmOverlay">
-    <div class="cs-confirm-box" id="csConfirmBox">
-        <div class="cs-confirm-icon" id="csConfirmIcon"><i class="fas fa-trash-alt"></i></div>
+    <div class="cs-confirm-box">
+        <div class="cs-confirm-icon">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
+        </div>
         <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
         <p class="cs-confirm-message" id="csConfirmMessage">¿Estás seguro?</p>
         <div class="cs-confirm-actions">
@@ -629,127 +1199,296 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block extra_js %}
 <script>
-    // ===== FILTRO EN TIEMPO REAL =====
-    (function() {
-        const filterForm = document.getElementById('filterForm');
-        const searchInput = document.getElementById('searchInput');
-        const sortSelect = document.getElementById('sortSelect');
-        let timeoutId = null;
-        function submitForm() {
-            if (timeoutId) clearTimeout(timeoutId);
-            timeoutId = setTimeout(function() { filterForm.submit(); }, 300);
+    // ============================================================
+    // CUSTOM SELECT (con búsqueda interna auto si >8 opciones)
+    // ============================================================
+    function initCustomSelect(selectEl) {
+        if (!selectEl || selectEl.dataset.csInit === '1') return;
+        if (selectEl.closest('.cs-select-wrap')) return;
+        if (selectEl.multiple) return;
+        selectEl.dataset.csInit = '1';
+
+        const wrap = document.createElement('div');
+        wrap.className = 'cs-select-wrap';
+        selectEl.parentNode.insertBefore(wrap, selectEl);
+        wrap.appendChild(selectEl);
+        selectEl.classList.add('cs-select-native');
+
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'cs-select-trigger';
+        trigger.innerHTML = `
+            <span class="cs-value"></span>
+            <svg class="cs-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        `;
+        wrap.appendChild(trigger);
+
+        const menu = document.createElement('div');
+        menu.className = 'cs-select-menu';
+        document.body.appendChild(menu);
+
+        const searchable = selectEl.dataset.searchable === '1' || selectEl.options.length > 8;
+        let searchInput = null;
+        if (searchable) {
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cs-select-search-wrap';
+            searchWrap.innerHTML = `
+                <svg class="cs-search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+            `;
+            searchInput = document.createElement('input');
+            searchInput.type = 'text';
+            searchInput.className = 'cs-select-search';
+            searchInput.placeholder = 'Buscar...';
+            searchInput.autocomplete = 'off';
+            searchInput.spellcheck = false;
+            searchWrap.appendChild(searchInput);
+            menu.appendChild(searchWrap);
+            searchWrap.addEventListener('click', (e) => e.stopPropagation());
         }
-        searchInput.addEventListener('input', submitForm);
-        sortSelect.addEventListener('change', submitForm);
-        searchInput.addEventListener('keydown', function(e) { if (e.key === 'Enter') { e.preventDefault(); submitForm(); } });
-    })();
 
-    // ===== ORDENACIÓN =====
-    function ordenar(columna) {
-        const url = new URL(window.location.href);
-        const currentSort = url.searchParams.get('sort');
-        const currentOrder = url.searchParams.get('order');
-        let newOrder = 'asc';
-        if (currentSort === columna && currentOrder === 'asc') { newOrder = 'desc'; }
-        url.searchParams.set('sort', columna);
-        url.searchParams.set('order', newOrder);
-        window.location.href = url.toString();
-    }
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'cs-select-options';
+        menu.appendChild(optionsContainer);
 
-    // ===== CAMBIO DE VISTA =====
-    function cambiarVista(vista) {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
-        document.querySelector(`.view-btn[data-view="${vista}"]`).classList.add('active');
-        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-        document.getElementById(vista === 'lista' ? 'vistaLista' : 'vistaKanban').classList.add('active');
-        localStorage.setItem('clientes_view_preference', vista);
-    }
+        let highlightedIndex = -1;
+        let filteredIndexes = [];
 
-    // ===== GRÁFICOS =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const ctx1 = document.getElementById('nuevosClientesChart');
-        if (ctx1) {
-            const labels = {{ meses_nuevos|tojson }};
-            const values = {{ valores_nuevos|tojson }};
-            const config = {{ dashboard_config|tojson }};
-            const color = config.colores.grafico_nuevos || '#a8854f';
-            new Chart(ctx1, {
-                type: '{{ dashboard_config.graficos.tipo_nuevos }}',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Nuevos clientes',
-                        data: values,
-                        backgroundColor: color + '80',
-                        borderColor: color,
-                        borderWidth: 1.5,
-                        borderRadius: 3,
-                        fill: {{ 'true' if dashboard_config.graficos.tipo_nuevos == 'line' else 'false' }},
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 8, family: 'Inter' }, maxTicksLimit: 12 } },
-                        y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { stepSize: 1, font: { size: 8, family: 'Inter' } } }
-                    }
+        function updateValue() {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const valueEl = wrap.querySelector('.cs-value');
+            if (!opt || !opt.value) {
+                valueEl.textContent = opt ? opt.textContent : '—';
+                valueEl.classList.add('placeholder');
+            } else {
+                valueEl.textContent = opt.textContent;
+                valueEl.classList.remove('placeholder');
+            }
+        }
+
+        function renderOptions(filter = '') {
+            optionsContainer.innerHTML = '';
+            filteredIndexes = [];
+            highlightedIndex = -1;
+            const q = (filter || '').trim().toLowerCase();
+            Array.from(selectEl.options).forEach((opt, idx) => {
+                if (q && !opt.textContent.toLowerCase().includes(q)) return;
+                filteredIndexes.push(idx);
+                const item = document.createElement('div');
+                item.className = 'cs-select-option';
+                if (opt.value === selectEl.value) item.classList.add('selected');
+                item.textContent = opt.textContent;
+                item.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    selectEl.value = opt.value;
+                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                    updateValue();
+                    close();
+                });
+                item.addEventListener('mouseenter', () => {
+                    highlightedIndex = filteredIndexes.length - 1;
+                    updateHighlight();
+                });
+                optionsContainer.appendChild(item);
+            });
+            if (filteredIndexes.length === 0) {
+                const empty = document.createElement('div');
+                empty.className = 'cs-select-empty';
+                empty.textContent = 'Sin coincidencias';
+                optionsContainer.appendChild(empty);
+            }
+        }
+
+        function updateHighlight() {
+            optionsContainer.querySelectorAll('.cs-select-option').forEach((el, i) => {
+                el.classList.toggle('highlighted', i === highlightedIndex);
+            });
+        }
+
+        function moveHighlight(delta) {
+            if (filteredIndexes.length === 0) return;
+            const n = filteredIndexes.length;
+            if (highlightedIndex === -1) highlightedIndex = delta > 0 ? 0 : n - 1;
+            else highlightedIndex = (highlightedIndex + delta + n) % n;
+            updateHighlight();
+        }
+
+        function selectHighlighted() {
+            if (highlightedIndex < 0 || highlightedIndex >= filteredIndexes.length) return;
+            const opt = selectEl.options[filteredIndexes[highlightedIndex]];
+            if (!opt) return;
+            selectEl.value = opt.value;
+            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+            updateValue();
+            close();
+        }
+
+        function positionMenu() {
+            const rect = trigger.getBoundingClientRect();
+            const menuH = Math.min(320, menu.scrollHeight || 200);
+            const spaceBelow = window.innerHeight - rect.bottom;
+            menu.style.left = rect.left + 'px';
+            menu.style.width = Math.max(rect.width, 200) + 'px';
+            if (spaceBelow < menuH + 20 && rect.top > menuH + 20) {
+                menu.style.top = (rect.top - menuH - 6) + 'px';
+            } else {
+                menu.style.top = (rect.bottom + 6) + 'px';
+            }
+        }
+
+        function open() {
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                if (w !== wrap) {
+                    w.classList.remove('open');
+                    const m = w._csMenu;
+                    if (m) m.classList.remove('open');
                 }
             });
+            if (searchInput) searchInput.value = '';
+            renderOptions('');
+            updateValue();
+            wrap.classList.add('open');
+            menu.classList.add('open');
+            positionMenu();
+            if (searchInput) setTimeout(() => searchInput.focus(), 40);
         }
+        function close() {
+            wrap.classList.remove('open');
+            menu.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            highlightedIndex = -1;
+        }
+        wrap._csMenu = menu;
 
-        const ctx2 = document.getElementById('nivelesChart');
-        if (ctx2) {
-            const labels = {{ nivel_labels|tojson }};
-            const data = {{ nivel_data|tojson }};
-            const colors = {{ nivel_colors|tojson }};
-            new Chart(ctx2, {
-                type: '{{ dashboard_config.graficos.tipo_niveles }}',
-                data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderColor: '#ffffff', borderWidth: 2 }] },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { size: 9, family: 'Inter' }, boxWidth: 10, padding: 6 } } } }
+        trigger.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (wrap.classList.contains('open')) close();
+            else open();
+        });
+
+        trigger.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (!wrap.classList.contains('open')) open();
+            }
+        });
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                renderOptions(searchInput.value);
+                positionMenu();
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown') { e.preventDefault(); moveHighlight(1); }
+                else if (e.key === 'ArrowUp') { e.preventDefault(); moveHighlight(-1); }
+                else if (e.key === 'Enter') { e.preventDefault(); selectHighlighted(); }
+                else if (e.key === 'Escape') { e.preventDefault(); close(); }
             });
         }
 
-        const pref = localStorage.getItem('clientes_view_preference') || 'kanban';
+        document.addEventListener('click', (e) => {
+            if (!wrap.contains(e.target) && !menu.contains(e.target)) close();
+        });
+        window.addEventListener('scroll', (e) => {
+            if (!menu.classList.contains('open')) return;
+            if (menu.contains(e.target) || wrap.contains(e.target)) return;
+            close();
+        }, true);
+        window.addEventListener('resize', () => {
+            if (menu.classList.contains('open')) close();
+        });
+
+        selectEl.addEventListener('change', updateValue);
+        selectEl._csRefresh = updateValue;
+        updateValue();
+    }
+
+    // ============================================================
+    // FILTRO EN TIEMPO REAL (debounce 400ms)
+    // ============================================================
+    (function() {
+        const form = document.getElementById('filterForm');
+        const searchInput = document.getElementById('searchInput');
+        if (!form || !searchInput) return;
+        let t = null;
+        function submit() {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => form.submit(), 400);
+        }
+        searchInput.addEventListener('input', submit);
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); submit(); }
+        });
+    })();
+
+    // ============================================================
+    // CAMBIO DE VISTA (kanban / lista)
+    // ============================================================
+    function cambiarVista(vista) {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.querySelector(`.view-btn[data-view="${vista}"]`);
+        if (btn) btn.classList.add('active');
+        document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+        const target = document.getElementById(vista === 'lista' ? 'vistaLista' : 'vistaKanban');
+        if (target) target.classList.add('active');
+        try { localStorage.setItem('clientes_view_preference', vista); } catch (e) {}
+    }
+
+    // ============================================================
+    // SORT: interceptar el cambio y navegar con sort/order
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Vista por defecto
+        let pref = 'kanban';
+        try { pref = localStorage.getItem('clientes_view_preference') || 'kanban'; } catch (e) {}
         cambiarVista(pref);
+
+        // Custom select para el dropdown de sort
+        const sortSelect = document.getElementById('sortSelect');
+        if (sortSelect) {
+            // Guardar los datos de sort/order en cada option
+            Array.from(sortSelect.options).forEach(o => {
+                const [s, ord] = o.value.split('|');
+                o.dataset.sort = s;
+                o.dataset.order = ord || 'desc';
+            });
+            initCustomSelect(sortSelect);
+            sortSelect.addEventListener('change', function() {
+                const o = this.options[this.selectedIndex];
+                const url = new URL(window.location.href);
+                url.searchParams.set('sort', o.dataset.sort || 'metros');
+                url.searchParams.set('order', o.dataset.order || 'desc');
+                url.searchParams.set('page', 1);
+                window.location.href = url.toString();
+            });
+        }
     });
 
     // ============================================================
-    // MODAL DE CONFIRMACIÓN PERSONALIZADO
+    // MODAL DE CONFIRMACIÓN
     // ============================================================
     let csConfirmCallback = null;
 
     function csConfirm(opts) {
         const overlay = document.getElementById('csConfirmOverlay');
-        const box = document.getElementById('csConfirmBox');
-        const iconEl = document.getElementById('csConfirmIcon');
         const titleEl = document.getElementById('csConfirmTitle');
         const messageEl = document.getElementById('csConfirmMessage');
         const okBtn = document.getElementById('csConfirmOk');
-
-        const variant = opts.variant || 'danger';
-        box.className = 'cs-confirm-box ' + variant;
-        iconEl.className = 'cs-confirm-icon ' + variant;
-
-        if (variant === 'warning') {
-            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            okBtn.className = 'cs-confirm-btn danger';
-        } else {
-            iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            okBtn.className = 'cs-confirm-btn danger';
-        }
-
         titleEl.textContent = opts.title || 'Confirmar acción';
         messageEl.textContent = opts.message || '¿Estás seguro?';
         okBtn.textContent = opts.okText || 'Eliminar';
-
         csConfirmCallback = opts.onConfirm || null;
         overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
-
     function csConfirmClose() {
         const overlay = document.getElementById('csConfirmOverlay');
         if (overlay) overlay.classList.remove('active');
@@ -762,19 +1501,15 @@
         const cancelBtn = document.getElementById('csConfirmCancel');
         const overlay = document.getElementById('csConfirmOverlay');
 
-        if (okBtn) {
-            okBtn.addEventListener('click', function() {
-                const cb = csConfirmCallback;
-                csConfirmClose();
-                if (typeof cb === 'function') cb();
-            });
-        }
+        if (okBtn) okBtn.addEventListener('click', function() {
+            const cb = csConfirmCallback;
+            csConfirmClose();
+            if (typeof cb === 'function') cb();
+        });
         if (cancelBtn) cancelBtn.addEventListener('click', csConfirmClose);
-        if (overlay) {
-            overlay.addEventListener('click', function(e) {
-                if (e.target === this) csConfirmClose();
-            });
-        }
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === this) csConfirmClose();
+        });
 
         document.querySelectorAll('form.form-cs-confirm').forEach(function(form) {
             form.addEventListener('submit', function(e) {
@@ -784,15 +1519,21 @@
                     title: self.dataset.confirmTitle || 'Confirmar acción',
                     message: self.dataset.confirmMessage || '¿Estás seguro?',
                     okText: self.dataset.confirmOk || 'Eliminar',
-                    variant: self.dataset.confirmVariant || 'danger',
-                    onConfirm: function() { self.submit(); }
+                    onConfirm: () => self.submit()
                 });
             });
         });
     });
 
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') csConfirmClose();
+        if (e.key === 'Escape') {
+            csConfirmClose();
+            document.querySelectorAll('.cs-select-wrap.open').forEach(w => {
+                w.classList.remove('open');
+                const m = w._csMenu;
+                if (m) m.classList.remove('open');
+            });
+        }
     });
 </script>
 {% endblock %}

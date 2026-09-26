@@ -2,247 +2,638 @@
 
 {% block title %}{% if cliente %}Editar {{ cliente.nombre }}{% else %}Nuevo Cliente{% endif %} · CairoStudio{% endblock %}
 
-{% block page_title %}{% endblock %}
+{% block page_title %}
+<div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;">
+    <span class="page-main-title">{% if cliente %}Editar cliente{% else %}Nuevo cliente{% endif %}</span>
+    {% if cliente %}
+    <span class="page-subtitle">{{ cliente.nombre }} · Ref: {{ cliente.referencia }}</span>
+    {% else %}
+    <span class="page-subtitle">Completa los datos del nuevo cliente</span>
+    {% endif %}
+</div>
+{% endblock %}
 
 {% block extra_css %}
 <style>
-    .form-container { max-width: 900px; margin: 0 auto; padding: 0 20px; }
+    /* ============================================================
+       TIPOGRAFÍA
+       ============================================================ */
+    .page-main-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 28px; font-weight: 700;
+        letter-spacing: -0.5px; color: #1c1c1e; line-height: 1.2;
+    }
+    .page-subtitle {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px; font-weight: 400;
+        color: #8e8e93; letter-spacing: 0.3px;
+    }
 
-    .form-header {
-        display: flex; align-items: center; justify-content: space-between;
-        flex-wrap: wrap; gap: 16px; margin-bottom: 28px; padding: 20px 24px;
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
-        border-radius: 20px; border: 1px solid rgba(0,0,0,0.04);
+    /* ============================================================
+       LAYOUT
+       ============================================================ */
+    .cli-form-container {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 20px;
+        box-sizing: border-box;
+    }
+
+    /* ============================================================
+       HEADER (idéntico al de detalle_cliente.html)
+       ============================================================ */
+    .cli-form-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 20px;
+        padding: 18px 22px;
+        background: white;
+        border-radius: 16px;
+        border: 1px solid #f0ece8;
         box-shadow: 0 2px 12px rgba(0,0,0,0.02);
     }
-    .form-header .info { display: flex; align-items: center; gap: 16px; }
-    .form-header .avatar {
-        width: 56px; height: 56px; border-radius: 50%;
-        background: #f0ece8; display: flex; align-items: center;
-        justify-content: center; font-size: 24px; color: #a8854f; flex-shrink: 0;
+    .cli-form-header .info {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        min-width: 0;
+        flex: 1;
     }
-    .form-header .name-group h1 {
-        font-family: 'Playfair Display', serif; font-size: 24px;
-        font-weight: 700; color: #1c1c1e; margin: 0 0 2px 0;
+    .cli-form-header .avatar {
+        width: 52px;
+        height: 52px;
+        border-radius: 50%;
+        background: #f5f2ef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #a8854f;
+        flex-shrink: 0;
     }
-    .form-header .name-group .sub {
-        font-size: 14px; color: #8e8e93; display: flex;
-        align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .badge-nivel-personalizado {
-        display: inline-block; padding: 2px 12px; border-radius: 30px;
-        font-size: 11px; font-weight: 700; text-transform: uppercase;
-        letter-spacing: 0.3px; border: 1px solid rgba(0,0,0,0.1);
-    }
-    .form-header .actions { display: flex; gap: 8px; flex-wrap: wrap; }
-
-    .form-card {
-        background: rgba(255,255,255,0.85); backdrop-filter: blur(12px);
-        border-radius: 20px; padding: 28px 32px;
-        border: 1px solid rgba(0,0,0,0.04);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
-        margin-bottom: 24px;
-    }
-    .form-card .card-title {
-        font-family: 'Playfair Display', serif; font-size: 20px;
-        font-weight: 700; color: #1c1c1e; margin: 0 0 20px 0;
-        display: flex; align-items: center; gap: 10px;
-        border-bottom: 1px solid #f0ece8; padding-bottom: 12px;
-        justify-content: space-between;
-    }
-    .form-card .card-title .title-txt { display: flex; align-items: center; gap: 10px; }
-    .form-card .card-title i { color: #a8854f; font-size: 20px; }
-
-    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .form-group { margin-bottom: 18px; }
-    .form-group label {
-        display: block; font-weight: 600; font-size: 13px;
-        color: #333; margin-bottom: 4px; font-family: 'Inter', sans-serif;
-    }
-    .form-group label .required { color: #dc2626; margin-left: 2px; }
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%; padding: 10px 14px; border: 1.5px solid #e0dcd8;
-        border-radius: 10px; font-size: 14px; background: #fafaf9;
-        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
-        font-family: 'Inter', sans-serif; color: #1c1c1e; box-sizing: border-box;
-    }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        outline: none; border-color: #a8854f; background: white;
-        box-shadow: 0 0 0 4px rgba(168,133,79,0.08);
-    }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-group small { display: block; color: #8e8e93; font-size: 12px; margin-top: 4px; }
-
-    .btn {
-        padding: 8px 20px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 13px; cursor: pointer;
-        transition: all 0.2s; display: inline-flex; align-items: center;
-        gap: 6px; font-family: 'Inter', sans-serif;
-        text-decoration: none; background: #1c1c1e; color: white;
+    .cli-form-header .name-group { min-width: 0; }
+    .cli-form-header .name-group h1 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 4px 0;
+        letter-spacing: -0.3px;
+        line-height: 1.2;
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
-    .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-    .btn-outline { background: transparent; border: 1px solid #d2d2d7; color: #1c1c1e; }
-    .btn-outline:hover { border-color: #8e8e93; background: #f5f5f5; transform: none; box-shadow: none; }
-    .btn-success { background: #10b981; color: white; }
-    .btn-success:hover { background: #059669; }
-    .btn-warning { background: #f59e0b; color: white; }
-    .btn-warning:hover { background: #d97706; }
-    .btn-danger { background: #dc2626; color: white; }
-    .btn-danger:hover { background: #b91c1c; }
-    .btn-gold { background: #a8854f; color: white; }
-    .btn-gold:hover { background: #8c7040; }
-    .btn-sm { padding: 4px 12px; font-size: 12px; border-radius: 20px; }
-
-    .btn-gold-lg {
-        background: #a8854f; color: white;
-        padding: 10px 22px; font-size: 14px; border-radius: 30px;
-        font-weight: 600; border: none; cursor: pointer;
-        display: inline-flex; align-items: center; gap: 8px;
-        transition: all 0.2s; font-family: 'Inter', sans-serif;
+    .cli-form-header .name-group .sub {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #8e8e93;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     }
-    .btn-gold-lg:hover { background: #8c7040; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(168,133,79,0.3); }
+    .cli-form-header .name-group .sub .ref {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #6b6b7a;
+        letter-spacing: -0.2px;
+    }
+    .cli-form-header .name-group .sub .metric {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #1c1c1e;
+        letter-spacing: -0.2px;
+    }
+    .cli-form-header .actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
 
-    .btn-group {
-        display: flex; gap: 12px; flex-wrap: wrap;
-        margin-top: 8px; padding-top: 20px;
+    /* ============================================================
+       BADGE DE NIVEL
+       ============================================================ */
+    .cli-form-badge-nivel {
+        display: inline-block;
+        padding: 3px 12px;
+        border-radius: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        border: 1px solid transparent;
+        white-space: nowrap;
+        line-height: 1.4;
+    }
+    .cli-form-badge-nivel.black    { background: #1a1a1a; color: #e8c98a; border-color: #d4a574; }
+    .cli-form-badge-nivel.golden   { background: #fdf7ea; color: #92400e; border-color: #e8c98a; }
+    .cli-form-badge-nivel.standard { background: #f3f4f6; color: #4b5563; border-color: #d1d5db; }
+
+    /* ============================================================
+       BOTONES
+       ============================================================ */
+    .cli-form-btn {
+        padding: 7px 16px;
+        border-radius: 30px;
+        border: 1.5px solid #d2d2d7;
+        font-family: 'Inter', sans-serif;
+        font-weight: 600;
+        font-size: 12.5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: white;
+        color: #1c1c1e;
+        transition: all 0.15s;
+        text-decoration: none;
+        white-space: nowrap;
+        line-height: 1;
+    }
+    .cli-form-btn:hover {
+        border-color: #8e8e93;
+        background: #f5f5f5;
+        transform: translateY(-1px);
+    }
+    .cli-form-btn svg { flex-shrink: 0; }
+    .cli-form-btn-primary {
+        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .cli-form-btn-primary:hover {
+        background: linear-gradient(135deg, #2c2c30 0%, #3a3a3e 100%);
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+        transform: translateY(-1px);
+    }
+    .cli-form-btn-success {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: transparent;
+        box-shadow: 0 2px 8px rgba(16,185,129,0.2);
+    }
+    .cli-form-btn-success:hover {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        border-color: transparent;
+        box-shadow: 0 6px 16px rgba(16,185,129,0.3);
+        transform: translateY(-1px);
+    }
+    .cli-form-btn-warning {
+        background: transparent;
+        border-color: #f59e0b;
+        color: #d97706;
+    }
+    .cli-form-btn-warning:hover {
+        background: #fef3c7;
+        border-color: #d97706;
+        color: #78350f;
+        transform: none;
+    }
+    .cli-form-btn-danger {
+        background: transparent;
+        border-color: #dc2626;
+        color: #dc2626;
+    }
+    .cli-form-btn-danger:hover {
+        background: #fef2f2;
+        border-color: #b91c1c;
+        color: #b91c1c;
+        transform: none;
+    }
+    .cli-form-btn-gold {
+        background: transparent;
+        border-color: #a8854f;
+        color: #78350f;
+    }
+    .cli-form-btn-gold:hover {
+        background: #faf6f0;
+        border-color: #8c7040;
+        color: #5a3f1a;
+        transform: none;
+    }
+    .cli-form-btn-sm {
+        padding: 4px 11px;
+        font-size: 11.5px;
+    }
+
+    /* ============================================================
+       CARDS (idéntico look a detalle_cliente.html)
+       ============================================================ */
+    .cli-form-card {
+        background: white;
+        border-radius: 16px;
+        padding: 18px 22px;
+        border: 1px solid #f0ece8;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.02);
+        margin-bottom: 16px;
+        min-width: 0;
+    }
+    .cli-form-card .card-title {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 14px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 18px 0;
+        display: flex;
+        align-items: center;
         justify-content: space-between;
+        gap: 10px;
+        letter-spacing: -0.2px;
+        flex-wrap: wrap;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0ece8;
     }
-    .btn-group .left-buttons,
-    .btn-group .right-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+    .cli-form-card .card-title .title-txt {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+    .cli-form-card .card-title svg { color: #a8854f; flex-shrink: 0; }
+    .cli-form-card .card-title .count-badge {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        font-size: 12px;
+        color: #8e8e93;
+        letter-spacing: -0.2px;
+    }
 
-    /* ===== ETIQUETAS FAVORITAS ===== */
-    .fav-grid {
-        display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 14px;
+    /* ============================================================
+       FORM GROUPS
+       ============================================================ */
+    .cli-form-grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px 20px;
     }
-    .fav-card {
-        background: white; border: 1px solid #f0ece8;
-        border-radius: 14px; padding: 14px;
-        display: flex; flex-direction: column; gap: 8px;
+    .cli-form-group {
+        min-width: 0;
+        margin-bottom: 0;
+    }
+    .cli-form-group.full-width { grid-column: 1 / -1; }
+    .cli-form-group label {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-weight: 700;
+        font-size: 10.5px;
+        color: #6b6b7a;
+        margin-bottom: 6px;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+    }
+    .cli-form-group label .required {
+        color: #dc2626;
+        margin-left: 2px;
+    }
+    .cli-form-group input[type="text"],
+    .cli-form-group input[type="email"],
+    .cli-form-group input[type="date"],
+    .cli-form-group select,
+    .cli-form-group textarea {
+        width: 100%;
+        padding: 10px 14px;
+        border: 1.5px solid #e0dcd8;
+        border-radius: 10px;
+        font-size: 13.5px;
+        background: #fafaf9;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        box-sizing: border-box;
+        font-weight: 500;
+    }
+    .cli-form-group input:hover,
+    .cli-form-group select:hover,
+    .cli-form-group textarea:hover {
+        border-color: #ddd5c8;
+        background: #ffffff;
+    }
+    .cli-form-group input:focus,
+    .cli-form-group select:focus,
+    .cli-form-group textarea:focus {
+        outline: none;
+        border-color: #a8854f;
+        background: #ffffff;
+        box-shadow: 0 0 0 3px rgba(168,133,79,0.08);
+    }
+    .cli-form-group textarea {
+        resize: vertical;
+        min-height: 80px;
+        line-height: 1.55;
+    }
+    .cli-form-group small.hint {
+        display: block;
+        font-family: 'Inter', sans-serif;
+        font-size: 11.5px;
+        color: #8e8e93;
+        margin-top: 5px;
+        line-height: 1.4;
+    }
+
+    /* Select nativo estilizado como input */
+    .cli-form-group select {
+        appearance: none;
+        -webkit-appearance: none;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a8854f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 14px center;
+        padding-right: 38px;
+        cursor: pointer;
+    }
+
+    /* ============================================================
+       FAVORITOS (idéntico look a detalle_cliente.html)
+       ============================================================ */
+    .cli-form-fav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+        gap: 12px;
+    }
+    .cli-form-fav-card {
+        background: white;
+        border: 1px solid #f0ece8;
+        border-radius: 14px;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         transition: all 0.2s ease;
+        min-width: 0;
     }
-    .fav-card:hover {
-        border-color: rgba(168,133,79,0.3);
-        box-shadow: 0 6px 22px rgba(168,133,79,0.10);
+    .cli-form-fav-card:hover {
+        border-color: #e5d4b8;
+        box-shadow: 0 6px 22px rgba(168,133,79,0.08);
         transform: translateY(-2px);
     }
-    .fav-thumb {
-        width: 100%; height: 90px; border-radius: 8px;
-        border: 1px solid #f0ece8; object-fit: cover;
-        background: #fafaf9; display: block;
+    .cli-form-fav-thumb {
+        width: 100%;
+        height: 90px;
+        border-radius: 8px;
+        border: 1px solid #f0ece8;
+        object-fit: cover;
+        background: #fafaf9;
+        display: block;
     }
-    .fav-pdf-thumb {
-        width: 100%; height: 90px; border-radius: 8px;
-        border: 1px dashed #d2d2d7; background: #fafaf9;
-        display: flex; flex-direction: column; align-items: center;
-        justify-content: center; gap: 4px; color: #dc2626;
-        font-size: 11px; font-weight: 700; text-decoration: none;
-        transition: 0.15s;
+    .cli-form-fav-pdf-thumb {
+        width: 100%;
+        height: 90px;
+        border-radius: 8px;
+        border: 1px dashed #d2d2d7;
+        background: #fafaf9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        color: #dc2626;
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+        transition: all 0.15s;
+        overflow: hidden;
     }
-    .fav-pdf-thumb:hover { background: #fef2f2; border-color: #dc2626; }
-    .fav-pdf-thumb .pdf-ico { font-size: 28px; }
-    .fav-pdf-thumb .pdf-name {
-        color: #6b6b7a; font-weight: 500; max-width: 90%;
-        overflow: hidden; text-overflow: ellipsis;
-        white-space: nowrap; font-size: 10px;
+    .cli-form-fav-pdf-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: white;
+        border-radius: 7px;
     }
-    .fav-nombre {
-        font-family: 'Playfair Display', serif; font-size: 15px;
-        font-weight: 700; color: #1c1c1e; line-height: 1.25;
+    .cli-form-fav-pdf-thumb:hover {
+        background: #fef2f2;
+        border-color: #dc2626;
     }
-    .fav-dim {
-        font-size: 13px; color: #a8854f; font-weight: 700; margin-top: 2px;
+    .cli-form-fav-nombre {
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 700;
+        color: #1c1c1e;
+        line-height: 1.25;
+        letter-spacing: -0.1px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
-    .fav-notas {
-        font-size: 11px; color: #8e8e93; font-style: italic;
-        border-left: 2px solid #f0ece8; padding-left: 8px; margin-top: 4px;
+    .cli-form-fav-dim {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 13px;
+        color: #a8854f;
+        font-weight: 700;
+        letter-spacing: -0.2px;
     }
-    .fav-acciones {
-        display: flex; gap: 6px; flex-wrap: wrap;
-        margin-top: auto; padding-top: 8px; border-top: 1px solid #f0ece8;
+    .cli-form-fav-notas {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        font-style: italic;
+        border-left: 2px solid #f0ece8;
+        padding-left: 8px;
+        line-height: 1.4;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
     }
-    .fav-empty {
-        grid-column: 1 / -1; text-align: center;
-        padding: 40px 20px; color: #8e8e93;
+    .cli-form-fav-acciones {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: auto;
+        padding-top: 10px;
+        border-top: 1px solid #f0ece8;
     }
-    .fav-empty .fav-empty-ico { font-size: 40px; opacity: 0.35; margin-bottom: 8px; }
-    .fav-empty h4 {
-        font-family: 'Playfair Display', serif;
-        color: #1c1c1e; margin: 0 0 4px 0; font-size: 17px;
+    .cli-form-fav-acciones .cli-form-btn {
+        flex: 1;
+        justify-content: center;
     }
-    .fav-empty p { margin: 0 0 16px 0; font-size: 13px; }
+    .cli-form-fav-empty {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 32px 20px;
+        color: #8e8e93;
+        font-family: 'Inter', sans-serif;
+    }
+    .cli-form-fav-empty .fav-empty-ico {
+        width: 56px; height: 56px;
+        border-radius: 50%;
+        background: #faf6f0;
+        color: #a8854f;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 12px;
+    }
+    .cli-form-fav-empty h4 {
+        font-family: 'Inter', sans-serif;
+        color: #1c1c1e;
+        margin: 0 0 4px 0;
+        font-size: 15px;
+        font-weight: 700;
+    }
+    .cli-form-fav-empty p {
+        margin: 0;
+        font-size: 13px;
+        color: #8e8e93;
+    }
 
-    /* ===== MODAL ===== */
-    .modal-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
-        z-index: 9999; justify-content: center; align-items: center;
-        padding: 16px; animation: csFade 0.18s ease;
+    /* ============================================================
+       BOTONES FINALES
+       ============================================================ */
+    .cli-form-actions-bottom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 8px;
+        margin-bottom: 20px;
     }
-    .modal-overlay.active { display: flex; }
-    @keyframes csFade { from { opacity: 0; } to { opacity: 1; } }
+    .cli-form-actions-bottom .left-buttons,
+    .cli-form-actions-bottom .right-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       MODAL: FAVORITO
+       ============================================================ */
+    .cli-form-modal-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(20,20,25,0.45);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+    }
+    .cli-form-modal-overlay.active { display: flex; }
+    .cli-form-modal {
+        background: white;
+        border-radius: 18px;
+        padding: 24px 26px;
+        width: 100%;
+        max-width: 520px;
+        max-height: 92vh;
+        overflow-y: auto;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        animation: cliFormModalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        box-sizing: border-box;
+    }
+    @keyframes cliFormModalIn {
+        from { transform: scale(0.94) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .cli-form-modal .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+        padding-bottom: 14px;
+        border-bottom: 1px solid #f0ece8;
+    }
+    .cli-form-modal h3 {
+        font-family: 'Inter', sans-serif !important;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        letter-spacing: -0.2px;
+    }
+    .cli-form-modal h3 svg { color: #a8854f; flex-shrink: 0; }
+    .cli-form-modal .modal-close {
+        background: none;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        color: #8e8e93;
+        line-height: 1;
+        padding: 0 4px;
+        transition: color 0.15s, transform 0.15s;
+    }
+    .cli-form-modal .modal-close:hover { color: #1c1c1e; transform: rotate(90deg); }
+    .cli-form-modal .modal-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 16px;
+        border-top: 1px solid #f0ece8;
+        flex-wrap: wrap;
+    }
+
+    /* File input + archivo actual */
+    .cli-form-modal .archivo-info-box {
+        background: #faf6f0;
+        border-left: 3px solid #a8854f;
+        padding: 8px 12px;
+        border-radius: 6px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        color: #78350f;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        margin-top: 6px;
+    }
+    .cli-form-modal .archivo-info-box a {
+        color: #78350f;
+        font-weight: 700;
+        text-decoration: underline;
+    }
+    .cli-form-modal .file-input-hint {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        color: #8e8e93;
+        margin-top: 5px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    /* ============================================================
+       MODAL DE CONFIRMACIÓN (compartido con el resto de la app)
+       ============================================================ */
     @keyframes csPop {
         from { transform: scale(0.95) translateY(10px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
-    .modal {
-        background: white; border-radius: 20px;
-        padding: 24px 26px 20px; width: 100%; max-width: 520px;
-        max-height: 92vh; overflow-y: auto;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
-        animation: csPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .modal-header {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 16px; padding-bottom: 12px;
-        border-bottom: 1px solid #f0ece8;
-    }
-    .modal-header h3 {
-        font-family: 'Playfair Display', serif;
-        font-size: 19px; font-weight: 700; color: #1c1c1e; margin: 0;
-    }
-    .modal-close {
-        background: none; border: none; font-size: 26px;
-        line-height: 1; cursor: pointer; color: #8e8e93; padding: 0 4px;
-    }
-    .modal-close:hover { color: #1c1c1e; }
-    .modal-actions {
-        display: flex; justify-content: flex-end; gap: 10px;
-        margin-top: 16px; padding-top: 14px;
-        border-top: 1px solid #f0ece8;
-    }
-    .archivo-info-box {
-        background: #f5efe4; border-left: 3px solid #a8854f;
-        padding: 8px 12px; border-radius: 6px;
-        font-size: 12px; color: #78350f;
-        display: flex; align-items: center;
-        justify-content: space-between; gap: 8px; margin-top: 6px;
-    }
-    .archivo-info-box .fav-link {
-        color: #78350f; font-weight: 700;
-        text-decoration: underline; font-size: 12px;
-    }
-    .file-input-hint {
-        font-size: 11px; color: #8e8e93; margin-top: 4px;
-        display: flex; justify-content: space-between; gap: 8px;
-    }
-
-    /* ============================================================
-       MODAL DE CONFIRMACIÓN PERSONALIZADO
-       ============================================================ */
     .cs-confirm-overlay {
-        display: none; position: fixed; inset: 0;
-        background: rgba(0,0,0,0.35); backdrop-filter: blur(6px);
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(6px);
         z-index: 10000;
-        justify-content: center; align-items: center;
-        padding: 16px; animation: csFade 0.18s ease;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
     }
     .cs-confirm-overlay.active { display: flex; }
-
     .cs-confirm-box {
-        background: white; border-radius: 20px;
-        padding: 26px 28px 22px; max-width: 460px; width: 100%;
+        background: white;
+        border-radius: 20px;
+        padding: 26px 28px 22px;
+        max-width: 460px;
+        width: 100%;
         box-shadow: 0 30px 80px rgba(0,0,0,0.22);
         animation: csPop 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
         text-align: center;
@@ -250,104 +641,112 @@
         box-sizing: border-box;
     }
     .cs-confirm-box.warning { border-top-color: #f59e0b; }
-    .cs-confirm-box.danger  { border-top-color: #dc2626; }
-    .cs-confirm-box.success { border-top-color: #10b981; }
-    .cs-confirm-box.info    { border-top-color: #3b82f6; }
-
     .cs-confirm-icon {
-        width: 64px; height: 64px; border-radius: 50%;
-        margin: 0 auto 14px; display: flex;
-        align-items: center; justify-content: center;
-        font-size: 30px;
-        background: #fef2f2; color: #dc2626;
+        width: 60px; height: 60px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fef2f2;
+        color: #dc2626;
     }
     .cs-confirm-icon.warning { background: #fffbeb; color: #f59e0b; }
-    .cs-confirm-icon.danger  { background: #fef2f2; color: #dc2626; }
-    .cs-confirm-icon.success { background: #ecfdf5; color: #10b981; }
-    .cs-confirm-icon.info    { background: #eff6ff; color: #3b82f6; }
-
     .cs-confirm-title {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px; font-weight: 700;
-        color: #1c1c1e; margin: 0 0 8px 0; line-height: 1.25;
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        line-height: 1.3;
     }
     .cs-confirm-message {
-        font-size: 14px; color: #555;
-        line-height: 1.55; margin: 0 0 22px 0;
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #6b6b7a;
+        line-height: 1.55;
+        margin: 0 0 22px 0;
         white-space: pre-line;
         word-break: break-word;
     }
     .cs-confirm-actions {
-        display: flex; justify-content: center;
-        gap: 12px; flex-wrap: wrap;
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
     }
     .cs-confirm-btn {
-        padding: 10px 24px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 14px; cursor: pointer;
-        transition: all 0.15s; font-family: 'Inter', sans-serif;
-        min-width: 120px;
-        display: inline-flex; align-items: center;
-        justify-content: center; gap: 6px;
+        padding: 10px 24px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        transition: all 0.15s;
+        font-family: 'Inter', sans-serif;
+        min-width: 110px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
     }
-    .cs-confirm-btn.danger {
-        background: #dc2626; color: white;
-    }
-    .cs-confirm-btn.danger:hover {
-        background: #b91c1c;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(220,38,38,0.3);
-    }
-    .cs-confirm-btn.warning {
-        background: #f59e0b; color: white;
-    }
-    .cs-confirm-btn.warning:hover {
-        background: #d97706;
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(245,158,11,0.3);
-    }
-    .cs-confirm-btn.cancel {
-        background: transparent;
-        border: 1.5px solid #d2d2d7; color: #1c1c1e;
-    }
-    .cs-confirm-btn.cancel:hover {
-        border-color: #8e8e93; background: #f5f5f5;
-    }
+    .cs-confirm-btn.danger { background: #dc2626; color: white; }
+    .cs-confirm-btn.danger:hover { background: #b91c1c; transform: translateY(-1px); }
+    .cs-confirm-btn.warning { background: #f59e0b; color: white; }
+    .cs-confirm-btn.warning:hover { background: #d97706; transform: translateY(-1px); }
+    .cs-confirm-btn.cancel { background: transparent; border: 1.5px solid #d2d2d7; color: #1c1c1e; }
+    .cs-confirm-btn.cancel:hover { border-color: #8e8e93; background: #f5f5f5; }
 
+    /* ============================================================
+       RESPONSIVE
+       ============================================================ */
     @media (max-width: 768px) {
-        .form-grid-2 { grid-template-columns: 1fr; gap: 0; }
-        .form-container { padding: 0 12px; }
-        .form-card { padding: 20px; }
-        .form-header { flex-direction: column; align-items: flex-start; }
-        .form-header .actions { width: 100%; justify-content: flex-start; }
-        .btn-group { flex-direction: column; align-items: stretch; }
-        .btn-group .left-buttons,
-        .btn-group .right-buttons { justify-content: center; }
-        .btn { justify-content: center; }
-        .fav-grid { grid-template-columns: 1fr; }
-
-        .cs-confirm-box { padding: 22px 20px 18px; border-radius: 16px; }
-        .cs-confirm-icon { width: 54px; height: 54px; font-size: 26px; }
-        .cs-confirm-title { font-size: 18px; }
-        .cs-confirm-message { font-size: 13px; }
+        .cli-form-container { padding: 0 12px; }
+        .cli-form-header { padding: 16px 18px; border-radius: 14px; }
+        .cli-form-header .info { width: 100%; }
+        .cli-form-header .name-group h1 { font-size: 18px; white-space: normal; }
+        .cli-form-header .actions { width: 100%; justify-content: flex-start; }
+        .cli-form-card { padding: 16px; border-radius: 14px; }
+        .cli-form-grid-2 { grid-template-columns: 1fr; gap: 14px; }
+        .cli-form-fav-grid { grid-template-columns: 1fr; }
+        .cli-form-actions-bottom { flex-direction: column; align-items: stretch; }
+        .cli-form-actions-bottom .left-buttons,
+        .cli-form-actions-bottom .right-buttons { justify-content: center; }
+        .cli-form-actions-bottom .cli-form-btn { flex: 1; justify-content: center; }
+        .cli-form-modal { padding: 20px; border-radius: 16px; }
+        .cli-form-modal .modal-actions { flex-direction: column; }
+        .cli-form-modal .modal-actions .cli-form-btn { width: 100%; justify-content: center; }
         .cs-confirm-actions { flex-direction: column; }
         .cs-confirm-btn { width: 100%; }
     }
     @media (max-width: 480px) {
-        .form-header .name-group h1 { font-size: 20px; }
-        .form-card .card-title { font-size: 17px; }
-        .form-group input, .form-group select, .form-group textarea { font-size: 13px; padding: 8px 12px; }
+        .cli-form-header .avatar { width: 44px; height: 44px; }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="form-container">
+<div class="cli-form-container">
 
-    <!-- ===== CABECERA ===== -->
-    <div class="form-header">
+    <!-- ============================================================
+         HEADER
+         ============================================================ -->
+    <div class="cli-form-header">
         <div class="info">
             <div class="avatar">
-                <i class="fas fa-user{% if cliente %}-edit{% else %}-plus{% endif %}"></i>
+                {% if cliente %}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                {% else %}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="8.5" cy="7" r="4"></circle>
+                    <line x1="20" y1="8" x2="20" y2="14"></line>
+                    <line x1="23" y1="11" x2="17" y2="11"></line>
+                </svg>
+                {% endif %}
             </div>
             <div class="name-group">
                 <h1>{% if cliente %}{{ cliente.nombre }}{% else %}Nuevo Cliente{% endif %}</h1>
@@ -355,184 +754,228 @@
                     {% if cliente %}
                         <span class="ref">Ref: {{ cliente.referencia }}</span>
                         <span>·</span>
-                        <span>{{ total_ordenes }} pedidos</span>
+                        <span><span class="metric">{{ total_ordenes }}</span> pedidos</span>
                         <span>·</span>
-                        <span class="badge-nivel-personalizado" style="background:{{ color_nivel }}; color:{% if nivel_actual == 'black' %}#ffffff{% elif nivel_actual == 'golden' %}#ffffff{% else %}#1c1c1e{% endif %}; border-color:{{ color_nivel }};">
+                        <span class="cli-form-badge-nivel {{ nivel_actual }}">
                             {{ nombre_nivel }}
                         </span>
                     {% else %}
-                        <span>Completa los datos del nuevo cliente</span>
+                        <span>Completa los datos para crear el cliente</span>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="actions">
-            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Volver
+            {% if cliente %}
+            <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="cli-form-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Ver detalle
+            </a>
+            {% endif %}
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="cli-form-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Volver
             </a>
         </div>
     </div>
 
     <!-- ============================================================
-         FORMULARIO DEL CLIENTE (se cierra antes de favoritos)
+         FORMULARIO DEL CLIENTE
          ============================================================ -->
     <form method="POST" id="clienteForm">
-        <div class="form-card">
-            <div class="card-title"><span class="title-txt"><i class="fas fa-id-card"></i> Datos personales</span></div>
-            <div class="form-grid-2">
-                <div class="form-group">
+
+        <!-- ===== DATOS PERSONALES ===== -->
+        <div class="cli-form-card">
+            <div class="card-title">
+                <span class="title-txt">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Datos personales
+                </span>
+            </div>
+            <div class="cli-form-grid-2">
+                <div class="cli-form-group">
                     <label>Nombre <span class="required">*</span></label>
                     <input type="text" name="nombre" value="{{ cliente.nombre if cliente else '' }}" required placeholder="Nombre completo">
                 </div>
-                <div class="form-group">
+                <div class="cli-form-group">
                     <label>Referencia</label>
-                    <input type="text" name="referencia" value="{{ cliente.referencia if cliente else '' }}" placeholder="Opcional, se genera automáticamente">
-                    <small>Si se deja vacío, se generará automáticamente.</small>
+                    <input type="text" name="referencia" value="{{ cliente.referencia if cliente else '' }}" placeholder="Opcional">
+                    <small class="hint">Si se deja vacío, se genera automáticamente.</small>
                 </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
+                <div class="cli-form-group">
                     <label>Teléfono</label>
                     <input type="text" name="telefono" value="{{ cliente.telefono if cliente else '' }}" placeholder="Ej. 555-1234">
                 </div>
-                <div class="form-group">
+                <div class="cli-form-group">
                     <label>Email</label>
                     <input type="email" name="email" value="{{ cliente.email if cliente else '' }}" placeholder="cliente@ejemplo.com">
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Dirección</label>
-                <input type="text" name="direccion" value="{{ cliente.direccion if cliente else '' }}" placeholder="Calle, número, ciudad">
+                <div class="cli-form-group full-width">
+                    <label>Dirección</label>
+                    <input type="text" name="direccion" value="{{ cliente.direccion if cliente else '' }}" placeholder="Calle, número, ciudad">
+                </div>
             </div>
         </div>
 
-        <div class="form-card">
-            <div class="card-title"><span class="title-txt"><i class="fas fa-briefcase"></i> Información comercial</span></div>
-            <div class="form-grid-2">
-                <div class="form-group">
+        <!-- ===== INFORMACIÓN COMERCIAL ===== -->
+        <div class="cli-form-card">
+            <div class="card-title">
+                <span class="title-txt">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                    Información comercial
+                </span>
+            </div>
+            <div class="cli-form-grid-2">
+                <div class="cli-form-group">
                     <label>Comercial asignado</label>
                     <input type="text" name="comercial" value="{{ cliente.comercial if cliente else '' }}" placeholder="Nombre del comercial">
                 </div>
-                <div class="form-group">
-                    <label>Tipo de Cliente</label>
+                <div class="cli-form-group">
+                    <label>Tipo de cliente</label>
                     <select name="tipo_cliente">
                         <option value="persona" {% if cliente and cliente.tipo_cliente == 'persona' %}selected{% endif %}>Persona</option>
                         <option value="empresa" {% if cliente and cliente.tipo_cliente == 'empresa' %}selected{% endif %}>Empresa</option>
                     </select>
                 </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
+                <div class="cli-form-group">
                     <label>Sector</label>
                     <input type="text" name="sector" value="{{ cliente.sector if cliente else '' }}" placeholder="Ej. Retail, Educación, Gráfica">
                 </div>
-                <div class="form-group">
-                    <label>Preferencias de Diseño</label>
+                <div class="cli-form-group">
+                    <label>Preferencias de diseño</label>
                     <input type="text" name="preferencias_diseno" value="{{ cliente.preferencias_diseno if cliente else '' }}" placeholder="Moderno, minimalista, etc.">
                 </div>
-            </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Método de Pago Favorito</label>
+                <div class="cli-form-group">
+                    <label>Método de pago favorito</label>
                     <input type="text" name="metodo_pago_favorito" value="{{ cliente.metodo_pago_favorito if cliente else '' }}" placeholder="Transferencia, Efectivo, etc.">
                 </div>
-                <div class="form-group">
-                    <label>Referido Por</label>
+                <div class="cli-form-group">
+                    <label>Referido por</label>
                     <input type="text" name="referido_por" value="{{ cliente.referido_por if cliente else '' }}" placeholder="Nombre de quien lo refirió">
                 </div>
-            </div>
-            <div class="form-group">
-                <label>Frecuencia de Pedido</label>
-                <select name="frecuencia_pedido">
-                    <option value="">-- Seleccionar --</option>
-                    {% for opt in ['diario','semanal','quincenal','mensual','trimestral','anual','eventual'] %}
-                        <option value="{{ opt }}" {% if cliente and cliente.frecuencia_pedido == opt %}selected{% endif %}>{{ opt|capitalize }}</option>
-                    {% endfor %}
-                </select>
+                <div class="cli-form-group">
+                    <label>Frecuencia de pedido</label>
+                    <select name="frecuencia_pedido">
+                        <option value="">— Seleccionar —</option>
+                        {% for opt in ['diario','semanal','quincenal','mensual','trimestral','anual','eventual'] %}
+                            <option value="{{ opt }}" {% if cliente and cliente.frecuencia_pedido == opt %}selected{% endif %}>{{ opt|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="form-card">
-            <div class="card-title"><span class="title-txt"><i class="fas fa-notes-medical"></i> Información adicional</span></div>
-            <div class="form-grid-2">
-                <div class="form-group">
+        <!-- ===== INFORMACIÓN ADICIONAL ===== -->
+        <div class="cli-form-card">
+            <div class="card-title">
+                <span class="title-txt">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                    </svg>
+                    Información adicional
+                </span>
+            </div>
+            <div class="cli-form-grid-2">
+                <div class="cli-form-group">
+                    <label>Carnet de identidad</label>
+                    <input type="text" name="carnet_identidad" value="{{ cliente.carnet_identidad if cliente else '' }}" placeholder="Número de identificación">
+                </div>
+                <div class="cli-form-group">
+                    <label>Fecha de nacimiento</label>
+                    <input type="date" name="fecha_nacimiento" value="{{ cliente.fecha_nacimiento.strftime('%Y-%m-%d') if cliente and cliente.fecha_nacimiento else '' }}">
+                </div>
+                <div class="cli-form-group full-width">
+                    <label>Etiquetas</label>
+                    <input type="text" name="etiquetas" value="{{ cliente.etiquetas if cliente else '' }}" placeholder="Ej. VIP, Premium, Socio">
+                    <small class="hint">Separadas por comas.</small>
+                </div>
+                <div class="cli-form-group">
                     <label>Notas</label>
                     <textarea name="notas" rows="3" placeholder="Información relevante sobre el cliente...">{{ cliente.notas if cliente else '' }}</textarea>
                 </div>
-                <div class="form-group">
-                    <label>Observaciones Internas</label>
+                <div class="cli-form-group">
+                    <label>Observaciones internas</label>
                     <textarea name="observaciones_internas" rows="3" placeholder="Notas internas del equipo...">{{ cliente.observaciones_internas if cliente else '' }}</textarea>
                 </div>
             </div>
-            <div class="form-grid-2">
-                <div class="form-group">
-                    <label>Carnet de Identidad</label>
-                    <input type="text" name="carnet_identidad" value="{{ cliente.carnet_identidad if cliente else '' }}" placeholder="Número de identificación">
-                </div>
-                <div class="form-group">
-                    <label>Fecha de Nacimiento</label>
-                    <input type="date" name="fecha_nacimiento" value="{{ cliente.fecha_nacimiento.strftime('%Y-%m-%d') if cliente and cliente.fecha_nacimiento else '' }}">
-                </div>
-            </div>
-            <div class="form-group">
-                <label>Etiquetas</label>
-                <input type="text" name="etiquetas" value="{{ cliente.etiquetas if cliente else '' }}" placeholder="Ej. VIP, Premium, Socio, etc.">
-                <small>Etiquetas separadas por comas.</small>
-            </div>
         </div>
+
     </form>
     <!-- ===== FIN DEL FORMULARIO DEL CLIENTE ===== -->
 
     <!-- ============================================================
-         ETIQUETAS FAVORITAS — FUERA del form del cliente
+         ETIQUETAS FAVORITAS (fuera del form del cliente)
          ============================================================ -->
     {% if cliente %}
-    <div class="form-card" id="favoritos">
+    <div class="cli-form-card" id="favoritos">
         <div class="card-title">
             <span class="title-txt">
-                <i class="fas fa-star"></i> Etiquetas favoritas
-                <span style="font-size:12px; color:#8e8e93; font-weight:400; margin-left:6px;">
-                    ({{ total_favoritos }} guardada{{ 's' if total_favoritos != 1 else '' }})
-                </span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Etiquetas favoritas
+                <span class="count-badge">({{ total_favoritos }})</span>
             </span>
-            <button type="button" class="btn btn-gold btn-sm" onclick="abrirModalFavorito()">
-                <i class="fas fa-plus"></i> Añadir etiqueta
+            <button type="button" class="cli-form-btn cli-form-btn-gold" onclick="abrirModalFavorito()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Añadir
             </button>
         </div>
 
-        <p style="color:#8e8e93; font-size:13px; margin: 0 0 16px 0;">
-            Guarda aquí las medidas que el cliente pide normalmente. Aparecerán en el formulario de órdenes
-            para reutilizarlas con un clic.
+        <p style="color:#8e8e93; font-family:'Inter',sans-serif; font-size:13px; margin: 0 0 16px 0; line-height: 1.5;">
+            Guarda aquí las medidas que el cliente pide normalmente. Aparecerán en el formulario de órdenes para reutilizarlas con un clic.
         </p>
 
         {% if etiquetas_favoritas %}
-        <div class="fav-grid">
+        <div class="cli-form-fav-grid">
             {% for f in etiquetas_favoritas %}
-            <div class="fav-card">
+            <div class="cli-form-fav-card">
                 {% if f.archivo_ruta %}
                     {% if f.es_imagen() %}
                         <a href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank">
-                            <img class="fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
+                            <img class="cli-form-fav-thumb" src="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" alt="{{ f.nombre }}">
                         </a>
                     {% elif f.es_pdf() %}
-                        <a class="fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank"
-                        data-fav-pdf-url="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}">
-                            <span class="pdf-ico">📄</span>
-                            <span class="pdf-name">{{ f.archivo_nombre or 'PDF' }}</span>
-                            <span style="color:#8e8e93;font-size:9px;font-weight:400;">Clic para abrir</span>
+                        <a class="cli-form-fav-pdf-thumb" href="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}" target="_blank"
+                           data-fav-pdf-url="{{ url_for('clientes.ver_archivo_favorito', fav_id=f.id) }}">
+                            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                            <span style="color:#6b6b7a; font-weight: 500; font-size: 10px; max-width: 90%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                {{ f.archivo_nombre or 'PDF' }}
+                            </span>
                         </a>
                     {% endif %}
                 {% endif %}
 
                 <div>
-                    <div class="fav-nombre">{{ f.nombre }}</div>
-                    <div class="fav-dim">{{ f.medidas_str }}</div>
+                    <div class="cli-form-fav-nombre">{{ f.nombre }}</div>
+                    <div class="cli-form-fav-dim">{{ f.medidas_str }}</div>
                 </div>
 
-                {% if f.notas %}<div class="fav-notas">{{ f.notas }}</div>{% endif %}
+                {% if f.notas %}<div class="cli-form-fav-notas">{{ f.notas }}</div>{% endif %}
 
-                <div class="fav-acciones">
-                    <button type="button" class="btn btn-sm btn-outline"
+                <div class="cli-form-fav-acciones">
+                    <button type="button" class="cli-form-btn cli-form-btn-sm"
                             onclick='abrirModalFavorito({
                                 id: {{ f.id }},
                                 nombre: {{ f.nombre|tojson }},
@@ -543,7 +986,11 @@
                                 archivo_url: {{ (url_for('clientes.ver_archivo_favorito', fav_id=f.id) if f.archivo_ruta else '')|tojson }},
                                 archivo_tipo: {{ (f.archivo_tipo or '')|tojson }}
                             })'>
-                        <i class="fas fa-edit"></i> Editar
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                        </svg>
+                        Editar
                     </button>
                     <form method="POST" action="{{ url_for('clientes.eliminar_favorito', fav_id=f.id) }}"
                           class="form-cs-confirm"
@@ -552,8 +999,15 @@
                           data-confirm-ok="Sí, eliminar"
                           data-confirm-variant="warning"
                           style="display:inline;">
-                        <button type="submit" class="btn btn-sm btn-danger" title="Eliminar etiqueta">
-                            <i class="fas fa-trash-alt"></i>
+                        <button type="submit" class="cli-form-btn cli-form-btn-sm cli-form-btn-danger" title="Eliminar">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                                <path d="M10 11v6"></path>
+                                <path d="M14 11v6"></path>
+                                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                            </svg>
+                            Eliminar
                         </button>
                     </form>
                 </div>
@@ -561,51 +1015,69 @@
             {% endfor %}
         </div>
         {% else %}
-        <div class="fav-empty">
-            <div class="fav-empty-ico">⭐</div>
+        <div class="cli-form-fav-empty">
+            <div class="fav-empty-ico">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+            </div>
             <h4>Aún no tiene etiquetas favoritas guardadas</h4>
             <p>Guarda las medidas que este cliente pide normalmente para reutilizarlas con un clic.</p>
-            <button type="button" class="btn-gold-lg" onclick="abrirModalFavorito()">
-                <i class="fas fa-plus"></i> Crear primera etiqueta
-            </button>
+            <div style="margin-top: 16px;">
+                <button type="button" class="cli-form-btn cli-form-btn-gold" onclick="abrirModalFavorito()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Crear primera etiqueta
+                </button>
+            </div>
         </div>
         {% endif %}
     </div>
     {% endif %}
 
     <!-- ============================================================
-         BOTONES — FUERA del form, usan form="clienteForm"
+         BOTONES FINALES (fuera del form, submit vía form="clienteForm")
          ============================================================ -->
-    <div class="btn-group">
+    <div class="cli-form-actions-bottom">
         <div class="left-buttons">
-            <button type="submit" form="clienteForm" class="btn btn-success">
-                <i class="fas fa-save"></i> {{ 'Actualizar cliente' if cliente else 'Crear cliente' }}
+            <button type="submit" form="clienteForm" class="cli-form-btn cli-form-btn-success">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                {{ 'Actualizar cliente' if cliente else 'Crear cliente' }}
             </button>
-            <a href="{{ url_for('clientes.listar_clientes') }}" class="btn btn-outline">
-                <i class="fas fa-times"></i> Cancelar
+            <a href="{{ url_for('clientes.listar_clientes') }}" class="cli-form-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                Cancelar
             </a>
         </div>
         <div class="right-buttons">
-            {% if cliente %}
-                <a href="{{ url_for('clientes.detalle_cliente', cliente_id=cliente.id) }}" class="btn btn-outline">
-                    <i class="fas fa-eye"></i> Ver detalle
-                </a>
-                <a href="{{ url_for('ordenes.create_order') }}?cliente_id={{ cliente.id }}" class="btn btn-primary">
-                    <i class="fas fa-plus"></i> Nueva orden
-                </a>
-                {% if current_user.role == 'admin' %}
-                    <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}"
-                          class="form-cs-confirm"
-                          data-confirm-title="Eliminar cliente"
-                          data-confirm-message="¿Eliminar el cliente &quot;{{ cliente.nombre }}&quot; permanentemente?&#10;&#10;También se eliminarán sus etiquetas favoritas. Esta acción no se puede deshacer."
-                          data-confirm-ok="Sí, eliminar cliente"
-                          data-confirm-variant="danger"
-                          style="display:inline;">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash-alt"></i> Eliminar
-                        </button>
-                    </form>
-                {% endif %}
+            {% if cliente and current_user.role == 'admin' %}
+                <form method="POST" action="{{ url_for('clientes.eliminar_cliente', cliente_id=cliente.id) }}"
+                      class="form-cs-confirm"
+                      data-confirm-title="Eliminar cliente"
+                      data-confirm-message="¿Eliminar el cliente &quot;{{ cliente.nombre }}&quot; permanentemente?&#10;&#10;También se eliminarán sus etiquetas favoritas. Esta acción no se puede deshacer."
+                      data-confirm-ok="Sí, eliminar cliente"
+                      data-confirm-variant="danger"
+                      style="display:inline;">
+                    <button type="submit" class="cli-form-btn cli-form-btn-danger">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                            <path d="M10 11v6"></path>
+                            <path d="M14 11v6"></path>
+                            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+                        </svg>
+                        Eliminar cliente
+                    </button>
+                </form>
             {% endif %}
         </div>
     </div>
@@ -616,10 +1088,15 @@
      MODAL: NUEVA / EDITAR ETIQUETA FAVORITA
      ============================================================ -->
 {% if cliente %}
-<div class="modal-overlay" id="modalFavorito">
-    <div class="modal">
+<div class="cli-form-modal-overlay" id="modalFavorito">
+    <div class="cli-form-modal">
         <div class="modal-header">
-            <h3 id="favModalTitle">Nueva etiqueta favorita</h3>
+            <h3 id="favModalTitle">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                </svg>
+                Nueva etiqueta favorita
+            </h3>
             <button type="button" class="modal-close" onclick="cerrarModalFavorito()">&times;</button>
         </div>
 
@@ -627,49 +1104,55 @@
               enctype="multipart/form-data" id="favForm">
             <input type="hidden" name="fav_id" id="favId" value="">
 
-            <div class="form-group">
+            <div class="cli-form-group" style="margin-bottom: 14px;">
                 <label>Nombre <span class="required">*</span></label>
                 <input type="text" name="nombre" id="favNombre" required maxlength="150"
                        placeholder="Ej. Etiqueta 5×3 Vinilo Brillante">
-                <small>Si dejas vacío y adjuntas un archivo, tomaremos el nombre del archivo.</small>
+                <small class="hint">Si dejas vacío y adjuntas un archivo, tomaremos el nombre del archivo.</small>
             </div>
 
-            <div class="form-grid-2">
-                <div class="form-group">
+            <div class="cli-form-grid-2" style="margin-bottom: 14px;">
+                <div class="cli-form-group">
                     <label>Ancho (cm) <span class="required">*</span></label>
                     <input type="number" name="ancho_cm" id="favAncho" step="0.01" min="0.01" required placeholder="Ej. 5">
                 </div>
-                <div class="form-group">
+                <div class="cli-form-group">
                     <label>Alto (cm) <span class="required">*</span></label>
                     <input type="number" name="alto_cm" id="favAlto" step="0.01" min="0.01" required placeholder="Ej. 3">
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="cli-form-group" style="margin-bottom: 14px;">
                 <label>Archivo adjunto (PDF o imagen, opcional)</label>
-                <input type="file" name="archivo" id="favArchivo" accept="image/*,application/pdf">
+                <input type="file" name="archivo" id="favArchivo" accept="image/*,application/pdf"
+                       style="padding: 8px 12px; font-size: 13px; cursor: pointer;">
                 <div class="file-input-hint">
-                    <span>Al seleccionar un archivo, intentamos extraer las medidas automáticamente.</span>
+                    <span>Si adjuntas un archivo, intentamos extraer las medidas automáticamente.</span>
                     <span>Máx. {{ favoritos_max_mb|round(0)|int }} MB{% if puede_subir_grande %} (admin: sin límite){% endif %}</span>
                 </div>
                 <div class="archivo-info-box" id="favArchivoInfo" style="display:none;">
                     <div id="favArchivoInfoTxt"></div>
-                    <label style="font-size:11px; color:#78350f; display:inline-flex; align-items:center; gap:4px; cursor:pointer;">
+                    <label style="font-size:11px; color:#78350f; display:inline-flex; align-items:center; gap:4px; cursor:pointer; white-space:nowrap;">
                         <input type="checkbox" name="eliminar_archivo" id="favEliminarArchivo"> Quitar
                     </label>
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="cli-form-group">
                 <label>Notas</label>
                 <textarea name="notas" id="favNotas" rows="2"
                           placeholder="Ej. Esquinas redondeadas, Pantone 300C..."></textarea>
             </div>
 
             <div class="modal-actions">
-                <button type="button" class="btn btn-outline" onclick="cerrarModalFavorito()">Cancelar</button>
-                <button type="submit" class="btn btn-success" id="favSubmitBtn">
-                    <i class="fas fa-save"></i> <span id="favSubmitTxt">Guardar</span>
+                <button type="button" class="cli-form-btn" onclick="cerrarModalFavorito()">Cancelar</button>
+                <button type="submit" class="cli-form-btn cli-form-btn-success" id="favSubmitBtn">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                    </svg>
+                    <span id="favSubmitTxt">Guardar</span>
                 </button>
             </div>
         </form>
@@ -678,12 +1161,18 @@
 {% endif %}
 
 <!-- ============================================================
-     MODAL DE CONFIRMACIÓN PERSONALIZADO
+     MODAL DE CONFIRMACIÓN
      ============================================================ -->
 <div class="cs-confirm-overlay" id="csConfirmOverlay">
     <div class="cs-confirm-box" id="csConfirmBox">
         <div class="cs-confirm-icon" id="csConfirmIcon">
-            <i class="fas fa-trash-alt"></i>
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                <path d="M10 11v6"></path>
+                <path d="M14 11v6"></path>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+            </svg>
         </div>
         <h3 class="cs-confirm-title" id="csConfirmTitle">Confirmar acción</h3>
         <p class="cs-confirm-message" id="csConfirmMessage">¿Estás seguro?</p>
@@ -697,7 +1186,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- pdf.js: mismo que usa el módulo etiquetas para leer medidas de PDFs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
 <script>
     if (typeof pdfjsLib !== 'undefined') {
@@ -705,7 +1193,7 @@
     }
 
     // ============================================================
-    // HELPERS GLOBALES
+    // HELPERS
     // ============================================================
     function escapeHtml(str) {
         if (str == null) return '';
@@ -713,13 +1201,10 @@
     }
 
     // ============================================================
-    // EXTRACCIÓN DE MEDIDAS · CLIENT-SIDE (igual que etiquetas)
+    // EXTRACCIÓN DE MEDIDAS (PDF + imagen)
     // ============================================================
     const PT_A_CM = 0.0352778;
 
-    /**
-     * Lee un PDF con pdf.js y devuelve {ancho_cm, alto_cm} de la primera página.
-     */
     function leerMedidasPDF(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -731,14 +1216,12 @@
                         .then(pdf => pdf.getPage(1))
                         .then(page => {
                             const viewport = page.getViewport({ scale: 1.0 });
-                            const ancho_cm = viewport.width * PT_A_CM;
-                            const alto_cm = viewport.height * PT_A_CM;
                             resolve({
-                                ancho_cm: parseFloat(ancho_cm.toFixed(2)),
-                                alto_cm: parseFloat(alto_cm.toFixed(2)),
+                                ancho_cm: parseFloat((viewport.width * PT_A_CM).toFixed(2)),
+                                alto_cm: parseFloat((viewport.height * PT_A_CM).toFixed(2)),
                             });
                         })
-                        .catch(err => reject(new Error('PDF inválido o corrupto: ' + err.message)));
+                        .catch(err => reject(new Error('PDF inválido: ' + err.message)));
                 } catch (e) {
                     reject(new Error('No se pudo procesar el PDF: ' + e.message));
                 }
@@ -747,61 +1230,36 @@
         });
     }
 
-    /**
-     * Lee una imagen con la API Image y devuelve {ancho_cm, alto_cm}.
-     * Intenta respetar el DPI si está en EXIF; si no, asume 300 DPI.
-     */
     function leerMedidasImagen(file) {
         return new Promise((resolve) => {
             const url = URL.createObjectURL(file);
             const img = new Image();
             img.onload = function() {
                 URL.revokeObjectURL(url);
-                // Intentamos leer DPI de EXIF de forma best-effort.
-                // Si falla, usamos 300 DPI como asume la mayoría de diseños.
-                let dpi = 300;
-                try {
-                    // Si el navegador expone density vía createImageBitmap la usamos
-                    // (Chrome moderno lo hace; falla silenciosamente en otros).
-                } catch (e) {}
-                const ancho_cm = (img.naturalWidth / dpi) * 2.54;
-                const alto_cm  = (img.naturalHeight / dpi) * 2.54;
+                const dpi = 300;
                 resolve({
-                    ancho_cm: parseFloat(ancho_cm.toFixed(2)),
-                    alto_cm:  parseFloat(alto_cm.toFixed(2)),
+                    ancho_cm: parseFloat(((img.naturalWidth / dpi) * 2.54).toFixed(2)),
+                    alto_cm:  parseFloat(((img.naturalHeight / dpi) * 2.54).toFixed(2)),
                 });
             };
-            img.onerror = () => {
-                URL.revokeObjectURL(url);
-                resolve(null);
-            };
+            img.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
             img.src = url;
         });
     }
 
-    /**
-     * Dispatcher: detecta el tipo y llama al lector adecuado.
-     */
     async function extraerMedidasArchivo(file) {
         const mime = file.type || '';
         const nombre = (file.name || '').toLowerCase();
-        const esPDF = mime === 'application/pdf' || nombre.endsWith('.pdf');
-        const esImg = mime.startsWith('image/');
-
-        if (esPDF) {
-            if (typeof pdfjsLib === 'undefined') {
-                throw new Error('pdf.js no está disponible (bloqueado por red o CDN).');
-            }
+        if (mime === 'application/pdf' || nombre.endsWith('.pdf')) {
+            if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js no disponible.');
             return await leerMedidasPDF(file);
         }
-        if (esImg) {
-            return await leerMedidasImagen(file);
-        }
+        if (mime.startsWith('image/')) return await leerMedidasImagen(file);
         throw new Error('Tipo de archivo no soportado.');
     }
 
     // ============================================================
-    // MODAL DE CONFIRMACIÓN PERSONALIZADO
+    // MODAL DE CONFIRMACIÓN
     // ============================================================
     let csConfirmCallback = null;
 
@@ -814,19 +1272,16 @@
         const okBtn = document.getElementById('csConfirmOk');
 
         const variant = opts.variant || 'danger';
-        box.className = 'cs-confirm-box ' + variant;
-        iconEl.className = 'cs-confirm-icon ' + variant;
-        if (variant === 'warning') {
-            iconEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-            okBtn.className = 'cs-confirm-btn danger';
-        } else {
-            iconEl.innerHTML = '<i class="fas fa-trash-alt"></i>';
-            okBtn.className = 'cs-confirm-btn danger';
-        }
+        box.style.borderTopColor = variant === 'warning' ? '#f59e0b' : '#dc2626';
+        iconEl.className = 'cs-confirm-icon' + (variant === 'warning' ? ' warning' : '');
+        iconEl.innerHTML = variant === 'warning'
+            ? '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
+            : '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
 
         titleEl.textContent = opts.title || 'Confirmar acción';
         messageEl.textContent = opts.message || '¿Estás seguro?';
         okBtn.textContent = opts.okText || 'Eliminar';
+        okBtn.className = 'cs-confirm-btn ' + (variant === 'warning' ? 'warning' : 'danger');
 
         csConfirmCallback = opts.onConfirm || null;
         overlay.classList.add('active');
@@ -864,7 +1319,7 @@
                     message: self.dataset.confirmMessage || '¿Estás seguro?',
                     okText: self.dataset.confirmOk || 'Eliminar',
                     variant: self.dataset.confirmVariant || 'danger',
-                    onConfirm: function() { self.submit(); }
+                    onConfirm: () => self.submit()
                 });
             });
         });
@@ -875,7 +1330,7 @@
     });
 
     // ============================================================
-    // MODAL DE FAVORITO (con detección client-side)
+    // MODAL DE FAVORITO (crear / editar)
     // ============================================================
     {% if cliente %}
     const URL_CREAR = "{{ url_for('clientes.crear_favorito', cliente_id=cliente.id) }}";
@@ -899,7 +1354,8 @@
         document.getElementById('favEliminarArchivo').checked = false;
 
         if (isEdit) {
-            document.getElementById('favModalTitle').textContent = 'Editar etiqueta favorita';
+            document.getElementById('favModalTitle').innerHTML =
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Editar etiqueta favorita';
             document.getElementById('favSubmitTxt').textContent = 'Actualizar';
             document.getElementById('favId').value = data.id;
             setFormActionEditar(data.id);
@@ -912,11 +1368,12 @@
             if (data.archivo_nombre) {
                 const box = document.getElementById('favArchivoInfo');
                 const t = document.getElementById('favArchivoInfoTxt');
-                t.innerHTML = '📎 Archivo actual: <a class="fav-link" target="_blank" href="' + (data.archivo_url || '#') + '">' + escapeHtml(data.archivo_nombre) + '</a>';
+                t.innerHTML = 'Archivo actual: <a target="_blank" href="' + (data.archivo_url || '#') + '">' + escapeHtml(data.archivo_nombre) + '</a>';
                 box.style.display = 'flex';
             }
         } else {
-            document.getElementById('favModalTitle').textContent = 'Nueva etiqueta favorita';
+            document.getElementById('favModalTitle').innerHTML =
+                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg> Nueva etiqueta favorita';
             document.getElementById('favSubmitTxt').textContent = 'Guardar';
             document.getElementById('favId').value = '';
             setFormActionCrear();
@@ -946,7 +1403,6 @@
         const infoBox    = document.getElementById('favArchivoInfo');
         const infoTxt    = document.getElementById('favArchivoInfoTxt');
 
-        // Flags: el usuario editó manualmente → no sobreescribir
         let userEditedAncho = false;
         let userEditedAlto  = false;
         let userEditedNombre = false;
@@ -967,13 +1423,11 @@
             archivoInput.addEventListener('change', async function() {
                 const file = this.files[0];
                 if (!file) return;
-
-                // Nuevo archivo → resetear flags
                 userEditedAncho = false;
                 userEditedAlto  = false;
                 userEditedNombre = false;
 
-                setInfo(`⏳ <strong>${escapeHtml(file.name)}</strong> · detectando medidas...`);
+                setInfo('⏳ <strong>' + escapeHtml(file.name) + '</strong> · detectando medidas...');
 
                 let medidas = null;
                 let errorMsg = null;
@@ -983,7 +1437,6 @@
                     errorMsg = e.message || String(e);
                 }
 
-                // Si el archivo es un PDF y falló, intentar fallback con backend
                 const esPDF = (file.type === 'application/pdf') || (file.name || '').toLowerCase().endsWith('.pdf');
                 if (!medidas && esPDF) {
                     try {
@@ -1000,28 +1453,25 @@
                 }
 
                 if (!medidas) {
-                    setInfo(`📎 <strong>${escapeHtml(file.name)}</strong> · medidas no detectadas (${escapeHtml(errorMsg || 'rellénalas manualmente')})`);
+                    setInfo('📎 <strong>' + escapeHtml(file.name) + '</strong> · medidas no detectadas (' + escapeHtml(errorMsg || 'rellénalas manualmente') + ')');
                     return;
                 }
 
-                // Auto-rellenar nombre
                 if (!userEditedNombre) {
                     const sugerido = file.name.replace(/\.[^.]+$/, '').slice(0, 150);
                     if (!nombreInput.value.trim()) nombreInput.value = sugerido;
                 }
 
-                // Auto-rellenar medidas
                 if (medidas.ancho_cm > 0 && medidas.alto_cm > 0) {
-                    // Sobreescribimos si el usuario no editó, o si el valor actual es el default (5, 3)
                     if (!userEditedAncho || parseFloat(anchoInput.value) === 5) {
                         anchoInput.value = medidas.ancho_cm;
                     }
                     if (!userEditedAlto || parseFloat(altoInput.value) === 3) {
                         altoInput.value = medidas.alto_cm;
                     }
-                    setInfo(`✅ <strong>${escapeHtml(file.name)}</strong> · medidas detectadas: <strong>${medidas.ancho_cm} × ${medidas.alto_cm} cm</strong>`);
+                    setInfo('✅ <strong>' + escapeHtml(file.name) + '</strong> · medidas detectadas: <strong>' + medidas.ancho_cm + ' × ' + medidas.alto_cm + ' cm</strong>');
                 } else {
-                    setInfo(`📎 <strong>${escapeHtml(file.name)}</strong> · medidas no detectadas (rellénalas manualmente)`);
+                    setInfo('📎 <strong>' + escapeHtml(file.name) + '</strong> · medidas no detectadas (rellénalas manualmente)');
                 }
             });
         }
@@ -1033,14 +1483,14 @@
     {% endif %}
 
     // ============================================================
-    // RENDERIZADO DE THUMBNAILS DE PDFs EN FAVORITOS
+    // RENDERIZADO DE THUMBNAILS DE PDFs
     // ============================================================
     async function renderizarThumbnailsPdf() {
         if (typeof pdfjsLib === 'undefined') return;
         pdfjsLib.GlobalWorkerOptions.workerSrc =
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
 
-        const thumbs = document.querySelectorAll('.fav-pdf-thumb[data-fav-pdf-url]:not([data-pdf-rendered])');
+        const thumbs = document.querySelectorAll('.cli-form-fav-pdf-thumb[data-fav-pdf-url]:not([data-pdf-rendered])');
         for (const el of thumbs) {
             el.dataset.pdfRendered = '1';
             const url = el.dataset.favPdfUrl;
@@ -1048,17 +1498,14 @@
                 const pdf = await pdfjsLib.getDocument(url).promise;
                 const page = await pdf.getPage(1);
                 const viewport = page.getViewport({ scale: 1 });
-                const targetW = 320;
-                const scale = targetW / viewport.width;
+                const scale = 320 / viewport.width;
                 const scaled = page.getViewport({ scale });
                 const off = document.createElement('canvas');
                 off.width = Math.round(scaled.width);
                 off.height = Math.round(scaled.height);
                 await page.render({ canvasContext: off.getContext('2d'), viewport: scaled }).promise;
                 const dataUrl = off.toDataURL('image/jpeg', 0.85);
-
-                // Reemplazar el contenido del <a> con la imagen
-                el.innerHTML = `<img src="${dataUrl}" alt="PDF" style="width:100%;height:100%;object-fit:contain;background:white;">`;
+                el.innerHTML = '<img src="' + dataUrl + '" alt="PDF">';
             } catch (err) {
                 console.error('Error renderizando PDF:', url, err);
             }
@@ -1066,9 +1513,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        // Ejecutar tras un tick para asegurar que pdfjsLib cargó
         setTimeout(renderizarThumbnailsPdf, 100);
     });
 </script>
 {% endblock %}
-

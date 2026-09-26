@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.models import Client, User, Order, ArchivoAdjunto, Producto, Configuracion, EtiquetaFavorita
 from app import db
 from datetime import datetime, timedelta, date
+import math
 import io
 import os
 import re
@@ -458,7 +459,13 @@ def get_tasa_retencion():
     total = Client.query.count()
     if total == 0:
         return 0
-    repetidos = sum(1 for c in Client.query.all() if len(c.orders) > 1)
+    repetidos = 0
+    for c in Client.query.all():
+        finalizadas = sum(
+            1 for o in (c.orders or []) if o.column in ESTADOS_QUE_CUENTAN_M2
+        )
+        if finalizadas > 1:
+            repetidos += 1
     return round((repetidos / total) * 100, 1)
 
 def get_clientes_recientes(limit=5):
@@ -505,21 +512,53 @@ def calcular_frecuencia(orders):
     if avg <= 92: return 'trimestral'
     return 'eventual'
 
+# Estados de workflow donde la orden se considera "consumada" y cuenta
+# para los m² facturados del cliente.
+# Los estados anteriores (pendiente, por-preparar, etc.) NO cuentan,
+# porque la orden podría cancelarse o modificarse.
+ESTADOS_QUE_CUENTAN_M2 = ('listo', 'entregados')
+
+
 def calcular_metros_cliente(cliente):
+    """
+    Suma los m² facturados al cliente (área comercial),
+    NO los metros lineales de rollo consumido (vista interna).
+
+    Solo cuenta órdenes en estado 'listo' o 'entregados' para evitar
+    reflejar pedidos que aún podrían cancelarse.
+
+    - Etiquetas: area_m2 = área facturada (m² de paño).
+    - Carteles: area_piezas_m2 + merma_facturada_m2 (m² cobrados).
+
+    Devuelve el total redondeado a 1 decimal.
+    """
     total = 0.0
     for order in cliente.orders:
+        if order.column not in ESTADOS_QUE_CUENTAN_M2:
+            continue
         for archivo in order.archivos:
             if archivo.parametros_etiqueta:
                 try:
                     params = json.loads(archivo.parametros_etiqueta)
-                    if params.get('consumo'):
-                        total += params.get('consumo', 0)
+                    tipo = params.get('tipo', 'etiqueta')
+                    if tipo == 'cartel':
+                        area = (float(params.get('area_piezas_m2') or 0)
+                                + float(params.get('merma_facturada_m2') or 0))
+                    else:
+                        area = float(
+                            params.get('area_m2')
+                            or params.get('area_facturada_m2')
+                            or 0
+                        )
+                    if area > 0:
+                        total += area
                         continue
                 except Exception:
                     pass
+            # Fallback: si no hay params pero la unidad ya es m², sumar
             if archivo.unidad in ['m', 'm2', 'm²'] and archivo.cantidad:
-                total += archivo.cantidad
-    return round(total, 2)
+                total += float(archivo.cantidad)
+    return round(total, 1)
 
 
 # ==========================================
@@ -547,7 +586,9 @@ def listar_clientes():
     clientes_todos = query.all()
     for c in clientes_todos:
         c.total_metros = calcular_metros_cliente(c)
-        c.total_pedidos = len(c.orders) if c.orders else 0
+        c.total_pedidos = sum(
+            1 for o in (c.orders or []) if o.column in ESTADOS_QUE_CUENTAN_M2
+        )
         ins = calcular_insights_cliente(c)
         c.top_materiales = ins['top_materiales'][:2]
         c.top_servicios = ins['top_servicios'][:2]
@@ -563,16 +604,31 @@ def listar_clientes():
     except Exception:
         config_nombres = {}
 
-    if clasificacion_automatica and len(clientes_todos) >= 5:
+    # ===== Clasificación: SOLO clientes con actividad =====
+    # Un cliente cuenta para el ranking solo si tiene al menos un pedido o metros > 0.
+    # Los que no tienen actividad van directo a Standard y no entran al top %.
+    clientes_con_actividad = [
+        c for c in clientes_todos
+        if (c.total_metros or 0) > 0 or (c.total_pedidos or 0) > 0
+    ]
+
+    if clasificacion_automatica and len(clientes_con_actividad) >= 5:
         try:
             top_black_pct = float(obtener_config('clientes_top_black_pct', '5'))
             top_golden_pct = float(obtener_config('clientes_top_golden_pct', '20'))
         except Exception:
             top_black_pct, top_golden_pct = 5, 20
-        s = sorted(clientes_todos, key=lambda c: c.total_metros, reverse=True)
+        s = sorted(clientes_con_actividad, key=lambda c: (c.total_metros or 0), reverse=True)
         n = len(s)
-        top_black_ids = set(c.id for c in s[:max(1, int(n * top_black_pct / 100))])
-        top_golden_ids = set(c.id for c in s[:max(1, int(n * top_golden_pct / 100))])
+        # Redondeo hacia arriba para no quedarnos con 0 cuando el % es pequeño.
+        n_black = max(1, math.ceil(n * top_black_pct / 100))
+        n_golden = max(n_black + 1, math.ceil(n * top_golden_pct / 100))
+        # Nunca exceder n
+        n_black = min(n_black, n)
+        n_golden = min(n_golden, n)
+        # Sets DISJUNTOS: black = primeros n_black, golden = siguientes hasta n_golden
+        top_black_ids  = set(c.id for c in s[:n_black])
+        top_golden_ids = set(c.id for c in s[n_black:n_golden])
     else:
         top_black_ids, top_golden_ids = set(), set()
 
@@ -721,6 +777,9 @@ def admin_panel():
     clientes_todos = Client.query.all()
     for c in clientes_todos:
         c.total_metros = calcular_metros_cliente(c)
+        c.total_pedidos = sum(
+            1 for o in (c.orders or []) if o.column in ESTADOS_QUE_CUENTAN_M2
+        )
     try:
         colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
     except Exception:
@@ -732,17 +791,25 @@ def admin_panel():
     columnas = get_columnas_visibles()
     clasificacion_auto = get_clasificacion_automatica()
 
+    # ===== Clasificación: SOLO clientes con actividad =====
+    clientes_con_actividad = [
+        c for c in clientes_todos
+        if (c.total_metros or 0) > 0 or (c.total_pedidos or 0) > 0
+    ]
+
     black_count = golden_count = 0
-    if clasificacion_auto and len(clientes_todos) >= 5:
+    if clasificacion_auto and len(clientes_con_actividad) >= 5:
         try:
             tb = float(obtener_config('clientes_top_black_pct', '5'))
             tg = float(obtener_config('clientes_top_golden_pct', '20'))
         except Exception:
             tb, tg = 5, 20
-        s = sorted(clientes_todos, key=lambda c: c.total_metros, reverse=True)
+        s = sorted(clientes_con_actividad, key=lambda c: (c.total_metros or 0), reverse=True)
         n = len(s)
-        black_ids = set(c.id for c in s[:max(1, int(n * tb / 100))])
-        golden_ids = set(c.id for c in s[:max(1, int(n * tg / 100))])
+        n_black = min(n, max(1, math.ceil(n * tb / 100)))
+        n_golden = min(n, max(n_black + 1, math.ceil(n * tg / 100)))
+        black_ids  = set(c.id for c in s[:n_black])
+        golden_ids = set(c.id for c in s[n_black:n_golden])
         black_count = sum(1 for c in clientes_todos if c.id in black_ids)
         golden_count = sum(1 for c in clientes_todos if c.id in golden_ids)
 
@@ -881,20 +948,7 @@ def _get_form_cliente_ctx(cliente):
     """Contexto común para form_cliente (crear/editar)."""
     orders = Order.query.filter_by(client_id=cliente.id).all()
     total_ordenes = len(orders)
-    total_metros = 0
-    for o in orders:
-        for a in o.archivos:
-            if a.parametros_etiqueta:
-                try:
-                    p = json.loads(a.parametros_etiqueta)
-                    if p.get('consumo'):
-                        total_metros += p.get('consumo', 0)
-                        continue
-                except Exception:
-                    pass
-            if a.unidad in ['m', 'm2', 'm²'] and a.cantidad:
-                total_metros += a.cantidad
-    total_metros = round(total_metros, 2)
+    total_metros = calcular_metros_cliente(cliente)
 
     if total_ordenes >= 50 or total_metros >= 500:
         nivel_actual = 'black'
@@ -964,20 +1018,7 @@ def detalle_cliente(cliente_id):
     ordenes_pendientes = sum(1 for o in orders if o.column in ['pendiente', 'por-preparar', 'preparados'])
     ordenes_completadas = sum(1 for o in orders if o.column in ['entregados', 'listo'])
 
-    total_metros = 0
-    for o in orders:
-        for a in o.archivos:
-            if a.parametros_etiqueta:
-                try:
-                    p = json.loads(a.parametros_etiqueta)
-                    if p.get('consumo'):
-                        total_metros += p.get('consumo', 0)
-                        continue
-                except Exception:
-                    pass
-            if a.unidad in ['m', 'm2', 'm²'] and a.cantidad:
-                total_metros += a.cantidad
-    total_metros = round(total_metros, 2)
+    total_metros = calcular_metros_cliente(cliente)
 
     try:
         config_colores = json.loads(obtener_config('clientes_colores_niveles', '{}'))
