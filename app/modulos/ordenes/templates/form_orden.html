@@ -565,10 +565,13 @@
         flex-wrap: wrap; justify-content: flex-end;
     }
 
-    /* ============ ALERTAS / CONFIRM ============ */
+    /* ============================================================
+       MODAL DE ALERTA con icono 3D
+       ============================================================ */
     .cs-alert-overlay, .cs-confirm-overlay {
         display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(20,20,25,0.4); backdrop-filter: blur(6px);
+        background: rgba(20,20,25,0.45); backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         justify-content: center; align-items: center; padding: 16px;
         animation: csAlertFadeIn 0.2s ease;
     }
@@ -581,43 +584,157 @@
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
     .cs-alert-box, .cs-confirm-box {
-        background: #ffffff; border-radius: 20px; padding: 28px 26px 24px;
-        max-width: 440px; width: 100%;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.2);
-        animation: csAlertPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-        font-family: 'Inter', sans-serif; text-align: center; box-sizing: border-box;
+        background: linear-gradient(180deg, #ffffff 0%, #fbf9f6 100%);
+        border-radius: 24px; padding: 30px 28px 24px;
+        max-width: 480px; width: 100%;
+        box-shadow:
+            0 1px 0 rgba(255,255,255,0.9) inset,
+            0 20px 40px rgba(0,0,0,0.1),
+            0 40px 80px rgba(0,0,0,0.15);
+        animation: csAlertPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        font-family: 'Inter', sans-serif; text-align: center;
+        box-sizing: border-box; position: relative;
+        overflow: hidden;
     }
-    .cs-alert-icon, .cs-confirm-icon {
-        width: 60px; height: 60px; border-radius: 50%;
-        margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;
-        font-size: 28px;
+    /* Borde superior de color según tipo */
+    .cs-alert-box::before {
+        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
+        background: #1c1c1e;
     }
-    .cs-alert-box.info .cs-alert-icon { background: #dbeafe; color: #1e40af; }
-    .cs-alert-box.warning .cs-alert-icon { background: #fef3c7; color: #d97706; }
-    .cs-alert-box.error .cs-alert-icon { background: #fee2e2; color: #dc2626; }
-    .cs-alert-box.success .cs-alert-icon { background: #d1fae5; color: #10b981; }
-    .cs-confirm-icon { background: #fee2e2; color: #dc2626; }
+    .cs-alert-box.info::before    { background: linear-gradient(90deg, #0ea5e9, #0284c7); }
+    .cs-alert-box.warning::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+    .cs-alert-box.error::before   { background: linear-gradient(90deg, #dc2626, #991b1b); }
+    .cs-alert-box.success::before { background: linear-gradient(90deg, #10b981, #047857); }
+
+    /* ---- Icono 3D ---- */
+    .cs-alert-icon {
+        width: 88px; height: 88px;
+        margin: 4px auto 18px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 42px; line-height: 1;
+        border-radius: 50%;
+        position: relative;
+        transform: perspective(400px) rotateX(8deg) translateZ(0);
+        transition: transform 0.3s ease;
+        /* Sombra externa multicapa = profundidad 3D */
+        box-shadow:
+            0 1px 1px rgba(0,0,0,0.06),
+            0 4px 8px rgba(0,0,0,0.10),
+            0 10px 20px rgba(0,0,0,0.12),
+            0 20px 40px rgba(0,0,0,0.14),
+            0 30px 60px rgba(0,0,0,0.10),
+            /* Highlight interior superior (brillo) */
+            inset 0 3px 4px rgba(255,255,255,0.65),
+            /* Sombra interior inferior (profundidad) */
+            inset 0 -6px 12px rgba(0,0,0,0.18);
+    }
+    /* Reflejo circular pequeño arriba */
+    .cs-alert-icon::after {
+        content: ''; position: absolute; top: 10px; left: 22px;
+        width: 22px; height: 12px; border-radius: 50%;
+        background: radial-gradient(ellipse at center,
+                    rgba(255,255,255,0.85) 0%,
+                    rgba(255,255,255,0.0) 70%);
+        pointer-events: none;
+    }
+    /* El emoji/SVG interno tiene su propio drop-shadow */
+    .cs-alert-icon > * { filter: drop-shadow(0 2px 1px rgba(0,0,0,0.15)); }
+
+    /* Fondos con gradiente radial = efecto esfera 3D */
+    .cs-alert-box.info .cs-alert-icon {
+        background: radial-gradient(circle at 35% 25%,
+                    #7dd3fc 0%, #0ea5e9 45%, #0369a1 100%);
+        color: #ffffff;
+    }
+    .cs-alert-box.warning .cs-alert-icon {
+        background: radial-gradient(circle at 35% 25%,
+                    #fde68a 0%, #f59e0b 45%, #b45309 100%);
+        color: #ffffff;
+    }
+    .cs-alert-box.error .cs-alert-icon {
+        background: radial-gradient(circle at 35% 25%,
+                    #fca5a5 0%, #dc2626 45%, #991b1b 100%);
+        color: #ffffff;
+    }
+    .cs-alert-box.success .cs-alert-icon {
+        background: radial-gradient(circle at 35% 25%,
+                    #6ee7b7 0%, #10b981 45%, #047857 100%);
+        color: #ffffff;
+    }
+    .cs-confirm-icon {
+        background: radial-gradient(circle at 35% 25%,
+                    #fca5a5 0%, #dc2626 45%, #991b1b 100%) !important;
+        color: white;
+    }
+
     .cs-alert-title, .cs-confirm-title {
-        font-family: 'Playfair Display', serif; font-size: 20px;
-        font-weight: 700; color: #1c1c1e; margin-bottom: 8px;
+        font-family: 'Inter', sans-serif !important;
+        font-size: 20px; font-weight: 700;
+        color: #1c1c1e; margin-bottom: 10px;
+        letter-spacing: -0.3px;
     }
     .cs-alert-message, .cs-confirm-message {
-        font-size: 14px; color: #555; line-height: 1.55; margin-bottom: 20px;
+        font-size: 14px; color: #4a4a4a;
+        line-height: 1.6; margin-bottom: 22px;
+        text-align: left;
+        white-space: pre-line;
+        max-height: 50vh;
+        overflow-y: auto;
     }
+    .cs-alert-message:empty { display: none; }
+
+    /* Lista de errores dentro del mensaje */
+    .cs-alert-message .cs-error-line {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 14px; margin-bottom: 8px;
+        background: #fef2f2;
+        border-left: 3px solid #dc2626;
+        border-radius: 8px;
+        font-size: 13.5px; color: #1c1c1e;
+        line-height: 1.5;
+    }
+    .cs-alert-message .cs-error-line:last-child { margin-bottom: 0; }
+    .cs-alert-message .cs-error-line .cs-error-num {
+        display: inline-flex; align-items: center; justify-content: center;
+        min-width: 22px; height: 22px; border-radius: 50%;
+        background: #dc2626; color: white;
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700; font-size: 11px;
+        flex-shrink: 0; margin-top: 1px;
+    }
+    .cs-alert-message .cs-error-line .cs-error-fields {
+        flex: 1; min-width: 0;
+    }
+    .cs-alert-message .cs-error-line .cs-error-fields strong {
+        color: #991b1b; font-weight: 700;
+    }
+
     .cs-alert-actions, .cs-confirm-actions {
         display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
     }
     .cs-alert-btn, .cs-confirm-btn {
-        padding: 11px 28px; border-radius: 30px; border: none;
-        font-weight: 600; font-size: 14px; cursor: pointer;
+        padding: 12px 32px; border-radius: 30px; border: none;
+        font-weight: 700; font-size: 14px; cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        font-family: 'Inter', sans-serif; min-width: 110px;
+        font-family: 'Inter', sans-serif; min-width: 130px;
+        letter-spacing: -0.1px;
     }
     .cs-alert-btn {
-        background: linear-gradient(135deg, #1c1c1e 0%, #2c2c30 100%);
-        color: white; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        background: linear-gradient(180deg, #2c2c30 0%, #1c1c1e 100%);
+        color: white;
+        box-shadow:
+            0 2px 4px rgba(0,0,0,0.15),
+            0 6px 16px rgba(0,0,0,0.2),
+            inset 0 1px 0 rgba(255,255,255,0.1);
     }
-    .cs-alert-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+    .cs-alert-btn:hover {
+        transform: translateY(-2px);
+        box-shadow:
+            0 4px 8px rgba(0,0,0,0.2),
+            0 12px 24px rgba(0,0,0,0.25),
+            inset 0 1px 0 rgba(255,255,255,0.15);
+    }
+    .cs-alert-btn:active { transform: translateY(0); }
     .cs-confirm-btn.danger {
         background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
         color: white; box-shadow: 0 2px 8px rgba(220,38,38,0.25);
@@ -1250,7 +1367,7 @@
         </div>
     </div>
 
-    <form method="POST" action="{{ url_for('ordenes.create_order') if not edit else url_for('ordenes.edit_order', order_id=order.id) }}" enctype="multipart/form-data" id="orderForm">
+    <form method="POST" action="{{ url_for('ordenes.create_order') if not edit else url_for('ordenes.edit_order', order_id=order.id) }}" enctype="multipart/form-data" id="orderForm" novalidate>
 
         <!-- SECCIÓN 1: DATOS GENERALES -->
         <div class="form-section">
@@ -1478,7 +1595,7 @@
                             {% set is_etiqueta = (tipo_archivo == 'etiqueta') %}
                             {% set is_cartel = (tipo_archivo == 'cartel') %}
                             {% set paramsId = 'edit-' ~ archivo.id %}
-                            <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false" data-tipo="{{ tipo_archivo }}">
+                            <tr class="linea-fila" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-eliminado="false" data-tipo="{{ tipo_archivo }}" data-num-linea="{{ loop.index }}">
                                 <td data-label="Nombre visible">
                                     <input type="hidden" name="archivo_ids[]" value="{{ archivo.id }}">
                                     {% if is_etiqueta and params and params.fav_id %}
@@ -1980,16 +2097,45 @@ const ANCHO_UTIL_DEFAULT = 1.30;
 const CS_ALERT_ICONS = { info: 'ℹ️', warning: '⚠️', error: '❌', success: '✅' };
 const CS_ALERT_TITLES = { info: 'Información', warning: 'Atención', error: 'Error', success: '¡Listo!' };
 
-function csAlert(message, type = 'info', title = null) {
+/**
+ * Muestra un modal de alerta.
+ * @param {string|Array} message - Texto o array de strings (cada uno una línea).
+ * @param {string} type - 'info' | 'warning' | 'error' | 'success'
+ * @param {string} [title]
+ * @param {Array} [detalles] - Array opcional de {num, titulo, campos[]} para formato enriquecido.
+ */
+function csAlert(message, type = 'info', title = null, detalles = null) {
     const overlay = document.getElementById('csAlertOverlay');
     const box = document.getElementById('csAlertBox');
     const iconEl = document.getElementById('csAlertIcon');
     const titleEl = document.getElementById('csAlertTitle');
     const msgEl = document.getElementById('csAlertMessage');
+
     box.className = 'cs-alert-box ' + type;
     iconEl.textContent = CS_ALERT_ICONS[type] || CS_ALERT_ICONS.info;
     titleEl.textContent = title || CS_ALERT_TITLES[type] || '';
-    msgEl.textContent = message;
+
+    // Si vienen detalles estructurados (lista de líneas con campos faltantes),
+    // construimos HTML rico.
+    if (Array.isArray(detalles) && detalles.length > 0) {
+        const html = detalles.map(d => `
+            <div class="cs-error-line">
+                <span class="cs-error-num">${d.num}</span>
+                <span class="cs-error-fields">
+                    <strong>Línea ${d.num}:</strong> faltan ${d.campos.length === 1 ? 'el campo' : 'los campos'}
+                    <em>${d.campos.join(', ')}</em>.
+                </span>
+            </div>
+        `).join('');
+        msgEl.innerHTML = html;
+    } else if (Array.isArray(message)) {
+        // Array de strings → cada uno un párrafo
+        msgEl.innerHTML = message.map(m => `<div style="margin-bottom:6px;">${m}</div>`).join('');
+    } else {
+        // Texto simple: convertir \n en saltos reales con <br> para que se vean
+        msgEl.innerHTML = String(message || '').split('\n').map(l => `<div>${l}</div>`).join('');
+    }
+
     overlay.classList.add('active');
     setTimeout(() => {
         const btn = box.querySelector('.cs-alert-btn');
@@ -3056,6 +3202,78 @@ function actualizarEmptyState() {
     const filasReales = tbody.querySelectorAll('tr.linea-fila').length;
     emptyEl.style.display = filasReales === 0 ? 'block' : 'none';
 }
+// ============================================
+// VALIDACIÓN DE LÍNEAS DE TRABAJO
+// Devuelve { valid, errores: [{num, campos[]}] }
+// ============================================
+function validarLineasTrabajo() {
+    const tbody = document.getElementById('cuerpoLineas');
+    if (!tbody) return { valid: true, errores: [] };
+
+    const filas = tbody.querySelectorAll('tr.linea-fila');
+    const errores = [];
+
+    filas.forEach((row) => {
+        // Saltar filas eliminadas u ocultas
+        if (row.dataset.eliminado === 'true') return;
+        if (row.style.display === 'none') return;
+
+        const num = parseInt(row.dataset.numLinea) || (errores.length + 1);
+        const tipo = (row.dataset.tipo || 'otros').toLowerCase();
+        const camposFaltantes = [];
+
+        // 1) Nombre visible
+        const nombreInput = row.querySelector(
+            'input[name^="nombre_visible_"], input[name="nombres_visibles[]"]'
+        );
+        if (nombreInput && !nombreInput.value.trim()) {
+            camposFaltantes.push('Nombre visible');
+        }
+
+        // 2) Material (Producto)
+        const productoSelect = row.querySelector(
+            'select[name^="producto_"], select[name="productos_ids[]"]'
+        );
+        if (productoSelect && !productoSelect.value) {
+            camposFaltantes.push('Material (Producto)');
+        }
+
+        // 3) Cantidad — solo si NO es cartel (en cartel está oculto)
+        if (tipo !== 'cartel') {
+            const cantidadInput = row.querySelector(
+                'input[name^="cantidad_"], input[name="cantidades[]"]'
+            );
+            if (cantidadInput && cantidadInput.style.display !== 'none') {
+                const v = (cantidadInput.value || '').trim();
+                if (!v || isNaN(parseFloat(v)) || parseFloat(v) <= 0) {
+                    camposFaltantes.push('Cantidad');
+                }
+            }
+        }
+
+        // 4) Unidad — solo si NO es cartel
+        if (tipo !== 'cartel') {
+            const unidadSelect = row.querySelector(
+                'select[name^="unidad_"], select[name="unidades[]"]'
+            );
+            if (unidadSelect && unidadSelect.style.display !== 'none' && !unidadSelect.value) {
+                camposFaltantes.push('Unidad');
+            }
+        }
+
+        // 5) Proyecto/Producto — solo en filas nuevas (las de edición ya tienen tipo fijo)
+        const proyectoSelect = row.querySelector('select[name="proyecto_linea[]"]');
+        if (proyectoSelect && !proyectoSelect.value) {
+            camposFaltantes.push('Proyecto/Producto');
+        }
+
+        if (camposFaltantes.length > 0) {
+            errores.push({ num, campos: camposFaltantes });
+        }
+    });
+
+    return { valid: errores.length === 0, errores };
+}
 
 function agregarLinea() {
     const tbody = document.getElementById('cuerpoLineas');
@@ -3078,23 +3296,26 @@ function agregarLinea() {
             <input type="hidden" name="fav_ids_new[]" value="">
             <input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required>
         </td>
-        <td data-label="Material (Producto)"><select name="productos_ids[]" class="producto-select" required>${prodOptions}</select></td>
+        <td data-label="Material (Producto)">
+            <select name="productos_ids[]" class="producto-select" required>${prodOptions}</select>
+        </td>
         <td data-label="Cantidad" class="col-cantidad">
             <span class="cartel-dash" style="display:none;">-</span>
-            <input type="number" step="0.01" name="cantidades[]" placeholder="m²">
+            <input type="number" step="0.01" name="cantidades[]" placeholder="m²" required>
         </td>
         <td data-label="Unidad" class="col-unidad">
             <span class="cartel-dash" style="display:none;">-</span>
-            <select name="unidades[]" class="unidad-select">
+            <select name="unidades[]" class="unidad-select" required>
                 <option value="m2" selected>metros cuadrados (m²)</option>
                 <option value="unidades">unidades</option>
             </select>
         </td>
         <td data-label="Proyecto/Producto">
-            <select name="proyecto_linea[]" class="proyecto-linea" data-params-id="${paramsId}">
-                <option value="otros">Otros</option>
+            <select name="proyecto_linea[]" class="proyecto-linea" data-params-id="${paramsId}" required>
+                <option value="">-- Seleccionar --</option>
                 <option value="etiquetas">Etiquetas</option>
                 <option value="cartel">Cartel</option>
+                <option value="otros">Otros</option>
             </select>
             <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="${paramsId}" style="display:none; margin-left:4px;"></button>
         </td>
@@ -3107,7 +3328,9 @@ function agregarLinea() {
             </button>
         </td>
     `;
+
     tbody.appendChild(row);
+    row.dataset.numLinea = tbody.querySelectorAll('tr.linea-fila').length;
 
     const paramsRow = document.createElement('tr');
     paramsRow.className = 'etiquetas-params-row';
@@ -4150,6 +4373,33 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(precargarImagenesFavoritasIniciales, 200);
 
     actualizarEmptyState();
+    
+    // ============ VALIDACIÓN CLIENT-SIDE AL ENVIAR ============
+    const orderForm = document.getElementById('orderForm');
+    if (orderForm) {
+        orderForm.addEventListener('submit', function(e) {
+            const res = validarLineasTrabajo();
+            if (!res.valid) {
+                e.preventDefault();
+                e.stopPropagation();
+                csAlert(
+                    'No se puede guardar la orden. Revisa los siguientes campos obligatorios:',
+                    'error',
+                    'Campos incompletos en líneas de trabajo',
+                    res.errores
+                );
+                const primerError = res.errores[0];
+                const row = document.querySelector(`tr.linea-fila[data-num-linea="${primerError.num}"]`);
+                if (row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.style.transition = 'background 0.3s';
+                    row.style.background = '#fef2f2';
+                    setTimeout(() => { row.style.background = ''; }, 2500);
+                }
+                return false;
+            }
+        });
+    }
 });
 
 // ============ CLIENTE AUTOCOMPLETE ============

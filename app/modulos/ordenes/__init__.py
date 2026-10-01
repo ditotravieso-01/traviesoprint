@@ -60,6 +60,103 @@ def _sanitize_order_num(value):
         return None
     return s
 
+def _validar_lineas_trabajo(form, edit=False):
+    """
+    Valida líneas nuevas (nombres_visibles[]...) y existentes (nombre_visible_{id}...).
+    Devuelve lista de tuplas (num_linea, [campos_faltantes]) — vacía si todo OK.
+    """
+    errores = []
+
+    # ---------- Líneas NUEVAS ----------
+    nombres = form.getlist('nombres_visibles[]')
+    productos = form.getlist('productos_ids[]')
+    cantidades = form.getlist('cantidades[]')
+    unidades = form.getlist('unidades[]')
+    proyectos = form.getlist('proyecto_linea[]')
+
+    for i, nombre in enumerate(nombres):
+        num = i + 1
+        faltantes = []
+        if not (nombre or '').strip():
+            faltantes.append('Nombre visible')
+
+        producto = productos[i].strip() if i < len(productos) else ''
+        if not producto:
+            faltantes.append('Material (Producto)')
+
+        proyecto = (proyectos[i] if i < len(proyectos) else '').strip()
+        if not proyecto:
+            faltantes.append('Proyecto/Producto')
+
+        if proyecto != 'cartel':
+            cantidad = cantidades[i].strip() if i < len(cantidades) else ''
+            if not cantidad:
+                faltantes.append('Cantidad')
+            else:
+                try:
+                    if float(cantidad) <= 0:
+                        faltantes.append('Cantidad')
+                except ValueError:
+                    faltantes.append('Cantidad')
+
+            unidad = unidades[i].strip() if i < len(unidades) else ''
+            if not unidad:
+                faltantes.append('Unidad')
+
+        if faltantes:
+            errores.append((num, faltantes))
+
+    # ---------- Líneas EXISTENTES (solo en modo edit) ----------
+    if edit:
+        from app.models import ArchivoAdjunto as _AA
+        archivo_ids = form.getlist('archivo_ids[]')
+        ids_a_eliminar = set(form.getlist('eliminar_archivos[]'))
+        offset = len(nombres)
+
+        for i, archivo_id in enumerate(archivo_ids):
+            if archivo_id in ids_a_eliminar:
+                continue
+            num = offset + i + 1
+            faltantes = []
+
+            nombre = form.get(f'nombre_visible_{archivo_id}', '').strip()
+            if not nombre:
+                faltantes.append('Nombre visible')
+
+            producto = form.get(f'producto_{archivo_id}', '').strip()
+            if not producto:
+                faltantes.append('Material (Producto)')
+
+            # Detectar si es cartel (esos no tienen cantidad/unidad editables)
+            es_cartel = False
+            try:
+                archivo = _AA.query.get(int(archivo_id))
+                if archivo:
+                    params = archivo.get_parametros_etiqueta()
+                    if params and params.get('tipo') == 'cartel':
+                        es_cartel = True
+            except (ValueError, TypeError):
+                pass
+
+            if not es_cartel:
+                cantidad = form.get(f'cantidad_{archivo_id}', '').strip()
+                if not cantidad:
+                    faltantes.append('Cantidad')
+                else:
+                    try:
+                        if float(cantidad) <= 0:
+                            faltantes.append('Cantidad')
+                    except ValueError:
+                        faltantes.append('Cantidad')
+
+                unidad = form.get(f'unidad_{archivo_id}', '').strip()
+                if not unidad:
+                    faltantes.append('Unidad')
+
+            if faltantes:
+                errores.append((num, faltantes))
+
+    return errores
 
 def _extraer_fav_id(form_data, key, default=None):
     """Helper defensivo para leer un fav_id del form."""
@@ -754,6 +851,14 @@ def create_order():
         tipo_proyecto = request.form.get('tipo_proyecto')
         priority = request.form.get('priority')
         descripcion = request.form.get('descripcion')
+        errores_lineas = _validar_lineas_trabajo(request.form)
+        if errores_lineas:
+            detalle = '; '.join(
+                f"Línea {n}: {', '.join(c)}" for n, c in errores_lineas
+            )
+            flash(f'Faltan campos obligatorios en las líneas de trabajo — {detalle}', 'danger')
+            context = _get_form_context(form_data=request.form, edit=False, order=None)
+            return render_template('form_orden.html', **context)
 
         if not client_id or not date:
             flash('Cliente y Fecha son obligatorios.', 'danger')
@@ -993,6 +1098,17 @@ def edit_order(order_id):
                 flash(f'Ya existe otra orden con el número "{nuevo_order_num}".', 'danger')
                 context = _get_form_context(form_data=request.form, edit=True, order=order)
                 return render_template('form_orden.html', **context)
+
+        # ✅ VALIDACIÓN SERVER-SIDE (una sola vez, antes de procesar)
+        errores_lineas = _validar_lineas_trabajo(request.form, edit=True)
+        if errores_lineas:
+            detalle = '; '.join(
+                f"Línea {n}: {', '.join(c)}" for n, c in errores_lineas
+            )
+            flash(f'Faltan campos obligatorios en las líneas de trabajo — {detalle}', 'danger')
+            context = _get_form_context(form_data=request.form, edit=True, order=order)
+            return render_template('form_orden.html', **context)
+        
         order.order_num = nuevo_order_num
 
         order.date = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
