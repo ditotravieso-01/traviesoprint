@@ -263,7 +263,36 @@
         font-weight: 400;
         padding-left: 28px;
     }
-
+    /* Consumible: fondo azul suave */
+    .inv-section-box.consumible {
+        background: rgba(59,130,246,0.04);
+        border-color: rgba(59,130,246,0.15);
+        display: block !important;
+    }
+    .inv-section-box.consumible label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #1e40af;
+        font-size: 13.5px;
+    }
+    .inv-section-box.consumible label input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+        accent-color: #3b82f6;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+    .inv-section-box.consumible small {
+        display: block;
+        color: #8e8e93;
+        font-size: 12px;
+        margin-top: 6px;
+        font-weight: 400;
+        padding-left: 28px;
+    }
     /* ============================================================
        LEGACY FIELDS (ocultos)
        ============================================================ */
@@ -605,6 +634,15 @@
                     <small>Marca esta casilla si el producto es un rollo, tinta u otro material que se usa en producción.</small>
                 </div>
 
+                <!-- Consumible (se cuenta semanalmente) -->
+                <div class="inv-section-box consumible" id="consumible_group">
+                    <label>
+                        <input type="checkbox" name="es_consumible" id="es_consumible" {% if producto and producto.es_consumible %}checked{% endif %}>
+                        <span>Es consumible (se cuenta semanalmente)</span>
+                    </label>
+                    <small>Marca si el producto se cuenta en los conteos semanales del económico. Rollos, tintas, PVC, acrílico, solventes, etc.</small>
+                </div>
+
                 <!-- Botones -->
                 <div class="inv-btn-group">
                     <button type="submit" class="btn btn-success">
@@ -895,6 +933,12 @@
                     document.getElementById('largo_rollo').required = false;
                 }
 
+                // Consumible hereda de la categoría si el producto aún no lo tiene marcado
+                const consumibleCheckbox = document.getElementById('es_consumible');
+                if (consumibleCheckbox && data.es_consumible && !consumibleCheckbox.dataset.userTouched) {
+                    consumibleCheckbox.checked = true;
+                }
+
                 const atributosFiltrados = atributos.filter(a => a.nombre !== 'ancho' && a.nombre !== 'largo');
 
                 if (atributosFiltrados.length === 0) {
@@ -995,5 +1039,12 @@
 
         calcularMetros();
     });
+        // Marcar el checkbox como "tocado por el usuario" si lo cambia a mano
+        const consumibleEl = document.getElementById('es_consumible');
+        if (consumibleEl) {
+            consumibleEl.addEventListener('change', function() {
+                this.dataset.userTouched = '1';
+            });
+        }
 </script>
 {% endblock %}

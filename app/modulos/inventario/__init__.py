@@ -125,6 +125,40 @@ def get_grupo_atributos_para_categoria(categoria_id):
     return None
 
 # ==========================================
+# AUXILIAR: PRODUCTOS QUE SE PUEDEN CONTAR
+# ==========================================
+def get_productos_consumibles_para_conteo():
+    """
+    Devuelve los productos que se pueden contar semanalmente:
+    - Productos con es_consumible=True marcado directo, O
+    - Productos cuya categoría (o algún ancestro) sea es_consumible=True.
+
+    Incluye rollos (material de impresión) y consumibles por unidad.
+    """
+    # 1. Los marcados directamente en el producto
+    productos = list(Producto.query.filter(
+        Producto.es_consumible == True
+    ).all())
+
+    ids_ya = {p.id for p in productos}
+
+    # 2. Los que heredan de su categoría
+    cat_ids_cons = set()
+    for c in Categoria.query.filter_by(es_consumible=True).all():
+        for cid in get_all_subcategory_ids(c.id):
+            cat_ids_cons.add(cid)
+
+    if cat_ids_cons:
+        extra_query = Producto.query.filter(Producto.categoria_id.in_(cat_ids_cons))
+        if ids_ya:
+            extra_query = extra_query.filter(~Producto.id.in_(ids_ya))
+        productos.extend(extra_query.all())
+
+    # Ordenar alfabéticamente (case-insensitive)
+    productos.sort(key=lambda x: (x.nombre or '').lower())
+    return productos
+
+# ==========================================
 # MERMA OPERATIVA ACUMULADA POR PRODUCTO
 # ==========================================
 def calcular_merma_estimada_producto(producto_id):
@@ -514,13 +548,15 @@ def crear_categoria():
         descripcion = request.form.get('descripcion', '').strip()
         parent_id = request.form.get('parent_id', type=int) or None
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
+        es_consumible = request.form.get('es_consumible') == 'on'
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
             return render_template('form_categoria.html')
         if Categoria.query.filter_by(nombre=nombre).first():
             flash('Ya existe una categoría con ese nombre.', 'danger')
             return render_template('form_categoria.html')
-        cat = Categoria(nombre=nombre, descripcion=descripcion, parent_id=parent_id, es_material_impresion=es_material_impresion)
+        cat = Categoria(nombre=nombre, descripcion=descripcion, parent_id=parent_id,
+                        es_material_impresion=es_material_impresion, es_consumible=es_consumible)
         db.session.add(cat)
         db.session.commit()
         flash(f'Categoría "{nombre}" creada correctamente.', 'success')
@@ -538,6 +574,7 @@ def editar_categoria(categoria_id):
         descripcion = request.form.get('descripcion', '').strip()
         parent_id = request.form.get('parent_id', type=int) or None
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
+        es_consumible = request.form.get('es_consumible') == 'on'
         if not nombre:
             flash('El nombre es obligatorio.', 'danger')
             return render_template('form_categoria.html', categoria=cat)
@@ -552,6 +589,7 @@ def editar_categoria(categoria_id):
         cat.descripcion = descripcion
         cat.parent_id = parent_id
         cat.es_material_impresion = es_material_impresion
+        cat.es_consumible = es_consumible
         db.session.commit()
         flash('Categoría actualizada.', 'success')
         return redirect(url_for('inventario.listar_categorias'))
@@ -869,12 +907,12 @@ def crear_producto():
         tipo_producto_id = request.form.get('tipo_producto_id', type=int)
         unidad_id = request.form.get('unidad_id', type=int)
         ancho_rollo = request.form.get('ancho_rollo', type=float)
-        ancho_util = request.form.get('ancho_util', type=float)
         gap_panno_cm = request.form.get('gap_panno_cm', type=float, default=6.5)
         merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         largo_rollo = request.form.get('largo_rollo', type=float)
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         es_material_impresion = request.form.get('es_material_impresion') == 'on'
+        es_consumible = request.form.get('es_consumible') == 'on'
 
         atributos_extra = {}
         if categoria_id:
@@ -920,12 +958,12 @@ def crear_producto():
             tipo_producto_id=tipo_producto_id if tipo_producto_id else None,
             unidad_id=unidad_id if unidad_id else None,
             ancho_rollo=ancho_rollo,
-            ancho_util=ancho_util,
             gap_panno_cm=gap_panno_cm if gap_panno_cm is not None else 6.5,
             merma_porcentaje=merma_porcentaje,
             largo_rollo=largo_rollo,
             inversion_total=0.0,
             es_material_impresion=es_material_impresion,
+            es_consumible=es_consumible,
             atributos_extra=atributos_extra if atributos_extra else None
         )
         if fecha_vencimiento:
@@ -985,11 +1023,11 @@ def editar_producto(producto_id):
         producto.unidad_id = request.form.get('unidad_id', type=int) or None
         producto.ancho_rollo = request.form.get('ancho_rollo', type=float)
         producto.largo_rollo = request.form.get('largo_rollo', type=float)
-        producto.ancho_util = request.form.get('ancho_util', type=float)
         gap_panno_cm = request.form.get('gap_panno_cm', type=float)
         producto.gap_panno_cm = gap_panno_cm if gap_panno_cm is not None else 6.5
         producto.merma_porcentaje = request.form.get('merma_porcentaje', type=float, default=0.0)
         producto.es_material_impresion = request.form.get('es_material_impresion') == 'on'
+        producto.es_consumible = request.form.get('es_consumible') == 'on'
         fecha_vencimiento = request.form.get('fecha_vencimiento', '')
         stock_metros = request.form.get('stock_metros', type=float)
         if stock_metros is not None:
@@ -1074,6 +1112,7 @@ def duplicar_producto(producto_id):
         fecha_vencimiento=original.fecha_vencimiento,
         inversion_total=0.0,
         es_material_impresion=original.es_material_impresion,
+        es_consumible=original.es_consumible,
         atributos_extra=original.atributos_extra
     )
     db.session.add(nueva)
@@ -1786,6 +1825,7 @@ def exportar_productos():
             'ancho_rollo': 'ancho_rollo', 'largo_rollo': 'largo_rollo',
             'gap_panno_cm': 'gap_panno_cm',
             'es_material_impresion': 'es_material_impresion',
+            'es_consumible': 'es_consumible',
             'atributos_extra': 'atributos_extra', 'created_at': 'created_at'
         }
 
@@ -1861,6 +1901,7 @@ def exportar_productos():
         {'id': 'largo_rollo', 'label': 'Largo Rollo (m)'},
         {'id': 'gap_panno_cm', 'label': 'Gap entre Paños (cm)'},
         {'id': 'es_material_impresion', 'label': 'Material Impresión'},
+        {'id': 'es_consumible', 'label': 'Consumible'},
         {'id': 'atributos_extra', 'label': 'Atributos Extra (JSON)'},
         {'id': 'created_at', 'label': 'Fecha Creación'}
     ]
@@ -1930,6 +1971,8 @@ def importar_productos():
                     col_map['largo_rollo'] = idx
                 elif 'material_impresion' in h_clean:
                     col_map['es_material_impresion'] = idx
+                elif 'consumible' in h_clean:
+                    col_map['es_consumible'] = idx
                 elif 'unidad_medida' in h_clean or 'unidad de medida' in h_clean:
                     col_map['unidad_medida'] = idx
                 elif 'simbolo_unidad' in h_clean or 'simbolo' in h_clean:
@@ -2019,6 +2062,9 @@ def importar_productos():
                     if col_map.get('es_material_impresion') is not None and row[col_map['es_material_impresion']]:
                         val = str(row[col_map['es_material_impresion']]).strip().lower()
                         producto.es_material_impresion = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
+                    if col_map.get('es_consumible') is not None and row[col_map['es_consumible']]:
+                        val = str(row[col_map['es_consumible']]).strip().lower()
+                        producto.es_consumible = val in ['sí', 'si', 'yes', 'true', '1', 'x', 'on']
 
                     if col_map.get('categoria') is not None and row[col_map['categoria']]:
                         cat_nombre = str(row[col_map['categoria']]).strip()
@@ -2203,6 +2249,7 @@ def api_atributos_por_categoria(categoria_id):
     return jsonify({
         'atributos': atributos,
         'es_material_impresion': cat.es_material_impresion,
+        'es_consumible': cat.es_consumible,
         'grupo_origen': grupo.nombre if grupo else None,
         'grupo_categoria': grupo.categoria.nombre if grupo and grupo.categoria else None
     })
@@ -2594,10 +2641,8 @@ def listar_conteos():
 
     semanas_lista = sorted(semanas_resumen.values(), key=lambda x: x['semana'], reverse=True)
 
-    productos = Producto.query.filter(
-        Producto.es_material_impresion == True,
-        Producto.largo_rollo > 0
-    ).order_by(Producto.nombre).all()
+    # Productos contables: rollos + tintas/consumibles (por producto o por categoría)
+    productos = get_productos_consumibles_para_conteo()
 
     return render_template('conteos_semanales.html',
                            conteos=conteos,
@@ -2628,10 +2673,6 @@ def nuevo_conteo():
             flash('Producto no encontrado.', 'danger')
             return redirect(url_for('inventario.nuevo_conteo'))
 
-        if not producto.largo_rollo or producto.largo_rollo <= 0:
-            flash('El producto no tiene largo de rollo definido.', 'danger')
-            return redirect(url_for('inventario.nuevo_conteo'))
-
         if fecha_str:
             try:
                 fecha_conteo = datetime.strptime(fecha_str, '%Y-%m-%d')
@@ -2642,24 +2683,38 @@ def nuevo_conteo():
 
         semana = ConteoSemanal.semana_iso(fecha_conteo)
 
+        # ¿Es un rollo (tiene largo_rollo) o una unidad tipo tinta?
+        es_rollo = bool(producto.largo_rollo and producto.largo_rollo > 0)
+
         stock_sistema_unidades = producto.stock or 0.0
-        stock_sistema_metros = producto.stock_metros or 0.0
-
-        largo_rollo = producto.largo_rollo
-        ancho_rollo = producto.ancho_rollo or 1.34
-
-        stock_fisico_metros = stock_fisico_unidades * largo_rollo
-        stock_fisico_m2 = stock_fisico_metros * ancho_rollo
-        stock_sistema_m2 = stock_sistema_metros * ancho_rollo
-
         diferencia_unidades = stock_sistema_unidades - stock_fisico_unidades
-        diferencia_metros = stock_sistema_metros - stock_fisico_metros
-        diferencia_m2 = stock_sistema_m2 - stock_fisico_m2
 
-        merma_operativa_m2 = _calcular_merma_operativa_semana(semana)
+        if es_rollo:
+            # ---- Producto tipo ROLLO ----
+            largo_rollo = producto.largo_rollo
+            ancho_rollo = producto.ancho_rollo or 1.34
 
-        merma_imprevista_m2 = diferencia_m2 - merma_operativa_m2
-        merma_imprevista_metros = merma_imprevista_m2 / ancho_rollo if ancho_rollo > 0 else 0
+            stock_sistema_metros = producto.stock_metros or 0.0
+            stock_fisico_metros = stock_fisico_unidades * largo_rollo
+            stock_fisico_m2 = stock_fisico_metros * ancho_rollo
+            stock_sistema_m2 = stock_sistema_metros * ancho_rollo
+
+            diferencia_metros = stock_sistema_metros - stock_fisico_metros
+            diferencia_m2 = stock_sistema_m2 - stock_fisico_m2
+
+            merma_operativa_m2 = _calcular_merma_operativa_semana(semana)
+            merma_imprevista_m2 = diferencia_m2 - merma_operativa_m2
+            merma_imprevista_metros = merma_imprevista_m2 / ancho_rollo if ancho_rollo > 0 else 0
+        else:
+            # ---- Producto tipo UNIDAD (tintas, solventes, etc.) ----
+            # No hay conversión a metros/m². La pérdida es directamente en unidades.
+            stock_sistema_metros = 0.0
+            stock_fisico_metros = 0.0
+            diferencia_metros = 0.0
+            diferencia_m2 = 0.0
+            merma_operativa_m2 = 0.0
+            merma_imprevista_m2 = 0.0
+            merma_imprevista_metros = 0.0
 
         conteo = ConteoSemanal(
             producto_id=producto.id,
@@ -2682,12 +2737,13 @@ def nuevo_conteo():
         if abs(diferencia_unidades) > 0.001:
             tipo = 'merma' if diferencia_unidades > 0 else 'sobrante'
             producto.stock = stock_fisico_unidades
-            producto.stock_metros = stock_fisico_metros
+            if es_rollo:
+                producto.stock_metros = stock_fisico_metros
             mov = Movimiento(
                 producto_id=producto.id,
                 tipo=tipo,
                 cantidad=abs(diferencia_unidades),
-                cantidad_metros=abs(diferencia_metros),
+                cantidad_metros=abs(diferencia_metros) if es_rollo else None,
                 comentario=f'Conteo semanal {semana}: {comentario or "ajuste por conteo"}',
                 usuario_id=current_user.id,
                 tipo_ajuste='conteo'
@@ -2699,10 +2755,8 @@ def nuevo_conteo():
         flash(f'Conteo registrado para la semana {semana}.', 'success')
         return redirect(url_for('inventario.reporte_conteos', semana=semana))
 
-    productos = Producto.query.filter(
-        Producto.es_material_impresion == True,
-        Producto.largo_rollo > 0
-    ).order_by(Producto.nombre).all()
+    # Productos contables: rollos + tintas/consumibles (por producto o por categoría)
+    productos = get_productos_consumibles_para_conteo()
 
     return render_template('form_conteo_semanal.html',
                            productos=productos,
@@ -2715,10 +2769,11 @@ def nuevo_conteo():
 def editar_conteo(conteo_id):
     from app.models import ConteoSemanal
     conteo = ConteoSemanal.query.get_or_404(conteo_id)
-    
+    producto = conteo.producto
+    es_rollo = bool(producto and producto.largo_rollo and producto.largo_rollo > 0)
+
     if request.method == 'POST':
-        # Revertir ajuste anterior
-        producto = conteo.producto
+        # ---- Revertir ajuste anterior ----
         if producto:
             mov = Movimiento.query.filter(
                 Movimiento.producto_id == producto.id,
@@ -2727,34 +2782,45 @@ def editar_conteo(conteo_id):
             ).order_by(Movimiento.fecha.desc()).first()
             if mov:
                 producto.stock += conteo.diferencia_unidades
-                producto.stock_metros += conteo.diferencia_metros
+                if es_rollo:
+                    producto.stock_metros += conteo.diferencia_metros
                 db.session.delete(mov)
-        
+
         nuevo_stock_fisico = request.form.get('stock_fisico_unidades', type=float)
         nuevo_comentario = request.form.get('comentario', '').strip()
         nueva_fecha_str = request.form.get('fecha', '').strip()
-        
+
         if nuevo_stock_fisico is None or nuevo_stock_fisico < 0:
             flash('Stock físico inválido.', 'danger')
             return redirect(url_for('inventario.editar_conteo', conteo_id=conteo_id))
-        
+
         stock_sistema_unidades = conteo.stock_sistema_unidades
-        stock_sistema_metros = conteo.stock_sistema_metros
-        largo_rollo = producto.largo_rollo or 1
-        ancho_rollo = producto.ancho_rollo or 1.34
-        
-        stock_fisico_metros = nuevo_stock_fisico * largo_rollo
-        stock_fisico_m2 = stock_fisico_metros * ancho_rollo
-        stock_sistema_m2 = stock_sistema_metros * ancho_rollo
-        
         diferencia_unidades = stock_sistema_unidades - nuevo_stock_fisico
-        diferencia_metros = stock_sistema_metros - stock_fisico_metros
-        diferencia_m2 = stock_sistema_m2 - stock_fisico_m2
-        
-        merma_operativa_m2 = _calcular_merma_operativa_semana(conteo.semana)
-        merma_imprevista_m2 = diferencia_m2 - merma_operativa_m2
-        merma_imprevista_metros = merma_imprevista_m2 / ancho_rollo if ancho_rollo > 0 else 0
-        
+
+        if es_rollo:
+            largo_rollo = producto.largo_rollo or 1
+            ancho_rollo = producto.ancho_rollo or 1.34
+
+            stock_sistema_metros = conteo.stock_sistema_metros
+            stock_fisico_metros = nuevo_stock_fisico * largo_rollo
+            stock_fisico_m2 = stock_fisico_metros * ancho_rollo
+            stock_sistema_m2 = stock_sistema_metros * ancho_rollo
+
+            diferencia_metros = stock_sistema_metros - stock_fisico_metros
+            diferencia_m2 = stock_sistema_m2 - stock_fisico_m2
+
+            merma_operativa_m2 = _calcular_merma_operativa_semana(conteo.semana)
+            merma_imprevista_m2 = diferencia_m2 - merma_operativa_m2
+            merma_imprevista_metros = merma_imprevista_m2 / ancho_rollo if ancho_rollo > 0 else 0
+        else:
+            stock_sistema_metros = 0.0
+            stock_fisico_metros = 0.0
+            diferencia_metros = 0.0
+            diferencia_m2 = 0.0
+            merma_operativa_m2 = 0.0
+            merma_imprevista_m2 = 0.0
+            merma_imprevista_metros = 0.0
+
         conteo.stock_fisico_unidades = nuevo_stock_fisico
         conteo.stock_fisico_metros = stock_fisico_metros
         conteo.diferencia_unidades = diferencia_unidades
@@ -2768,34 +2834,33 @@ def editar_conteo(conteo_id):
                 conteo.fecha = datetime.strptime(nueva_fecha_str, '%Y-%m-%d')
             except:
                 pass
-        
-        if abs(diferencia_unidades) > 0.001:
+
+        if producto and abs(diferencia_unidades) > 0.001:
             tipo = 'merma' if diferencia_unidades > 0 else 'sobrante'
             producto.stock = nuevo_stock_fisico
-            producto.stock_metros = stock_fisico_metros
+            if es_rollo:
+                producto.stock_metros = stock_fisico_metros
             mov = Movimiento(
                 producto_id=producto.id,
                 tipo=tipo,
                 cantidad=abs(diferencia_unidades),
-                cantidad_metros=abs(diferencia_metros),
+                cantidad_metros=abs(diferencia_metros) if es_rollo else None,
                 comentario=f'Conteo semanal {conteo.semana}: {nuevo_comentario or "ajuste por conteo"}',
                 usuario_id=current_user.id,
                 tipo_ajuste='conteo'
             )
             db.session.add(mov)
-        else:
+        elif producto:
             producto.stock = nuevo_stock_fisico
-            producto.stock_metros = stock_fisico_metros
-        
+            if es_rollo:
+                producto.stock_metros = stock_fisico_metros
+
         db.session.commit()
         flash('Conteo actualizado correctamente.', 'success')
         return redirect(url_for('inventario.reporte_conteos', semana=conteo.semana))
-    
-    productos = Producto.query.filter(
-        Producto.es_material_impresion == True,
-        Producto.largo_rollo > 0
-    ).order_by(Producto.nombre).all()
-    
+
+    productos = get_productos_consumibles_para_conteo()
+
     return render_template('form_conteo_semanal.html',
                            productos=productos,
                            conteo=conteo,
@@ -2808,9 +2873,10 @@ def editar_conteo(conteo_id):
 def eliminar_conteo(conteo_id):
     from app.models import ConteoSemanal
     conteo = ConteoSemanal.query.get_or_404(conteo_id)
-    
-    # Revertir ajuste de stock
     producto = conteo.producto
+    es_rollo = bool(producto and producto.largo_rollo and producto.largo_rollo > 0)
+
+    # Revertir ajuste de stock
     if producto:
         mov = Movimiento.query.filter(
             Movimiento.producto_id == producto.id,
@@ -2819,7 +2885,8 @@ def eliminar_conteo(conteo_id):
         ).order_by(Movimiento.fecha.desc()).first()
         if mov:
             producto.stock += conteo.diferencia_unidades
-            producto.stock_metros += conteo.diferencia_metros
+            if es_rollo:
+                producto.stock_metros += conteo.diferencia_metros
             db.session.delete(mov)
     
     db.session.delete(conteo)
@@ -2837,6 +2904,7 @@ def eliminar_conteos_semana(semana):
     
     for conteo in conteos:
         producto = conteo.producto
+        es_rollo = bool(producto and producto.largo_rollo and producto.largo_rollo > 0)
         if producto:
             mov = Movimiento.query.filter(
                 Movimiento.producto_id == producto.id,
@@ -2845,7 +2913,8 @@ def eliminar_conteos_semana(semana):
             ).order_by(Movimiento.fecha.desc()).first()
             if mov:
                 producto.stock += conteo.diferencia_unidades
-                producto.stock_metros += conteo.diferencia_metros
+                if es_rollo:
+                    producto.stock_metros += conteo.diferencia_metros
                 db.session.delete(mov)
         db.session.delete(conteo)
     
@@ -2863,8 +2932,7 @@ def reporte_conteos():
     semana = request.args.get('semana', ConteoSemanal.semana_iso())
 
     # ============================================================
-    # Convertir la semana ISO (ej. "2026-W38") a lenguaje natural
-    # (ej. "Semana del 14 al 20 de septiembre de 2026")
+    # Convertir la semana ISO (ej. "2026-W40") a lenguaje natural
     # ============================================================
     semana_natural = semana
     try:
@@ -2891,6 +2959,34 @@ def reporte_conteos():
 
     conteos = ConteoSemanal.query.filter_by(semana=semana).order_by(ConteoSemanal.fecha.desc()).all()
 
+    # ============================================================
+    # Detectar tipos de conteo presentes en la semana
+    # ============================================================
+    tiene_rollos = False
+    tiene_tintas = False
+    total_faltante_unidades = 0.0   # tintas que faltan (sistema > físico)
+    total_sobrante_unidades = 0.0   # tintas que sobran (físico > sistema)
+    total_conteos_rollos = 0
+    total_conteos_tintas = 0
+
+    for c in conteos:
+        p = c.producto
+        es_rollo = bool(p and p.largo_rollo and p.largo_rollo > 0)
+        if es_rollo:
+            tiene_rollos = True
+            total_conteos_rollos += 1
+        else:
+            tiene_tintas = True
+            total_conteos_tintas += 1
+            dif = c.diferencia_unidades or 0
+            if dif > 0:
+                total_faltante_unidades += dif
+            elif dif < 0:
+                total_sobrante_unidades += abs(dif)
+
+    # ============================================================
+    # Agrupar por producto (para compatibilidad hacia atrás)
+    # ============================================================
     por_producto = {}
     for c in conteos:
         pid = c.producto_id
@@ -2911,65 +3007,70 @@ def reporte_conteos():
     total_merma_operativa_m2 = sum(v['total_merma_operativa_m2'] for v in por_producto.values())
     total_merma_imprevista_m2 = sum(v['total_merma_imprevista_m2'] for v in por_producto.values())
 
-    try:
-        year, week = semana.split('-W')
-        year, week = int(year), int(week)
-        lunes = datetime.fromisocalendar(year, week, 1)
-        domingo = lunes + timedelta(days=7)
-    except Exception:
-        lunes = datetime.utcnow()
-        domingo = lunes + timedelta(days=7)
-
-    archivos_semana = ArchivoAdjunto.query.join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
-        Order.date >= lunes.date(),
-        Order.date < domingo.date(),
-        ArchivoAdjunto.parametros_etiqueta.isnot(None)
-    ).all()
-
-    merma_por_orden = {}
-    for a in archivos_semana:
+    # ============================================================
+    # Órdenes procesadas en la semana (solo si hay conteos de rollos)
+    # ============================================================
+    ordenes_lista = []
+    if tiene_rollos:
         try:
-            params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+            year, week = semana.split('-W')
+            year, week = int(year), int(week)
+            lunes = datetime.fromisocalendar(year, week, 1)
+            domingo = lunes + timedelta(days=7)
         except Exception:
-            continue
-        if 'merma_operativa_m2' not in params:
-            continue
-        orden = a.orden
-        if not orden:
-            continue
-        key = orden.id
-        if key not in merma_por_orden:
-            merma_por_orden[key] = {
-                'orden_id': orden.id,
-                'orden_num': orden.order_num or 'Sin número',
-                'cliente': orden.client.nombre if orden.client else 'Sin cliente',
-                'fecha': orden.date,
-                'lineas': [],
-                'total_area_m2': 0.0,
-                'total_material_m2': 0.0,
-                'total_merma_m2': 0.0,
-            }
-        merma_por_orden[key]['lineas'].append({
-            'nombre': a.nombre_visible,
-            'producto': a.producto.nombre if a.producto else '—',
-            'area_m2': float(params.get('area_m2', 0) or 0),
-            'material_m2': float(params.get('material_consumido_m2', 0) or 0),
-            'merma_m2': float(params.get('merma_operativa_m2', 0) or 0),
-            'merma_pct': float(params.get('merma_operativa_pct', 0) or 0),
-            'ancho_cm': params.get('ancho', '—'),
-            'alto_cm': params.get('alto', '—'),
-            'n_paños': params.get('n_paños', 1),
-            'filas': params.get('filas', 0),
-            'columnas': params.get('columnas', 0),
-            'largo_total_m': float(params.get('largo_total_m', 0) or 0),
-            'gap_usado_cm': params.get('gap_usado_cm', 6.5),
-            'desglose_paños': params.get('desglose_paños', []),
-        })
-        merma_por_orden[key]['total_area_m2'] += float(params.get('area_m2', 0) or 0)
-        merma_por_orden[key]['total_material_m2'] += float(params.get('material_consumido_m2', 0) or 0)
-        merma_por_orden[key]['total_merma_m2'] += float(params.get('merma_operativa_m2', 0) or 0)
+            lunes = datetime.utcnow()
+            domingo = lunes + timedelta(days=7)
 
-    ordenes_lista = sorted(merma_por_orden.values(), key=lambda x: x['total_merma_m2'], reverse=True)
+        archivos_semana = ArchivoAdjunto.query.join(Order, ArchivoAdjunto.orden_id == Order.id).filter(
+            Order.date >= lunes.date(),
+            Order.date < domingo.date(),
+            ArchivoAdjunto.parametros_etiqueta.isnot(None)
+        ).all()
+
+        merma_por_orden = {}
+        for a in archivos_semana:
+            try:
+                params = json.loads(a.parametros_etiqueta) if a.parametros_etiqueta else {}
+            except Exception:
+                continue
+            if 'merma_operativa_m2' not in params:
+                continue
+            orden = a.orden
+            if not orden:
+                continue
+            key = orden.id
+            if key not in merma_por_orden:
+                merma_por_orden[key] = {
+                    'orden_id': orden.id,
+                    'orden_num': orden.order_num or 'Sin número',
+                    'cliente': orden.client.nombre if orden.client else 'Sin cliente',
+                    'fecha': orden.date,
+                    'lineas': [],
+                    'total_area_m2': 0.0,
+                    'total_material_m2': 0.0,
+                    'total_merma_m2': 0.0,
+                }
+            merma_por_orden[key]['lineas'].append({
+                'nombre': a.nombre_visible,
+                'producto': a.producto.nombre if a.producto else '—',
+                'area_m2': float(params.get('area_m2', 0) or 0),
+                'material_m2': float(params.get('material_consumido_m2', 0) or 0),
+                'merma_m2': float(params.get('merma_operativa_m2', 0) or 0),
+                'merma_pct': float(params.get('merma_operativa_pct', 0) or 0),
+                'ancho_cm': params.get('ancho', '—'),
+                'alto_cm': params.get('alto', '—'),
+                'n_paños': params.get('n_paños', 1),
+                'filas': params.get('filas', 0),
+                'columnas': params.get('columnas', 0),
+                'largo_total_m': float(params.get('largo_total_m', 0) or 0),
+                'gap_usado_cm': params.get('gap_usado_cm', 6.5),
+                'desglose_paños': params.get('desglose_paños', []),
+            })
+            merma_por_orden[key]['total_area_m2'] += float(params.get('area_m2', 0) or 0)
+            merma_por_orden[key]['total_material_m2'] += float(params.get('material_consumido_m2', 0) or 0)
+            merma_por_orden[key]['total_merma_m2'] += float(params.get('merma_operativa_m2', 0) or 0)
+
+        ordenes_lista = sorted(merma_por_orden.values(), key=lambda x: x['total_merma_m2'], reverse=True)
 
     semanas_disponibles = sorted(
         {c.semana for c in ConteoSemanal.query.all()},
@@ -2978,14 +3079,20 @@ def reporte_conteos():
 
     return render_template('reporte_conteos.html',
                            semana=semana,
-                           semana_natural=semana_natural,   # <-- NUEVO
+                           semana_natural=semana_natural,
                            conteos=conteos,
                            por_producto=por_producto,
                            ordenes_lista=ordenes_lista,
                            total_diferencia_m2=round(total_diferencia_m2, 2),
                            total_merma_operativa_m2=round(total_merma_operativa_m2, 2),
                            total_merma_imprevista_m2=round(total_merma_imprevista_m2, 2),
-                           semanas_disponibles=semanas_disponibles)
+                           semanas_disponibles=semanas_disponibles,
+                           tiene_rollos=tiene_rollos,
+                           tiene_tintas=tiene_tintas,
+                           total_faltante_unidades=round(total_faltante_unidades, 2),
+                           total_sobrante_unidades=round(total_sobrante_unidades, 2),
+                           total_conteos_rollos=total_conteos_rollos,
+                           total_conteos_tintas=total_conteos_tintas)
 
 
 @inventario_bp.route('/conteos-semanales/eliminar/<int:conteo_id>', methods=['POST'])

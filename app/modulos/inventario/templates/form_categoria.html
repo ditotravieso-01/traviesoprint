@@ -122,7 +122,7 @@
     .inv-form-group small strong { color: #1c1c1e; }
 
     /* ============================================================
-       CHECKBOX
+       CHECKBOXES CON COLORES DISTINTOS
        ============================================================ */
     .inv-checkbox-single {
         display: flex;
@@ -153,6 +153,24 @@
         text-transform: none;
         letter-spacing: 0;
     }
+
+    /* Variante verde (material impresión) */
+    .inv-checkbox-single.verde {
+        border-color: rgba(16,185,129,0.15);
+        background: rgba(16,185,129,0.04);
+    }
+    .inv-checkbox-single.verde:hover { border-color: rgba(16,185,129,0.4); background: rgba(16,185,129,0.08); }
+    .inv-checkbox-single.verde input[type="checkbox"] { accent-color: #10b981; }
+    .inv-checkbox-single.verde label { color: #065f46; }
+
+    /* Variante azul (consumible) */
+    .inv-checkbox-single.azul {
+        border-color: rgba(59,130,246,0.15);
+        background: rgba(59,130,246,0.04);
+    }
+    .inv-checkbox-single.azul:hover { border-color: rgba(59,130,246,0.4); background: rgba(59,130,246,0.08); }
+    .inv-checkbox-single.azul input[type="checkbox"] { accent-color: #3b82f6; }
+    .inv-checkbox-single.azul label { color: #1e40af; }
 
     /* ============================================================
        BOTONES
@@ -337,11 +355,22 @@
                     <textarea name="descripcion" rows="3" placeholder="Describe esta categoría...">{{ categoria.descripcion if categoria else '' }}</textarea>
                 </div>
 
+                <!-- Material de impresión -->
                 <div class="inv-form-group">
-                    <div class="inv-checkbox-single">
+                    <div class="inv-checkbox-single verde">
                         <input type="checkbox" name="es_material_impresion" id="es_mat_imp" {% if categoria and categoria.es_material_impresion %}checked{% endif %}>
                         <label for="es_mat_imp">Es material de impresión (usado en órdenes de trabajo)</label>
                     </div>
+                    <small>Los productos de esta categoría aparecerán en el form de órdenes y se calcularán en m².</small>
+                </div>
+
+                <!-- Consumible -->
+                <div class="inv-form-group">
+                    <div class="inv-checkbox-single azul">
+                        <input type="checkbox" name="es_consumible" id="es_consumible" {% if categoria and categoria.es_consumible %}checked{% endif %}>
+                        <label for="es_consumible">Es consumible (aparecerá en conteos semanales)</label>
+                    </div>
+                    <small>Los productos de esta categoría <strong>y sus subcategorías</strong> se podrán contar en el módulo de Conteos Semanales. Ejemplos: rollos, tintas, PVC, acrílico, solventes, etc.</small>
                 </div>
 
                 <div class="inv-btn-group">

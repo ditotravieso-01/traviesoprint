@@ -730,6 +730,10 @@
                     <span class="label">Material impresión</span>
                     <span class="value">{{ '✅ Sí' if producto.es_material_impresion else '❌ No' }}</span>
                 </div>
+                <div class="detail-item">
+                    <span class="label">Es consumible</span>
+                    <span class="value">{{ '✅ Sí' if producto.es_consumible else '❌ No' }}</span>
+                </div>
                 {% if producto.fecha_vencimiento %}
                 <div class="detail-item"><span class="label">Vence</span><span class="value">{{ producto.fecha_vencimiento.strftime('%d/%m/%Y') }}</span></div>
                 {% endif %}

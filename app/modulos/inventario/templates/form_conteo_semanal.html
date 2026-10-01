@@ -384,9 +384,10 @@
                     <line x1="12" y1="8" x2="12.01" y2="8"></line>
                 </svg>
                 <div>
-                    <strong>Conteo semanal:</strong> Ingresa los rollos/unidades que contaste físicamente.
-                    El sistema convierte automáticamente a <strong>metros lineales</strong> y <strong>m²</strong> usando
-                    el largo y ancho del rollo, y calcula la <strong>merma imprevista</strong>.
+                    <strong>Conteo semanal:</strong> Ingresa las unidades que contaste físicamente.
+                    Para <strong>rollos</strong>, el sistema calcula además los metros lineales y m²
+                    y descuenta la <strong>merma operativa</strong>. Para <strong>tintas y otros
+                    consumibles</strong>, el conteo se registra directamente en unidades.
                 </div>
             </div>
             {% else %}
@@ -412,14 +413,16 @@
                     <select name="producto_id" id="productoSelect" data-searchable="1" required {% if conteo %}disabled{% endif %}>
                         <option value="">— Seleccionar producto —</option>
                         {% for p in productos %}
+                            {% set es_rollo = p.largo_rollo and p.largo_rollo > 0 %}
                             <option value="{{ p.id }}"
                                     data-largo="{{ p.largo_rollo or 0 }}"
                                     data-ancho="{{ p.ancho_rollo or 1.34 }}"
                                     data-stock-metros="{{ p.stock_metros or 0 }}"
                                     data-stock-unidades="{{ p.stock or 0 }}"
                                     data-nombre="{{ p.nombre }}"
+                                    data-es-rollo="{{ '1' if es_rollo else '0' }}"
                                     {% if conteo and conteo.producto_id == p.id %}selected{% endif %}>
-                                {{ p.nombre }} (stock: {{ "%.2f"|format(p.stock or 0) }} rollos)
+                                {{ p.nombre }} (stock: {{ "%.2f"|format(p.stock or 0) }} {% if es_rollo %}rollos{% else %}u{% endif %})
                             </option>
                         {% endfor %}
                     </select>
@@ -437,9 +440,10 @@
 
                 <!-- Stock físico -->
                 <div class="fcs-form-group">
-                    <label>Stock físico contado (unidades / rollos) *</label>
-                    <input type="number" step="0.01" min="0" name="stock_fisico_unidades" id="stockFisico" required placeholder="Ej. 2.5" value="{{ conteo.stock_fisico_unidades if conteo else '' }}">
-                    <small>Suma total de todos los rollos (abiertos + completos) de este producto.</small>
+                    <label>Stock físico contado (<span id="unidadLabel">unidades / rollos</span>) *</label>
+                    <input type="number" step="0.01" min="0" name="stock_fisico_unidades" id="stockFisico" required
+                        placeholder="Ej. 2.5" value="{{ conteo.stock_fisico_unidades if conteo else '' }}">
+                    <small id="unidadHint">Suma total de todos los rollos (abiertos + completos) de este producto.</small>
                 </div>
 
                 <!-- Comentario -->
@@ -459,19 +463,19 @@
                     </h5>
 
                     <div class="fcs-preview-section-divider">Stock en sistema</div>
-                    <div class="fcs-preview-row"><span class="lbl">Unidades (rollos):</span><span class="val" id="prevSisU">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Metros lineales:</span><span class="val" id="prevSisM">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Área (m²):</span><span class="val" id="prevSisM2">—</span></div>
+                    <div class="fcs-preview-row"><span class="lbl">Unidades:</span><span class="val" id="prevSisU">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Metros lineales:</span><span class="val" id="prevSisM">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Área (m²):</span><span class="val" id="prevSisM2">—</span></div>
 
                     <div class="fcs-preview-section-divider">Stock físico contado</div>
-                    <div class="fcs-preview-row"><span class="lbl">Unidades (rollos):</span><span class="val" id="prevFisU">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Metros lineales:</span><span class="val" id="prevFisM">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Área (m²):</span><span class="val" id="prevFisM2">—</span></div>
+                    <div class="fcs-preview-row"><span class="lbl">Unidades:</span><span class="val" id="prevFisU">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Metros lineales:</span><span class="val" id="prevFisM">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Área (m²):</span><span class="val" id="prevFisM2">—</span></div>
 
                     <div class="fcs-preview-section-divider">Diferencia (sistema − físico)</div>
                     <div class="fcs-preview-row"><span class="lbl">Unidades:</span><span class="val" id="prevDifU">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Metros lineales:</span><span class="val" id="prevDifM">—</span></div>
-                    <div class="fcs-preview-row"><span class="lbl">Área (m²):</span><span class="val" id="prevDifM2">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Metros lineales:</span><span class="val" id="prevDifM">—</span></div>
+                    <div class="fcs-preview-row preview-row-metros"><span class="lbl">Área (m²):</span><span class="val" id="prevDifM2">—</span></div>
                 </div>
 
                 <!-- Botones -->
@@ -708,7 +712,7 @@
     }
 
     // ============================================================
-    // PREVIEW DINÁMICO
+    // PREVIEW DINÁMICO — rollo vs unidad
     // ============================================================
     const productoSelect = document.getElementById('productoSelect');
     const stockFisico = document.getElementById('stockFisico');
@@ -718,42 +722,66 @@
         return (Math.round(n * 100) / 100).toFixed(dec);
     }
 
+    function setColor(elId, val, suffix) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+        el.textContent = (val >= 0 ? '+' : '') + fmt(val) + ' ' + suffix;
+        el.className = 'val ' + (val > 0.001 ? 'rojo' : (val < -0.001 ? 'verde' : ''));
+    }
+
     function actualizarPreview() {
         if (!productoSelect || !stockFisico || !previewBox) return;
         const opt = productoSelect.options[productoSelect.selectedIndex];
         if (!opt || !opt.value) { previewBox.style.display = 'none'; return; }
 
+        const esRollo = opt.dataset.esRollo === '1';
         const largo = parseFloat(opt.dataset.largo) || 0;
         const ancho = parseFloat(opt.dataset.ancho) || 1.34;
         const sisU = parseFloat(opt.dataset.stockUnidades) || 0;
         const sisM = parseFloat(opt.dataset.stockMetros) || 0;
         const fisU = parseFloat(stockFisico.value) || 0;
 
-        const fisM = fisU * largo;
-        const fisM2 = fisM * ancho;
-        const sisM2 = sisM * ancho;
+        // Label + hint dinámico
+        const unidadLabel = document.getElementById('unidadLabel');
+        const unidadHint = document.getElementById('unidadHint');
+        if (unidadLabel) unidadLabel.textContent = esRollo ? 'unidades / rollos' : 'unidades';
+        if (unidadHint) unidadHint.textContent = esRollo
+            ? 'Suma total de todos los rollos (abiertos + completos) de este producto.'
+            : 'Total de unidades contadas físicamente (botellas, latas, etc.).';
 
         const difU = sisU - fisU;
-        const difM = sisM - fisM;
-        const difM2 = sisM2 - fisM2;
+        const rowsMetros = document.querySelectorAll('.preview-row-metros');
 
-        document.getElementById('prevSisU').textContent = fmt(sisU) + ' rollos';
-        document.getElementById('prevSisM').textContent = fmt(sisM) + ' m';
-        document.getElementById('prevSisM2').textContent = fmt(sisM2) + ' m²';
+        if (esRollo) {
+            // ---- ROLLO ----
+            const fisM = fisU * largo;
+            const fisM2 = fisM * ancho;
+            const sisM2 = sisM * ancho;
+            const difM = sisM - fisM;
+            const difM2 = sisM2 - fisM2;
 
-        document.getElementById('prevFisU').textContent = fmt(fisU) + ' rollos';
-        document.getElementById('prevFisM').textContent = fmt(fisM) + ' m';
-        document.getElementById('prevFisM2').textContent = fmt(fisM2) + ' m²';
+            document.getElementById('prevSisU').textContent = fmt(sisU) + ' u';
+            document.getElementById('prevSisM').textContent = fmt(sisM) + ' m';
+            document.getElementById('prevSisM2').textContent = fmt(sisM2) + ' m²';
 
-        const setColor = (elId, val, suffix) => {
-            const el = document.getElementById(elId);
-            if (!el) return;
-            el.textContent = (val >= 0 ? '+' : '') + fmt(val) + ' ' + suffix;
-            el.className = 'val ' + (val > 0.001 ? 'rojo' : (val < -0.001 ? 'verde' : ''));
-        };
-        setColor('prevDifU', difU, 'rollos');
-        setColor('prevDifM', difM, 'm');
-        setColor('prevDifM2', difM2, 'm²');
+            document.getElementById('prevFisU').textContent = fmt(fisU) + ' u';
+            document.getElementById('prevFisM').textContent = fmt(fisM) + ' m';
+            document.getElementById('prevFisM2').textContent = fmt(fisM2) + ' m²';
+
+            setColor('prevDifU', difU, 'u');
+            setColor('prevDifM', difM, 'm');
+            setColor('prevDifM2', difM2, 'm²');
+
+            rowsMetros.forEach(el => el.style.display = '');
+        } else {
+            // ---- UNIDAD (tintas, solventes) ----
+            document.getElementById('prevSisU').textContent = fmt(sisU) + ' u';
+            document.getElementById('prevFisU').textContent = fmt(fisU) + ' u';
+            setColor('prevDifU', difU, 'u');
+
+            // Ocultar filas de metros/m² (no aplican)
+            rowsMetros.forEach(el => el.style.display = 'none');
+        }
 
         previewBox.style.display = 'block';
     }
@@ -761,11 +789,9 @@
     document.addEventListener('DOMContentLoaded', function() {
         initAllCustomSelects();
 
-        // Preview setup (después de custom select, para que el native select sea el mismo)
         const productoSelectEl = document.getElementById('productoSelect');
         if (productoSelectEl) {
             productoSelectEl.addEventListener('change', actualizarPreview);
-            // Disparar preview al cargar si hay datos
             if (productoSelectEl.value) actualizarPreview();
         }
         if (stockFisico) {

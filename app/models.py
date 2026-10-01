@@ -47,7 +47,8 @@ class Categoria(db.Model):
     nombre = db.Column(db.String(100), nullable=False, unique=True)
     descripcion = db.Column(db.String(200))
     parent_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)
-    es_material_impresion = db.Column(db.Boolean, default=False)
+    es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
+    es_consumible = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
 
@@ -417,6 +418,7 @@ class Producto(db.Model):
     gap_panno_cm = db.Column(db.Float, default=6.5)  # cm entre paño y paño
     largo_rollo = db.Column(db.Float, nullable=True)
     es_material_impresion = db.Column(db.Boolean, default=False, nullable=False)
+    es_consumible = db.Column(db.Boolean, default=False, nullable=False)
     atributos_extra = db.Column(db.JSON, nullable=True, default={})
 
     categoria_id = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=True)

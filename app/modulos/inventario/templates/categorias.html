@@ -384,6 +384,7 @@
                         <th>Nombre</th>
                         <th>Ruta completa</th>
                         <th>Material impresión</th>
+                        <th>Consumible</th>
                         <th>Productos</th>
                         <th style="text-align:right;">Acciones</th>
                     </tr>
@@ -397,6 +398,18 @@
                         </td>
                         <td data-label="Material impresión">
                             {% if cat.es_material_impresion %}
+                                <span class="inv-bool-badge si">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                    </svg>
+                                    Sí
+                                </span>
+                            {% else %}
+                                <span class="inv-bool-badge no">No</span>
+                            {% endif %}
+                        </td>
+                        <td data-label="Consumible">
+                            {% if cat.es_consumible %}
                                 <span class="inv-bool-badge si">
                                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                                         <polyline points="20 6 9 17 4 12"></polyline>

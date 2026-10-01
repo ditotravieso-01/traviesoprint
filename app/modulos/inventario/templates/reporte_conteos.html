@@ -156,11 +156,11 @@
     .rc-info-box em { font-style: italic; color: #1e40af; }
 
     /* ============================================================
-       KPIs
+       KPIs — adaptativo (auto-fit)
        ============================================================ */
     .rc-kpi-grid {
         display: grid !important;
-        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
         gap: 14px;
         margin-bottom: 20px;
     }
@@ -203,6 +203,8 @@
     .rc-kpi.verde .rc-kpi-value { color: #10b981; }
     .rc-kpi.amarillo { border-top-color: #f59e0b; }
     .rc-kpi.amarillo .rc-kpi-value { color: #f59e0b; }
+    .rc-kpi.azul { border-top-color: #0ea5e9; }
+    .rc-kpi.azul .rc-kpi-value { color: #0ea5e9; }
 
     /* ============================================================
        CARD BASE
@@ -278,6 +280,21 @@
     table.rc-table tr:last-child td { border-bottom: none; }
     .rc-merma-pos { color: #dc2626; }
     .rc-merma-neg { color: #10b981; }
+
+    /* Badge tipo */
+    .rc-tipo-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 30px;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.4px;
+        text-transform: uppercase;
+        vertical-align: middle;
+        margin-left: 6px;
+    }
+    .rc-tipo-badge.rollo { background: #dbeafe; color: #1e40af; }
+    .rc-tipo-badge.unidad { background: #e0f2fe; color: #075985; }
 
     .rc-actions-cell {
         display: flex;
@@ -601,9 +618,6 @@
     /* ============================================================
        RESPONSIVE
        ============================================================ */
-    @media (max-width: 992px) {
-        .rc-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
-    }
     @media (max-width: 768px) {
         .rc-header { flex-direction: column; align-items: stretch; }
         .rc-header-actions { margin-left: 0; width: 100%; }
@@ -718,7 +732,7 @@
     </div>
 
     <!-- ============================================================
-         INFO BOX
+         INFO BOX (adaptativo)
          ============================================================ -->
     <div class="rc-info-box">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -727,21 +741,49 @@
             <line x1="12" y1="8" x2="12.01" y2="8"></line>
         </svg>
         <div>
-            <strong>¿Qué estoy viendo?</strong> Este es el resumen del conteo físico que hiciste esta semana.
-            Compara <em>lo que el sistema creía tener</em> contra <em>lo que contaste a mano</em>, y separa
-            lo que es <strong>desperdicio normal de impresión</strong> de lo que es <strong>pérdida no explicada</strong>.
-            Puedes editar o eliminar cada conteo individual usando los botones de la tabla.
+            {% if tiene_rollos and tiene_tintas %}
+                <strong>Esta semana contaste rollos y tintas.</strong> Los rollos se miden en metros/m²
+                (incluye desperdicio normal de impresión), mientras que las tintas se cuentan por unidad.
+            {% elif tiene_rollos %}
+                <strong>Esta semana contaste rollos.</strong> Compárate lo que el sistema creía tener contra
+                lo que contaste a mano. Se separa el <em>desperdicio normal de impresión</em> de la
+                <em>pérdida no explicada</em>.
+            {% elif tiene_tintas %}
+                <strong>Esta semana contaste tintas y otros consumibles.</strong> Aquí se compara lo que
+                el sistema creía tener contra lo que contaste físicamente. La diferencia se muestra
+                directamente en unidades.
+            {% else %}
+                <strong>Aún no registraste conteos esta semana.</strong> Registra el primer conteo
+                con el botón <em>"Nuevo conteo"</em>.
+            {% endif %}
         </div>
     </div>
 
     <!-- ============================================================
-         KPIs
+         KPIs — adaptativo
          ============================================================ -->
     <div class="rc-kpi-grid">
+
+        {# --- KPIs de TINTAS (solo si hay conteos de tintas) --- #}
+        {% if tiene_tintas %}
+        <div class="rc-kpi rojo">
+            <div class="rc-kpi-value">{{ "%.2f"|format(total_faltante_unidades) }} u</div>
+            <div class="rc-kpi-label">📦 Unidades faltantes (tintas)</div>
+            <div class="rc-kpi-hint">Lo que el sistema creía tener y no apareció en el conteo.</div>
+        </div>
+        <div class="rc-kpi verde">
+            <div class="rc-kpi-value">{{ "%.2f"|format(total_sobrante_unidades) }} u</div>
+            <div class="rc-kpi-label">📦 Unidades sobrantes (tintas)</div>
+            <div class="rc-kpi-hint">Unidades que aparecieron de más respecto al sistema.</div>
+        </div>
+        {% endif %}
+
+        {# --- KPIs de ROLLOS (solo si hay conteos de rollos) --- #}
+        {% if tiene_rollos %}
         <div class="rc-kpi rojo">
             <div class="rc-kpi-value">{{ "%.2f"|format(total_diferencia_m2) }} m²</div>
-            <div class="rc-kpi-label">📉 Lo que faltó según el conteo</div>
-            <div class="rc-kpi-hint">Diferencia entre lo que el sistema creía tener y lo que contaste físicamente.</div>
+            <div class="rc-kpi-label">📉 Faltante en rollos (m²)</div>
+            <div class="rc-kpi-hint">Diferencia en m² según el conteo físico de rollos.</div>
         </div>
         <div class="rc-kpi verde">
             <div class="rc-kpi-value">{{ "%.2f"|format(total_merma_operativa_m2) }} m²</div>
@@ -750,14 +792,28 @@
         </div>
         <div class="rc-kpi amarillo">
             <div class="rc-kpi-value">{{ "%.2f"|format(total_merma_imprevista_m2) }} m²</div>
-            <div class="rc-kpi-label">⚠️ Pérdida no explicada</div>
+            <div class="rc-kpi-label">⚠️ Pérdida no explicada (rollos)</div>
             <div class="rc-kpi-hint">Lo que falta y NO se explica con la impresión. Si es alto, hay que investigar.</div>
         </div>
+        {% endif %}
+
+        {# --- Conteos registrados (siempre) --- #}
         <div class="rc-kpi">
             <div class="rc-kpi-value">{{ conteos|length }}</div>
-            <div class="rc-kpi-label">📦 Conteos registrados esta semana</div>
-            <div class="rc-kpi-hint">Cada uno lo registraste individualmente.</div>
+            <div class="rc-kpi-label">📋 Conteos registrados esta semana</div>
+            <div class="rc-kpi-hint">
+                {% if tiene_rollos and tiene_tintas %}
+                    {{ total_conteos_rollos }} de rollos · {{ total_conteos_tintas }} de tintas.
+                {% elif tiene_rollos %}
+                    Solo de rollos.
+                {% elif tiene_tintas %}
+                    Solo de tintas/consumibles.
+                {% else %}
+                    Cada uno lo registraste individualmente.
+                {% endif %}
+            </div>
         </div>
+
     </div>
 
     <!-- ============================================================
@@ -796,16 +852,33 @@
                 </thead>
                 <tbody>
                     {% for c in conteos %}
+                    {% set es_rollo = c.producto and c.producto.largo_rollo and c.producto.largo_rollo > 0 %}
+                    {% set delta_u = -(c.diferencia_unidades or 0) %}
                     <tr>
-                        <td data-label="Producto"><strong>{{ c.producto.nombre if c.producto else '—' }}</strong></td>
-                        <td data-label="Fecha" class="num-mont">{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else '—' }}</td>
-                        <td data-label="Stock sistema (u)" class="num-mont">{{ "%.2f"|format(c.stock_sistema_unidades) }}</td>
-                        <td data-label="Stock físico (u)" class="num-mont">{{ "%.2f"|format(c.stock_fisico_unidades) }}</td>
-                        <td data-label="Diferencia (u)" class="num-mont" style="color:{% if c.diferencia_unidades > 0 %}#dc2626{% elif c.diferencia_unidades < 0 %}#10b981{% else %}#555{% endif %};">
-                            {{ "%+.2f"|format(c.diferencia_unidades) }}
+                        <td data-label="Producto">
+                            <strong>{{ c.producto.nombre if c.producto else '—' }}</strong>
+                            {% if es_rollo %}
+                                <span class="rc-tipo-badge rollo">Rollo</span>
+                            {% else %}
+                                <span class="rc-tipo-badge unidad">Unidad</span>
+                            {% endif %}
                         </td>
-                        <td data-label="Merma operativa (m²)" class="num-mont">{{ "%.3f"|format(c.merma_operativa_semana_m2 or 0) }}</td>
-                        <td data-label="Merma imprevista (m²)" class="num-mont rc-merma-pos">{{ "%.3f"|format(c.merma_imprevista_m2 or 0) }}</td>
+                        <td data-label="Fecha" class="num-mont">{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else '—' }}</td>
+                        <td data-label="Stock sistema (u)" class="num-mont">{{ "%.2f"|format(c.stock_sistema_unidades or 0) }}</td>
+                        <td data-label="Stock físico (u)" class="num-mont">{{ "%.2f"|format(c.stock_fisico_unidades or 0) }}</td>
+                        <td data-label="Diferencia (u)" class="num-mont"
+                            style="color:{% if delta_u < -0.001 %}#dc2626{% elif delta_u > 0.001 %}#10b981{% else %}#555{% endif %};">
+                            {{ "%+.2f"|format(delta_u) }}
+                        </td>
+
+                        {% if es_rollo %}
+                            <td data-label="Merma operativa (m²)" class="num-mont">{{ "%.3f"|format(c.merma_operativa_semana_m2 or 0) }}</td>
+                            <td data-label="Merma imprevista (m²)" class="num-mont rc-merma-pos">{{ "%.3f"|format(c.merma_imprevista_m2 or 0) }}</td>
+                        {% else %}
+                            <td data-label="Merma operativa (m²)" class="num-mont" style="color:#b8b8c0;">—</td>
+                            <td data-label="Merma imprevista (m²)" class="num-mont" style="color:#b8b8c0;">—</td>
+                        {% endif %}
+
                         <td data-label="Comentario" style="color:#6b6b7a; font-size:12.5px;">{{ c.comentario or '—' }}</td>
                         <td data-label="Acciones">
                             <div class="rc-actions-cell">
@@ -841,8 +914,9 @@
     {% endif %}
 
     <!-- ============================================================
-         ÓRDENES PROCESADAS EN LA SEMANA
+         DESPERDICIO DE ÓRDENES — solo si hay rollos esta semana
          ============================================================ -->
+    {% if tiene_rollos %}
     <div class="rc-card">
         <h4>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -906,7 +980,7 @@
                                     <td data-label="Desperdicio" class="num-mont rc-merma-pos">{{ "%.2f"|format(l.merma_m2) }} m²</td>
                                     <td data-label="%" class="num-mont">{{ "%.1f"|format(l.merma_pct) }}%</td>
                                     <td data-label="Paños">
-                                        <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)">
+                                        <button type="button" class="btn btn-sm btn-outline" onclick="togglePaños(this)" data-n="{{ l.n_paños }}">
                                             Ver ({{ l.n_paños }})
                                         </button>
                                     </td>
@@ -971,6 +1045,7 @@
             <div class="rc-empty">No hay órdenes procesadas esta semana.</div>
         {% endif %}
     </div>
+    {% endif %}
 
 </div>
 
@@ -1014,7 +1089,8 @@
         if (row && row.classList.contains('rc-paños-row')) {
             const isOpen = row.style.display !== 'none';
             row.style.display = isOpen ? 'none' : 'table-row';
-            btn.textContent = isOpen ? `Ver (${btn.dataset.n || ''})` : 'Ocultar';
+            const n = btn.dataset.n || '';
+            btn.textContent = isOpen ? `Ver (${n})` : 'Ocultar';
         }
     }
 
@@ -1098,14 +1174,7 @@
             });
         });
 
-        // Guardar n_paños en el botón de "Ver" para reusar
-        document.querySelectorAll('.rc-orden-card .btn-sm.btn-outline').forEach(function(btn) {
-            const txt = btn.textContent.trim();
-            const m = txt.match(/\((\d+)\)/);
-            if (m) btn.dataset.n = m[1];
-        });
-
-        // Abrir automáticamente la primera orden card
+        // Abrir automáticamente la primera orden card (solo desktop)
         const firstCard = document.querySelector('.rc-orden-card');
         if (firstCard && window.innerWidth >= 768) firstCard.classList.add('open');
     });
