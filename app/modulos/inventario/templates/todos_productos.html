@@ -1016,8 +1016,12 @@
                         {% elif bajo %}{% set badgeClass = 'badge-bajo' %}{% set badgeText = 'Bajo' %}{% set color = '#f59e0b' %}
                         {% else %}{% set badgeClass = 'badge-normal' %}{% set badgeText = 'Normal' %}{% set color = '#10b981' %}{% endif %}
 
-                        {% set pct = (stock_disp / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo and p.stock_minimo > 0 else 100 %}
-                        {% set pct = 100 if pct > 100 else pct %}
+                        {% if sin_stock %}
+                            {% set pct = 100 %}
+                        {% else %}
+                            {% set pct = (stock_disp / (p.stock_minimo * 2) * 100) | round(0) if p.stock_minimo and p.stock_minimo > 0 else 100 %}
+                            {% set pct = 100 if pct > 100 else (0 if pct < 0 else pct) %}
+                        {% endif %}
 
                         <tr>
                             <td>
