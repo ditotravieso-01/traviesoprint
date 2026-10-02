@@ -629,7 +629,7 @@
                     </a>
                     {% endif %}
 
-                    {% if current_user.role in ['comercial', 'admin'] %}
+                    {% if current_user.role in ['comercial', 'admin', 'economico', 'operario'] %}
                     <a href="{{ url_for('etiquetas.index') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('etiquetas.') %}active{% endif %}">
                         <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
                         <span>Etiquetas</span>
@@ -638,6 +638,8 @@
                         <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
                         <span>Carteles</span>
                     </a>
+                    {% endif %}
+                    {% if current_user.role in ['comercial', 'admin'] %}
                     <a href="{{ url_for('clientes.listar_clientes') }}" class="nav-item nav-link {% if request.endpoint and request.endpoint.startswith('clientes.') %}active{% endif %}">
                         <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         <span>Clientes</span>
