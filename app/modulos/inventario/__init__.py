@@ -233,7 +233,12 @@ def index():
             stock_m2_total += (p.stock_metros or 0)
     stock_m2_total = round(stock_m2_total, 2)
     valor_total = db.session.query(func.sum(Producto.inversion_total)).scalar() or 0
-    criticos = Producto.query.filter(Producto.stock < Producto.stock_minimo).count()
+    criticos = Producto.query.filter(
+        Producto.stock > 0,
+        Producto.stock_minimo.isnot(None),
+        Producto.stock_minimo > 0,
+        Producto.stock < Producto.stock_minimo
+    ).count()
 
     ultimos_movimientos = Movimiento.query.order_by(Movimiento.fecha.desc()).limit(10).all()
     for m in ultimos_movimientos:
