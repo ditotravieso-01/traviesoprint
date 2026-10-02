@@ -566,182 +566,176 @@
     }
 
     /* ============================================================
-       MODAL DE ALERTA con icono 3D
+       MODAL DE ALERTA — rediseño sutil y homogéneo
+       Sigue el lenguaje del resto de la app: iconos flat en círculo
+       con fondo tintado, tipografía Inter, sombras suaves.
        ============================================================ */
     .cs-alert-overlay, .cs-confirm-overlay {
         display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-        background: rgba(20,20,25,0.45); backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        background: rgba(20,20,25,0.35);
+        backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
         justify-content: center; align-items: center; padding: 16px;
-        animation: csAlertFadeIn 0.2s ease;
+        animation: csAlertFadeIn 0.18s ease;
     }
     .cs-alert-overlay { z-index: 10000; }
     .cs-confirm-overlay { z-index: 10001; }
     .cs-alert-overlay.active, .cs-confirm-overlay.active { display: flex; }
     @keyframes csAlertFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes csAlertPop {
-        from { transform: scale(0.92) translateY(10px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
+        from { transform: scale(0.96) translateY(6px); opacity: 0; }
+        to   { transform: scale(1) translateY(0); opacity: 1; }
     }
+
     .cs-alert-box, .cs-confirm-box {
-        background: linear-gradient(180deg, #ffffff 0%, #fbf9f6 100%);
-        border-radius: 24px; padding: 30px 28px 24px;
-        max-width: 480px; width: 100%;
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 22px 24px 18px;
+        max-width: 440px; width: 100%;
         box-shadow:
-            0 1px 0 rgba(255,255,255,0.9) inset,
-            0 20px 40px rgba(0,0,0,0.1),
-            0 40px 80px rgba(0,0,0,0.15);
-        animation: csAlertPop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
-        font-family: 'Inter', sans-serif; text-align: center;
-        box-sizing: border-box; position: relative;
-        overflow: hidden;
+            0 1px 2px rgba(0,0,0,0.04),
+            0 12px 32px rgba(0,0,0,0.08);
+        border: 1px solid #f0ece8;
+        animation: csAlertPop 0.24s cubic-bezier(0.34, 1.56, 0.64, 1);
+        font-family: 'Inter', sans-serif;
+        text-align: center;
+        box-sizing: border-box;
     }
-    /* Borde superior de color según tipo */
-    .cs-alert-box::before {
-        content: ''; position: absolute; top: 0; left: 0; right: 0; height: 5px;
-        background: #1c1c1e;
-    }
-    .cs-alert-box.info::before    { background: linear-gradient(90deg, #0ea5e9, #0284c7); }
-    .cs-alert-box.warning::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
-    .cs-alert-box.error::before   { background: linear-gradient(90deg, #dc2626, #991b1b); }
-    .cs-alert-box.success::before { background: linear-gradient(90deg, #10b981, #047857); }
 
-    /* ---- Icono 3D ---- */
+    /* ---- Icono plano en círculo tintado (mismo lenguaje que section-title .icon) ---- */
     .cs-alert-icon {
-        width: 88px; height: 88px;
-        margin: 4px auto 18px;
+        width: 52px; height: 52px;
+        margin: 0 auto 14px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 42px; line-height: 1;
         border-radius: 50%;
-        position: relative;
-        transform: perspective(400px) rotateX(8deg) translateZ(0);
-        transition: transform 0.3s ease;
-        /* Sombra externa multicapa = profundidad 3D */
-        box-shadow:
-            0 1px 1px rgba(0,0,0,0.06),
-            0 4px 8px rgba(0,0,0,0.10),
-            0 10px 20px rgba(0,0,0,0.12),
-            0 20px 40px rgba(0,0,0,0.14),
-            0 30px 60px rgba(0,0,0,0.10),
-            /* Highlight interior superior (brillo) */
-            inset 0 3px 4px rgba(255,255,255,0.65),
-            /* Sombra interior inferior (profundidad) */
-            inset 0 -6px 12px rgba(0,0,0,0.18);
+        flex-shrink: 0;
     }
-    /* Reflejo circular pequeño arriba */
-    .cs-alert-icon::after {
-        content: ''; position: absolute; top: 10px; left: 22px;
-        width: 22px; height: 12px; border-radius: 50%;
-        background: radial-gradient(ellipse at center,
-                    rgba(255,255,255,0.85) 0%,
-                    rgba(255,255,255,0.0) 70%);
-        pointer-events: none;
+    .cs-alert-icon svg {
+        width: 22px; height: 22px;
     }
-    /* El emoji/SVG interno tiene su propio drop-shadow */
-    .cs-alert-icon > * { filter: drop-shadow(0 2px 1px rgba(0,0,0,0.15)); }
 
-    /* Fondos con gradiente radial = efecto esfera 3D */
     .cs-alert-box.info .cs-alert-icon {
-        background: radial-gradient(circle at 35% 25%,
-                    #7dd3fc 0%, #0ea5e9 45%, #0369a1 100%);
-        color: #ffffff;
+        background: #e0f2fe; color: #0284c7;
     }
     .cs-alert-box.warning .cs-alert-icon {
-        background: radial-gradient(circle at 35% 25%,
-                    #fde68a 0%, #f59e0b 45%, #b45309 100%);
-        color: #ffffff;
+        background: #fef3c7; color: #b45309;
     }
     .cs-alert-box.error .cs-alert-icon {
-        background: radial-gradient(circle at 35% 25%,
-                    #fca5a5 0%, #dc2626 45%, #991b1b 100%);
-        color: #ffffff;
+        background: #fee2e2; color: #dc2626;
     }
     .cs-alert-box.success .cs-alert-icon {
-        background: radial-gradient(circle at 35% 25%,
-                    #6ee7b7 0%, #10b981 45%, #047857 100%);
-        color: #ffffff;
+        background: #d1fae5; color: #047857;
     }
     .cs-confirm-icon {
-        background: radial-gradient(circle at 35% 25%,
-                    #fca5a5 0%, #dc2626 45%, #991b1b 100%) !important;
-        color: white;
+        background: #fee2e2 !important;
+        color: #dc2626 !important;
     }
 
     .cs-alert-title, .cs-confirm-title {
         font-family: 'Inter', sans-serif !important;
-        font-size: 20px; font-weight: 700;
-        color: #1c1c1e; margin-bottom: 10px;
-        letter-spacing: -0.3px;
+        font-size: 16px; font-weight: 700;
+        color: #1c1c1e; margin: 0 0 6px 0;
+        letter-spacing: -0.2px;
+        line-height: 1.3;
     }
     .cs-alert-message, .cs-confirm-message {
-        font-size: 14px; color: #4a4a4a;
-        line-height: 1.6; margin-bottom: 22px;
+        font-size: 13.5px; color: #4a4a4a;
+        line-height: 1.55;
+        margin: 0 0 18px 0;
         text-align: left;
         white-space: pre-line;
-        max-height: 50vh;
+        max-height: 42vh;
         overflow-y: auto;
     }
     .cs-alert-message:empty { display: none; }
 
-    /* Lista de errores dentro del mensaje */
+    /* Lista de errores: filas compactas con bullet circular */
     .cs-alert-message .cs-error-line {
         display: flex; align-items: flex-start; gap: 10px;
-        padding: 10px 14px; margin-bottom: 8px;
-        background: #fef2f2;
-        border-left: 3px solid #dc2626;
+        padding: 8px 12px; margin-bottom: 6px;
+        background: #fef9f9;
         border-radius: 8px;
-        font-size: 13.5px; color: #1c1c1e;
+        font-size: 12.5px; color: #4a4a4a;
         line-height: 1.5;
     }
     .cs-alert-message .cs-error-line:last-child { margin-bottom: 0; }
     .cs-alert-message .cs-error-line .cs-error-num {
         display: inline-flex; align-items: center; justify-content: center;
-        min-width: 22px; height: 22px; border-radius: 50%;
-        background: #dc2626; color: white;
+        min-width: 20px; height: 20px; border-radius: 50%;
+        background: #fef2f2; color: #dc2626;
         font-family: 'Montserrat', sans-serif;
-        font-weight: 700; font-size: 11px;
+        font-weight: 700; font-size: 10px;
         flex-shrink: 0; margin-top: 1px;
+        border: 1px solid #fde8e5;
     }
     .cs-alert-message .cs-error-line .cs-error-fields {
         flex: 1; min-width: 0;
     }
     .cs-alert-message .cs-error-line .cs-error-fields strong {
-        color: #991b1b; font-weight: 700;
+        color: #1c1c1e; font-weight: 700;
+        font-size: 12.5px;
+    }
+    .cs-alert-message .cs-error-line .cs-error-fields em {
+        font-style: normal;
+        color: #991b1b;
+        font-weight: 600;
     }
 
     .cs-alert-actions, .cs-confirm-actions {
         display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;
     }
     .cs-alert-btn, .cs-confirm-btn {
-        padding: 12px 32px; border-radius: 30px; border: none;
-        font-weight: 700; font-size: 14px; cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        font-family: 'Inter', sans-serif; min-width: 130px;
+        padding: 10px 26px; border-radius: 30px; border: none;
+        font-weight: 600; font-size: 13.5px; cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+        font-family: 'Inter', sans-serif; min-width: 110px;
         letter-spacing: -0.1px;
+        display: inline-flex; align-items: center; justify-content: center;
+        gap: 6px;
     }
     .cs-alert-btn {
-        background: linear-gradient(180deg, #2c2c30 0%, #1c1c1e 100%);
+        background: #1c1c1e;
         color: white;
-        box-shadow:
-            0 2px 4px rgba(0,0,0,0.15),
-            0 6px 16px rgba(0,0,0,0.2),
-            inset 0 1px 0 rgba(255,255,255,0.1);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
     .cs-alert-btn:hover {
-        transform: translateY(-2px);
-        box-shadow:
-            0 4px 8px rgba(0,0,0,0.2),
-            0 12px 24px rgba(0,0,0,0.25),
-            inset 0 1px 0 rgba(255,255,255,0.15);
+        background: #2c2c30;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.15);
     }
     .cs-alert-btn:active { transform: translateY(0); }
     .cs-confirm-btn.danger {
-        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-        color: white; box-shadow: 0 2px 8px rgba(220,38,38,0.25);
+        background: #dc2626; color: white;
+        box-shadow: 0 2px 6px rgba(220,38,38,0.2);
     }
-    .cs-confirm-btn.danger:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(220,38,38,0.35); }
-    .cs-confirm-btn.cancel { background: transparent; border: 1.5px solid #e0dcd8; color: #1c1c1e; }
-    .cs-confirm-btn.cancel:hover { border-color: #a8854f; background: #faf6f0; color: #78350f; }
+    .cs-confirm-btn.danger:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(220,38,38,0.25);
+    }
+    .cs-confirm-btn.cancel {
+        background: transparent;
+        border: 1.5px solid #e0dcd8;
+        color: #1c1c1e;
+    }
+    .cs-confirm-btn.cancel:hover {
+        border-color: #a8854f; background: #faf6f0; color: #78350f;
+    }
+
+    /* ============================================================
+       HIGHLIGHT DE CAMPOS CON ERROR
+       Borde rojo + shake suave al aparecer, se limpia al cambiar
+       ============================================================ */
+    @keyframes csFieldShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-3px); }
+        40%, 80% { transform: translateX(3px); }
+    }
+    .cs-field-error {
+        border-color: #dc2626 !important;
+        background: #fef9f9 !important;
+        box-shadow: 0 0 0 3px rgba(220,38,38,0.08) !important;
+        animation: csFieldShake 0.4s ease;
+    }
 
     /* ============ FAVORITOS ============ */
     .fav-picker-bar {
@@ -1601,10 +1595,9 @@
                                     {% if is_etiqueta and params and params.fav_id %}
                                         <input type="hidden" name="fav_id_{{ archivo.id }}" value="{{ params.fav_id }}">
                                     {% endif %}
-                                    <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible" required>
-                                </td>
+                                    <input type="text" name="nombre_visible_{{ archivo.id }}" value="{{ archivo.nombre_visible }}" placeholder="Nombre visible">                                    </td>
                                 <td data-label="Material (Producto)">
-                                    <select name="producto_{{ archivo.id }}" class="producto-select-edit" required data-archivo-id="{{ archivo.id }}">
+                                    <select name="producto_{{ archivo.id }}" class="producto-select-edit" data-archivo-id="{{ archivo.id }}">
                                         <option value="">-- Seleccionar --</option>
                                         {% for p in productos %}
                                         <option value="{{ p.id }}" {% if archivo.producto_id == p.id %}selected{% endif %}
@@ -2014,7 +2007,7 @@
 <!-- MODAL DE ALERTA -->
 <div class="cs-alert-overlay" id="csAlertOverlay">
     <div class="cs-alert-box" id="csAlertBox">
-        <div class="cs-alert-icon" id="csAlertIcon">ℹ️</div>
+        <div class="cs-alert-icon" id="csAlertIcon"></div>
         <div class="cs-alert-title" id="csAlertTitle">Información</div>
         <div class="cs-alert-message" id="csAlertMessage"></div>
         <div class="cs-alert-actions">
@@ -2094,16 +2087,14 @@ const GAP_DEFAULT_M = 0.065;
 const ANCHO_REAL_DEFAULT = 1.34;
 const ANCHO_UTIL_DEFAULT = 1.30;
 
-const CS_ALERT_ICONS = { info: 'ℹ️', warning: '⚠️', error: '❌', success: '✅' };
+const CS_ALERT_ICONS = {
+    info:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>',
+    warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+    error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+    success: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+};
 const CS_ALERT_TITLES = { info: 'Información', warning: 'Atención', error: 'Error', success: '¡Listo!' };
 
-/**
- * Muestra un modal de alerta.
- * @param {string|Array} message - Texto o array de strings (cada uno una línea).
- * @param {string} type - 'info' | 'warning' | 'error' | 'success'
- * @param {string} [title]
- * @param {Array} [detalles] - Array opcional de {num, titulo, campos[]} para formato enriquecido.
- */
 function csAlert(message, type = 'info', title = null, detalles = null) {
     const overlay = document.getElementById('csAlertOverlay');
     const box = document.getElementById('csAlertBox');
@@ -2112,13 +2103,11 @@ function csAlert(message, type = 'info', title = null, detalles = null) {
     const msgEl = document.getElementById('csAlertMessage');
 
     box.className = 'cs-alert-box ' + type;
-    iconEl.textContent = CS_ALERT_ICONS[type] || CS_ALERT_ICONS.info;
+    iconEl.innerHTML = CS_ALERT_ICONS[type] || CS_ALERT_ICONS.info;
     titleEl.textContent = title || CS_ALERT_TITLES[type] || '';
 
-    // Si vienen detalles estructurados (lista de líneas con campos faltantes),
-    // construimos HTML rico.
     if (Array.isArray(detalles) && detalles.length > 0) {
-        const html = detalles.map(d => `
+        msgEl.innerHTML = detalles.map(d => `
             <div class="cs-error-line">
                 <span class="cs-error-num">${d.num}</span>
                 <span class="cs-error-fields">
@@ -2127,12 +2116,9 @@ function csAlert(message, type = 'info', title = null, detalles = null) {
                 </span>
             </div>
         `).join('');
-        msgEl.innerHTML = html;
     } else if (Array.isArray(message)) {
-        // Array de strings → cada uno un párrafo
         msgEl.innerHTML = message.map(m => `<div style="margin-bottom:6px;">${m}</div>`).join('');
     } else {
-        // Texto simple: convertir \n en saltos reales con <br> para que se vean
         msgEl.innerHTML = String(message || '').split('\n').map(l => `<div>${l}</div>`).join('');
     }
 
@@ -3190,6 +3176,45 @@ function initAllCustomSelects(root) {
     scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
 }
 
+// ============================================
+// MARCAR CAMPOS CON ERROR (inline highlight)
+// ============================================
+function marcarCamposConError(errores) {
+    // Limpiar highlights previos
+    document.querySelectorAll('.cs-field-error').forEach(el => el.classList.remove('cs-field-error'));
+
+    errores.forEach(err => {
+        const row = document.querySelector(`tr.linea-fila[data-num-linea="${err.num}"]`);
+        if (!row) return;
+
+        err.campos.forEach(campo => {
+            let selector = null;
+            if (campo === 'Nombre visible') {
+                selector = 'input[name^="nombre_visible_"], input[name="nombres_visibles[]"]';
+            } else if (campo === 'Material (Producto)') {
+                selector = 'select[name^="producto_"], select[name="productos_ids[]"]';
+            } else if (campo === 'Cantidad') {
+                selector = 'input[name^="cantidad_"], input[name="cantidades[]"]';
+            } else if (campo === 'Unidad') {
+                selector = 'select[name^="unidad_"], select[name="unidades[]"]';
+            } else if (campo === 'Proyecto/Producto') {
+                selector = 'select[name="proyecto_linea[]"]';
+            }
+            if (!selector) return;
+
+            const el = row.querySelector(selector);
+            if (!el) return;
+
+            el.classList.add('cs-field-error');
+
+            // Auto-limpiar al primer cambio del usuario
+            const limpiar = () => el.classList.remove('cs-field-error');
+            el.addEventListener('input', limpiar, { once: true });
+            el.addEventListener('change', limpiar, { once: true });
+        });
+    });
+}
+
 // ============ LÍNEAS DINÁMICAS ============
 let nuevaLineaCounter = 0;
 const productosData = {{ productos|tojson }};
@@ -3294,24 +3319,24 @@ function agregarLinea() {
     row.innerHTML = `
         <td data-label="Nombre visible">
             <input type="hidden" name="fav_ids_new[]" value="">
-            <input type="text" name="nombres_visibles[]" placeholder="Nombre visible" required>
+            <input type="text" name="nombres_visibles[]" placeholder="Nombre visible">
         </td>
         <td data-label="Material (Producto)">
-            <select name="productos_ids[]" class="producto-select" required>${prodOptions}</select>
+            <select name="productos_ids[]" class="producto-select">${prodOptions}</select>
         </td>
         <td data-label="Cantidad" class="col-cantidad">
             <span class="cartel-dash" style="display:none;">-</span>
-            <input type="number" step="0.01" name="cantidades[]" placeholder="m²" required>
+            <input type="number" step="0.01" name="cantidades[]" placeholder="m²">
         </td>
         <td data-label="Unidad" class="col-unidad">
             <span class="cartel-dash" style="display:none;">-</span>
-            <select name="unidades[]" class="unidad-select" required>
+            <select name="unidades[]" class="unidad-select">
                 <option value="m2" selected>metros cuadrados (m²)</option>
                 <option value="unidades">unidades</option>
             </select>
         </td>
         <td data-label="Proyecto/Producto">
-            <select name="proyecto_linea[]" class="proyecto-linea" data-params-id="${paramsId}" required>
+            <select name="proyecto_linea[]" class="proyecto-linea" data-params-id="${paramsId}">
                 <option value="">-- Seleccionar --</option>
                 <option value="etiquetas">Etiquetas</option>
                 <option value="cartel">Cartel</option>
@@ -4373,7 +4398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(precargarImagenesFavoritasIniciales, 200);
 
     actualizarEmptyState();
-    
+
     // ============ VALIDACIÓN CLIENT-SIDE AL ENVIAR ============
     const orderForm = document.getElementById('orderForm');
     if (orderForm) {
@@ -4382,19 +4407,23 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!res.valid) {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // 1) Modal compacto con la lista
                 csAlert(
-                    'No se puede guardar la orden. Revisa los siguientes campos obligatorios:',
+                    'Revisa los siguientes campos antes de guardar:',
                     'error',
-                    'Campos incompletos en líneas de trabajo',
+                    'Faltan datos por completar',
                     res.errores
                 );
+
+                // 2) Highlight inline de los campos con error
+                marcarCamposConError(res.errores);
+
+                // 3) Scroll suave a la primera fila con error
                 const primerError = res.errores[0];
                 const row = document.querySelector(`tr.linea-fila[data-num-linea="${primerError.num}"]`);
                 if (row) {
                     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    row.style.transition = 'background 0.3s';
-                    row.style.background = '#fef2f2';
-                    setTimeout(() => { row.style.background = ''; }, 2500);
                 }
                 return false;
             }
