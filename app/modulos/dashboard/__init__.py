@@ -63,28 +63,40 @@ def get_dashboard_data():
     productos = Producto.query.filter(Producto.es_material_impresion == True).all()
     total_productos = len(productos)
     sin_stock = 0
-    bajo_stock = 0
+    criticos = 0
     valor_estimado = 0.0
+
     for p in productos:
-        stock_m = p.stock_metros or 0
-        stock_u = p.stock or 0
-        if stock_m <= 0 and stock_u <= 0:
+        stock = p.stock or 0
+        stock_minimo = p.stock_minimo or 0
+
+        if stock <= 0:
             sin_stock += 1
-        elif stock_m < 5 or stock_u < 5:
-            bajo_stock += 1
+        elif stock_minimo > 0 and stock < stock_minimo:
+            criticos += 1
+
+        # Cálculo de valor estimado (mantener el original si aplica)
         if hasattr(p, 'precio_venta') and p.precio_venta and p.stock_metros:
             valor_estimado += p.precio_venta * p.stock_metros
 
-    # ===== STOCK CRÍTICO =====
+    # ===== STOCK CRÍTICO (Lista para el dashboard) =====
     stock_critico_items = []
     for p in productos:
-        stock_m = p.stock_metros or 0
-        stock_u = p.stock or 0
-        if stock_m < 5 or stock_u < 5:
+        stock = p.stock or 0
+        stock_minimo = p.stock_minimo or 0
+
+        # Incluimos tanto los sin stock como los críticos para la lista desplegable
+        if stock <= 0:
             stock_critico_items.append({
                 'nombre': p.nombre,
-                'stock': stock_m if stock_m > 0 else stock_u,
-                'unidad': 'm' if stock_m > 0 else 'unidades'
+                'stock': 0,
+                'unidad': 'u'
+            })
+        elif stock_minimo > 0 and stock < stock_minimo:
+            stock_critico_items.append({
+                'nombre': p.nombre,
+                'stock': stock,
+                'unidad': 'u'
             })
     stock_critico_items = sorted(stock_critico_items, key=lambda x: x['stock'])[:5]
 
@@ -195,7 +207,7 @@ def get_dashboard_data():
             'total': total_ordenes,
             'pendientes': pendientes,
             'completadas': completadas,
-            'stock_critico': sin_stock + bajo_stock,
+            'stock_critico': criticos,  # <--- SOLO CRÍTICOS
             'clientes_activos': clientes_activos,
             'facturacion': round(facturacion_total, 2)
         },
@@ -229,7 +241,7 @@ def get_dashboard_data():
             'inventario': {
                 'total': total_productos,
                 'sin_stock': sin_stock,
-                'bajo_stock': bajo_stock,
+                'bajo_stock': criticos,
                 'valor': round(valor_estimado, 2)
             },
             'ordenes': {
