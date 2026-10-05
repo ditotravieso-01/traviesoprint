@@ -228,20 +228,26 @@ def admin_delete_user(user_id):
 
     user = User.query.get_or_404(user_id)
 
-    # No permitir eliminar usuarios LDAP
     if user.is_ldap_user():
         flash('No se puede eliminar un usuario LDAP.', 'warning')
         return redirect(url_for('auth.admin_users'))
 
-    # No permitir eliminar al propio admin
     if user.id == current_user.id:
         flash('No puedes eliminarte a ti mismo.', 'warning')
         return redirect(url_for('auth.admin_users'))
 
-    # Eliminar usuario
+    if user.empleado is not None:
+        flash(
+            'Este usuario tiene un empleado asociado. '
+            'Ve a Empleados → Administración para desmarcarlo o eliminarlo primero.',
+            'warning'
+        )
+        return redirect(url_for('auth.admin_users'))
+
+    username = user.username
     db.session.delete(user)
     db.session.commit()
-    flash(f'Usuario {user.username} eliminado correctamente.', 'success')
+    flash(f'Usuario {username} eliminado correctamente.', 'success')
     return redirect(url_for('auth.admin_users'))
 
 

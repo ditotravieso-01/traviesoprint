@@ -521,6 +521,14 @@ class Empleado(db.Model):
     tarifa_nocturna = db.Column(db.Float, default=1.30)
     tarifa_fin_semana = db.Column(db.Float, default=1.50)
     area = db.Column(db.String(50), nullable=True)
+
+    # ---- NUEVO (Parte 27) ----
+    activo = db.Column(db.Boolean, nullable=False, server_default='1', default=True)
+    fecha_baja = db.Column(db.Date, nullable=True)
+    tipo_pago = db.Column(db.String(20), nullable=False, server_default='hora', default='hora')
+    salario_fijo_mensual = db.Column(db.Float, nullable=True)
+    # --------------------------
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -538,6 +546,10 @@ class Empleado(db.Model):
             Asistencia.timestamp >= fecha_inicio,
             Asistencia.timestamp <= fecha_fin
         ).order_by(Asistencia.timestamp.asc()).all()
+
+    def tiene_datos(self):
+        """True si tiene asistencias o nómina → no se puede hard-delete."""
+        return self.asistencias.count() > 0 or self.detalles_nomina.count() > 0
 
 class Asistencia(db.Model):
     __tablename__ = 'asistencias'

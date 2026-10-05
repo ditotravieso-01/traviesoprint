@@ -23,7 +23,7 @@ def admin_required(func):
     return wrapper
 
 # ============================================================
-# CONFIGURACIÓN POR DEFECTO (sin odalys)
+# CONFIGURACIÓN POR DEFECTO
 # ============================================================
 DEFAULT_COLUMNAS = [
     {'id': 'pendiente', 'icono': 'fa-clock', 'nombre': 'Pendiente'},

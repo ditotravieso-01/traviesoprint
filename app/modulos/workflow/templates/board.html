@@ -1537,7 +1537,8 @@
         const scope = root || document;
         scope.querySelectorAll('select:not([data-cs-init]):not([multiple])').forEach(initCustomSelect);
     }
-// ============================================================
+
+    // ============================================================
     // CONFIGURACIÓN
     // ============================================================
     const POLLING_INTERVAL = 10000;
@@ -1569,19 +1570,77 @@
         'entregados': '#f59e0b'
     };
 
-    // NOTA: El mapa D3 usa glifos FA como unicode dentro de <text> SVG.
-    // Esto es un caso especial que requiere la fuente FontAwesome cargada.
-    // El resto del template usa SVG Feather inline.
-    const ICON_UNICODE = {
-        'fa-clock': '\uf017',
-        'fa-tools': '\uf7d9',
-        'fa-check-circle': '\uf058',
-        'fa-print': '\uf02f',
-        'fa-cut': '\uf0c4',
-        'fa-industry': '\uf275',
-        'fa-box': '\uf466',
-        'fa-truck': '\uf0d1'
+    // Iconos del mapa: SVG Feather inline via data URI.
+    // Los nombres fa-* vienen de la config del admin (workflow_admin).
+    const ICON_PATHS = {
+        'fa-clock': [
+            { type: 'circle',   attrs: { cx: 12, cy: 12, r: 10 } },
+            { type: 'polyline', attrs: { points: '12 6 12 12 16 14' } }
+        ],
+        'fa-tools': [
+            { type: 'path', attrs: { d: 'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z' } }
+        ],
+        'fa-check-circle': [
+            { type: 'path',     attrs: { d: 'M22 11.08V12a10 10 0 1 1-5.93-9.14' } },
+            { type: 'polyline', attrs: { points: '22 4 12 14.01 9 11.01' } }
+        ],
+        'fa-print': [
+            { type: 'polyline', attrs: { points: '6 9 6 2 18 2 18 9' } },
+            { type: 'path',     attrs: { d: 'M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2' } },
+            { type: 'rect',     attrs: { x: 6, y: 14, width: 12, height: 8 } }
+        ],
+        'fa-cut': [
+            { type: 'circle', attrs: { cx: 6, cy: 6, r: 3 } },
+            { type: 'circle', attrs: { cx: 6, cy: 18, r: 3 } },
+            { type: 'line',   attrs: { x1: 20, y1: 4, x2: 8.12, y2: 15.88 } },
+            { type: 'line',   attrs: { x1: 14.47, y1: 14.48, x2: 20, y2: 20 } },
+            { type: 'line',   attrs: { x1: 8.12, y1: 8.12, x2: 12, y2: 12 } }
+        ],
+        'fa-industry': [
+            { type: 'rect', attrs: { x: 2, y: 7, width: 20, height: 14, rx: 2, ry: 2 } },
+            { type: 'path', attrs: { d: 'M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16' } }
+        ],
+        'fa-box': [
+            { type: 'line',     attrs: { x1: 16.5, y1: 9.4, x2: 7.5, y2: 4.21 } },
+            { type: 'path',     attrs: { d: 'M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z' } },
+            { type: 'polyline', attrs: { points: '3.27 6.96 12 12.01 20.73 6.96' } },
+            { type: 'line',     attrs: { x1: 12, y1: 22.08, x2: 12, y2: 12 } }
+        ],
+        'fa-truck': [
+            { type: 'rect',    attrs: { x: 1, y: 3, width: 15, height: 13 } },
+            { type: 'polygon', attrs: { points: '16 8 20 8 23 11 23 16 16 16 16 8' } },
+            { type: 'circle',  attrs: { cx: 5.5, cy: 18.5, r: 2.5 } },
+            { type: 'circle',  attrs: { cx: 18.5, cy: 18.5, r: 2.5 } }
+        ]
     };
+    const ICON_FALLBACK = [
+        { type: 'circle', attrs: { cx: 12, cy: 12, r: 10 } },
+        { type: 'path',   attrs: { d: 'M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3' } },
+        { type: 'line',   attrs: { x1: 12, y1: 17, x2: 12.01, y2: 17 } }
+    ];
+
+    function buildFeatherDataUri(iconName, color) {
+        const shapes = ICON_PATHS[iconName] || ICON_FALLBACK;
+        const inner = shapes.map(s => {
+            const attrs = Object.entries(s.attrs).map(([k, v]) => `${k}="${v}"`).join(' ');
+            return `<${s.type} ${attrs}/>`;
+        }).join('');
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${inner}</svg>`;
+        return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    function appendFeatherIcon(parent, iconName, size, color, centerX, centerY) {
+        const uri = buildFeatherDataUri(iconName, color);
+        return parent.append('image')
+            .attr('x', centerX - size / 2)
+            .attr('y', centerY - size / 2)
+            .attr('width', size)
+            .attr('height', size)
+            .attr('href', uri)
+            .attr('xlink:href', uri)
+            .attr('preserveAspectRatio', 'xMidYMid meet')
+            .style('pointer-events', 'none');
+    }
 
     // ============================================================
     // ICONOS SVG (Feather) reutilizables
@@ -1986,8 +2045,7 @@
             width: nodeWidth,
             height: nodeHeight,
             color: COLORES[c.id] || '#a8854f',
-            icono: c.icono,
-            unicode: ICON_UNICODE[c.icono] || '?'
+            icono: c.icono
         }));
 
         const edgeSet = new Set();
@@ -2065,8 +2123,9 @@
         g.nodes().forEach(id => {
             const node = g.node(id);
             if (!node) return;
-            const color = nodes.find(n => n.id === id)?.color || '#a8854f';
-            const unicode = nodes.find(n => n.id === id)?.unicode || '?';
+            const nodeData = nodes.find(n => n.id === id);
+            const color = nodeData?.color || '#a8854f';
+            const iconName = nodeData?.icono || 'fa-circle';
             const count = columnCounts[id] || 0;
 
             const group = nodeGroup.append('g')
@@ -2088,22 +2147,13 @@
                 .style('stroke', color)
                 .style('stroke-width', '2px');
 
-            const iconSize = isMobile ? '18px' : '14px';
             const countSize = isMobile ? '14px' : '11px';
             const countY = isMobile ? 14 : 10;
 
-            // NOTA: Este glifo necesita la fuente FontAwesome cargada.
-            // El mapa D3 es el único sitio que aún usa FA (por limitación técnica de <text> SVG).
-            innerGroup.append('text')
-                .attr('x', 0)
-                .attr('y', -2)
-                .attr('text-anchor', 'middle')
-                .style('font-family', '"Font Awesome 6 Free", "Font Awesome 6 Pro", sans-serif')
-                .style('font-weight', '900')
-                .style('font-size', iconSize)
-                .style('fill', color)
-                .style('pointer-events', 'none')
-                .text(unicode);
+            // Icono SVG Feather inline (reemplaza el glifo FontAwesome anterior)
+            const iconCenterY = isMobile ? -8 : -7;
+            const iconSize = isMobile ? 22 : 18;
+            appendFeatherIcon(innerGroup, iconName, iconSize, color, 0, iconCenterY);
 
             innerGroup.append('text')
                 .attr('x', 0)

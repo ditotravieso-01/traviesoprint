@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Administración de Empleados · CairoStudio{% endblock %}
+{% block page_title %}<i class="fas fa-users-cog" style="color:#a8854f;"></i> Administración de Empleados{% endblock %}
+
+{% block extra_css %}
+<style>
+    .adm-toolbar {
+        display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px;
+        align-items: center; justify-content: space-between;
+    }
+    .adm-toolbar a { text-decoration: none; }
+    .tabla-adm {
+        width: 100%; border-collapse: collapse; font-size: 14px;
+    }
+    .tabla-adm th {
+        text-align: left; padding: 10px 8px; font-weight: 600;
+        color: #8e8e93; border-bottom: 2px solid #f0ece8;
+        font-size: 12px; text-transform: uppercase;
+    }
+    .tabla-adm td {
+        padding: 10px 8px; border-bottom: 1px solid #f5f2ef; vertical-align: middle;
+    }
+    .tabla-adm tr.inactivo { background: #fafaf9; opacity: 0.75; }
+    .badge-estado {
+        padding: 3px 12px; border-radius: 30px; font-size: 12px; font-weight: 600;
+    }
+    .badge-activo { background: #d1fae5; color: #065f46; }
+    .badge-inactivo { background: #fee2e2; color: #991b1b; }
+    .badge-tipo { background: #e0e7ff; color: #3730a3; padding: 2px 10px; border-radius: 30px; font-size: 11px; }
+    .btn-mini {
+        background: none; border: 1px solid #d2d2d7; border-radius: 30px;
+        padding: 5px 12px; font-size: 12px; cursor: pointer;
+        font-family: 'Inter', sans-serif; transition: 0.2s; color: #555;
+    }
+    .btn-mini:hover { border-color: #a8854f; background: #fafaf9; }
+    .btn-mini.warn { border-color: #f59e0b; color: #92400e; }
+    .btn-mini.warn:hover { background: #fef3c7; }
+    .btn-mini.danger { border-color: #dc2626; color: #991b1b; }
+    .btn-mini.danger:hover { background: #fee2e2; }
+    .btn-mini.ok { border-color: #10b981; color: #065f46; }
+    .btn-mini.ok:hover { background: #d1fae5; }
+    .tarifa-form {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 8px; padding: 10px; background: #fefcf9; border-radius: 10px;
+        margin-top: 6px;
+    }
+    .tarifa-form label { font-size: 11px; color: #8e8e93; font-weight: 600; display: block; margin-bottom: 2px; }
+    .tarifa-form input, .tarifa-form select {
+        width: 100%; padding: 5px 10px; border: 1px solid #d2d2d7;
+        border-radius: 8px; font-size: 13px; font-family: 'Inter', sans-serif;
+    }
+    .tarifa-form input:focus, .tarifa-form select:focus { outline: none; border-color: #a8854f; }
+    details summary { cursor: pointer; color: #a8854f; font-weight: 600; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="adm-toolbar">
+        <h3 class="serif" style="font-size: 20px; margin: 0;">Empleados</h3>
+        <div>
+            <a href="{{ url_for('empleados.panel_economico') }}" class="btn-mini">← Volver al panel</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <table class="tabla-adm">
+            <thead>
+                <tr>
+                    <th>Usuario</th>
+                    <th>Área</th>
+                    <th>Identificación</th>
+                    <th>Teléfono</th>
+                    <th>Tipo pago</th>
+                    <th>Tarifas / Salario</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in empleados %}
+                <tr class="{{ 'inactivo' if not e.activo else '' }}">
+                    <td><strong>{{ e.user.username }}</strong></td>
+                    <td>{{ e.area or '—' }}</td>
+                    <td>{{ e.numero_identificacion or '—' }}</td>
+                    <td>{{ e.telefono or '—' }}</td>
+                    <td>
+                        {% if e.tipo_pago == 'fijo' %}
+                            <span class="badge-tipo">Fijo</span>
+                        {% else %}
+                            <span class="badge-tipo">Por hora</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if e.tipo_pago == 'fijo' %}
+                            ${{ '%.2f'|format(e.salario_fijo_mensual or 0) }} / mes
+                        {% else %}
+                            ${{ '%.2f'|format(e.tarifa_normal or 0) }} / h
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if e.activo %}
+                            <span class="badge-estado badge-activo">Activo</span>
+                        {% else %}
+                            <span class="badge-estado badge-inactivo">
+                                Baja {{ e.fecha_baja.strftime('%d/%m/%Y') if e.fecha_baja else '' }}
+                            </span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                            {% if e.activo %}
+                                <form method="POST" action="{{ url_for('empleados.admin_empleado_desmarcar', empleado_id=e.id) }}"
+                                      onsubmit="return confirm('¿Desmarcar a {{ e.user.username }} como empleado? El histórico se conserva.');"
+                                      style="display:inline;">
+                                    <button type="submit" class="btn-mini warn">Desmarcar</button>
+                                </form>
+                            {% else %}
+                                <form method="POST" action="{{ url_for('empleados.admin_empleado_reactivar', empleado_id=e.id) }}"
+                                      style="display:inline;">
+                                    <button type="submit" class="btn-mini ok">Reactivar</button>
+                                </form>
+                            {% endif %}
+                            {% if not e.tiene_datos() %}
+                                <form method="POST" action="{{ url_for('empleados.admin_empleado_eliminar', empleado_id=e.id) }}"
+                                      onsubmit="return confirm('¿Eliminar definitivamente el registro de empleado de {{ e.user.username }}? El usuario seguirá existiendo.');"
+                                      style="display:inline;">
+                                    <button type="submit" class="btn-mini danger">Eliminar</button>
+                                </form>
+                            {% endif %}
+                        </div>
+                        <details style="margin-top: 6px;">
+                            <summary>Editar tarifas / datos</summary>
+                            <form method="POST" action="{{ url_for('empleados.admin_empleado_tarifas', empleado_id=e.id) }}"
+                                  class="tarifa-form">
+                                <div>
+                                    <label>Tarifa normal ($/h)</label>
+                                    <input type="number" step="0.01" name="tarifa_normal" value="{{ e.tarifa_normal or 1.00 }}">
+                                </div>
+                                <div>
+                                    <label>Tarifa nocturna ($/h)</label>
+                                    <input type="number" step="0.01" name="tarifa_nocturna" value="{{ e.tarifa_nocturna or 1.30 }}">
+                                </div>
+                                <div>
+                                    <label>Tarifa fin de semana ($/h)</label>
+                                    <input type="number" step="0.01" name="tarifa_fin_semana" value="{{ e.tarifa_fin_semana or 1.50 }}">
+                                </div>
+                                <div>
+                                    <label>Tipo de pago</label>
+                                    <select name="tipo_pago">
+                                        <option value="hora" {% if e.tipo_pago != 'fijo' %}selected{% endif %}>Por hora</option>
+                                        <option value="fijo" {% if e.tipo_pago == 'fijo' %}selected{% endif %}>Fijo mensual</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Salario fijo mensual ($)</label>
+                                    <input type="number" step="0.01" name="salario_fijo_mensual" value="{{ e.salario_fijo_mensual or '' }}" placeholder="Solo si aplica">
+                                </div>
+                                <div>
+                                    <label>Área</label>
+                                    <input type="text" name="area" value="{{ e.area or '' }}">
+                                </div>
+                                <div>
+                                    <label>Teléfono</label>
+                                    <input type="text" name="telefono" value="{{ e.telefono or '' }}">
+                                </div>
+                                <div>
+                                    <label>Identificación</label>
+                                    <input type="text" name="numero_identificacion" value="{{ e.numero_identificacion or '' }}">
+                                </div>
+                                <div style="align-self: end;">
+                                    <button type="submit" class="btn-mini ok" style="width: 100%;">Guardar</button>
+                                </div>
+                            </form>
+                        </details>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="8" style="text-align: center; color: #8e8e93; padding: 20px;">No hay empleados registrados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

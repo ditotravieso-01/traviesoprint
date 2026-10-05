@@ -351,6 +351,12 @@
     </div>
     {% endif %}
 
+    {% if current_user.role == 'admin' %}
+    <a href="{{ url_for('empleados.admin_empleados') }}" class="btn btn-outline">
+        <i class="fas fa-cog"></i> Administración
+    </a>
+    {% endif %}
+
     <div class="card">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; margin-bottom:12px;">
             <h3 class="serif" style="font-size:18px;"><i class="fas fa-calendar-week" style="color:#a8854f;"></i> Resumen del período</h3>

@@ -60,6 +60,23 @@ def get_empleado_actual():
         return None
     return Empleado.query.filter_by(user_id=current_user.id).first()
 
+def empleados_operativos(inicio=None, fin=None):
+    """
+    Empleados a mostrar en listados operativos.
+    - Activos siempre.
+    - Inactivos solo si su fecha_baja cae dentro del período (para no perder
+      la nómina de quien fue desmarcado a mitad de semana).
+    """
+    q = Empleado.query.filter(Empleado.activo == True)
+    if inicio:
+        q = q.union(
+            Empleado.query.filter(
+                Empleado.activo == False,
+                Empleado.fecha_baja >= inicio
+            )
+        )
+    return q.order_by(Empleado.id.asc()).all()
+
 def get_periodo_actual():
     return PeriodoNomina.crear_periodo_actual()
 
@@ -99,8 +116,8 @@ def index():
 @login_required
 def panel_empleado():
     empleado = get_empleado_actual()
-    if not empleado:
-        flash('No tienes un empleado asociado.', 'danger')
+    if not empleado.activo:
+        flash('Tu cuenta ya no está marcada como empleado activo. Contacta al administrador.', 'warning')
         return redirect(url_for('home.index'))
 
     periodo = get_periodo_actual()
@@ -200,7 +217,7 @@ def panel_economico():
         db.session.add(periodo)
         db.session.commit()
 
-    empleados = Empleado.query.all()
+    empleados = empleados_operativos(inicio=inicio, fin=fin)
     if empleado_id:
         empleados = [e for e in empleados if e.id == empleado_id]
 
@@ -228,7 +245,7 @@ def panel_economico():
         Asistencia.timestamp < hoy_fin
     ).all()
     empleados_activos_hoy = len(set([a.empleado_id for a in asistencias_hoy]))
-    total_empleados = Empleado.query.count()
+    total_empleados = Empleado.query.filter(Empleado.activo == True).count()
     ausentes_hoy = total_empleados - empleados_activos_hoy
 
     horas_hoy = 0.0
@@ -311,8 +328,8 @@ def marcar():
         return jsonify({'error': 'No autorizado'}), 403
 
     empleado = get_empleado_actual()
-    if not empleado:
-        return jsonify({'error': 'No tienes un empleado asociado.'}), 400
+    if not empleado.activo:
+        return jsonify({'error': 'Tu cuenta ya no está marcada como empleado activo.'}), 403
 
     data = request.get_json() or {}
     comentario = data.get('comentario', '').strip()
@@ -386,7 +403,7 @@ def exportar():
         return jsonify({'error': 'No autorizado'}), 403
 
     periodo = get_periodo_actual()
-    empleados = Empleado.query.all()
+    empleados = empleados_operativos(inicio=inicio, fin=fin)
     lines = ['Empleado,Horas,Salario,Aprobado']
     for emp in empleados:
         detalle = calcular_nomina_empleado(emp.id, periodo.id)
@@ -430,7 +447,7 @@ def recalcular_nomina():
         db.session.add(periodo)
         db.session.commit()
 
-    empleados = Empleado.query.all()
+    empleados = empleados_operativos()
     for emp in empleados:
         calcular_nomina_empleado(emp.id, periodo.id)
 
@@ -472,3 +489,125 @@ def create_empleado(username):
     db.session.add(empleado)
     db.session.commit()
     print(f'✅ Empleado {username} creado correctamente.')
+
+# ============================================================
+#  ADMINISTRACIÓN DE EMPLEADOS (solo admin)
+# ============================================================
+
+from datetime import date as _date
+
+
+def _require_admin():
+    if current_user.role != 'admin':
+        flash('Solo el administrador puede acceder aquí.', 'danger')
+        return False
+    return True
+
+
+@empleados_bp.route('/admin')
+@login_required
+def admin_empleados():
+    if not _require_admin():
+        return redirect(url_for('empleados.index'))
+    # Todos: activos primero, luego inactivos ordenados por fecha_baja desc
+    empleados = Empleado.query.join(Empleado.user).order_by(
+        Empleado.activo.desc(),
+        Empleado.fecha_baja.desc().nullslast() if hasattr(Empleado.fecha_baja.desc(), 'nullslast') else Empleado.fecha_baja.desc(),
+        Empleado.id.asc()
+    ).all()
+    return render_template('admin_empleados.html', empleados=empleados)
+
+
+@empleados_bp.route('/admin/<int:empleado_id>/tarifas', methods=['POST'])
+@login_required
+def admin_empleado_tarifas(empleado_id):
+    if not _require_admin():
+        return redirect(url_for('empleados.index'))
+    e = Empleado.query.get_or_404(empleado_id)
+
+    try:
+        e.tarifa_normal = float(request.form.get('tarifa_normal') or 1.00)
+        e.tarifa_nocturna = float(request.form.get('tarifa_nocturna') or 1.30)
+        e.tarifa_fin_semana = float(request.form.get('tarifa_fin_semana') or 1.50)
+    except ValueError:
+        flash('Tarifas inválidas.', 'danger')
+        return redirect(url_for('empleados.admin_empleados'))
+
+    tipo = request.form.get('tipo_pago', 'hora')
+    if tipo not in ('hora', 'fijo'):
+        flash('Tipo de pago inválido.', 'danger')
+        return redirect(url_for('empleados.admin_empleados'))
+    e.tipo_pago = tipo
+
+    if tipo == 'fijo':
+        try:
+            e.salario_fijo_mensual = float(request.form.get('salario_fijo_mensual') or 0)
+        except ValueError:
+            flash('Salario fijo inválido.', 'danger')
+            return redirect(url_for('empleados.admin_empleados'))
+    else:
+        e.salario_fijo_mensual = None
+
+    e.telefono = (request.form.get('telefono') or '').strip() or None
+    e.numero_identificacion = (request.form.get('numero_identificacion') or '').strip() or None
+    e.area = (request.form.get('area') or '').strip() or None
+
+    db.session.commit()
+    flash(f'Tarifas de {e.user.username} actualizadas.', 'success')
+    return redirect(url_for('empleados.admin_empleados'))
+
+
+@empleados_bp.route('/admin/<int:empleado_id>/desmarcar', methods=['POST'])
+@login_required
+def admin_empleado_desmarcar(empleado_id):
+    if not _require_admin():
+        return redirect(url_for('empleados.index'))
+    e = Empleado.query.get_or_404(empleado_id)
+    if not e.activo:
+        flash('Este empleado ya está desmarcado.', 'info')
+        return redirect(url_for('empleados.admin_empleados'))
+    e.activo = False
+    e.fecha_baja = _date.today()
+    db.session.commit()
+    flash(
+        f'{e.user.username} desmarcado como empleado. '
+        'El usuario sigue activo y su histórico se conserva.',
+        'success'
+    )
+    return redirect(url_for('empleados.admin_empleados'))
+
+
+@empleados_bp.route('/admin/<int:empleado_id>/reactivar', methods=['POST'])
+@login_required
+def admin_empleado_reactivar(empleado_id):
+    if not _require_admin():
+        return redirect(url_for('empleados.index'))
+    e = Empleado.query.get_or_404(empleado_id)
+    if e.activo:
+        flash('Este empleado ya está activo.', 'info')
+        return redirect(url_for('empleados.admin_empleados'))
+    e.activo = True
+    e.fecha_baja = None
+    db.session.commit()
+    flash(f'{e.user.username} reactivado como empleado.', 'success')
+    return redirect(url_for('empleados.admin_empleados'))
+
+
+@empleados_bp.route('/admin/<int:empleado_id>/eliminar', methods=['POST'])
+@login_required
+def admin_empleado_eliminar(empleado_id):
+    if not _require_admin():
+        return redirect(url_for('empleados.index'))
+    e = Empleado.query.get_or_404(empleado_id)
+    if e.tiene_datos():
+        flash(
+            'Este empleado tiene asistencias o nómina registradas. '
+            'No se puede eliminar. Usa "Desmarcar" en su lugar.',
+            'warning'
+        )
+        return redirect(url_for('empleados.admin_empleados'))
+    username = e.user.username
+    db.session.delete(e)
+    db.session.commit()
+    flash(f'Empleado {username} eliminado. El usuario sigue existiendo.', 'success')
+    return redirect(url_for('empleados.admin_empleados'))
