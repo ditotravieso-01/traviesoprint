@@ -244,6 +244,17 @@ def mover_ajax(order_id):
                          'Por favor, ve a la lista de órdenes y asígnale el número de Odoo para poder avanzarla en el flujo de trabajo.'
             }), 400
 
+        # 5.5 Validar requiere_revision (Fase 4)
+        # Defensa en profundidad: aunque el frontend oculte el botón,
+        # el backend rechaza mover una orden importada sin revisar.
+        # Un no-op (misma columna) no se bloquea.
+        if order.requiere_revision and nueva_columna != order.column:
+            return jsonify({
+                'error': '⚠️ Esta orden fue importada desde Odoo y todavía no ha sido revisada.\n\n'
+                         'Debes abrirla, añadir al menos una línea de trabajo y guardar, '
+                         'o pulsar "Marcar como revisada" en el detalle de la orden.'
+            }), 403
+
         # 6. Guardar columna anterior
         columna_anterior = order.column
 

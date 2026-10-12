@@ -1492,6 +1492,14 @@ def edit_order(order_id):
 
         order.add_history(f'Editada por {current_user.username}')
 
+        # ---- Limpieza de requiere_revision (Fase 4) ----
+        # Si la orden tenía el flag y ya tiene al menos una línea de trabajo,
+        # se considera revisada automáticamente al guardar.
+        if order.requiere_revision and len(order.archivos) > 0:
+            order.requiere_revision = False
+            order.add_history('Revisión completada: la orden ya tiene líneas de trabajo')
+        # ------------------------------------------------
+
         usuarios_ids = []
         usuarios_notificar = request.form.getlist('usuarios_notificar[]')
         usuarios_ids = [int(id) for id in usuarios_notificar if id.isdigit()]
@@ -1918,3 +1926,40 @@ def odoo_sync_run():
         current_app.logger.error(f'odoo_sync_run error: {e}', exc_info=True)
         return jsonify({'ok': False, 'error': f'Error inesperado: {e}'}), 500
     return jsonify(resultado)
+
+# ==========================================
+# MARCAR ORDEN COMO REVISADA (Fase 4)
+# ==========================================
+@ordenes_bp.route('/<int:order_id>/marcar-revisada', methods=['POST'])
+@login_required
+def marcar_revisada(order_id):
+    """
+    Marca manualmente una orden como revisada (limpia requiere_revision).
+
+    Permisos: comercial o admin.
+    Se usa cuando la orden no necesita líneas de trabajo (casos raros)
+    o como escape para el comercial.
+    """
+    if current_user.role not in ['comercial', 'admin']:
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': False, 'error': 'No tienes permiso'}), 403
+        flash('No tienes permiso para marcar revisada.', 'danger')
+        return redirect(url_for('ordenes.list_orders'))
+
+    order = Order.query.get_or_404(order_id)
+
+    if not order.requiere_revision:
+        if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return jsonify({'ok': True, 'ya_revisada': True, 'mensaje': 'La orden ya estaba revisada'})
+        flash('Esta orden ya estaba marcada como revisada.', 'info')
+        return redirect(url_for('ordenes.detalle_order', order_id=order.id))
+
+    order.requiere_revision = False
+    order.add_history(f'Marcada como revisada manualmente por {current_user.username}')
+    db.session.commit()
+
+    if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return jsonify({'ok': True, 'mensaje': 'Orden marcada como revisada'})
+
+    flash('Orden marcada como revisada.', 'success')
+    return redirect(url_for('ordenes.detalle_order', order_id=order.id))
