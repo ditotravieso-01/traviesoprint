@@ -1158,6 +1158,67 @@
             min-height: 46px;
         }
     }
+
+    /* ============================================================
+       TARJETA BLOQUEADA POR REVISIÓN (Fase 5.3)
+       ============================================================ */
+    .tarjeta.tarjeta-bloqueada {
+        background: linear-gradient(135deg, #fffbf5 0%, #fef9f5 100%);
+        border-color: #fde68a;
+        border-left: 3px solid #f59e0b;
+        cursor: not-allowed !important;
+        position: relative;
+    }
+    .tarjeta.tarjeta-bloqueada .btn-hecho {
+        display: none !important;
+    }
+    .tarjeta.tarjeta-bloqueada .candado-ico {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: #fef3c7;
+        color: #b45309;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 1px solid #fcd34d;
+        z-index: 1;
+    }
+    .tarjeta.tarjeta-bloqueada .candado-ico svg {
+        width: 11px;
+        height: 11px;
+    }
+    .tarjeta.tarjeta-bloqueada .titulo {
+        padding-right: 26px; /* espacio para el candado */
+    }
+    .ord-completitud-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 7px;
+        border-radius: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 8.5px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        margin-top: 3px;
+    }
+    .ord-completitud-badge .dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+    }
+    .ord-completitud-badge.rev         { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
 </style>
 {% endblock %}
 
@@ -2457,6 +2518,7 @@
                     delay: 300,
                     delayOnTouchOnly: true,
                     touchStartThreshold: 3,
+                    filter: '.tarjeta-bloqueada',
                     onEnd: function(evt) {
                         const item = evt.item;
                         const ordenId = parseInt(item.dataset.id);
@@ -2499,6 +2561,7 @@
                 delay: 300,
                 delayOnTouchOnly: true,
                 touchStartThreshold: 3,
+                filter: '.tarjeta-bloqueada',
                 onEnd: function(evt) {
                     const item = evt.item;
                     const ordenId = parseInt(item.dataset.id);
@@ -2516,8 +2579,10 @@
     // ============================================================
     function crearTarjeta(orden) {
         const card = document.createElement('div');
-        card.className = 'tarjeta';
+        const bloqueada = !!orden.requiere_revision;
+        card.className = 'tarjeta' + (bloqueada ? ' tarjeta-bloqueada' : '');
         card.dataset.id = orden.id;
+        if (bloqueada) card.dataset.bloqueada = '1';
         card.addEventListener('click', function(e) {
             if (e.target.closest('button')) return;
             abrirPanel(orden.id);
@@ -2530,7 +2595,21 @@
         const tiempo = tiempoEnColumna(orden, orden.column);
         const sig = obtenerSiguienteColumna(orden);
 
+        const candadoHTML = bloqueada
+            ? `<div class="candado-ico" title="Requiere revisión antes de moverse">
+                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                       <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                       <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                   </svg>
+               </div>`
+            : '';
+
+        const badgeRevisionHTML = bloqueada
+            ? `<span class="ord-completitud-badge rev"><span class="dot"></span> Por revisar</span>`
+            : '';
+
         card.innerHTML = `
+            ${candadoHTML}
             <div class="titulo">
                 <span class="order-num">${orden.order_num} <span class="tiempo-columna">${tiempo}</span></span>
                 <span class="ruta-badge ${ruta}">${ruta}</span>
@@ -2539,8 +2618,9 @@
                 <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
                 <span class="prioridad ${prioridadClass}">${orden.priority}</span>
             </div>
+            ${badgeRevisionHTML}
             <div class="acciones-mini">
-                ${sig ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
+                ${!bloqueada && sig ? `<button class="btn-hecho" data-id="${orden.id}">Hecho →</button>` : ''}
             </div>
         `;
 

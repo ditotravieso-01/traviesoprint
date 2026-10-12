@@ -139,6 +139,7 @@ def _order_to_dict(order):
         'column': order.column,
         'ruta': getattr(order, 'ruta', 'impresion'),
         'entrada_ok': order.entrada_ok,
+        'requiere_revision': getattr(order, 'requiere_revision', False),   # ← NUEVA LÍNEA
         'fecha_entregado': order.fecha_entregado.isoformat() if order.fecha_entregado else None,
         'created_at': order.created_at.isoformat() if order.created_at else None,
         'proyecto': order.proyecto,
