@@ -25,8 +25,9 @@ def create_app():
     login_manager.init_app(app)
 
     # Registrar comandos CLI personalizados
-    from app.cli import sync_odoo_command
+    from app.cli import sync_odoo_command, sync_odoo_orders_command
     app.cli.add_command(sync_odoo_command)
+    app.cli.add_command(sync_odoo_orders_command)
 
     # ===== INTEGRAR FLASK-MIGRATE =====
     from flask_migrate import Migrate
