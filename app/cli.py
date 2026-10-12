@@ -20,54 +20,94 @@ def sync_odoo_command():
     """
     Sincroniza clientes desde Odoo hacia TraviesoPrint.
 
-    Lee todos los partners con customer_rank > 0 en Odoo y los inserta
-    o actualiza en la tabla local `clients` usando odoo_partner_id como
-    clave de correlación.
-
-    Pensado para ejecutarse desde cron cada minuto. Es idempotente: si
-    ya existe un cliente con el mismo odoo_partner_id, lo actualiza en
-    lugar de duplicarlo.
+    Escribe bloques delimitados al log para que el script
+    scripts/show_sync_log.sh los pueda parsear.
     """
+    from datetime import datetime as _dt
+    start = _dt.now()
+    click.echo(f"=== SYNC START {start.strftime('%Y-%m-%d %H:%M:%S')} ===")
+
     service = OdooService()
     clientes = service.get_clientes()
 
-    nuevos = 0
-    actualizados = 0
-    errores = 0
+    nuevos_list = []
+    actualizados_list = []
+    errores_list = []
+    sin_cambios = 0
 
     for c in clientes:
         try:
             odoo_id = c['id']
             ref = (c.get('ref') or '').strip() or f'ODOO-{odoo_id}'
+            new_nombre = c['name']
+            new_email = c.get('email') or None
+            new_telefono = c.get('phone') or None
+            new_direccion = c.get('street') or None
 
             existente = Client.query.filter_by(odoo_partner_id=odoo_id).first()
 
             if existente:
-                # Actualizar campos básicos
-                existente.nombre = c['name']
-                existente.email = c.get('email') or None
-                existente.telefono = c.get('phone') or None
-                existente.direccion = c.get('street') or None
-                actualizados += 1
+                # Solo marcar como actualizado si algo cambió de verdad
+                cambios = []
+                if existente.nombre != new_nombre:
+                    cambios.append('nombre')
+                    existente.nombre = new_nombre
+                if existente.email != new_email:
+                    cambios.append('email')
+                    existente.email = new_email
+                if existente.telefono != new_telefono:
+                    cambios.append('telefono')
+                    existente.telefono = new_telefono
+                if existente.direccion != new_direccion:
+                    cambios.append('direccion')
+                    existente.direccion = new_direccion
+
+                if cambios:
+                    actualizados_list.append(
+                        f"{new_nombre} ({', '.join(cambios)})"
+                    )
+                else:
+                    sin_cambios += 1
             else:
-                # Evitar choque con una referencia ya existente en local
                 if Client.query.filter_by(referencia=ref).first():
                     ref = f'ODOO-{odoo_id}'
 
                 nuevo = Client(
                     odoo_partner_id=odoo_id,
                     referencia=ref,
-                    nombre=c['name'],
-                    email=c.get('email') or None,
-                    telefono=c.get('phone') or None,
-                    direccion=c.get('street') or None,
+                    nombre=new_nombre,
+                    email=new_email,
+                    telefono=new_telefono,
+                    direccion=new_direccion,
                 )
                 db.session.add(nuevo)
-                nuevos += 1
+                nuevos_list.append(new_nombre)
 
         except Exception as e:
-            errores += 1
-            click.echo(f'Error con cliente Odoo id={c.get("id")}: {e}', err=True)
+            errores_list.append(f"odoo_id={c.get('id')} · {e}")
 
     db.session.commit()
-    click.echo(f'Sync OK: {nuevos} nuevos, {actualizados} actualizados, {errores} errores')
+
+    # ---- Detalle del bloque ----
+    click.echo(f"Total procesados: {len(clientes)}")
+    click.echo(f"Nuevos: {len(nuevos_list)}")
+    for nombre in nuevos_list[:50]:
+        click.echo(f"  + {nombre}")
+    if len(nuevos_list) > 50:
+        click.echo(f"  ... y {len(nuevos_list) - 50} más")
+
+    click.echo(f"Actualizados: {len(actualizados_list)}")
+    for item in actualizados_list[:20]:
+        click.echo(f"  ~ {item}")
+    if len(actualizados_list) > 20:
+        click.echo(f"  ... y {len(actualizados_list) - 20} más")
+
+    click.echo(f"Sin cambios: {sin_cambios}")
+    click.echo(f"Errores: {len(errores_list)}")
+    for err in errores_list[:10]:
+        click.echo(f"  ! {err}", err=True)
+
+    end = _dt.now()
+    elapsed = (end - start).total_seconds()
+    click.echo(f"=== SYNC END {end.strftime('%Y-%m-%d %H:%M:%S')} ({elapsed:.1f}s) ===")
+    click.echo(f"Sync OK: {len(nuevos_list)} nuevos, {len(actualizados_list)} actualizados, {len(errores_list)} errores")
