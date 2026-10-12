@@ -973,27 +973,139 @@
         font-size: 18px; font-weight: 700;
         color: #1c1c1e; letter-spacing: -0.3px;
     }
+
+    /* ============================================================
+       BADGE DE COMPLETITUD (Fase 5.1)
+       ============================================================ */
+    .ord-completitud-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 2px 8px;
+        border-radius: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        border: 1px solid transparent;
+        vertical-align: middle;
+        margin-left: 6px;
+    }
+    .ord-completitud-badge .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: currentColor;
+        flex-shrink: 0;
+    }
+    .ord-completitud-badge.rev {
+        background: #fee2e2;
+        color: #991b1b;
+        border-color: #fca5a5;
+    }
+    .ord-completitud-badge.falta-entrada {
+        background: #fef3c7;
+        color: #78350f;
+        border-color: #fcd34d;
+    }
+    .ord-completitud-badge.sin-lineas {
+        background: #fef3c7;
+        color: #78350f;
+        border-color: #fcd34d;
+    }
+    .ord-completitud-badge.lista {
+        background: #d1fae5;
+        color: #065f46;
+        border-color: #6ee7b7;
+    }
+    .ord-completitud-badge svg {
+        width: 9px;
+        height: 9px;
+        flex-shrink: 0;
+    }
+
+    /* Variante para el kanban (más grande) */
+    .kanban-card .ord-completitud-badge {
+        font-size: 9px;
+        padding: 2px 7px;
+        margin-left: 0;
+        margin-top: 4px;
+    }
+
+    /* ============================================================
+       CHIP "SOLO POR REVISAR"
+       ============================================================ */
+    .revision-chip {
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        background: #fef3c7;
+        color: #78350f;
+        border: 1.5px solid #fcd34d;
+        transition: all 0.15s;
+        white-space: nowrap;
+        height: 30px;
+        line-height: 1;
+        box-sizing: border-box;
+    }
+    .revision-chip:hover {
+        background: #fde68a;
+        border-color: #f59e0b;
+    }
+    .revision-chip.active {
+        background: #dc2626;
+        color: white;
+        border-color: #b91c1c;
+    }
+    .revision-chip.active:hover {
+        background: #b91c1c;
+    }
+    .revision-chip .count {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        background: rgba(0,0,0,0.08);
+        border-radius: 30px;
+        padding: 1px 7px;
+        font-size: 11px;
+    }
+    .revision-chip.active .count {
+        background: rgba(255,255,255,0.25);
+    }
+    .revision-chip svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+    }
+
 </style>
 {% endblock %}
 
 {% block content %}
 {# ===== MACRO DE PAGINACIÓN ===== #}
-{% macro render_pagination(page, total_pages, search, estado) %}
+{% macro render_pagination(page, total_pages, search, estado, revision=None) %}
 {% if total_pages > 1 %}
 <div class="pagination">
-    <a href="{{ url_for('ordenes.list_orders', page=1, search=search, estado=estado) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
-    <a href="{{ url_for('ordenes.list_orders', page=page-1 if page>1 else 1, search=search, estado=estado) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
+    <a href="{{ url_for('ordenes.list_orders', page=1, search=search, estado=estado, revision=revision) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
+    <a href="{{ url_for('ordenes.list_orders', page=page-1 if page>1 else 1, search=search, estado=estado, revision=revision) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
 
     {% set start = [page - 2, 1]|max %}
     {% set end = [page + 2, total_pages]|min %}
     {% if start > 1 %}<span class="info">…</span>{% endif %}
     {% for p in range(start, end + 1) %}
-        <a href="{{ url_for('ordenes.list_orders', page=p, search=search, estado=estado) }}" class="btn {% if p == page %}active{% endif %}">{{ p }}</a>
+        <a href="{{ url_for('ordenes.list_orders', page=p, search=search, estado=estado, revision=revision) }}" class="btn {% if p == page %}active{% endif %}">{{ p }}</a>
     {% endfor %}
     {% if end < total_pages %}<span class="info">…</span>{% endif %}
 
-    <a href="{{ url_for('ordenes.list_orders', page=page+1 if page<total_pages else total_pages, search=search, estado=estado) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
-    <a href="{{ url_for('ordenes.list_orders', page=total_pages, search=search, estado=estado) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
+    <a href="{{ url_for('ordenes.list_orders', page=page+1 if page<total_pages else total_pages, search=search, estado=estado, revision=revision) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
+    <a href="{{ url_for('ordenes.list_orders', page=total_pages, search=search, estado=estado, revision=revision) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
     <span class="info">Página {{ page }} de {{ total_pages }}</span>
 </div>
 {% endif %}
@@ -1144,6 +1256,28 @@
         </div>
 
         <div class="center-group">
+                {% if solo_revision %}
+                    <a href="{{ url_for('ordenes.list_orders', search=search or None, estado=estado or None) }}"
+                    class="revision-chip active" title="Quitar filtro">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                        Por revisar
+                        <span class="count">{{ cnt_por_revisar }}</span>
+                    </a>
+                {% else %}
+                    <a href="{{ url_for('ordenes.list_orders', revision='1', search=search or None, estado=estado or None) }}"
+                    class="revision-chip" title="Ver solo órdenes por revisar">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                            <line x1="12" y1="9" x2="12" y2="13"></line>
+                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                        Por revisar
+                        <span class="count">{{ cnt_por_revisar }}</span>
+                    </a>
+                {% endif %}
             <form method="GET" action="{{ url_for('ordenes.list_orders') }}" id="filterForm" class="filters-group">
                 <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -1213,7 +1347,29 @@
                 <tbody>
                     {% for order in orders %}
                     <tr>
-                        <td class="order-num">{{ order.order_num or 'Sin número' }}</td>
+                        <td class="order-num">
+                            {{ order.order_num or 'Sin número' }}
+                            {% set _rev = order.requiere_revision %}
+                            {% set _lineas = order.archivos|length %}
+                            {% set _entrada = order.entrada_ok %}
+                            {% if _rev %}
+                                <span class="ord-completitud-badge rev" title="Importada desde Odoo — revisar antes de mover">
+                                    <span class="dot"></span> Por revisar
+                                </span>
+                            {% elif not _entrada %}
+                                <span class="ord-completitud-badge falta-entrada" title="Sin entrada al sistema">
+                                    <span class="dot"></span> Falta entrada
+                                </span>
+                            {% elif _lineas == 0 %}
+                                <span class="ord-completitud-badge sin-lineas" title="Sin líneas de trabajo">
+                                    <span class="dot"></span> Sin líneas
+                                </span>
+                            {% else %}
+                                <span class="ord-completitud-badge lista" title="Lista para producir">
+                                    <span class="dot"></span> Lista
+                                </span>
+                            {% endif %}
+                        </td>
                         <td class="client-name">{{ order.client.nombre if order.client else 'Sin cliente' }}</td>
 
                         {# --- COLUMNA PROYECTO --- #}
@@ -1340,7 +1496,7 @@
                 </tbody>
             </table>
         </div>
-        {{ render_pagination(page, total_pages, search, estado) }}
+        {{ render_pagination(page, total_pages, search, estado, revision=('1' if solo_revision else None)) }}
     </div>
 
     <!-- ===== VISTA KANBAN ===== -->
@@ -1353,6 +1509,26 @@
                 <div class="header">
                     <div>
                         <div class="order-num">{{ order.order_num or 'Sin número' }}</div>
+                        {% set _rev = order.requiere_revision %}
+                        {% set _lineas = order.archivos|length %}
+                        {% set _entrada = order.entrada_ok %}
+                        {% if _rev %}
+                            <span class="ord-completitud-badge rev">
+                                <span class="dot"></span> Por revisar
+                            </span>
+                        {% elif not _entrada %}
+                            <span class="ord-completitud-badge falta-entrada">
+                                <span class="dot"></span> Falta entrada
+                            </span>
+                        {% elif _lineas == 0 %}
+                            <span class="ord-completitud-badge sin-lineas">
+                                <span class="dot"></span> Sin líneas
+                            </span>
+                        {% else %}
+                            <span class="ord-completitud-badge lista">
+                                <span class="dot"></span> Lista
+                            </span>
+                        {% endif %}
                         <div class="client">{{ order.client.nombre if order.client else 'Sin cliente' }}</div>
                     </div>
                     <span class="badge-prioridad {{ order.priority or 'normal' }}">{{ order.priority or 'normal' }}</span>

@@ -401,15 +401,17 @@ def _get_form_context(form_data=None, edit=False, order=None):
 def list_orders():
     estado = request.args.get('estado', '').strip()
     search = request.args.get('search', '').strip()
+    solo_revision = request.args.get('revision', '') == '1'
     page = request.args.get('page', 1, type=int)
     per_page = 20
 
-    query = Order.query
+    # --- Query base (estado + búsqueda) ---
+    base_query = Order.query
     if estado and estado in COLUMNAS_NOMBRES:
-        query = query.filter_by(column=estado)
+        base_query = base_query.filter_by(column=estado)
     if search:
         search_like = f'%{search}%'
-        query = query.filter(
+        base_query = base_query.filter(
             db.or_(
                 Order.order_num.ilike(search_like),
                 Order.proyecto.ilike(search_like),
@@ -417,26 +419,65 @@ def list_orders():
             )
         )
 
-    paginated = query.order_by(Order.created_at.desc()).paginate(page=page, per_page=per_page, error_out=False)
+    # --- Query paginada (aplica filtro "solo revisión" si procede) ---
+    query = base_query
+    if solo_revision:
+        query = query.filter_by(requiere_revision=True)
+
+    paginated = query.order_by(Order.created_at.desc()).paginate(
+        page=page, per_page=per_page, error_out=False
+    )
     orders = paginated.items
     total = paginated.total
     total_pages = paginated.pages
 
+    # --- KPIs sobre el conjunto filtrado ---
     all_orders = query.all()
     total_ordenes = len(all_orders)
-    pendientes = sum(1 for o in all_orders if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados'])
+    pendientes = sum(
+        1 for o in all_orders
+        if not o.entrada_ok or o.column in ['pendiente', 'por-preparar', 'preparados']
+    )
     completadas = sum(1 for o in all_orders if o.column in ['entregados', 'listo'])
     facturacion_total = sum(getattr(o, 'total_facturado', 0) or 0 for o in all_orders)
     inicio_mes = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-    nuevas_ordenes_mes = sum(1 for o in all_orders if o.created_at and o.created_at >= inicio_mes)
+    nuevas_ordenes_mes = sum(
+        1 for o in all_orders if o.created_at and o.created_at >= inicio_mes
+    )
 
-    return render_template('list_ordenes.html',
-                           orders=orders, columnas_nombres=COLUMNAS_NOMBRES,
-                           total_ordenes=total_ordenes, pendientes=pendientes,
-                           completadas=completadas, facturacion_total=facturacion_total,
-                           nuevas_ordenes_mes=nuevas_ordenes_mes,
-                           page=page, per_page=per_page, total=total,
-                           total_pages=total_pages, search=search, estado=estado)
+    # --- Contadores globales de completitud (independientes del filtro) ---
+    todos = Order.query.all()
+    cnt_por_revisar = sum(1 for o in todos if o.requiere_revision)
+    cnt_falta_entrada = sum(
+        1 for o in todos
+        if not o.requiere_revision and not o.entrada_ok
+    )
+    cnt_sin_lineas = sum(
+        1 for o in todos
+        if not o.requiere_revision and o.entrada_ok and len(o.archivos) == 0
+    )
+    cnt_listas = sum(
+        1 for o in todos
+        if not o.requiere_revision and o.entrada_ok and len(o.archivos) > 0
+    )
+
+    return render_template(
+        'list_ordenes.html',
+        orders=orders,
+        columnas_nombres=COLUMNAS_NOMBRES,
+        total_ordenes=total_ordenes,
+        pendientes=pendientes,
+        completadas=completadas,
+        facturacion_total=facturacion_total,
+        nuevas_ordenes_mes=nuevas_ordenes_mes,
+        page=page, per_page=per_page, total=total,
+        total_pages=total_pages,
+        search=search, estado=estado, solo_revision=solo_revision,
+        cnt_por_revisar=cnt_por_revisar,
+        cnt_falta_entrada=cnt_falta_entrada,
+        cnt_sin_lineas=cnt_sin_lineas,
+        cnt_listas=cnt_listas,
+    )
 
 # ==========================================
 # DETALLE DE ORDEN
