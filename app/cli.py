@@ -4,16 +4,20 @@ Comandos CLI personalizados de TraviesoPrint.
 Se registran en create_app() con app.cli.add_command(...).
 
 Uso:
-    flask sync-odoo      # Sincroniza clientes desde Odoo
+    flask sync-odoo          # Sincroniza clientes desde Odoo
+    flask sync-odoo-orders   # Sincroniza ventas confirmadas (sale.order) -> Order
 """
 import click
 from flask.cli import with_appcontext
 
 from app import db
-from app.models import Client, Order, Configuracion, User
+from app.models import Client
 from app.services.odoo_service import OdooService
 
 
+# ==================================================================
+# COMANDO 1: sync-odoo (clientes) — EXISTENTE EN PRODUCCION
+# ==================================================================
 @click.command('sync-odoo')
 @with_appcontext
 def sync_odoo_command():
@@ -47,7 +51,6 @@ def sync_odoo_command():
             existente = Client.query.filter_by(odoo_partner_id=odoo_id).first()
 
             if existente:
-                # Solo marcar como actualizado si algo cambió de verdad
                 cambios = []
                 if existente.nombre != new_nombre:
                     cambios.append('nombre')
@@ -110,191 +113,80 @@ def sync_odoo_command():
     end = _dt.now()
     elapsed = (end - start).total_seconds()
     click.echo(f"=== SYNC END {end.strftime('%Y-%m-%d %H:%M:%S')} ({elapsed:.1f}s) ===")
-    click.echo(f"Sync OK: {len(nuevos_list)} nuevos, {len(actualizados_list)} actualizados, {len(errores_list)} errores")
+    click.echo(
+        f"Sync OK: {len(nuevos_list)} nuevos, "
+        f"{len(actualizados_list)} actualizados, {len(errores_list)} errores"
+    )
 
+
+# ==================================================================
+# COMANDO 2: sync-odoo-orders (ventas) — NUEVO EN PARTE 28
+# ==================================================================
 @click.command('sync-odoo-orders')
 @with_appcontext
 def sync_odoo_orders_command():
     """
     Sincroniza ventas confirmadas (sale.order state='sale') de Odoo
-    hacia órdenes de TraviesoPrint.
+    hacia ordenes de TraviesoPrint.
 
-    - Lee 'odoo_orders_sync_since' de Configuracion.
-    - Si no existe, la inicializa a now() y termina sin importar historia.
-    - Deduplica por Order.odoo_order_id.
-    - Crea con requiere_revision=True.
-    - Al final, actualiza 'odoo_orders_sync_since' = hora de inicio de este ciclo.
+    Delega en app.services.odoo_orders_sync.run_sync().
+
+    Respeta el toggle 'odoo_orders_sync_enabled' (Configuracion).
+    Si esta en 'false', no hace nada (el cron puede seguir latiendo).
     """
-    from datetime import datetime, timezone
-    from app.services.notification_service import crear_notificacion
+    from datetime import datetime as _dt
+    from app.services.odoo_orders_sync import run_sync
 
-    def _utcnow():
-        return datetime.now(timezone.utc).replace(tzinfo=None)
-
-    start = _utcnow()
+    start = _dt.now()
     click.echo(f"=== ORDERS SYNC START {start.strftime('%Y-%m-%d %H:%M:%S')} ===")
 
-    # 1. Marca de agua
-    since_str = Configuracion.get_config('odoo_orders_sync_since')
-    if not since_str:
-        now_iso = start.isoformat(timespec='seconds')
-        Configuracion.set_config('odoo_orders_sync_since', now_iso)
-        click.echo(f"Primera ejecucion. Marca inicializada a {now_iso}. No se importa historia.")
-        click.echo(f"=== ORDERS SYNC END {_utcnow().strftime('%Y-%m-%d %H:%M:%S')} (0.0s) ===")
+    resultado = run_sync(force=False)
+
+    # --- Salidas tempranas (toggle off o marca recien inicializada) ---
+    if not resultado['ok']:
+        motivo = resultado['motivo']
+        if motivo == 'sync_disabled':
+            click.echo("Sync deshabilitado (odoo_orders_sync_enabled=false). Nada que hacer.")
+        elif motivo == 'inicializado_since':
+            click.echo(
+                f"Primera ejecucion. Marca inicializada a {resultado['since_nuevo']}. "
+                "No se importa historia."
+            )
+        else:
+            click.echo(f"ERROR: {motivo}", err=True)
+
+        end = _dt.now()
+        elapsed = (end - start).total_seconds()
+        click.echo(f"=== ORDERS SYNC END {end.strftime('%Y-%m-%d %H:%M:%S')} ({elapsed:.1f}s) ===")
         click.echo("Sync OK: 0 nuevas, 0 enlazadas, 0 errores")
         return
 
-    try:
-        since = datetime.fromisoformat(since_str)
-    except ValueError:
-        click.echo(f"ERROR: odoo_orders_sync_since invalida: {since_str!r}", err=True)
-        click.echo(f"=== ORDERS SYNC END {_utcnow().strftime('%Y-%m-%d %H:%M:%S')} (0.0s) ===")
-        return
+    # --- Camino normal ---
+    click.echo(f"Buscando ventas confirmadas desde: {resultado['since_usado']}")
+    click.echo(f"Ventas recibidas: {resultado['ventas_total']}")
 
-    click.echo(f"Buscando ventas confirmadas desde: {since.isoformat(timespec='seconds')}")
-
-    # 2. Fetch Odoo
-    try:
-        service = OdooService()
-        ventas = service.get_ventas_confirmadas(desde=since)
-    except Exception as e:
-        click.echo(f"ERROR: no se pudo consultar Odoo: {e}", err=True)
-        click.echo(f"=== ORDERS SYNC END {_utcnow().strftime('%Y-%m-%d %H:%M:%S')} (0.0s) ===")
-        return  # NO actualizamos marca → reintenta el proximo minuto
-
-    click.echo(f"Ventas recibidas: {len(ventas)}")
-
-    nuevas_list, enlazadas_list, skipped_list, errores_list = [], [], [], []
-
-    # 3. Procesar
-    for venta in ventas:
-        try:
-            odoo_order_id = venta['id']
-            order_num = venta.get('name') or f'ODOO-{odoo_order_id}'
-
-            # 3a. Dedup por odoo_order_id
-            if Order.query.filter_by(odoo_order_id=odoo_order_id).first():
-                continue
-
-            # 3b. Cliente
-            partner = venta.get('partner_id') or []
-            if not isinstance(partner, (list, tuple)) or not partner:
-                skipped_list.append(f"{order_num}: sin partner_id")
-                continue
-            cliente = Client.query.filter_by(odoo_partner_id=partner[0]).first()
-            if not cliente:
-                skipped_list.append(f"{order_num}: cliente odoo_id={partner[0]} no existe local")
-                continue
-
-            # 3c. Enlazar por order_num si ya existe sin odoo_order_id
-            existente = Order.query.filter_by(order_num=order_num).first()
-            if existente and not existente.odoo_order_id:
-                existente.odoo_order_id = odoo_order_id
-                existente.requiere_revision = True
-                enlazadas_list.append(f"{order_num} -> id local {existente.id}")
-                continue
-
-            # 3d. Fechas
-            try:
-                fecha_order = datetime.strptime(venta['date_order'], '%Y-%m-%d %H:%M:%S').date()
-            except (KeyError, ValueError):
-                fecha_order = start.date()
-
-            fecha_entrega = None
-            commitment = venta.get('commitment_date')
-            if commitment and commitment is not False:
-                try:
-                    fecha_entrega = datetime.strptime(commitment, '%Y-%m-%d %H:%M:%S')
-                except ValueError:
-                    fecha_entrega = None
-
-            # 3e. Vendedor Odoo
-            user_data = venta.get('user_id') or []
-            comercial_odoo = (
-                user_data[1]
-                if isinstance(user_data, (list, tuple)) and len(user_data) > 1
-                else None
-            )
-
-            # 3f. Mapear a usuario local (por username normalizado)
-            created_by_id = None
-            if comercial_odoo:
-                norm = comercial_odoo.strip().lower().replace(' ', '')
-                local_user = User.query.filter(
-                    db.func.lower(User.username) == norm
-                ).first()
-                if local_user:
-                    created_by_id = local_user.id
-
-            # 3g. Crear Order
-            nueva = Order(
-                order_num=order_num,
-                date=fecha_order,
-                client_id=cliente.id,
-                descripcion=venta.get('note') or '',
-                entrada_ok=True,
-                column='pendiente',
-                ruta='impresion',
-                priority='normal',
-                tipo_proyecto='grafica',
-                requiere_revision=True,
-                odoo_order_id=odoo_order_id,
-                comercial_odoo=comercial_odoo,
-                fecha_entrega_odoo=fecha_entrega,
-                created_by_id=created_by_id,
-            )
-            nueva.add_history(f"Importada desde Odoo ({order_num})")
-            db.session.add(nueva)
-            db.session.flush()
-
-            nuevas_list.append(f"{order_num} . {cliente.nombre}")
-
-            # 3h. Notificacion al creador (si se pudo mapear)
-            if created_by_id:
-                try:
-                    crear_notificacion(
-                        usuario_id=created_by_id,
-                        mensaje=f"Orden {order_num} importada de Odoo. Requiere revision.",
-                        tipo='orden_importada',
-                        order_id=nueva.id,
-                        enlace=f"/ordenes/{nueva.id}",
-                    )
-                except Exception as e:
-                    click.echo(f"  ! No se pudo notificar: {e}", err=True)
-
-        except Exception as e:
-            errores_list.append(f"odoo_id={venta.get('id')} . {e}")
-
-    # 4. Commit + marca de agua
-    try:
-        db.session.commit()
-        Configuracion.set_config('odoo_orders_sync_since', start.isoformat(timespec='seconds'))
-    except Exception as e:
-        db.session.rollback()
-        click.echo(f"ERROR al commitear: {e}", err=True)
-        click.echo(f"=== ORDERS SYNC END {_utcnow().strftime('%Y-%m-%d %H:%M:%S')} (0.0s) ===")
-        return
-
-    # 5. Detalle
-    click.echo(f"Nuevas: {len(nuevas_list)}")
-    for item in nuevas_list[:50]:
+    click.echo(f"Nuevas: {resultado['nuevas']}")
+    for item in resultado['detalle']['nuevas'][:50]:
         click.echo(f"  + {item}")
-    if len(nuevas_list) > 50:
-        click.echo(f"  ... y {len(nuevas_list) - 50} mas")
+    if resultado['nuevas'] > 50:
+        click.echo(f"  ... y {resultado['nuevas'] - 50} mas")
 
-    click.echo(f"Enlazadas: {len(enlazadas_list)}")
-    for item in enlazadas_list[:20]:
+    click.echo(f"Enlazadas: {resultado['enlazadas']}")
+    for item in resultado['detalle']['enlazadas'][:20]:
         click.echo(f"  ~ {item}")
 
-    click.echo(f"Saltadas: {len(skipped_list)}")
-    for item in skipped_list[:20]:
+    click.echo(f"Saltadas: {resultado['saltadas']}")
+    for item in resultado['detalle']['saltadas'][:20]:
         click.echo(f"  - {item}")
 
-    click.echo(f"Errores: {len(errores_list)}")
-    for err in errores_list[:10]:
-        click.echo(f"  ! {err}", err=True)
+    click.echo(f"Errores: {resultado['errores']}")
+    for item in resultado['detalle']['errores'][:10]:
+        click.echo(f"  ! {item}", err=True)
 
-    end = _utcnow()
+    end = _dt.now()
     elapsed = (end - start).total_seconds()
     click.echo(f"=== ORDERS SYNC END {end.strftime('%Y-%m-%d %H:%M:%S')} ({elapsed:.1f}s) ===")
-    click.echo(f"Sync OK: {len(nuevas_list)} nuevas, {len(enlazadas_list)} enlazadas, {len(errores_list)} errores")
+    click.echo(
+        f"Sync OK: {resultado['nuevas']} nuevas, "
+        f"{resultado['enlazadas']} enlazadas, {resultado['errores']} errores"
+    )

@@ -71,7 +71,7 @@ class OdooService:
             kwargs
         )
 
-    def get_ventas_confirmadas(self, desde, limit=None):
+    def get_ventas_confirmadas(self, desde, limit=200):
         """
         Devuelve ventas confirmadas (sale.order con state='sale') cuya
         date_order sea >= 'desde'.

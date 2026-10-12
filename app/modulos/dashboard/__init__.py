@@ -209,7 +209,8 @@ def get_dashboard_data():
             'completadas': completadas,
             'stock_critico': criticos,  # <--- SOLO CRÍTICOS
             'clientes_activos': clientes_activos,
-            'facturacion': round(facturacion_total, 2)
+            'facturacion': round(facturacion_total, 2),
+            'por_revisar': sum(1 for o in orders if getattr(o, 'requiere_revision', False)),
         },
         'workflow': {
             'labels': ['Pendiente', 'Por preparar', 'Preparados', 'Imprimir hoy', 'Impreso y corte', 'Listo', 'Entregados'],
