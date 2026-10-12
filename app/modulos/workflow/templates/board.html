@@ -2611,7 +2611,7 @@
         card.innerHTML = `
             ${candadoHTML}
             <div class="titulo">
-                <span class="order-num">${orden.order_num} <span class="tiempo-columna">${tiempo}</span></span>
+                <span class="order-num">${orden.order_num || 'Sin número'} <span class="tiempo-columna">${tiempo}</span></span>
                 <span class="ruta-badge ${ruta}">${ruta}</span>
             </div>
             <div class="sub">
@@ -2748,7 +2748,7 @@
                 const color = COLORES[data.columna] || '#a8854f';
                 document.getElementById('panelLateral').style.borderLeftColor = color;
 
-                document.getElementById('panelTitulo').textContent = data.numero;
+                document.getElementById('panelTitulo').textContent = data.numero || 'Sin número';
                 const body = document.getElementById('panelBody');
                 const historialHtml = (data.historial || []).slice(-10).reverse().map(h => {
                     const fecha = h.fecha ? new Date(h.fecha).toLocaleString() : (h.timestamp ? new Date(h.timestamp).toLocaleString() : '');
