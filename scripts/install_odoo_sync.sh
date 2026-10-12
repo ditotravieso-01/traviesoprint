@@ -8,7 +8,8 @@
 #   3. Reinicia el servicio.
 #   4. Ejecuta un sync manual de prueba.
 #   5. Si funciona, instala el cron cada 1 minuto.
-#   6. Espera 90s y verifica que el cron haya corrido.
+#   6. Verifica que el cron haya quedado bien escrito.
+#   7. Espera 90s y confirma que corrió.
 #
 #  Uso:
 #    sudo ./scripts/install_odoo_sync.sh
@@ -65,17 +66,22 @@ if ! id "${APP_USER}" >/dev/null 2>&1; then
     exit 1
 fi
 
-CRON_LINE="* * * * * cd ${APP_DIR} && set -a && . ./.env && set +a && ./venv/bin/flask sync-odoo >> ${LOG_FILE} 2>&1"
+# Línea del cron: ahora apunta al script, no al comando inline.
+CRON_LINE="* * * * * ${APP_DIR}/scripts/sync_odoo.sh >> ${LOG_FILE} 2>&1"
 
 # ----- 1. Verificar código -----
 log "Verificando código de la integración..."
-for f in app/services/odoo_service.py app/cli.py; do
+for f in app/services/odoo_service.py app/cli.py scripts/sync_odoo.sh; do
     if [ ! -f "${APP_DIR}/${f}" ]; then
         err "No existe ${f}"
         err "Ejecutá ./deploy.sh primero para traer el código."
         exit 1
     fi
 done
+if [ ! -x "${APP_DIR}/scripts/sync_odoo.sh" ]; then
+    warn "scripts/sync_odoo.sh no es ejecutable. Corrigiendo..."
+    chmod +x "${APP_DIR}/scripts/sync_odoo.sh"
+fi
 ok "Código presente."
 
 # ----- 2. Configurar variables ODOO_* en .env -----
@@ -160,13 +166,44 @@ else
     exit 1
 fi
 
-# ----- 6. Instalar cron (si no existe) -----
+# ----- 6. Instalar cron (idempotente + verificado) -----
 log "Configurando cron..."
-if crontab -u "${APP_USER}" -l 2>/dev/null | grep -qF 'flask sync-odoo'; then
+
+TMP_CRON=$(mktemp)
+trap 'rm -f "${TMP_CRON}"' EXIT
+
+# Leer crontab actual (si no existe, crear vacío)
+if ! crontab -u "${APP_USER}" -l > "${TMP_CRON}" 2>/dev/null; then
+    : > "${TMP_CRON}"
+fi
+
+if grep -qF "${APP_DIR}/scripts/sync_odoo.sh" "${TMP_CRON}"; then
     ok "El cron ya estaba configurado. No se toca."
 else
-    ( crontab -u "${APP_USER}" -l 2>/dev/null; echo "${CRON_LINE}" ) | crontab -u "${APP_USER}" -
-    ok "Cron añadido para el usuario ${APP_USER}."
+    # Eliminar cualquier línea previa con 'flask sync-odoo' (formato viejo)
+    grep -vF 'flask sync-odoo' "${TMP_CRON}" > "${TMP_CRON}.clean" || true
+    mv "${TMP_CRON}.clean" "${TMP_CRON}"
+
+    # Añadir la línea correcta
+    echo "${CRON_LINE}" >> "${TMP_CRON}"
+
+    # Instalar el archivo entero
+    if crontab -u "${APP_USER}" "${TMP_CRON}"; then
+        ok "Cron instalado para el usuario ${APP_USER}."
+    else
+        err "No se pudo instalar el cron. Verificá permisos de ${APP_USER}."
+        exit 1
+    fi
+fi
+
+# Verificación: leer el crontab de nuevo y confirmar que la línea está
+if crontab -u "${APP_USER}" -l 2>/dev/null | grep -qF "${APP_DIR}/scripts/sync_odoo.sh"; then
+    ok "Verificación: la línea del cron está presente."
+else
+    err "Verificación fallida: la línea no aparece en el crontab de ${APP_USER}."
+    err "Crontab actual:"
+    crontab -u "${APP_USER}" -l 2>/dev/null || echo "(vacío)"
+    exit 1
 fi
 
 # ----- 7. Verificación del primer ciclo -----
@@ -192,6 +229,5 @@ echo ""
 ok "Instalación completada."
 echo ""
 echo "Para verificar manualmente:"
-echo "  sudo -u ${APP_USER} ${APP_DIR}/scripts/sync_odoo.sh"
-echo "  tail -f ${LOG_FILE}"
-echo "  crontab -u ${APP_USER} -l"
+echo "  sudo crontab -u ${APP_USER} -l"
+echo "  sudo tail -f ${LOG_FILE}"
