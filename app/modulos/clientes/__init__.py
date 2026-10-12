@@ -1496,3 +1496,127 @@ def admin_uso_favoritos():
         'total_blobs': total_blobs,
         'items': items,
     })
+
+# ==========================================
+# ACCIONES EN LOTE (multi-select)
+# ==========================================
+@clientes_bp.route('/batch/eliminar', methods=['POST'])
+@login_required
+@admin_required
+def batch_eliminar_clientes():
+    """Elimina varios clientes. Bloquea los que tengan órdenes asociadas."""
+    data = request.get_json() or {}
+    ids = data.get('ids', [])
+    if not isinstance(ids, list) or not ids:
+        return jsonify({'error': 'No se seleccionaron clientes'}), 400
+
+    # Normalizar a ints, evitar duplicados
+    try:
+        ids = list({int(x) for x in ids})
+    except (TypeError, ValueError):
+        return jsonify({'error': 'IDs inválidos'}), 400
+
+    eliminados = 0
+    bloqueados = []
+
+    for cid in ids:
+        cliente = Client.query.get(cid)
+        if not cliente:
+            continue
+        if cliente.orders and len(cliente.orders) > 0:
+            bloqueados.append({'id': cliente.id, 'nombre': cliente.nombre})
+            continue
+        for fav in cliente.etiquetas_favoritas:
+            borrar_archivo_favorito(fav)
+        db.session.delete(cliente)
+        eliminados += 1
+
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'eliminados': eliminados,
+        'bloqueados': bloqueados,
+    })
+
+
+@clientes_bp.route('/batch/exportar', methods=['POST'])
+@login_required
+@comercial_or_admin_required
+def batch_exportar_clientes():
+    """Exporta a Excel solo los clientes seleccionados."""
+    data = request.get_json() or {}
+    ids = data.get('ids', [])
+    if not isinstance(ids, list) or not ids:
+        return jsonify({'error': 'No se seleccionaron clientes'}), 400
+
+    try:
+        ids = list({int(x) for x in ids})
+    except (TypeError, ValueError):
+        return jsonify({'error': 'IDs inválidos'}), 400
+
+    clientes = Client.query.filter(Client.id.in_(ids)).order_by(Client.nombre).all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = 'Clientes'
+    headers = ['ID', 'Referencia', 'Nombre', 'Teléfono', 'Email', 'Dirección',
+               'Comercial', 'Carnet Identidad', 'Fecha Nacimiento', 'Tipo Cliente',
+               'Sector', 'Preferencias Diseño', 'Método Pago', 'Referido Por',
+               'Frecuencia Pedido', 'Notas', 'Observaciones', 'Etiquetas', 'Pedidos']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        cell.fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+    for r, c in enumerate(clientes, 2):
+        ws.cell(row=r, column=1, value=c.id)
+        ws.cell(row=r, column=2, value=c.referencia)
+        ws.cell(row=r, column=3, value=c.nombre)
+        ws.cell(row=r, column=4, value=c.telefono or '')
+        ws.cell(row=r, column=5, value=c.email or '')
+        ws.cell(row=r, column=6, value=c.direccion or '')
+        ws.cell(row=r, column=7, value=c.comercial or '')
+        ws.cell(row=r, column=8, value=c.carnet_identidad or '')
+        ws.cell(row=r, column=9, value=c.fecha_nacimiento.strftime('%Y-%m-%d') if c.fecha_nacimiento else '')
+        ws.cell(row=r, column=10, value=c.tipo_cliente or '')
+        ws.cell(row=r, column=11, value=c.sector or '')
+        ws.cell(row=r, column=12, value=c.preferencias_diseno or '')
+        ws.cell(row=r, column=13, value=c.metodo_pago_favorito or '')
+        ws.cell(row=r, column=14, value=c.referido_por or '')
+        ws.cell(row=r, column=15, value=c.frecuencia_pedido or '')
+        ws.cell(row=r, column=16, value=c.notas or '')
+        ws.cell(row=r, column=17, value=c.observaciones_internas or '')
+        ws.cell(row=r, column=18, value=c.etiquetas or '')
+        ws.cell(row=r, column=19, value=len(c.orders) if c.orders else 0)
+    for col in range(1, len(headers) + 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(col)].width = 18
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=f'clientes_seleccionados_{datetime.now().strftime("%Y%m%d_%H%M")}.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+@clientes_bp.route('/batch/ids', methods=['GET'])
+@login_required
+@view_required
+def batch_ids_clientes():
+    """
+    Devuelve los IDs de todos los clientes que coinciden con el filtro actual.
+    Se usa para el botón 'Seleccionar todos los N' del multi-select.
+    """
+    search = request.args.get('search', '').strip()
+    query = Client.query
+    if search:
+        query = query.filter(db.or_(
+            Client.nombre.ilike(f'%{search}%'),
+            Client.referencia.ilike(f'%{search}%'),
+            Client.email.ilike(f'%{search}%'),
+            Client.telefono.ilike(f'%{search}%')
+        ))
+    ids = [row[0] for row in query.with_entities(Client.id).all()]
+    return jsonify({'ids': ids, 'total': len(ids)})

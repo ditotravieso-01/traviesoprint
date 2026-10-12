@@ -194,10 +194,6 @@
         transform: none !important;
         box-shadow: none !important;
     }
-    /* ============================================================
-       BOTONES DE ACCIÓN SECUNDARIA — outline, sin relleno
-       (mismo patrón que list_ordenes.html)
-       ============================================================ */
     .btn-warning {
         background: transparent !important;
         border: 1px solid #f59e0b !important;
@@ -322,7 +318,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 14px;
-        min-width: 860px;
+        min-width: 900px;
     }
     .table th {
         font-family: 'Inter', sans-serif;
@@ -380,25 +376,21 @@
         white-space: nowrap;
         line-height: 1.4;
     }
-    /* Black → sigue siendo oscuro pero elegante, no pesado */
     .badge-nivel.black {
         background: #1a1a1a;
         color: #e8c98a;
         border-color: #d4a574;
     }
-    /* Golden → muy suave, pastel ámbar, texto marrón oscuro */
     .badge-nivel.golden {
         background: #fdf7ea;
         color: #92400e;
         border-color: #e8c98a;
     }
-    /* Standard → gris neutro, ni se nota */
     .badge-nivel.standard {
         background: #f3f4f6;
         color: #4b5563;
         border-color: #d1d5db;
     }
-    /* Versión outline-only si el usuario lo prefiere muy sutil */
     .badge-nivel.outline {
         background: transparent !important;
         border: 1.5px solid currentColor;
@@ -435,6 +427,7 @@
         display: flex;
         flex-direction: column;
         gap: 4px;
+        position: relative;
     }
     .kanban-card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
     .kanban-card .header {
@@ -442,6 +435,7 @@
         justify-content: space-between;
         align-items: flex-start;
         gap: 8px;
+        padding-left: 22px;
     }
     .kanban-card .header .info { min-width: 0; flex: 1; }
     .kanban-card .nombre {
@@ -526,7 +520,6 @@
         background: #f5f5f5;
         border-color: #8e8e93;
     }
-    /* Colores específicos por tipo dentro del kanban (solo borde + texto) */
     .kanban-card .actions .btn-outline {
         border-color: #d2d2d7;
         color: #1c1c1e;
@@ -804,6 +797,119 @@
     .cs-confirm-btn.cancel:hover { border-color: #8e8e93; background: #f5f5f5; }
 
     /* ============================================================
+       MULTI-SELECT (estilo Odoo)
+       ============================================================ */
+    .kanban-card .kb-check {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        width: 18px;
+        height: 18px;
+        accent-color: #a8854f;
+        cursor: pointer;
+        z-index: 2;
+        opacity: 0;
+        transition: opacity 0.15s;
+        margin: 0;
+    }
+    .kanban-card:hover .kb-check,
+    .kanban-card.is-selected .kb-check {
+        opacity: 1;
+    }
+    .kanban-card.is-selected {
+        border-color: #a8854f;
+        background: linear-gradient(135deg, #ffffff 0%, #fdf9f3 100%);
+        box-shadow: 0 4px 18px rgba(168,133,79,0.15);
+    }
+    @media (hover: none) {
+        .kanban-card .kb-check { opacity: 1; }
+    }
+
+    .row-checkbox-cell {
+        width: 36px;
+        padding-right: 0 !important;
+        text-align: center;
+    }
+    .row-checkbox {
+        width: 16px;
+        height: 16px;
+        accent-color: #a8854f;
+        cursor: pointer;
+        margin: 0;
+    }
+    .table tr.is-selected td { background: #fdf9f3; }
+
+    .batch-toolbar {
+        position: fixed;
+        bottom: 24px;
+        left: 50%;
+        transform: translateX(-50%) translateY(120%);
+        background: #1c1c1e;
+        color: white;
+        border-radius: 16px;
+        padding: 10px 16px 10px 22px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        z-index: 9500;
+        transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        font-weight: 600;
+        max-width: calc(100vw - 32px);
+        flex-wrap: wrap;
+    }
+    .batch-toolbar.is-open {
+        transform: translateX(-50%) translateY(0);
+    }
+    .batch-toolbar .batch-count {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        color: #e8c98a;
+        letter-spacing: -0.2px;
+        margin-right: 4px;
+    }
+    .batch-toolbar .batch-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+    .batch-toolbar .batch-btn {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 30px;
+        padding: 7px 14px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        transition: all 0.15s;
+        white-space: nowrap;
+        line-height: 1;
+    }
+    .batch-toolbar .batch-btn:hover {
+        background: rgba(255,255,255,0.18);
+        border-color: rgba(255,255,255,0.28);
+    }
+    .batch-toolbar .batch-btn.danger {
+        background: #dc2626;
+        border-color: #dc2626;
+    }
+    .batch-toolbar .batch-btn.danger:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+    }
+    .batch-toolbar .batch-btn.outline {
+        background: transparent;
+    }
+    .batch-toolbar .batch-btn svg { flex-shrink: 0; }
+
+    /* ============================================================
        RESPONSIVE
        ============================================================ */
     @media (max-width: 768px) {
@@ -825,11 +931,164 @@
         .kanban-card .actions .btn { flex: 1; }
         .cs-confirm-actions { flex-direction: column; }
         .cs-confirm-btn { width: 100%; }
+
+        .batch-toolbar {
+            left: 12px;
+            right: 12px;
+            transform: translateX(0) translateY(120%);
+            bottom: 12px;
+            padding: 10px;
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
+        .batch-toolbar.is-open {
+            transform: translateX(0) translateY(0);
+        }
+        .batch-toolbar .batch-actions { justify-content: stretch; }
+        .batch-toolbar .batch-btn { flex: 1; justify-content: center; }
     }
     @media (max-width: 480px) {
         .kpi-grid { grid-template-columns: 1fr; }
         .view-toggle .view-btn .label { display: none; }
     }
+
+    /* ============================================================
+       BANNER DE SELECCIÓN MASIVA (estilo Odoo)
+       ============================================================ */
+    .batch-banner {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px 16px;
+        margin-bottom: 12px;
+        background: #fdf9f3;
+        border: 1px solid #e8dcc4;
+        border-radius: 12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        color: #78350f;
+        flex-wrap: wrap;
+    }
+    .batch-banner.is-open { display: flex; }
+    .batch-banner .batch-banner-link {
+        background: none;
+        border: none;
+        color: #a8854f;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: underline;
+        font-family: inherit;
+        font-size: inherit;
+        padding: 0;
+    }
+    .batch-banner .batch-banner-link:hover { color: #78350f; }
+    .batch-banner .batch-banner-close {
+        background: none;
+        border: none;
+        color: #a8854f;
+        font-size: 18px;
+        cursor: pointer;
+        line-height: 1;
+        padding: 0 4px;
+        margin-left: auto;
+    }
+    .batch-banner .batch-banner-close:hover { color: #78350f; }
+    /* ============================================================
+       MODAL DE RESULTADO (batch actions)
+       ============================================================ */
+    @keyframes csResultIn {
+        from { transform: scale(0.92) translateY(10px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    .cs-result-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(20,20,25,0.4);
+        backdrop-filter: blur(6px);
+        z-index: 10001;
+        justify-content: center;
+        align-items: center;
+        padding: 16px;
+    }
+    .cs-result-overlay.active { display: flex; }
+    .cs-result-box {
+        background: white;
+        border-radius: 20px;
+        padding: 28px 30px 22px;
+        max-width: 440px;
+        width: 100%;
+        box-shadow: 0 30px 80px rgba(0,0,0,0.22);
+        animation: csResultIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        text-align: center;
+        border-top: 5px solid #10b981;
+        box-sizing: border-box;
+    }
+    .cs-result-box.error { border-top-color: #dc2626; }
+    .cs-result-box.warning { border-top-color: #f59e0b; }
+    .cs-result-box.info { border-top-color: #3b82f6; }
+    .cs-result-icon {
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #ecfdf5;
+        color: #10b981;
+    }
+    .cs-result-box.error .cs-result-icon { background: #fef2f2; color: #dc2626; }
+    .cs-result-box.warning .cs-result-icon { background: #fffbeb; color: #f59e0b; }
+    .cs-result-box.info .cs-result-icon { background: #eff6ff; color: #3b82f6; }
+    .cs-result-title {
+        font-family: 'Inter', sans-serif;
+        font-size: 18px;
+        font-weight: 700;
+        color: #1c1c1e;
+        margin: 0 0 8px 0;
+        line-height: 1.3;
+    }
+    .cs-result-message {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        color: #6b6b7a;
+        line-height: 1.55;
+        margin: 0 0 20px 0;
+        white-space: pre-line;
+        word-break: break-word;
+    }
+    .cs-result-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .cs-result-btn {
+        padding: 10px 26px;
+        border-radius: 30px;
+        border: none;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        font-family: 'Inter', sans-serif;
+        min-width: 120px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #1c1c1e;
+        color: white;
+        transition: background 0.15s;
+    }
+    .cs-result-btn:hover { background: #333; }
+    .cs-result-box.error .cs-result-btn { background: #dc2626; }
+    .cs-result-box.error .cs-result-btn:hover { background: #b91c1c; }
+    .cs-result-box.warning .cs-result-btn { background: #f59e0b; }
+    .cs-result-box.warning .cs-result-btn:hover { background: #d97706; }
+    .cs-result-box.info .cs-result-btn { background: #3b82f6; }
+    .cs-result-box.info .cs-result-btn:hover { background: #2563eb; }
 </style>
 {% endblock %}
 
@@ -856,6 +1115,11 @@
 
 <div class="content-card">
 
+    <div class="batch-banner" id="batchBanner">
+        <span id="batchBannerText"></span>
+        <button type="button" class="batch-banner-link" id="batchBannerLink" onclick="selectAllMatching()"></button>
+        <button type="button" class="batch-banner-close" onclick="clearSelection()" title="Limpiar selección">&times;</button>
+    </div>
     <!-- ===== KPIs ===== -->
     <div class="kpi-grid">
         <div class="kpi-card total">
@@ -1005,7 +1269,8 @@
     <div class="view-section active" id="vistaKanban">
         <div class="kanban-grid">
             {% for c in clients %}
-            <div class="kanban-card kanban-{{ c.nivel or 'standard' }}">
+            <div class="kanban-card kanban-{{ c.nivel or 'standard' }}" data-cliente-id="{{ c.id }}">
+                <input type="checkbox" class="kb-check" data-id="{{ c.id }}" onclick="toggleSelection(event, {{ c.id }})" title="Seleccionar">
                 <div class="header">
                     <div class="info">
                         <div class="nombre">{{ c.nombre }}</div>
@@ -1106,6 +1371,9 @@
             <table class="table">
                 <thead>
                     <tr>
+                        <th class="row-checkbox-cell">
+                            <input type="checkbox" class="row-checkbox" id="selectAllHeader" onclick="toggleSelectAllVisible(this.checked)" title="Seleccionar todo lo visible">
+                        </th>
                         <th>Ref.</th>
                         <th>Nombre</th>
                         <th>Teléfono</th>
@@ -1118,7 +1386,10 @@
                 </thead>
                 <tbody>
                     {% for c in clients %}
-                    <tr>
+                    <tr data-cliente-id="{{ c.id }}">
+                        <td class="row-checkbox-cell">
+                            <input type="checkbox" class="row-checkbox row-checkbox-item" data-id="{{ c.id }}" onclick="toggleSelection(event, {{ c.id }})">
+                        </td>
                         <td class="col-ref">{{ c.referencia }}</td>
                         <td>{{ c.nombre }}</td>
                         <td>{{ c.telefono or '—' }}</td>
@@ -1168,7 +1439,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="8" style="text-align:center; padding:30px; color:#8e8e93;">No hay clientes que coincidan con los filtros.</td></tr>
+                    <tr><td colspan="9" style="text-align:center; padding:30px; color:#8e8e93;">No hay clientes que coincidan con los filtros.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -1176,6 +1447,37 @@
         {{ render_pagination(page, total_pages, search, sort, order) }}
     </div>
 
+</div>
+
+<!-- ===== BARRA DE ACCIONES EN LOTE ===== -->
+<div class="batch-toolbar" id="batchToolbar">
+    <span><span class="batch-count" id="batchCount">0</span> seleccionados</span>
+    <div class="batch-actions">
+        <button type="button" class="batch-btn outline" onclick="clearSelection()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Limpiar
+        </button>
+        <button type="button" class="batch-btn" onclick="exportSelected()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Exportar
+        </button>
+        {% if current_user.role == 'admin' %}
+        <button type="button" class="batch-btn danger" onclick="deleteSelected()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            </svg>
+            Eliminar
+        </button>
+        {% endif %}
+    </div>
 </div>
 
 <!-- ===== MODAL DE CONFIRMACIÓN ===== -->
@@ -1199,10 +1501,69 @@
     </div>
 </div>
 
+<!-- ===== MODAL DE RESULTADO (batch) ===== -->
+<div class="cs-result-overlay" id="csResultOverlay">
+    <div class="cs-result-box" id="csResultBox">
+        <div class="cs-result-icon" id="csResultIcon">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+        </div>
+        <h3 class="cs-result-title" id="csResultTitle">Listo</h3>
+        <p class="cs-result-message" id="csResultMessage"></p>
+        <div class="cs-result-actions">
+            <button type="button" class="cs-result-btn" id="csResultOk">Aceptar</button>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    // ============================================================
+    // MODAL DE RESULTADO (batch)
+    // ============================================================
+    function showBatchResult(title, message, type) {
+        type = type || 'success';
+        const overlay = document.getElementById('csResultOverlay');
+        const box = document.getElementById('csResultBox');
+        const iconEl = document.getElementById('csResultIcon');
+        const titleEl = document.getElementById('csResultTitle');
+        const messageEl = document.getElementById('csResultMessage');
+
+        box.className = 'cs-result-box ' + type;
+
+        const icons = {
+            success: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>',
+            error:   '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>',
+            warning: '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+            info:    '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>'
+        };
+
+        iconEl.innerHTML = icons[type] || icons.success;
+        titleEl.textContent = title;
+        messageEl.textContent = message;
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeBatchResult() {
+        const overlay = document.getElementById('csResultOverlay');
+        if (overlay) overlay.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const okBtn = document.getElementById('csResultOk');
+        const overlay = document.getElementById('csResultOverlay');
+        if (okBtn) okBtn.addEventListener('click', closeBatchResult);
+        if (overlay) overlay.addEventListener('click', function(e) {
+            if (e.target === this) closeBatchResult();
+        });
+    });
+
     // ============================================================
     // CUSTOM SELECT (con búsqueda interna auto si >8 opciones)
     // ============================================================
@@ -1446,15 +1807,12 @@
     // SORT: interceptar el cambio y navegar con sort/order
     // ============================================================
     document.addEventListener('DOMContentLoaded', function() {
-        // Vista por defecto
         let pref = 'kanban';
         try { pref = localStorage.getItem('clientes_view_preference') || 'kanban'; } catch (e) {}
         cambiarVista(pref);
 
-        // Custom select para el dropdown de sort
         const sortSelect = document.getElementById('sortSelect');
         if (sortSelect) {
-            // Guardar los datos de sort/order en cada option
             Array.from(sortSelect.options).forEach(o => {
                 const [s, ord] = o.value.split('|');
                 o.dataset.sort = s;
@@ -1534,6 +1892,203 @@
                 if (m) m.classList.remove('open');
             });
         }
+    });
+
+    // ============================================================
+    // MULTI-SELECT (batch actions)
+    // ============================================================
+    const TOTAL_MATCHING = {{ total }};
+    let _allMatchingLoaded = false;
+
+    const selectedIds = new Set();
+
+    function toggleSelection(event, id) {
+        if (event) event.stopPropagation();
+        id = parseInt(id);
+        if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+        } else {
+            selectedIds.add(id);
+        }
+        updateSelectionUI();
+    }
+
+    function clearSelection() {
+        selectedIds.clear();
+        _allMatchingLoaded = false;
+        updateSelectionUI();
+    }
+
+    function updateSelectionUI() {
+        document.querySelectorAll('.kanban-card').forEach(card => {
+            const cid = parseInt(card.dataset.clienteId);
+            const cb = card.querySelector('.kb-check');
+            const isSel = selectedIds.has(cid);
+            card.classList.toggle('is-selected', isSel);
+            if (cb && cb.checked !== isSel) cb.checked = isSel;
+        });
+        document.querySelectorAll('.table tbody tr[data-cliente-id]').forEach(tr => {
+            const cid = parseInt(tr.dataset.clienteId);
+            const cb = tr.querySelector('.row-checkbox-item');
+            const isSel = selectedIds.has(cid);
+            tr.classList.toggle('is-selected', isSel);
+            if (cb && cb.checked !== isSel) cb.checked = isSel;
+        });
+
+        const toolbar = document.getElementById('batchToolbar');
+        const countEl = document.getElementById('batchCount');
+        if (countEl) countEl.textContent = selectedIds.size;
+        if (toolbar) toolbar.classList.toggle('is-open', selectedIds.size > 0);
+
+        const headerCb = document.getElementById('selectAllHeader');
+        if (headerCb) {
+            const visibleIds = Array.from(document.querySelectorAll('.table tbody tr[data-cliente-id]'))
+                .map(tr => parseInt(tr.dataset.clienteId));
+            const allSel = visibleIds.length > 0 && visibleIds.every(id => selectedIds.has(id));
+            headerCb.checked = allSel;
+            headerCb.indeterminate = !allSel && visibleIds.some(id => selectedIds.has(id));
+        }
+
+        // Banner de selección masiva
+        const banner = document.getElementById('batchBanner');
+        const bannerText = document.getElementById('batchBannerText');
+        const bannerLink = document.getElementById('batchBannerLink');
+        if (banner && bannerText && bannerLink) {
+            const n = selectedIds.size;
+            if (n > 0 && n < TOTAL_MATCHING) {
+                bannerText.textContent = n + ' seleccionado' + (n !== 1 ? 's' : '') + '.';
+                bannerLink.textContent = 'Seleccionar los ' + TOTAL_MATCHING + ' que coinciden';
+                bannerLink.style.display = '';
+                banner.classList.add('is-open');
+            } else if (n > 0 && n >= TOTAL_MATCHING) {
+                bannerText.textContent = 'Todos los ' + TOTAL_MATCHING + ' seleccionados.';
+                bannerLink.style.display = 'none';
+                banner.classList.add('is-open');
+            } else {
+                banner.classList.remove('is-open');
+            }
+        }
+    }
+
+    function toggleSelectAllVisible(checked) {
+        document.querySelectorAll('.table tbody tr[data-cliente-id], .kanban-card[data-cliente-id]').forEach(el => {
+            const cid = parseInt(el.dataset.clienteId);
+            if (checked) selectedIds.add(cid);
+            else selectedIds.delete(cid);
+        });
+        updateSelectionUI();
+    }
+
+    function selectAllMatching() {
+        if (_allMatchingLoaded) {
+            updateSelectionUI();
+            return;
+        }
+        const searchEl = document.getElementById('searchInput');
+        const search = searchEl ? searchEl.value.trim() : '';
+        const url = new URL('{{ url_for("clientes.batch_ids_clientes") }}', window.location.origin);
+        if (search) url.searchParams.set('search', search);
+
+        fetch(url.toString())
+            .then(r => r.json())
+            .then(data => {
+                (data.ids || []).forEach(id => selectedIds.add(parseInt(id)));
+                _allMatchingLoaded = true;
+                updateSelectionUI();
+            })
+            .catch(() => alert('Error al cargar todos los IDs'));
+    }
+
+    function exportSelected() {
+        if (selectedIds.size === 0) return;
+        const ids = Array.from(selectedIds);
+        fetch('{{ url_for("clientes.batch_exportar_clientes") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        })
+        .then(async r => {
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                throw new Error(err.error || 'Error al exportar');
+            }
+            return r.blob();
+        })
+        .then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'clientes_seleccionados_' + new Date().toISOString().slice(0,10) + '.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        })
+        .catch(err => {
+            alert('Error: ' + err.message);
+        });
+    }
+
+    function deleteSelected() {
+        if (selectedIds.size === 0) return;
+        const n = selectedIds.size;
+        const msg = '¿Eliminar ' + n + ' cliente' + (n !== 1 ? 's' : '') + '?\n\n' +
+                    'Esta acción no se puede deshacer.\n' +
+                    'Los clientes con órdenes asociadas serán omitidos.';
+
+        if (typeof csConfirm === 'function') {
+            csConfirm({
+                title: 'Eliminar clientes',
+                message: msg,
+                okText: 'Sí, eliminar',
+                onConfirm: _doDeleteSelected
+            });
+        } else if (confirm(msg)) {
+            _doDeleteSelected();
+        }
+    }
+
+    function _doDeleteSelected() {
+        const ids = Array.from(selectedIds);
+        fetch('{{ url_for("clientes.batch_eliminar_clientes") }}', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) {
+                throw new Error(data.error || 'Error al eliminar');
+            }
+            const bloqueados = data.bloqueados || [];
+            let msg = data.eliminados + ' cliente' + (data.eliminados !== 1 ? 's' : '') + ' eliminado' + (data.eliminados !== 1 ? 's' : '') + '.';
+            let tipo = 'success';
+            let titulo = 'Eliminación completada';
+
+            if (bloqueados.length > 0) {
+                msg += '\n\n' + bloqueados.length + ' cliente' + (bloqueados.length !== 1 ? 's' : '') + ' no se pudo eliminar porque tiene' + (bloqueados.length !== 1 ? 'n' : '') + ' órdenes asociadas.';
+                tipo = 'warning';
+                titulo = 'Eliminación parcial';
+            }
+
+            showBatchResult(titulo, msg, tipo);
+            setTimeout(() => window.location.reload(), 1800);
+        })
+        .catch(err => {
+            showBatchResult('Error al exportar', err.message, 'error');
+        });
+    }
+
+    // Sincronizar estado al cambiar de vista
+    document.addEventListener('DOMContentLoaded', function() {
+        const origCambiarVista = window.cambiarVista;
+        if (typeof origCambiarVista === 'function') {
+            window.cambiarVista = function(v) {
+                origCambiarVista(v);
+                updateSelectionUI();
+            };
+        }
+        updateSelectionUI();
     });
 </script>
 {% endblock %}
