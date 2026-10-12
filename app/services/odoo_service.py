@@ -67,6 +67,6 @@ class OdooService:
         return self.models.execute_kw(
             self.db, self.uid, self.password,
             'res.partner', 'search_read',
-            [[['customer_rank', '>', 0]]],
+            [[['type', '=', 'contact'], ['employee', '=', False], ['active', '=', True]]],
             kwargs
         )
