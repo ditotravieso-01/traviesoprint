@@ -27,3 +27,13 @@ class Config:
     LDAP_SERVICE_PASSWORD = os.environ.get('LDAP_SERVICE_PASSWORD', '')
     LDAP_TIMEOUT = int(os.environ.get('LDAP_TIMEOUT', '5'))
     LDAP_CA_CERTS = os.environ.get('LDAP_CA_CERTS', '/etc/ssl/certs/ca-certificates.crt')
+
+        # ===== Odoo API =====
+    # Integración con Odoo ERP vía XML-RPC.
+    # Solo se activa si ODOO_ENABLED=True.
+    # Las credenciales vienen siempre del .env, nunca hardcodeadas aquí.
+    ODOO_ENABLED = os.environ.get('ODOO_ENABLED', 'False').lower() in ('true', '1', 't', 'yes')
+    ODOO_URL = os.environ.get('ODOO_URL', '')
+    ODOO_DB = os.environ.get('ODOO_DB', '')
+    ODOO_USER = os.environ.get('ODOO_USER', '')
+    ODOO_PASSWORD = os.environ.get('ODOO_PASSWORD', '')

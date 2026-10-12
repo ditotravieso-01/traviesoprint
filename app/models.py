@@ -370,6 +370,10 @@ class Client(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
     created_by = db.relationship('User', foreign_keys=[created_by_id])
+    # ID del partner en Odoo. Nullable porque puede haber clientes creados
+    # localmente que no provienen del ERP. Indexado para lookups rápidos
+    # durante la sincronización.
+    odoo_partner_id = db.Column(db.Integer, unique=True, nullable=True, index=True)
 
 # ==========================================
 # MODELO DE PROVEEDOR (NUEVO)
