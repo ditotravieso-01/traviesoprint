@@ -1824,3 +1824,97 @@ def incrementar_uso_favoritos_de_orden(order):
 
     db.session.commit()
     return contados
+
+# ==========================================
+# SYNC ODOO — CONFIGURACIÓN WEB (solo admin)
+# ==========================================
+
+def _admin_required_json(func):
+    """Decorador: solo admin. Responde JSON 403 si no."""
+    from functools import wraps
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        if current_user.role != 'admin':
+            return jsonify({'ok': False, 'error': 'Solo administradores'}), 403
+        return func(*args, **kwargs)
+    return wrapper
+
+
+@ordenes_bp.route('/odoo-sync/estado', methods=['GET'])
+@login_required
+@_admin_required_json
+def odoo_sync_estado():
+    """Estado actual del sync de órdenes Odoo."""
+    from app.services.odoo_orders_sync import (
+        is_enabled, get_since, CLAVE_SINCE
+    )
+    from app.models import Configuracion
+    from datetime import datetime as _dt
+
+    enabled = is_enabled()
+    since = get_since()
+    por_revisar = Order.query.filter_by(requiere_revision=True).count()
+
+    last_update = None
+    cfg = Configuracion.query.filter_by(clave=CLAVE_SINCE).first()
+    if cfg and cfg.updated_at:
+        last_update = cfg.updated_at.isoformat()
+
+    return jsonify({
+        'ok': True,
+        'enabled': enabled,
+        'since': since.isoformat(timespec='seconds') if since else None,
+        'since_updated_at': last_update,
+        'por_revisar': por_revisar,
+        'now': _dt.utcnow().isoformat(timespec='seconds'),
+    })
+
+
+@ordenes_bp.route('/odoo-sync/toggle', methods=['POST'])
+@login_required
+@_admin_required_json
+def odoo_sync_toggle():
+    """Activa o desactiva el sync."""
+    from app.services.odoo_orders_sync import set_enabled, is_enabled
+    data = request.get_json(silent=True) or {}
+    set_enabled(bool(data.get('enabled')))
+    return jsonify({'ok': True, 'enabled': is_enabled()})
+
+
+@ordenes_bp.route('/odoo-sync/since', methods=['POST'])
+@login_required
+@_admin_required_json
+def odoo_sync_set_since():
+    """Cambia la fecha desde la que se importan ventas."""
+    from app.services.odoo_orders_sync import set_since, get_since
+    from datetime import datetime as _dt
+
+    data = request.get_json(silent=True) or {}
+    raw = (data.get('since') or '').strip()
+    if not raw:
+        return jsonify({'ok': False, 'error': 'Falta el campo since'}), 400
+
+    try:
+        since_dt = _dt.fromisoformat(raw.replace(' ', 'T'))
+    except ValueError:
+        return jsonify({'ok': False, 'error': 'Formato de fecha inválido'}), 400
+
+    if since_dt > _dt.utcnow():
+        return jsonify({'ok': False, 'error': 'La fecha no puede ser futura'}), 400
+
+    set_since(since_dt)
+    return jsonify({'ok': True, 'since': get_since().isoformat(timespec='seconds')})
+
+
+@ordenes_bp.route('/odoo-sync/run', methods=['POST'])
+@login_required
+@_admin_required_json
+def odoo_sync_run():
+    """Ejecuta el sync ahora (force=True ignora el toggle)."""
+    from app.services.odoo_orders_sync import run_sync
+    try:
+        resultado = run_sync(force=True)
+    except Exception as e:
+        current_app.logger.error(f'odoo_sync_run error: {e}', exc_info=True)
+        return jsonify({'ok': False, 'error': f'Error inesperado: {e}'}), 500
+    return jsonify(resultado)
