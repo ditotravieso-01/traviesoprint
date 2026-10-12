@@ -70,3 +70,48 @@ class OdooService:
             [[['type', '=', 'contact'], ['employee', '=', False], ['active', '=', True]]],
             kwargs
         )
+
+    def get_ventas_confirmadas(self, desde, limit=None):
+        """
+        Devuelve ventas confirmadas (sale.order con state='sale') cuya
+        date_order sea >= 'desde'.
+
+        Args:
+            desde: datetime UTC (naive) — punto de corte inferior.
+            limit: opcional, máximo de registros.
+
+        Returns:
+            Lista de dicts con: id, name, date_order, partner_id,
+            note, user_id, commitment_date. Ordenada por date_order asc.
+
+        Notas:
+            - Solo lectura. No modifica nada en Odoo.
+            - 'date_order' en Odoo es UTC; 'desde' debe venir en UTC naive.
+            - No captura excepciones: el caller (sync-odoo) decide qué hacer.
+        """
+        if desde is None:
+            raise ValueError('get_ventas_confirmadas: falta "desde"')
+
+        desde_str = desde.strftime('%Y-%m-%d %H:%M:%S')
+
+        kwargs = {
+            'fields': [
+                'id', 'name', 'date_order', 'partner_id',
+                'note', 'user_id', 'commitment_date',
+            ],
+            'order': 'date_order asc',
+        }
+        if limit:
+            kwargs['limit'] = limit
+
+        domain = [
+            ['state', '=', 'sale'],
+            ['date_order', '>=', desde_str],
+        ]
+
+        return self.models.execute_kw(
+            self.db, self.uid, self.password,
+            'sale.order', 'search_read',
+            [domain],
+            kwargs,
+        )
