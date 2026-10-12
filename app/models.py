@@ -207,6 +207,22 @@ class Order(db.Model):
     usuarios_notificados = db.Column(db.Text, default='[]')
     ruta = db.Column(db.String(20), default='impresion')
 
+    # ---- NUEVO: integración con Odoo (sync de ventas) ----
+    # Anclar al sale.order de Odoo. Único para evitar duplicados al re-sincronizar.
+    odoo_order_id = db.Column(db.Integer, unique=True, nullable=True, index=True)
+    # Flag que bloquea mover la orden hasta que el comercial la revise
+    # (añadar líneas o la marque manualmente como revisada).
+    requiere_revision = db.Column(
+        db.Boolean, nullable=False, server_default='0', default=False, index=True
+    )
+    # Nombre del vendedor en Odoo (informativo, para filtros/estadísticas).
+    comercial_odoo = db.Column(db.String(100), nullable=True)
+    # Fecha de entrega prometida en Odoo ("entregar antes de").
+    # En una parte futura convivirá con fecha_entrega_real para comparar
+    # si el pedido se sacó antes o después de lo prometido.
+    fecha_entrega_odoo = db.Column(db.DateTime, nullable=True)
+    # -----------------------------------------------------------------
+
     def get_usuarios_notificados(self):
         return json.loads(self.usuarios_notificados) if self.usuarios_notificados else []
 
