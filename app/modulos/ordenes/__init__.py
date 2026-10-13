@@ -430,11 +430,22 @@ def list_orders():
             )
         )
     if ver_mias:
-        # Match normalizado: minúsculas, sin espacios. Cubre "Lauren" → "lauren".
+        # Match por email (fiable) o, como fallback, por nombre normalizado.
+        email_user = (current_user.email or '').strip().lower()
         username_norm = current_user.username.strip().lower().replace(' ', '')
-        base_query = base_query.filter(
-            db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
-        )
+
+        if email_user:
+            base_query = base_query.filter(
+                db.or_(
+                    db.func.lower(Order.comercial_odoo_email) == email_user,
+                    db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm,
+                )
+            )
+        else:
+            # Usuario sin email en DB — solo fallback por username
+            base_query = base_query.filter(
+                db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
+            )
 
     # --- Paginación ---
     query = base_query
@@ -476,10 +487,20 @@ def list_orders():
     )
 
     # --- Contador "mis órdenes" (siempre sobre el total, sin otros filtros) ---
+    email_user = (current_user.email or '').strip().lower()
     username_norm = current_user.username.strip().lower().replace(' ', '')
-    cnt_mias = Order.query.filter(
-        db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
-    ).count()
+
+    if email_user:
+        cnt_mias = Order.query.filter(
+            db.or_(
+                db.func.lower(Order.comercial_odoo_email) == email_user,
+                db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm,
+            )
+        ).count()
+    else:
+        cnt_mias = Order.query.filter(
+            db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
+        ).count()
 
     return render_template(
         'list_ordenes.html',

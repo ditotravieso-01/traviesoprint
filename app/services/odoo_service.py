@@ -74,16 +74,13 @@ class OdooService:
 
     def get_ventas_confirmadas(self, desde, limit=200):
         """
-        Devuelve ventas confirmadas (sale.order con state='sale') cuya
-        date_order sea >= 'desde'.
+        Devuelve ventas confirmadas (sale.order state='sale') con la
+        información de `user_id` y `create_uid` enriquecida con name + email.
 
-        Args:
-            desde: datetime UTC (naive) — punto de corte inferior.
-            limit: máximo de registros (default 200).
-
-        Returns:
-            Lista de dicts con: id, name, date_order, partner_id,
-            note, user_id, commitment_date. Ordenada por date_order asc.
+        Para cada venta devuelve además:
+            user_id_name      : nombre display del comercial
+            user_id_email     : email/login del comercial (para matching)
+            create_uid_name   : nombre display de quien creó el registro
         """
         if desde is None:
             raise ValueError('get_ventas_confirmadas: falta "desde"')
@@ -93,7 +90,7 @@ class OdooService:
         kwargs = {
             'fields': [
                 'id', 'name', 'date_order', 'partner_id',
-                'note', 'user_id', 'commitment_date',
+                'note', 'user_id', 'commitment_date', 'create_uid',
             ],
             'order': 'date_order asc',
         }
@@ -105,9 +102,55 @@ class OdooService:
             ['date_order', '>=', desde_str],
         ]
 
-        return self.models.execute_kw(
+        ventas = self.models.execute_kw(
             self.db, self.uid, self.password,
             'sale.order', 'search_read',
             [domain],
             kwargs,
         )
+
+        # Recoger ids únicos de user_id y create_uid
+        user_ids = set()
+        for v in ventas:
+            uid_pair = v.get('user_id') or []
+            if isinstance(uid_pair, (list, tuple)) and uid_pair:
+                user_ids.add(uid_pair[0])
+            cuid_pair = v.get('create_uid') or []
+            if isinstance(cuid_pair, (list, tuple)) and cuid_pair:
+                user_ids.add(cuid_pair[0])
+
+        # Leer todos los users de una vez y mapear por id
+        users_map = {}
+        if user_ids:
+            try:
+                usuarios = self.models.execute_kw(
+                    self.db, self.uid, self.password,
+                    'res.users', 'read',
+                    [list(user_ids)],
+                    {'fields': ['id', 'name', 'login', 'email']},
+                )
+                for u in usuarios:
+                    users_map[u['id']] = u
+            except Exception:
+                # Si falla la lectura, seguimos sin emails (degrada, no rompe)
+                users_map = {}
+
+        # Enriquecer cada venta
+        for v in ventas:
+            uid_pair = v.get('user_id') or []
+            if isinstance(uid_pair, (list, tuple)) and uid_pair:
+                u = users_map.get(uid_pair[0], {})
+                v['user_id_name'] = u.get('name') or (uid_pair[1] if len(uid_pair) > 1 else None)
+                v['user_id_email'] = (u.get('email') or u.get('login') or '').strip() or None
+            else:
+                v['user_id_name'] = None
+                v['user_id_email'] = None
+
+            cuid_pair = v.get('create_uid') or []
+            if isinstance(cuid_pair, (list, tuple)) and cuid_pair:
+                u = users_map.get(cuid_pair[0], {})
+                v['create_uid_name'] = u.get('name') or (cuid_pair[1] if len(cuid_pair) > 1 else None)
+            else:
+                v['create_uid_name'] = None
+
+        return ventas

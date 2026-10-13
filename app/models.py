@@ -221,6 +221,11 @@ class Order(db.Model):
     # En una parte futura convivirá con fecha_entrega_real para comparar
     # si el pedido se sacó antes o después de lo prometido.
     fecha_entrega_odoo = db.Column(db.DateTime, nullable=True)
+    comercial_odoo = db.Column(db.String(100), nullable=True)
+    fecha_entrega_odoo = db.Column(db.DateTime, nullable=True)
+    # ---- NUEVO (Parte 29.1c): matching por email + creador Odoo ----
+    comercial_odoo_email = db.Column(db.String(120), nullable=True, index=True)
+    creado_por_odoo = db.Column(db.String(100), nullable=True)
     # -----------------------------------------------------------------
 
     def get_usuarios_notificados(self):

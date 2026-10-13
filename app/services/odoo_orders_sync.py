@@ -179,17 +179,23 @@ def run_sync(force=False):
                 except ValueError:
                     fecha_entrega = None
 
-            # 4e. Vendedor Odoo
-            user_data = venta.get('user_id') or []
-            comercial_odoo = (
-                user_data[1]
-                if isinstance(user_data, (list, tuple)) and len(user_data) > 1
-                else None
-            )
+            # 4e. Vendedor Odoo — nombre display y email
+            comercial_odoo = venta.get('user_id_name')
+            comercial_odoo_email = venta.get('user_id_email')
 
-            # 4f. Mapeo a usuario local
+            # 4e.bis. Quién creó el registro en Odoo (puede diferir del comercial)
+            creado_por_odoo = venta.get('create_uid_name')
+
+            # 4f. Mapeo a usuario local — primero por email (más fiable),
+            #      fallback a username normalizado.
             created_by_id = None
-            if comercial_odoo:
+            if comercial_odoo_email:
+                local_user = User.query.filter(
+                    db.func.lower(User.email) == comercial_odoo_email.lower()
+                ).first()
+                if local_user:
+                    created_by_id = local_user.id
+            if not created_by_id and comercial_odoo:
                 norm = comercial_odoo.strip().lower().replace(' ', '')
                 local_user = User.query.filter(
                     db.func.lower(User.username) == norm
@@ -211,6 +217,8 @@ def run_sync(force=False):
                 requiere_revision=True,
                 odoo_order_id=odoo_order_id,
                 comercial_odoo=comercial_odoo,
+                comercial_odoo_email=comercial_odoo_email,
+                creado_por_odoo=creado_por_odoo,
                 fecha_entrega_odoo=fecha_entrega,
                 created_by_id=created_by_id,
             )
