@@ -402,10 +402,11 @@ def list_orders():
     estado = request.args.get('estado', '').strip()
     search = request.args.get('search', '').strip()
     solo_revision = request.args.get('revision', '') == '1'
+    comercial_odoo_filtro = request.args.get('comercial_odoo', '').strip()
     page = request.args.get('page', 1, type=int)
     per_page = 20
 
-    # --- Query base (estado + búsqueda) ---
+    # --- Query base ---
     base_query = Order.query
     if estado and estado in COLUMNAS_NOMBRES:
         base_query = base_query.filter_by(column=estado)
@@ -418,8 +419,10 @@ def list_orders():
                 Order.client.has(Client.nombre.ilike(search_like))
             )
         )
+    if comercial_odoo_filtro:
+        base_query = base_query.filter(Order.comercial_odoo == comercial_odoo_filtro)
 
-    # --- Query paginada (aplica filtro "solo revisión" si procede) ---
+    # --- Paginación ---
     query = base_query
     if solo_revision:
         query = query.filter_by(requiere_revision=True)
@@ -449,17 +452,25 @@ def list_orders():
     todos = Order.query.all()
     cnt_por_revisar = sum(1 for o in todos if o.requiere_revision)
     cnt_falta_entrada = sum(
-        1 for o in todos
-        if not o.requiere_revision and not o.entrada_ok
+        1 for o in todos if not o.requiere_revision and not o.entrada_ok
     )
     cnt_sin_lineas = sum(
-        1 for o in todos
-        if not o.requiere_revision and o.entrada_ok and len(o.archivos) == 0
+        1 for o in todos if not o.requiere_revision and o.entrada_ok and len(o.archivos) == 0
     )
     cnt_listas = sum(
-        1 for o in todos
-        if not o.requiere_revision and o.entrada_ok and len(o.archivos) > 0
+        1 for o in todos if not o.requiere_revision and o.entrada_ok and len(o.archivos) > 0
     )
+
+    # --- Lista de comerciales Odoo únicos (para el filtro) ---
+    comerciales_odoo = [
+        row[0] for row in
+        db.session.query(Order.comercial_odoo)
+            .filter(Order.comercial_odoo.isnot(None))
+            .filter(Order.comercial_odoo != '')
+            .distinct()
+            .order_by(Order.comercial_odoo)
+            .all()
+    ]
 
     return render_template(
         'list_ordenes.html',
@@ -473,10 +484,13 @@ def list_orders():
         page=page, per_page=per_page, total=total,
         total_pages=total_pages,
         search=search, estado=estado, solo_revision=solo_revision,
+        comercial_odoo_filtro=comercial_odoo_filtro,
+        comerciales_odoo=comerciales_odoo,
         cnt_por_revisar=cnt_por_revisar,
         cnt_falta_entrada=cnt_falta_entrada,
         cnt_sin_lineas=cnt_sin_lineas,
         cnt_listas=cnt_listas,
+        odoo_base_url=current_app.config.get('ODOO_URL', ''),
     )
 
 # ==========================================
@@ -486,7 +500,13 @@ def list_orders():
 @login_required
 def detalle_order(order_id):
     order = Order.query.get_or_404(order_id)
-    return render_template('detalle_orden.html', order=order, now=datetime.now(), columnas_nombres=COLUMNAS_NOMBRES)
+    return render_template(
+        'detalle_orden.html',
+        order=order,
+        now=datetime.now(),
+        columnas_nombres=COLUMNAS_NOMBRES,
+        odoo_base_url=current_app.config.get('ODOO_URL', ''),
+    )
 
 # ==========================================
 # GUARDAR ARCHIVO

@@ -1231,6 +1231,19 @@
             <span class="badge-status {{ clase_estado }}"><span class="dot"></span> {{ estado_nombre }}</span>
 
             <div class="actions-bar">
+                {% if order.odoo_order_id and odoo_base_url %}
+                    <a href="{{ odoo_base_url }}/odoo/sales/{{ order.odoo_order_id }}"
+                    target="_blank" rel="noopener"
+                    class="btn btn-outline"
+                    title="Abrir venta original en Odoo">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        <span class="btn-lbl">Odoo</span>
+                    </a>
+                {% endif %}
                 {% if current_user.role in ['comercial', 'admin'] %}
                     <a href="{{ url_for('ordenes.edit_order', order_id=order.id) }}" class="btn btn-warning" title="Editar orden">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

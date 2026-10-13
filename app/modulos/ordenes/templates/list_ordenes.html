@@ -1085,6 +1085,45 @@
         flex-shrink: 0;
     }
 
+    /* ============================================================
+       BADGE ODOO (Fase 29.1)
+       ============================================================ */
+    .ord-odoo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        padding: 1px 7px;
+        border-radius: 30px;
+        font-family: 'Inter', sans-serif;
+        font-size: 9.5px;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+        text-transform: uppercase;
+        white-space: nowrap;
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+        text-decoration: none;
+        margin-left: 6px;
+        vertical-align: middle;
+        transition: all 0.15s;
+        cursor: pointer;
+    }
+    .ord-odoo-badge:hover {
+        background: #e0e7ff;
+        border-color: #818cf8;
+        color: #312e81;
+    }
+    .ord-odoo-badge svg {
+        width: 9px;
+        height: 9px;
+        flex-shrink: 0;
+    }
+    .kanban-card .ord-odoo-badge {
+        font-size: 9px;
+        margin-left: 4px;
+        margin-top: 3px;
+    }
 </style>
 {% endblock %}
 
@@ -1290,6 +1329,15 @@
                         <option value="{{ col_id }}" {% if estado == col_id %}selected{% endif %}>{{ col_nombre }}</option>
                     {% endfor %}
                 </select>
+                {% if comerciales_odoo %}
+                <select name="comercial_odoo" id="comercialOdooSelect">
+                    <option value="">Todos los comerciales Odoo</option>
+                    {% for c in comerciales_odoo %}
+                        <option value="{{ c }}" {% if comercial_odoo_filtro == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+                {% if solo_revision %}<input type="hidden" name="revision" value="1">{% endif %}
                 <button type="submit" style="display:none;"></button>
                 {% if search or estado %}
                     <a href="{{ url_for('ordenes.list_orders') }}" class="btn-limpiar" title="Limpiar filtros">
@@ -1349,6 +1397,19 @@
                     <tr>
                         <td class="order-num">
                             {{ order.order_num or 'Sin número' }}
+                            {% if order.odoo_order_id and odoo_base_url %}
+                                <a href="{{ odoo_base_url }}/odoo/sales/{{ order.odoo_order_id }}"
+                                target="_blank" rel="noopener"
+                                class="ord-odoo-badge"
+                                title="Abrir venta original en Odoo">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Odoo
+                                </a>
+                            {% endif %}
                             {% set _rev = order.requiere_revision %}
                             {% set _lineas = order.archivos|length %}
                             {% set _entrada = order.entrada_ok %}
@@ -1508,7 +1569,23 @@
             <div class="kanban-card {{ clase_borde }}">
                 <div class="header">
                     <div>
-                        <div class="order-num">{{ order.order_num or 'Sin número' }}</div>
+                        <div class="order-num">
+                            {{ order.order_num or 'Sin número' }}
+                            {% if order.odoo_order_id and odoo_base_url %}
+                                <a href="{{ odoo_base_url }}/odoo/sales/{{ order.odoo_order_id }}"
+                                target="_blank" rel="noopener"
+                                class="ord-odoo-badge"
+                                onclick="event.stopPropagation()"
+                                title="Abrir venta original en Odoo">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                        <polyline points="15 3 21 3 21 9"></polyline>
+                                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                                    </svg>
+                                    Odoo
+                                </a>
+                            {% endif %}
+                        </div>
                         {% set _rev = order.requiere_revision %}
                         {% set _lineas = order.archivos|length %}
                         {% set _entrada = order.entrada_ok %}
@@ -1721,6 +1798,7 @@
         const filterForm = document.getElementById('filterForm');
         const searchInput = document.getElementById('searchInput');
         const estadoSelect = document.getElementById('estadoSelect');
+        const comercialOdooSelect = document.getElementById('comercialOdooSelect');
         let timeoutId = null;
 
         function submitForm() {
@@ -1732,6 +1810,7 @@
 
         searchInput.addEventListener('input', submitForm);
         estadoSelect.addEventListener('change', submitForm);
+        if (comercialOdooSelect) comercialOdooSelect.addEventListener('change', submitForm);
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); submitForm(); }
         });
