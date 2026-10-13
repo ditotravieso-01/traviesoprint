@@ -1,33 +1,21 @@
 """
 Servicio de integración con Odoo ERP vía XML-RPC.
 
-Autenticación: módulo OCA `auth_api_key`. La clave se envía
-en el header HTTP `API-KEY`, no via `common.authenticate`.
+Autenticación nativa de Odoo: usuario + API key via `common.authenticate`.
 
-Requiere en .env:
-    ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD, ODOO_UID
+Uso:
+    from app.services.odoo_service import OdooService
+    service = OdooService()
+    clientes = service.get_clientes()
+
+Requiere que existan las siguientes variables en config (que a su vez
+vienen del .env):
+    ODOO_URL, ODOO_DB, ODOO_USER, ODOO_PASSWORD
 
 Si ODOO_ENABLED=False en config, no se debe instanciar este servicio.
 """
-import os
 import xmlrpc.client
 from flask import current_app
-
-
-class _ApiKeyTransport(xmlrpc.client.SafeTransport):
-    """
-    Transport XML-RPC que añade el header `API-KEY` a cada petición.
-    Extiende SafeTransport (HTTPS) para hablar con Odoo por SSL.
-    """
-
-    def __init__(self, api_key, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._api_key = api_key or ''
-
-    def send_headers(self, connection, headers):
-        if self._api_key:
-            connection.putheader('API-KEY', self._api_key)
-        super().send_headers(connection, headers)
 
 
 class OdooService:
@@ -39,47 +27,31 @@ class OdooService:
         self.db = cfg.get('ODOO_DB', '')
         self.user = cfg.get('ODOO_USER', '')
         self.password = cfg.get('ODOO_PASSWORD', '')
-        self.uid_env = cfg.get('ODOO_UID', '')
         self.uid = None
         self.models = None
         self._connect()
 
     def _connect(self):
-        """Prepara el cliente XML-RPC usando el header API-KEY."""
+        """Autentica contra Odoo y prepara el cliente de objetos."""
         if not all([self.url, self.db, self.user, self.password]):
             raise RuntimeError(
                 'OdooService: faltan credenciales. '
                 'Revisa ODOO_URL, ODOO_DB, ODOO_USER y ODOO_PASSWORD en el .env'
             )
-
-        # UID explícito — el módulo OCA no expone `common.authenticate`.
-        if not str(self.uid_env).strip():
+        common = xmlrpc.client.ServerProxy(f'{self.url}/xmlrpc/2/common')
+        self.uid = common.authenticate(self.db, self.user, self.password, {})
+        if not self.uid:
             raise RuntimeError(
-                'OdooService: falta ODOO_UID en el .env. '
-                'Es el id numérico del usuario robot en Odoo (ej. 7). '
-                'Míralo en la URL del usuario: /odoo/settings/users/<id>'
+                'OdooService: autenticación fallida. '
+                'Revisa ODOO_USER y ODOO_PASSWORD'
             )
-        try:
-            self.uid = int(self.uid_env)
-        except (ValueError, TypeError):
-            raise RuntimeError(
-                f'OdooService: ODOO_UID inválido: {self.uid_env!r}. '
-                'Debe ser un número entero.'
-            )
-
-        # Cliente XML-RPC con header API-KEY inyectado
-        transport = _ApiKeyTransport(self.password)
-        self.models = xmlrpc.client.ServerProxy(
-            f'{self.url}/xmlrpc/2/object',
-            transport=transport,
-        )
+        self.models = xmlrpc.client.ServerProxy(f'{self.url}/xmlrpc/2/object')
 
     def get_clientes(self, limit=None):
         """
         Devuelve lista de clientes desde Odoo.
 
-        Filtra por customer_rank > 0 para excluir proveedores y contactos
-        que no son clientes.
+        Filtra por type='contact' y excluye empleados y partners inactivos.
 
         Args:
             limit: opcional, máximo de registros a devolver.

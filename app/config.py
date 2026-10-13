@@ -37,4 +37,3 @@ class Config:
     ODOO_DB = os.environ.get('ODOO_DB', '')
     ODOO_USER = os.environ.get('ODOO_USER', '')
     ODOO_PASSWORD = os.environ.get('ODOO_PASSWORD', '')
-    ODOO_UID = os.environ.get('ODOO_UID', '')
