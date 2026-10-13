@@ -402,7 +402,17 @@ def list_orders():
     estado = request.args.get('estado', '').strip()
     search = request.args.get('search', '').strip()
     solo_revision = request.args.get('revision', '') == '1'
-    comercial_odoo_filtro = request.args.get('comercial_odoo', '').strip()
+
+    # --- Filtro "mis órdenes" (default según rol) ---
+    # Si el usuario pasa ?mias=0 explícitamente, respetamos eso.
+    # Si no pasa nada, aplicamos default por rol.
+    mias_raw = request.args.get('mias', '')
+    if mias_raw == '':
+        # Primera carga sin parámetro: default por rol
+        ver_mias = (current_user.role == 'comercial')
+    else:
+        ver_mias = (mias_raw == '1')
+
     page = request.args.get('page', 1, type=int)
     per_page = 20
 
@@ -419,8 +429,12 @@ def list_orders():
                 Order.client.has(Client.nombre.ilike(search_like))
             )
         )
-    if comercial_odoo_filtro:
-        base_query = base_query.filter(Order.comercial_odoo == comercial_odoo_filtro)
+    if ver_mias:
+        # Match normalizado: minúsculas, sin espacios. Cubre "Lauren" → "lauren".
+        username_norm = current_user.username.strip().lower().replace(' ', '')
+        base_query = base_query.filter(
+            db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
+        )
 
     # --- Paginación ---
     query = base_query
@@ -448,7 +462,7 @@ def list_orders():
         1 for o in all_orders if o.created_at and o.created_at >= inicio_mes
     )
 
-    # --- Contadores globales de completitud (independientes del filtro) ---
+    # --- Contadores globales ---
     todos = Order.query.all()
     cnt_por_revisar = sum(1 for o in todos if o.requiere_revision)
     cnt_falta_entrada = sum(
@@ -461,16 +475,11 @@ def list_orders():
         1 for o in todos if not o.requiere_revision and o.entrada_ok and len(o.archivos) > 0
     )
 
-    # --- Lista de comerciales Odoo únicos (para el filtro) ---
-    comerciales_odoo = [
-        row[0] for row in
-        db.session.query(Order.comercial_odoo)
-            .filter(Order.comercial_odoo.isnot(None))
-            .filter(Order.comercial_odoo != '')
-            .distinct()
-            .order_by(Order.comercial_odoo)
-            .all()
-    ]
+    # --- Contador "mis órdenes" (siempre sobre el total, sin otros filtros) ---
+    username_norm = current_user.username.strip().lower().replace(' ', '')
+    cnt_mias = Order.query.filter(
+        db.func.lower(db.func.replace(Order.comercial_odoo, ' ', '')) == username_norm
+    ).count()
 
     return render_template(
         'list_ordenes.html',
@@ -484,8 +493,8 @@ def list_orders():
         page=page, per_page=per_page, total=total,
         total_pages=total_pages,
         search=search, estado=estado, solo_revision=solo_revision,
-        comercial_odoo_filtro=comercial_odoo_filtro,
-        comerciales_odoo=comerciales_odoo,
+        ver_mias=ver_mias,
+        cnt_mias=cnt_mias,
         cnt_por_revisar=cnt_por_revisar,
         cnt_falta_entrada=cnt_falta_entrada,
         cnt_sin_lineas=cnt_sin_lineas,

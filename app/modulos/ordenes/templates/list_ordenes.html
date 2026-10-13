@@ -1086,6 +1086,57 @@
     }
 
     /* ============================================================
+       CHIP "MIS ÓRDENES" (Fase 29.1b)
+       ============================================================ */
+    .mias-chip {
+        font-family: 'Inter', sans-serif;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1.5px solid #c7d2fe;
+        transition: all 0.15s;
+        white-space: nowrap;
+        height: 30px;
+        line-height: 1;
+        box-sizing: border-box;
+    }
+    .mias-chip:hover {
+        background: #e0e7ff;
+        border-color: #818cf8;
+    }
+    .mias-chip.active {
+        background: #4338ca;
+        color: white;
+        border-color: #3730a3;
+    }
+    .mias-chip.active:hover {
+        background: #3730a3;
+    }
+    .mias-chip .count {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 700;
+        background: rgba(0,0,0,0.08);
+        border-radius: 30px;
+        padding: 1px 7px;
+        font-size: 11px;
+    }
+    .mias-chip.active .count {
+        background: rgba(255,255,255,0.25);
+    }
+    .mias-chip svg {
+        width: 12px;
+        height: 12px;
+        flex-shrink: 0;
+    }
+
+    /* ============================================================
        BADGE ODOO (Fase 29.1)
        ============================================================ */
     .ord-odoo-badge {
@@ -1129,22 +1180,22 @@
 
 {% block content %}
 {# ===== MACRO DE PAGINACIÓN ===== #}
-{% macro render_pagination(page, total_pages, search, estado, revision=None) %}
+{% macro render_pagination(page, total_pages, search, estado, revision=None, mias=None) %}
 {% if total_pages > 1 %}
 <div class="pagination">
-    <a href="{{ url_for('ordenes.list_orders', page=1, search=search, estado=estado, revision=revision) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
-    <a href="{{ url_for('ordenes.list_orders', page=page-1 if page>1 else 1, search=search, estado=estado, revision=revision) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
+    <a href="{{ url_for('ordenes.list_orders', page=1, search=search, estado=estado, revision=revision, mias=mias) }}" class="btn {% if page == 1 %}disabled{% endif %}">«</a>
+    <a href="{{ url_for('ordenes.list_orders', page=page-1 if page>1 else 1, search=search, estado=estado, revision=revision, mias=mias) }}" class="btn {% if page == 1 %}disabled{% endif %}">‹</a>
 
     {% set start = [page - 2, 1]|max %}
     {% set end = [page + 2, total_pages]|min %}
     {% if start > 1 %}<span class="info">…</span>{% endif %}
     {% for p in range(start, end + 1) %}
-        <a href="{{ url_for('ordenes.list_orders', page=p, search=search, estado=estado, revision=revision) }}" class="btn {% if p == page %}active{% endif %}">{{ p }}</a>
+        <a href="{{ url_for('ordenes.list_orders', page=p, search=search, estado=estado, revision=revision, mias=mias) }}" class="btn {% if p == page %}active{% endif %}">{{ p }}</a>
     {% endfor %}
     {% if end < total_pages %}<span class="info">…</span>{% endif %}
 
-    <a href="{{ url_for('ordenes.list_orders', page=page+1 if page<total_pages else total_pages, search=search, estado=estado, revision=revision) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
-    <a href="{{ url_for('ordenes.list_orders', page=total_pages, search=search, estado=estado, revision=revision) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
+    <a href="{{ url_for('ordenes.list_orders', page=page+1 if page<total_pages else total_pages, search=search, estado=estado, revision=revision, mias=mias) }}" class="btn {% if page == total_pages %}disabled{% endif %}">›</a>
+    <a href="{{ url_for('ordenes.list_orders', page=total_pages, search=search, estado=estado, revision=revision, mias=mias) }}" class="btn {% if page == total_pages %}disabled{% endif %}">»</a>
     <span class="info">Página {{ page }} de {{ total_pages }}</span>
 </div>
 {% endif %}
@@ -1295,28 +1346,53 @@
         </div>
 
         <div class="center-group">
-                {% if solo_revision %}
-                    <a href="{{ url_for('ordenes.list_orders', search=search or None, estado=estado or None) }}"
-                    class="revision-chip active" title="Quitar filtro">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18"></line>
-                            <line x1="6" y1="6" x2="18" y2="18"></line>
-                        </svg>
-                        Por revisar
-                        <span class="count">{{ cnt_por_revisar }}</span>
-                    </a>
-                {% else %}
-                    <a href="{{ url_for('ordenes.list_orders', revision='1', search=search or None, estado=estado or None) }}"
-                    class="revision-chip" title="Ver solo órdenes por revisar">
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                            <line x1="12" y1="9" x2="12" y2="13"></line>
-                            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-                        </svg>
-                        Por revisar
-                        <span class="count">{{ cnt_por_revisar }}</span>
-                    </a>
-                {% endif %}
+            {# ===== Chip "Mis órdenes" ===== #}
+            {% if ver_mias %}
+                <a href="{{ url_for('ordenes.list_orders', mias='0', search=search or None, estado=estado or None, revision=('1' if solo_revision else None)) }}"
+                   class="mias-chip active" title="Ver todas las órdenes">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Mis órdenes
+                    <span class="count">{{ cnt_mias }}</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('ordenes.list_orders', mias='1', search=search or None, estado=estado or None, revision=('1' if solo_revision else None)) }}"
+                   class="mias-chip" title="Ver solo mis órdenes">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Mis órdenes
+                    <span class="count">{{ cnt_mias }}</span>
+                </a>
+            {% endif %}
+
+            {# ===== Chip "Por revisar" ===== #}
+            {% if solo_revision %}
+                <a href="{{ url_for('ordenes.list_orders', search=search or None, estado=estado or None, mias=('1' if ver_mias else '0')) }}"
+                   class="revision-chip active" title="Quitar filtro">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                    Por revisar
+                    <span class="count">{{ cnt_por_revisar }}</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('ordenes.list_orders', revision='1', search=search or None, estado=estado or None, mias=('1' if ver_mias else '0')) }}"
+                   class="revision-chip" title="Ver solo órdenes por revisar">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Por revisar
+                    <span class="count">{{ cnt_por_revisar }}</span>
+                </a>
+            {% endif %}
+
             <form method="GET" action="{{ url_for('ordenes.list_orders') }}" id="filterForm" class="filters-group">
                 <svg class="filter-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="11" cy="11" r="8"></circle>
@@ -1329,15 +1405,9 @@
                         <option value="{{ col_id }}" {% if estado == col_id %}selected{% endif %}>{{ col_nombre }}</option>
                     {% endfor %}
                 </select>
-                {% if comerciales_odoo %}
-                <select name="comercial_odoo" id="comercialOdooSelect">
-                    <option value="">Todos los comerciales Odoo</option>
-                    {% for c in comerciales_odoo %}
-                        <option value="{{ c }}" {% if comercial_odoo_filtro == c %}selected{% endif %}>{{ c }}</option>
-                    {% endfor %}
-                </select>
-                {% endif %}
+                {# Preservar chips al enviar el form #}
                 {% if solo_revision %}<input type="hidden" name="revision" value="1">{% endif %}
+                {% if ver_mias %}<input type="hidden" name="mias" value="1">{% elif request.args.get('mias') == '0' %}<input type="hidden" name="mias" value="0">{% endif %}
                 <button type="submit" style="display:none;"></button>
                 {% if search or estado %}
                     <a href="{{ url_for('ordenes.list_orders') }}" class="btn-limpiar" title="Limpiar filtros">
@@ -1557,7 +1627,7 @@
                 </tbody>
             </table>
         </div>
-        {{ render_pagination(page, total_pages, search, estado, revision=('1' if solo_revision else None)) }}
+        {{ render_pagination(page, total_pages, search, estado, revision=('1' if solo_revision else None), mias=('1' if ver_mias else '0')) }}
     </div>
 
     <!-- ===== VISTA KANBAN ===== -->
@@ -1732,7 +1802,7 @@
             </div>
             {% endfor %}
         </div>
-        {{ render_pagination(page, total_pages, search, estado) }}
+        {{ render_pagination(page, total_pages, search, estado, revision=('1' if solo_revision else None), mias=('1' if ver_mias else '0')) }}
     </div>
 
     <!-- ===== MODAL ===== -->
@@ -1798,7 +1868,6 @@
         const filterForm = document.getElementById('filterForm');
         const searchInput = document.getElementById('searchInput');
         const estadoSelect = document.getElementById('estadoSelect');
-        const comercialOdooSelect = document.getElementById('comercialOdooSelect');
         let timeoutId = null;
 
         function submitForm() {
@@ -1810,7 +1879,6 @@
 
         searchInput.addEventListener('input', submitForm);
         estadoSelect.addEventListener('change', submitForm);
-        if (comercialOdooSelect) comercialOdooSelect.addEventListener('change', submitForm);
         searchInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') { e.preventDefault(); submitForm(); }
         });
