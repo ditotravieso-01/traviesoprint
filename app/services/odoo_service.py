@@ -14,12 +14,10 @@ import xmlrpc.client
 from flask import current_app
 
 
-class _ApiKeyTransport(xmlrpc.client.Transport):
+class _ApiKeyTransport(xmlrpc.client.SafeTransport):
     """
     Transport XML-RPC que añade el header `API-KEY` a cada petición.
-
-    Necesario para el módulo OCA `auth_api_key`, que autentica
-    por header HTTP en lugar de por `common.authenticate()`.
+    Extiende SafeTransport (HTTPS) para hablar con Odoo por SSL.
     """
 
     def __init__(self, api_key, *args, **kwargs):
