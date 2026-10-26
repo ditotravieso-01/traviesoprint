@@ -980,6 +980,10 @@ def create_order():
             column='pendiente', entrada_ok=False, created_by_id=current_user.id
         )
         order.set_servicios(servicios)
+        # Sync legacy: ruta = tipo_proyecto (fuente de verdad)
+        order.ruta = tipo_proyecto if tipo_proyecto in (
+            'grafica', 'produccion', 'mixto', 'otro'
+        ) else 'grafica'
         order.add_history(f'Creada por {current_user.username}')
         db.session.add(order)
         db.session.flush()
@@ -1212,7 +1216,33 @@ def edit_order(order_id):
                 flash('Cliente no encontrado.', 'danger')
         order.solicitado = request.form.get('solicitado')
         order.proyecto = ''
-        order.tipo_proyecto = request.form.get('tipo_proyecto')
+
+        # --- Cambio de tipo de proyecto con auto-movimiento seguro (E1-B) ---
+        from app.modulos.workflow import (
+            _normalizar_tipo_proyecto, _calcular_columna_segura, TIPO_PROYECTO_LABELS
+        )
+        tipo_anterior = _normalizar_tipo_proyecto(getattr(order, 'tipo_proyecto', None))
+        tipo_nuevo = _normalizar_tipo_proyecto(request.form.get('tipo_proyecto'))
+
+        order.tipo_proyecto = tipo_nuevo
+        order.ruta = tipo_nuevo  # legacy sync
+
+        if tipo_anterior != tipo_nuevo:
+            columna_segura = _calcular_columna_segura(order.column, tipo_anterior, tipo_nuevo)
+            if columna_segura and columna_segura != order.column:
+                col_ant = order.column
+                order.column = columna_segura
+                order.add_history(
+                    f'Tipo de proyecto cambiado a "{TIPO_PROYECTO_LABELS[tipo_nuevo]}". '
+                    f'Columna "{col_ant}" no existe en la nueva ruta → '
+                    f'movida a "{columna_segura}".'
+                )
+            else:
+                order.add_history(
+                    f'Tipo de proyecto cambiado a "{TIPO_PROYECTO_LABELS[tipo_nuevo]}"'
+                )
+        # --------------------------------------------------------------------
+
         order.priority = request.form.get('priority')
         order.descripcion = request.form.get('descripcion')
 

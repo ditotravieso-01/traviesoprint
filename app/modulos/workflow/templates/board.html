@@ -545,8 +545,10 @@
         color: #555;
         letter-spacing: 0.3px;
     }
-    .ruta-badge.impresion { background: #dbeafe; color: #1e40af; }
+    .ruta-badge.grafica    { background: #dbeafe; color: #1e40af; }
     .ruta-badge.produccion { background: #fce7f3; color: #be185d; }
+    .ruta-badge.mixto      { background: #ede9fe; color: #5b21b6; }
+    .ruta-badge.otro       { background: #f3f4f6; color: #4b5563; }
 
     .tarjeta .acciones-mini {
         margin-top: 6px;
@@ -1722,10 +1724,9 @@
     // ============================================================
     // RUTAS
     // ============================================================
-    const RUTAS = {
-        'impresion': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'listo', 'entregados'],
-        'produccion': ['pendiente', 'por-preparar', 'preparados', 'imprimir-hoy', 'impreso-corte', 'produccion', 'listo', 'entregados']
-    };
+    // Fuente de verdad: viene del backend (workflow/__init__.py → RUTAS_POR_TIPO)
+    const RUTAS = {{ rutas_por_tipo|tojson }};
+    const TIPO_LABELS = {{ tipo_labels|tojson }};
 
     // ============================================================
     // ESTADO
@@ -1809,8 +1810,8 @@
     }
 
     function obtenerSiguienteColumna(orden) {
-        const ruta = orden.ruta || 'impresion';
-        const rutaArray = RUTAS[ruta] || RUTAS.impresion;
+        const tipo = orden.tipo_proyecto || orden.ruta || 'grafica';
+        const rutaArray = RUTAS[tipo] || RUTAS.grafica;
         const idx = rutaArray.indexOf(orden.column);
         if (idx === -1 || idx === rutaArray.length - 1) {
             return null;
@@ -2591,7 +2592,8 @@
         const prioridadClass = orden.priority || 'normal';
         const cliente = orden.client ? orden.client.nombre : 'Sin cliente';
         const clienteId = orden.client ? orden.client.id : null;
-        const ruta = orden.ruta || 'impresion';
+        const tipo = orden.tipo_proyecto || orden.ruta || 'grafica';
+        const rutaLabel = TIPO_LABELS[tipo] || tipo;
         const tiempo = tiempoEnColumna(orden, orden.column);
         const sig = obtenerSiguienteColumna(orden);
 
@@ -2612,7 +2614,7 @@
             ${candadoHTML}
             <div class="titulo">
                 <span class="order-num">${orden.order_num || 'Sin número'} <span class="tiempo-columna">${tiempo}</span></span>
-                <span class="ruta-badge ${ruta}">${ruta}</span>
+                <span class="ruta-badge ${tipo}">${rutaLabel}</span>
             </div>
             <div class="sub">
                 <span class="cliente" onclick="event.stopPropagation();irCliente(${clienteId})">${cliente}</span>
@@ -2656,7 +2658,7 @@
             `<div class="historial-item" data-id="${o.id}">
                 <div class="info">
                     <span class="num">${o.order_num}</span>
-                    <span class="cliente">${o.client ? o.client.nombre : '—'} · ${o.ruta || 'impresion'}</span>
+                    <span class="cliente">${o.client ? o.client.nombre : '—'} · ${TIPO_LABELS[o.tipo_proyecto || o.ruta || 'grafica'] || 'Gráfica'}</span>
                 </div>
                 <span class="fecha">${o.fecha_entregado ? new Date(o.fecha_entregado).toLocaleDateString() : '—'}</span>
             </div>`
@@ -2781,8 +2783,8 @@
                         <span class="valor">${data.tipo || 'otros'}</span>
                     </div>
                     <div class="campo">
-                        <span class="label">Ruta</span>
-                        <span class="valor">${data.ruta || 'impresion'}</span>
+                        <span class="label">Tipo de proyecto</span>
+                        <span class="valor">${TIPO_LABELS[data.tipo_proyecto || data.ruta || 'grafica'] || (data.tipo_proyecto || 'Gráfica')}</span>
                     </div>
                     <div class="campo">
                         <span class="label">Columna actual</span>

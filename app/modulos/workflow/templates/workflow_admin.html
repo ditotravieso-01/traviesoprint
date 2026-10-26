@@ -782,8 +782,7 @@
         const data = {
             columnas: columnas,
             permisos_mover: permisos,
-            movimiento_notificaciones: notificaciones,
-            rutas: {}
+            movimiento_notificaciones: notificaciones
         };
 
         fetch('{{ url_for("workflow.admin_guardar") }}', {
