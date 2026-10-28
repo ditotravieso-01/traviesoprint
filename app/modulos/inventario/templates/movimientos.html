@@ -720,7 +720,7 @@
         <div class="resumen-item">
             <span class="label">Consumos</span>
             <span class="value {% if consumos_val > 0 %}negativo{% elif consumos_val == 0 %}neutral{% endif %}">
-                {% if consumos_val > 0 %}-{% endif %}{{ consumos_val }}
+                {{ consumos_val }}
             </span>
         </div>
         <div class="resumen-item">

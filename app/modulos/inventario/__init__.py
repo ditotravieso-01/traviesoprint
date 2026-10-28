@@ -262,18 +262,27 @@ def index():
 
     hoy = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     inicio = hoy - timedelta(days=30)
-    movs = Movimiento.query.filter(Movimiento.fecha >= inicio).order_by(Movimiento.fecha).all()
-    fechas = []
-    valores = []
-    saldo = 0
+    movs_30d = Movimiento.query.filter(Movimiento.fecha >= inicio).order_by(Movimiento.fecha).all()
 
     TIPOS_SUMAN = ['entrada', 'entrada_ajuste', 'sobrante', 'correccion_alta']
-    TIPOS_RESTAN = ['consumo', 'salida_ajuste', 'reserva', 'merma', 'correccion_baja']
+    TIPOS_RESTAN = ['consumo', 'salida_ajuste', 'merma', 'correccion_baja']
+
+    stock_actual_total = db.session.query(func.sum(Producto.stock)).scalar() or 0
+    net_change = 0
+    for m in movs_30d:
+        if m.tipo in TIPOS_SUMAN:
+            net_change += m.cantidad
+        elif m.tipo in TIPOS_RESTAN:
+            net_change -= m.cantidad
+
+    saldo = stock_actual_total - net_change
+    fechas = []
+    valores = []
 
     for d in range(31):
         fecha = inicio + timedelta(days=d)
         fechas.append(fecha.strftime('%d/%m'))
-        dia_movs = [m for m in movs if m.fecha.date() == fecha.date()]
+        dia_movs = [m for m in movs_30d if m.fecha.date() == fecha.date()]
         for m in dia_movs:
             if m.tipo in TIPOS_SUMAN:
                 saldo += m.cantidad
@@ -1264,6 +1273,9 @@ def ajustar():
     if diferencia == 0:
         flash('El stock ya coincide con el valor ingresado.', 'info')
         return redirect(url_for('inventario.detalle_producto', producto_id=producto.id))
+
+    if stock_real < (producto.stock_comprometido or 0):
+        flash(f'⚠️ Advertencia: El stock ingresado ({stock_real}) es menor que el comprometido en órdenes activas ({producto.stock_comprometido}). El stock disponible aparecerá en negativo.', 'warning')
 
     tipo = 'correccion_baja' if diferencia > 0 else 'correccion_alta'
     cantidad = abs(diferencia)
