@@ -530,12 +530,20 @@ def list_orders():
 @login_required
 def detalle_order(order_id):
     order = Order.query.get_or_404(order_id)
+    
+    # Calcular totales en m²
+    total_m2 = 0.0
+    for a in order.archivos:
+        params = a.get_parametros_etiqueta() or {}
+        total_m2 += float(params.get('area_m2', 0) or 0)
+
     return render_template(
         'detalle_orden.html',
         order=order,
         now=datetime.now(),
         columnas_nombres=COLUMNAS_NOMBRES,
         odoo_base_url=current_app.config.get('ODOO_URL', ''),
+        total_m2=round(total_m2, 2)
     )
 
 # ==========================================
@@ -1818,7 +1826,13 @@ def delete_order(order_id):
 def generar_pdf(order_id):
     order = Order.query.get_or_404(order_id)
     now = datetime.now()
-    html_content = render_template('pdf_orden.html', order=order, now=now)
+    
+    total_m2 = 0.0
+    for a in order.archivos:
+        params = a.get_parametros_etiqueta() or {}
+        total_m2 += float(params.get('area_m2', 0) or 0)
+
+    html_content = render_template('pdf_orden.html', order=order, now=now, total_m2=round(total_m2, 2))
     pdf_file = HTML(string=html_content).write_pdf()
     with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as f:
         f.write(pdf_file)
@@ -1831,6 +1845,30 @@ def generar_pdf(order_id):
 @login_required
 def detalle_json(order_id):
     order = Order.query.get_or_404(order_id)
+    
+    total_m2 = 0.0
+    lineas = []
+    for a in order.archivos:
+        params = a.get_parametros_etiqueta() or {}
+        area = float(params.get('area_m2', 0) or 0)
+        total_m2 += area
+        
+        lineas.append({
+            'nombre': a.nombre_visible,
+            'material': a.material,
+            'cantidad': a.cantidad,
+            'unidad': a.unidad,
+            'n_etiquetas': params.get('n_etiquetas', 0),
+            'area_m2': area,
+            'largo_total_m': float(params.get('largo_total_m', 0) or 0),
+            'filas': params.get('filas', 0),
+            'columnas': params.get('columnas', 0),
+            'alto_cell_usado_m': params.get('alto_cell_usado_m', 0.05),
+            'ancho_util_usado': params.get('ancho_util_usado', 1.30),
+            'tipo': params.get('tipo', 'otros'),
+            'ruta': a.ruta
+        })
+
     data = {
         'id': order.id, 'numero': order.order_num,
         'cliente': order.client.nombre if order.client else 'Sin cliente',
@@ -1842,7 +1880,8 @@ def detalle_json(order_id):
         'historial': order.get_history(),
         'descripcion': order.descripcion,
         'servicios': order.get_servicios() if hasattr(order, 'get_servicios') else [],
-        'archivos': [{'nombre': a.nombre_visible, 'ruta': a.ruta} for a in order.archivos],
+        'archivos': lineas,
+        'total_m2': round(total_m2, 2),
         'fecha_entregado': order.fecha_entregado.isoformat() if order.fecha_entregado else None,
         'entrada_ok': order.entrada_ok, 'proyecto': order.proyecto, 'solicitado': order.solicitado,
     }

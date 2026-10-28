@@ -1296,6 +1296,13 @@
                 </svg>
                 N°: <span class="valor">{{ order.order_num or 'Sin número' }}</span>
             </span>
+            <!-- NUEVO: Total metros a imprimir -->
+            <span class="badge-dato" data-tipo="date" style="background:#eff6ff; border-color:#bfdbfe;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                </svg>
+                Total pedido: <span class="valor" style="color:#1e40af;">{{ "%.1f"|format(total_m2) }} m²</span>
+            </span>
             <span class="badge-dato" data-tipo="date">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -1572,8 +1579,7 @@
                     <div style="flex:1; min-width:0;">
                         <div class="nombre-linea">{{ archivo.nombre_visible or 'Sin nombre' }}</div>
                         <div class="sublinea">
-                            <span class="dato">{{ archivo.cantidad|int if archivo.cantidad else '?' }}</span>
-                            {% if archivo.unidad == 'unidades' %}unidades{% else %}m²{% endif %}
+                            <span class="dato">{{ archivo.cantidad|round(2) if archivo.cantidad is not none else '?' }} m²</span> (pedido)
                             <span class="sep">·</span>
                             {{ archivo.material or 'Sin material' }}
                         </div>
@@ -2230,17 +2236,6 @@ function resetCanvasZoomBtn(btn) {
 
 let _draggingCanvas = null;
 let _dragStartX = 0, _dragStartY = 0;
-
-document.addEventListener('wheel', (e) => {
-    const canvas = e.target.closest('canvas[id^="preview-detalle-etiqueta-"], canvas[id^="preview-detalle-cartel-"]');
-    if (!canvas) return;
-    e.preventDefault();
-    const state = getCanvasViewState(canvas.id);
-    if (e.deltaY < 0) state.scale = Math.min(state.scale * 1.15, 10);
-    else state.scale = Math.max(state.scale / 1.15, 0.2);
-    actualizarZoomLabel(canvas.id);
-    redibujarCanvas(canvas.id);
-}, { passive: false });
 
 document.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;

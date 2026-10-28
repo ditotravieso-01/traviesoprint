@@ -1374,7 +1374,7 @@
 <div class="panel-lateral" id="panelLateral">
     <div class="panel-header">
         <h2 id="panelTitulo">Detalle</h2>
-        <button class="panel-close" onclick="cerrarPanel()">&times;</button>
+        <button type="button" class="panel-close" id="btnCerrarPanel" style="position: relative; z-index: 10000;">&times;</button>
     </div>
     <div class="panel-body" id="panelBody"></div>
     <div class="panel-actions" id="panelActions"></div>
@@ -2354,7 +2354,7 @@
     }
 
     // ============================================================
-    // ACTUALIZAR DASHBOARD
+    // ACTUALIZAR DASHBOARD (BLINDADO CONTRA ERRORES)
     // ============================================================
     function actualizarDashboardCompleto() {
         if (isRendering) return;
@@ -2368,25 +2368,29 @@
                 return r.json();
             })
             .then(data => {
-                document.getElementById('kpiTotalActivas').textContent = data.total_activas;
-                document.getElementById('kpiPendientes').textContent = data.pendientes;
-                document.getElementById('kpiEnProceso').textContent = data.en_proceso;
-                document.getElementById('kpiListas').textContent = data.listas;
-                document.getElementById('kpiEntregadas').textContent = data.total_entregadas;
-                document.getElementById('totalActivasBadge').textContent = data.total_activas;
-                document.getElementById('totalEntregadasBadge').textContent = data.total_entregadas;
+                try {
+                    document.getElementById('kpiTotalActivas').textContent = data.total_activas;
+                    document.getElementById('kpiPendientes').textContent = data.pendientes;
+                    document.getElementById('kpiEnProceso').textContent = data.en_proceso;
+                    document.getElementById('kpiListas').textContent = data.listas;
+                    document.getElementById('kpiEntregadas').textContent = data.total_entregadas;
+                    document.getElementById('totalActivasBadge').textContent = data.total_activas;
+                    document.getElementById('totalEntregadasBadge').textContent = data.total_entregadas;
 
-                if (data.column_counts) {
-                    renderizarMapa(data.column_counts);
+                    if (data.column_counts) {
+                        renderizarMapa(data.column_counts);
+                    }
+
+                    if (chartInstance) {
+                        chartInstance.data.datasets[0].data = data.chart_data;
+                        chartInstance.update();
+                    }
+
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                    document.getElementById('pollingIcon').parentElement.style.color = '#10b981';
+                } catch (e) {
+                    console.error('Error actualizando el DOM del dashboard:', e);
                 }
-
-                if (chartInstance) {
-                    chartInstance.data.datasets[0].data = data.chart_data;
-                    chartInstance.update();
-                }
-
-                document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
-                document.getElementById('pollingIcon').parentElement.style.color = '#10b981';
             })
             .catch(err => {
                 console.error('❌ Error en actualizarDashboardCompleto:', err);
@@ -2735,6 +2739,13 @@
     // ============================================================
     // PANEL LATERAL
     // ============================================================
+    window.cerrarPanel = function() {
+        const panel = document.getElementById('panelLateral');
+        const overlay = document.getElementById('panelOverlay');
+        if (panel) panel.classList.remove('open');
+        if (overlay) overlay.classList.remove('active');
+    };
+
     window.abrirPanel = function(id) {
         const panel = document.getElementById('panelLateral');
         const overlay = document.getElementById('panelOverlay');
@@ -2752,6 +2763,7 @@
 
                 document.getElementById('panelTitulo').textContent = data.numero || 'Sin número';
                 const body = document.getElementById('panelBody');
+                
                 const historialHtml = (data.historial || []).slice(-10).reverse().map(h => {
                     const fecha = h.fecha ? new Date(h.fecha).toLocaleString() : (h.timestamp ? new Date(h.timestamp).toLocaleString() : '');
                     const mensaje = h.mensaje || h.columna || 'Movimiento';
@@ -2764,6 +2776,54 @@
                 }).join('');
 
                 const tiempoTotal = calcularTiempoTotal(data);
+
+                const lineasHtml = (data.archivos || []).map(a => {
+                    let esEtiqueta = a.tipo === 'etiqueta';
+                    let m2 = Number(a.area_m2 || 0);
+                    let etiquetas = Number(a.n_etiquetas || 0);
+                    
+                    // Cálculo dinámico idéntico a la página de Detalle
+                    let filasTotales = Number(a.filas || 0);
+                    let columnas = Number(a.columnas || 1);
+                    let alto_cell = Number(a.alto_cell_usado_m || 0.05);
+                    let ancho_util = Number(a.ancho_util_usado || 1.30);
+                    let filasPorPañoMax = alto_cell > 0 ? Math.max(1, Math.floor((1.0 / ancho_util) / alto_cell)) : 1;
+                    let metrosCompletos = Math.floor(filasTotales / filasPorPañoMax);
+                    let filasRestantes = filasTotales % filasPorPañoMax;
+                    let etiqPorPaño = filasPorPañoMax * columnas;
+                    let restoEtiquetas = filasRestantes * columnas;
+
+                    return `
+                        <div style="background:#fafaf9; border:1px solid #f0ece8; border-radius:12px; padding:12px; margin-bottom:10px;">
+                            <div style="font-weight:700; color:#1c1c1e; font-size:13.5px; margin-bottom:6px; display:flex; justify-content:space-between;">
+                                <span>${a.nombre}</span>
+                                <span style="font-size:10px; color:#a8854f; background:#f5f2ef; padding:2px 6px; border-radius:10px;">${esEtiqueta ? 'Etiqueta' : 'Cartel'}</span>
+                            </div>
+                            <div style="display:flex; flex-direction:column; gap:4px; font-size:11.5px; color:#555;">
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Área pedida:</span>
+                                    <strong style="font-family:'Montserrat', sans-serif; font-size:14px; color:#1c1c1e;">${m2.toFixed(1)} m²</strong>
+                                </div>
+                                ${esEtiqueta ? `
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Total etiquetas:</span>
+                                    <strong style="font-family:'Montserrat', sans-serif; font-size:13px; color:#1c1c1e;">${etiquetas} etiq.</strong>
+                                </div>
+                                <div style="display:flex; justify-content:space-between;">
+                                    <span>Etiquetas por paño:</span>
+                                    <strong style="font-family:'Montserrat', sans-serif; font-size:13px; color:#1c1c1e;">${etiqPorPaño} etiq.</strong>
+                                </div>
+                                ${metrosCompletos > 0 && restoEtiquetas > 0 ? `
+                                <div style="display:flex; justify-content:space-between; color:#a8854f; font-size:10.5px; margin-top:2px; border-top:1px dashed #e0dcd8; padding-top:4px;">
+                                    <span>Desglose:</span>
+                                    <span>${metrosCompletos} paño(s) de ${etiqPorPaño} + ${restoEtiquetas} en el último</span>
+                                </div>
+                                ` : ''}
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
 
                 body.innerHTML = `
                     <div class="campo">
@@ -2779,10 +2839,6 @@
                         <span class="valor"><span class="badge prioridad ${data.prioridad}">${data.prioridad}</span></span>
                     </div>
                     <div class="campo">
-                        <span class="label">Tipo</span>
-                        <span class="valor">${data.tipo || 'otros'}</span>
-                    </div>
-                    <div class="campo">
                         <span class="label">Tipo de proyecto</span>
                         <span class="valor">${TIPO_LABELS[data.tipo_proyecto || data.ruta || 'grafica'] || (data.tipo_proyecto || 'Gráfica')}</span>
                     </div>
@@ -2790,20 +2846,14 @@
                         <span class="label">Columna actual</span>
                         <span class="valor">${columnasInfo.find(c=>c.id===data.columna)?.nombre || data.columna}</span>
                     </div>
-                    <div class="campo">
-                        <span class="label">Tiempo en columna actual</span>
-                        <span class="valor">${tiempoEnColumna(data, data.columna)}</span>
+                    <div class="campo" style="background:#eff6ff; padding:10px; border-radius:10px; border:1px solid #bfdbfe; margin-top:8px;">
+                        <span class="label" style="color:#1e40af;">Total pedido en esta orden</span>
+                        <span class="valor" style="color:#1e40af; font-weight:700; font-size:18px;">${data.total_m2.toFixed(1)} m²</span>
                     </div>
-                    <div class="campo">
-                        <span class="label">Tiempo total en flujo</span>
-                        <span class="valor">${tiempoTotal}</span>
+                    <div class="seccion">
+                        <h4>${SVG.barChart} Líneas de trabajo</h4>
+                        ${lineasHtml || '<div class="historial-item">No hay líneas registradas</div>'}
                     </div>
-                    <div class="campo">
-                        <span class="label">Entrada sistema</span>
-                        <span class="valor">${data.entrada_ok ? 'OK' : 'Pendiente'}</span>
-                    </div>
-                    ${data.descripcion ? `<div class="campo"><span class="label">Descripción</span><span class="valor">${data.descripcion}</span></div>` : ''}
-                    ${data.servicios && data.servicios.length ? `<div class="campo"><span class="label">Servicios</span><span class="valor">${data.servicios.join(', ')}</span></div>` : ''}
                     <div class="seccion">
                         <h4>${SVG.history} Historial de movimientos</h4>
                         ${historialHtml || '<div class="historial-item">No hay movimientos</div>'}
@@ -2846,11 +2896,6 @@
                 document.getElementById('panelBody').innerHTML = '<div style="color:#dc2626;padding:20px;">Error al cargar los datos.</div>';
                 console.error(err);
             });
-    };
-
-    window.cerrarPanel = function() {
-        document.getElementById('panelLateral').classList.remove('open');
-        document.getElementById('panelOverlay').classList.remove('active');
     };
 
     // ============================================================
@@ -2899,6 +2944,13 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Custom selects (filters-bar + chart-header)
         initAllCustomSelects();
+
+        // Escuchar clics para cerrar el panel de forma robusta
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.panel-close') || e.target.id === 'panelOverlay') {
+                window.cerrarPanel();
+            }
+        });
 
         const todas = [];
         columnasInfo.forEach(col => {

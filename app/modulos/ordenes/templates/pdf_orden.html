@@ -306,9 +306,9 @@
             <tr>
                 <th style="width:26%;">Nombre</th>
                 <th style="width:20%;">Material</th>
-                <th style="width:12%;">Cantidad</th>
+                <th style="width:12%;">Pedido</th>
                 <th style="width:10%;">Tipo</th>
-                <th style="width:32%;">Detalle</th>
+                <th style="width:32%;">A producir</th>
             </tr>
         </thead>
         <tbody>
@@ -319,7 +319,7 @@
                 <td class="nombre">{{ archivo.nombre_visible }}</td>
                 <td class="material">{{ archivo.material or '—' }}</td>
                 <td class="cant">
-                    {{ archivo.cantidad if archivo.cantidad is not none else '—' }}
+                    {{ archivo.cantidad|round(2) if archivo.cantidad is not none else '—' }}
                     <span class="unidad">
                         {% if archivo.unidad == 'unidades' %}u.
                         {% elif archivo.unidad in ('m','m2') %}m²
@@ -333,29 +333,37 @@
                 </td>
                 <td class="detalle">
                     {% if tipo == 'etiqueta' %}
-                        {% set _a = params.area_m2|round(1) %}
+                        {% set _a = params.area_m2|float %}
                         {% set _p = params.precio|float %}
-                        {% set _costo = (_a * _p)|round(2) %}
-                        {{ params.ancho }}×{{ params.alto }} cm
-                        · útil <span class="strong">{{ params.ancho_util_usado|round(2) if params.ancho_util_usado else '—' }} m</span>
-                        · <span class="strong">{{ params.n_etiquetas or 0 }}</span> etiquetas ({{ params.filas or 0 }}×{{ params.columnas or 0 }})
+                        {% set _costo = "%.1f"|format(_a * _p) %}
+                        
+                        {% set total_filas = params.filas|default(0, true)|int %}
+                        {% set cols = params.columnas|default(1, true)|int %}
+                        {% set alto_cell = params.alto_cell_usado_m|default(0.05, true)|float %}
+                        {% set ancho_util = params.ancho_util_usado|default(1.30, true)|float %}
+                        {% set filas_max = (1.0 / ancho_util / alto_cell)|int if alto_cell > 0 and ancho_util > 0 else 1 %}
+                        {% set panos_completos = (total_filas / filas_max)|int if filas_max > 0 else 0 %}
+                        {% set filas_restantes = total_filas % filas_max if filas_max > 0 else total_filas %}
+                        {% set etiq_completo = filas_max * cols %}
+                        {% set etiq_restante = filas_restantes * cols %}
+                        
+                        <span class="strong">{{ params.n_etiquetas or 0 }} etiquetas</span>
+                        
+                        {% if total_filas > filas_max %}
+                            {% if filas_restantes > 0 %}
+                                · <span class="gold">{{ panos_completos }} paño(s) de {{ etiq_completo }} + {{ etiq_restante }} en el último</span>
+                            {% else %}
+                                · <span class="gold">{{ panos_completos }} paño(s) de {{ etiq_completo }} etiq.</span>
+                            {% endif %}
+                        {% else %}
+                            · <span class="gold">{{ etiq_completo }} etiq/paño</span>
+                        {% endif %}
+                        
                         <span class="line2">
-                            Costo <span class="strong">${{ _costo }}</span>
-                            · Merma <span class="gold">{{ params.merma_operativa_pct|round(1) if params.merma_operativa_pct is defined else '0' }}%</span>
-                        </span>
-                    {% elif tipo == 'cartel' %}
-                        {% set _ap = params.area_piezas_m2|round(1) %}
-                        {% set _mf = params.merma_facturada_m2|round(1) %}
-                        {% set _c_impr = (_ap * (params.precio_impresion_m2|float))|round(2) %}
-                        {% set _c_mer = (_mf * (params.precio_merma_m2|float))|round(2) %}
-                        {% set _c_tot = (_c_impr + _c_mer)|round(2) %}
-                        {{ params.ancho }}×{{ params.alto }} cm
-                        · <span class="strong">{{ params.cantidad }}</span> piezas
-                        · {{ params.filas }}×{{ params.cols }}
-                        <span class="line2">
-                            {{ params.tipo_material }}
-                            · Impresión <span class="strong">${{ _c_impr }}</span>
-                            · Total <span class="strong">${{ _c_tot }}</span>
+                            {{ "%.1f"|format(params.ancho|float) }}×{{ "%.1f"|format(params.alto|float) }} cm 
+                            · útil <span class="strong">{{ "%.1f"|format(params.ancho_util_usado|float) if params.ancho_util_usado else '—' }} m</span>
+                            · Costo <span class="strong">${{ _costo }}</span>
+                            · Merma <span class="gold">{{ "%.1f"|format(params.merma_operativa_pct|float) if params.merma_operativa_pct is defined else '0' }}%</span>
                         </span>
                     {% else %}
                         <span style="color:#b8b8c0;">—</span>
@@ -373,6 +381,7 @@
      ============================================================ -->
 <div class="footer">
     <span>CairoStudio · Grupo Creativo</span>
+    <span style="font-weight:700; color:#a8854f;">Total pedido: {{ total_m2 }} m²</span>
     <span>{{ now.strftime('%d/%m/%Y · %H:%M') if now else '' }}</span>
 </div>
 
