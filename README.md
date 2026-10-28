@@ -208,12 +208,10 @@ Esto significa que el software es de código abierto: cualquier persona es libre
 Consulta el archivo LICENSE para obtener el texto legal completo.
 Contacto y Soporte
 
-    Desarrollador / Mantenedor: Eduardo (CairoStudio)
+    Desarrollador / Mantenedor: Eduardo Travieso
 
     Correo electrónico: eduardo@traviesoworks.com
 
     Repositorio oficial: https://github.com/ditotravieso-01/traviesoprint
 
     Reporte de errores: https://github.com/ditotravieso-01/traviesoprint/issues
-
-text
