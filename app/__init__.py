@@ -1,3 +1,20 @@
+# TraviesoPrint - Sistema de gestión para talleres de imprenta.
+# Copyright (C) 2026 Eduardo (CairoStudio)
+#
+# Este programa es software libre: puedes redistribuirlo y/o modificarlo
+# bajo los términos de la Licencia Pública General de GNU publicada por
+# la Free Software Foundation, ya sea la versión 3 de la Licencia, o
+# (a tu elección) cualquier versión posterior.
+#
+# Este programa se distribuye con la esperanza de que sea útil,
+# pero SIN NINGUNA GARANTÍA; ni siquiera la garantía implícita
+# de COMERCIABILIDAD o IDONEIDAD PARA UN PROPÓSITO PARTICULAR. 
+# Consulta la Licencia Pública General de GNU para más detalles.
+#
+# Deberías haber recibido una copia de la Licencia Pública General de GNU
+# junto con este programa. Si no es así, consulta <https://www.gnu.org/licenses/>.
+
+
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -48,6 +65,8 @@ def create_app():
             if not Permiso.query.first():
                 Permiso.init_default_permissions()
                 print('Permisos por defecto creados.')
+            from flask_migrate import stamp
+            stamp()
             print('Base de datos inicializada correctamente.')
 
 #    with app.app_context():
