@@ -1760,43 +1760,49 @@
         return days + 'd';
     }
 
-    function tiempoEnColumna(orden, columnaId) {
+    // Función para calcular el tiempo exacto dentro de cada columna
+    function calcularTiemposPorColumna(orden) {
+        const res = {};
+        columnasInfo.forEach(c => res[c.id] = 0);
+        
         const historial = orden.historial || [];
-        let ultimaEntrada = null;
-        for (let i = historial.length - 1; i >= 0; i--) {
-            if (historial[i].columna === columnaId) {
-                ultimaEntrada = historial[i];
-                break;
+        const hist = [...historial].sort((a,b) => {
+            const fA = new Date(a.fecha || a.timestamp || 0).getTime();
+            const fB = new Date(b.fecha || b.timestamp || 0).getTime();
+            return fA - fB;
+        });
+
+        let tInicio = orden.created_at ? new Date(orden.created_at).getTime() : Date.now();
+        let colActual = 'pendiente'; 
+
+        for (let i = 0; i < hist.length; i++) {
+            const ev = hist[i];
+            const tEv = new Date(ev.fecha || ev.timestamp || Date.now()).getTime();
+            
+            if (tEv > tInicio) {
+                if (res[colActual] === undefined) res[colActual] = 0;
+                res[colActual] += (tEv - tInicio);
             }
+
+            if (ev.columna && res[ev.columna] !== undefined) {
+                colActual = ev.columna;
+            }
+            tInicio = tEv;
         }
-        if (ultimaEntrada) {
-            const fecha = ultimaEntrada.fecha || ultimaEntrada.timestamp || Date.now();
-            return timeSince(fecha);
+
+        const tAhora = Date.now();
+        if (tAhora > tInicio) {
+            if (res[colActual] === undefined) res[colActual] = 0;
+            res[colActual] += (tAhora - tInicio);
         }
-        if (columnaId === 'pendiente' && orden.created_at) {
-            return timeSince(orden.created_at);
-        }
-        return '—';
+
+        return res;
     }
 
-    function calcularTiempoTotal(orden) {
-        const historial = orden.historial || [];
-        if (historial.length < 2) return '—';
-        let totalMs = 0;
-        for (let i = 0; i < historial.length - 1; i++) {
-            const entrada = historial[i];
-            const salida = historial[i + 1];
-            const fechaIn = new Date(entrada.fecha || entrada.timestamp || Date.now());
-            const fechaOut = new Date(salida.fecha || salida.timestamp || Date.now());
-            totalMs += fechaOut - fechaIn;
-        }
-        const ultima = historial[historial.length - 1];
-        if (ultima) {
-            const fechaIn = new Date(ultima.fecha || ultima.timestamp || Date.now());
-            totalMs += Date.now() - fechaIn;
-        }
-        if (totalMs < 0) return '—';
-        const totalMins = Math.floor(totalMs / 60000);
+    // Función auxiliar para formatear los milisegundos a texto legible (ej. "2h 15m")
+    function formatearTiempo(ms) {
+        if (ms <= 0) return '—';
+        const totalMins = Math.floor(ms / 60000);
         if (totalMins < 1) return '<1m';
         if (totalMins < 60) return totalMins + 'm';
         const totalHours = Math.floor(totalMins / 60);
@@ -2598,7 +2604,8 @@
         const clienteId = orden.client ? orden.client.id : null;
         const tipo = orden.tipo_proyecto || orden.ruta || 'grafica';
         const rutaLabel = TIPO_LABELS[tipo] || tipo;
-        const tiempo = tiempoEnColumna(orden, orden.column);
+        const tiemposDict = calcularTiemposPorColumna(orden);
+        const tiempo = formatearTiempo(tiemposDict[orden.column] || 0);
         const sig = obtenerSiguienteColumna(orden);
 
         const candadoHTML = bloqueada
@@ -2770,12 +2777,13 @@
                     return `<div class="historial-item"><span>${mensaje}</span><span class="fecha">${fecha}</span></div>`;
                 }).join('');
 
+                const tiemposDict = calcularTiemposPorColumna(data);
                 const tiemposColumnas = columnasInfo.map(c => {
-                    const tiempo = data.historial ? tiempoEnColumna(data, c.id) : '—';
-                    return `<div class="historial-item"><span>${c.nombre}</span><span>${tiempo}</span></div>`;
+                    const tiempoStr = formatearTiempo(tiemposDict[c.id] || 0);
+                    return `<div class="historial-item"><span>${c.nombre}</span><span>${tiempoStr}</span></div>`;
                 }).join('');
 
-                const tiempoTotal = calcularTiempoTotal(data);
+                const tiempoTotalStr = formatearTiempo(Object.values(tiemposDict).reduce((a, b) => a + b, 0));
 
                 const lineasHtml = (data.archivos || []).map(a => {
                     let esEtiqueta = a.tipo === 'etiqueta';
