@@ -659,9 +659,18 @@ def _procesar_linea_etiqueta(
     columnas = simData.get('columnas', 1)
 
     ancho_columna_efectivo = ancho_util_efectivo / columnas if columnas > 0 else 0
-    diff_unrotado = abs(ancho_columna_efectivo - (ancho_cm / 100.0))
-    diff_rotado = abs(ancho_columna_efectivo - (alto_cm / 100.0))
-    es_rotado = diff_rotado < diff_unrotado
+    ancho_col_m = ancho_cm / 100.0
+    alto_col_m = alto_cm / 100.0
+
+    if ancho_col_m > ancho_columna_efectivo:
+        es_rotado = True  # No cabe a lo ancho, obligatorio rotar
+    elif alto_col_m > ancho_columna_efectivo:
+        es_rotado = False # No cabe a lo alto (rotado), obligatorio sin rotar
+    else:
+        # Si ambos caben, elegimos el que esté más cerca del ancho de columna
+        diff_unrotado = abs(ancho_columna_efectivo - ancho_col_m)
+        diff_rotado = abs(ancho_columna_efectivo - alto_col_m)
+        es_rotado = diff_rotado < diff_unrotado
 
     if es_rotado:
         alto_cell_m = (ancho_cm / 100.0) + MARGEN_MESA_M

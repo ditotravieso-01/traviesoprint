@@ -3924,9 +3924,22 @@ function calcularLinea(paramsRow) {
         const anchoCmNum = parseFloat(ancho);
         const altoCmNum = parseFloat(alto);
         const anchoColumnaEfectivo = anchoUtilEfectivo / columnas;
-        const diffUnrotado = Math.abs(anchoColumnaEfectivo - (anchoCmNum / 100));
-        const diffRotado = Math.abs(anchoColumnaEfectivo - (altoCmNum / 100));
-        const esRotado = diffRotado < diffUnrotado;
+        
+        const anchoColM = anchoCmNum / 100;
+        const altoColM = altoCmNum / 100;
+        let esRotado = false;
+
+        // ✅ NUEVA LÓGICA DE DETECCIÓN
+        if (anchoColM > anchoColumnaEfectivo) {
+            esRotado = true;
+        } else if (altoColM > anchoColumnaEfectivo) {
+            esRotado = false;
+        } else {
+            const diffUnrotado = Math.abs(anchoColumnaEfectivo - anchoColM);
+            const diffRotado = Math.abs(anchoColumnaEfectivo - altoColM);
+            esRotado = diffRotado < diffUnrotado;
+        }
+
         const altoCellM = esRotado ? (anchoCmNum / 100) + MARGEN_MESA_M : (altoCmNum / 100) + MARGEN_MESA_M;
         const anchoCellM = esRotado ? (altoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0) : (anchoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0);
         const esUnidades = (unidad === 'unidades');
