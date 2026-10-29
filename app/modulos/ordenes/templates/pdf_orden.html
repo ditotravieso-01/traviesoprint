@@ -381,7 +381,7 @@
      ============================================================ -->
 <div class="footer">
     <span>CairoStudio · Grupo Creativo</span>
-    <span style="font-weight:700; color:#a8854f;">Total pedido: {{ total_m2 }} m²</span>
+        <span style="font-weight:700; color:#a8854f;">Total pedido: {{ "%.1f"|format(total_m2) }} m²</span>
     <span>{{ now.strftime('%d/%m/%Y · %H:%M') if now else '' }}</span>
 </div>
 

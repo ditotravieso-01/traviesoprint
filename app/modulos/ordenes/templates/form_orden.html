@@ -4015,12 +4015,12 @@ function calcularLinea(paramsRow) {
         if (eArea) eArea.textContent = areaTotalFinal.toFixed(1) + ' m²';
         const eFormula = paramsDiv.querySelector(`.area_formula_display${prefix}`);
         if (eFormula) {
-            eFormula.textContent = esUnidades ? `solicitado: ${cantidad} · entregar: ${nEtiquetas}` : `solicitado: ${parseFloat(cantidad).toFixed(2)} m²`;
+            eFormula.textContent = esUnidades ? `solicitado: ${cantidad} · entregar: ${nEtiquetas}` : `solicitado: ${parseFloat(cantidad).toFixed(1)} m²`;
         }
         const eMat = paramsDiv.querySelector(`.material_consumido_display${prefix}`);
-        if (eMat) eMat.textContent = materialConsumido.toFixed(2) + ' m²';
+        if (eMat) eMat.textContent = materialConsumido.toFixed(1) + ' m²';
         const eLargo = paramsDiv.querySelector(`.largo_total_display${prefix}`);
-        if (eLargo) eLargo.textContent = `${largoTotalReal.toFixed(2)} m × ${anchoRollo.toFixed(2)} m`;
+        if (eLargo) eLargo.textContent = `${largoTotalReal.toFixed(1)} m × ${anchoRollo.toFixed(1)} m`;
         const eCosto = paramsDiv.querySelector(`.costo_estimado_display${prefix}`);
         if (eCosto) eCosto.textContent = '$' + costoEstimado.toFixed(2);
         const eMermaPct = paramsDiv.querySelector(`.merma_pct_display${prefix}`);

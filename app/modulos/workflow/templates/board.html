@@ -2788,18 +2788,12 @@
                 const lineasHtml = (data.archivos || []).map(a => {
                     let esEtiqueta = a.tipo === 'etiqueta';
                     let m2 = Number(a.area_m2 || 0);
-                    let etiquetas = Number(a.n_etiquetas || 0);
+                    if (a.tipo === 'cartel' && a.area_piezas_m2) m2 = Number(a.area_piezas_m2);
                     
-                    // Cálculo dinámico idéntico a la página de Detalle
-                    let filasTotales = Number(a.filas || 0);
-                    let columnas = Number(a.columnas || 1);
-                    let alto_cell = Number(a.alto_cell_usado_m || 0.05);
-                    let ancho_util = Number(a.ancho_util_usado || 1.30);
-                    let filasPorPañoMax = alto_cell > 0 ? Math.max(1, Math.floor((1.0 / ancho_util) / alto_cell)) : 1;
-                    let metrosCompletos = Math.floor(filasTotales / filasPorPañoMax);
-                    let filasRestantes = filasTotales % filasPorPañoMax;
-                    let etiqPorPaño = filasPorPañoMax * columnas;
-                    let restoEtiquetas = filasRestantes * columnas;
+                    // Usamos los datos que ya vienen calculados del backend
+                    let metrosCompletos = Number(a.metros_completos || 0);
+                    let restoEtiquetas = Number(a.resto_etiquetas || 0);
+                    let etiqPorPaño = Number(a.columnas || 1) * (a.filas || 0); // Cálculo rápido solo para el desglose
 
                     return `
                         <div style="background:#fafaf9; border:1px solid #f0ece8; border-radius:12px; padding:12px; margin-bottom:10px;">
@@ -2815,7 +2809,7 @@
                                 ${esEtiqueta ? `
                                 <div style="display:flex; justify-content:space-between;">
                                     <span>Total etiquetas:</span>
-                                    <strong style="font-family:'Montserrat', sans-serif; font-size:13px; color:#1c1c1e;">${etiquetas} etiq.</strong>
+                                    <strong style="font-family:'Montserrat', sans-serif; font-size:13px; color:#1c1c1e;">${a.n_etiquetas} etiq.</strong>
                                 </div>
                                 <div style="display:flex; justify-content:space-between;">
                                     <span>Etiquetas por paño:</span>
@@ -2855,7 +2849,7 @@
                         <span class="valor">${columnasInfo.find(c=>c.id===data.columna)?.nombre || data.columna}</span>
                     </div>
                     <div class="campo" style="background:#eff6ff; padding:10px; border-radius:10px; border:1px solid #bfdbfe; margin-top:8px;">
-                        <span class="label" style="color:#1e40af;">Total pedido en esta orden</span>
+                        <span class="label" style="color:#1e40af;">Total Área Producida</span>
                         <span class="valor" style="color:#1e40af; font-weight:700; font-size:18px;">${data.total_m2.toFixed(1)} m²</span>
                     </div>
                     <div class="seccion">

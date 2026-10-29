@@ -535,7 +535,12 @@ def detalle_order(order_id):
     total_m2 = 0.0
     for a in order.archivos:
         params = a.get_parametros_etiqueta() or {}
-        total_m2 += float(params.get('area_m2', 0) or 0)
+        # Si es cartel, usamos el área de las piezas. Si es etiqueta, el área del paño.
+        if params.get('tipo') == 'cartel':
+            area = float(params.get('area_piezas_m2', 0) or 0)
+        else:
+            area = float(params.get('area_m2', 0) or 0)
+        total_m2 += area
 
     return render_template(
         'detalle_orden.html',
@@ -1830,7 +1835,12 @@ def generar_pdf(order_id):
     total_m2 = 0.0
     for a in order.archivos:
         params = a.get_parametros_etiqueta() or {}
-        total_m2 += float(params.get('area_m2', 0) or 0)
+        # Si es cartel, usamos el área de las piezas. Si es etiqueta, el área del paño.
+        if params.get('tipo') == 'cartel':
+            area = float(params.get('area_piezas_m2', 0) or 0)
+        else:
+            area = float(params.get('area_m2', 0) or 0)
+        total_m2 += area
 
     html_content = render_template('pdf_orden.html', order=order, now=now, total_m2=round(total_m2, 2))
     pdf_file = HTML(string=html_content).write_pdf()
@@ -1850,7 +1860,10 @@ def detalle_json(order_id):
     lineas = []
     for a in order.archivos:
         params = a.get_parametros_etiqueta() or {}
-        area = float(params.get('area_m2', 0) or 0)
+        if params.get('tipo') == 'cartel':
+            area = float(params.get('area_piezas_m2', 0) or 0)
+        else:
+            area = float(params.get('area_m2', 0) or 0)
         total_m2 += area
         
         lineas.append({
@@ -1859,7 +1872,10 @@ def detalle_json(order_id):
             'cantidad': a.cantidad,
             'unidad': a.unidad,
             'n_etiquetas': params.get('n_etiquetas', 0),
+            'metros_completos': params.get('metros_completos', 0),  # 👈 AGREGAR AQUÍ
+            'resto_etiquetas': params.get('resto_etiquetas', 0),    # 👈 AGREGAR AQUÍ
             'area_m2': area,
+            'area_piezas_m2': params.get('area_piezas_m2', 0),
             'largo_total_m': float(params.get('largo_total_m', 0) or 0),
             'filas': params.get('filas', 0),
             'columnas': params.get('columnas', 0),
