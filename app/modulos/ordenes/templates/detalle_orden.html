@@ -1579,7 +1579,7 @@
                     <div style="flex:1; min-width:0;">
                         <div class="nombre-linea">{{ archivo.nombre_visible or 'Sin nombre' }}</div>
                         <div class="sublinea">
-                            <span class="dato">{{ archivo.cantidad|round(2) if archivo.cantidad is not none else '?' }} {% if is_cartel %} u.{% else %} m²{% endif %}</span> (pedido)                            
+                            <span class="dato"> {{ archivo.cantidad|round(2) if archivo.cantidad is not none else '?' }} {% if archivo.unidad == 'unidades' %} u. {% elif archivo.unidad in ('m', 'm2') %} m² {% else %} {{ archivo.unidad or '' }}{% endif %} </span> (pedido)                            
                             <span class="sep">·</span>
                             {{ archivo.material or 'Sin material' }}
                         </div>
