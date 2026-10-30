@@ -913,7 +913,7 @@
                         {% set area_m2 = (m.cantidad_metros or 0) * m.producto.ancho_rollo %}
                     {% endif %}
                     <tr>
-                        <td data-label="Fecha" class="num-mont">{{ m.fecha.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td data-label="Fecha" class="num-mont">{{ (m.fecha_local or m.fecha).strftime('%d/%m/%Y %H:%M') }}</td>
                         <td data-label="Tipo">
                             <span class="badge" style="background:{% if m.tipo == 'entrada' %}#d1fae5{% elif m.tipo == 'consumo' %}#fef3c7{% elif m.tipo == 'reserva' %}#e0e7ff{% elif m.tipo == 'merma' %}#fde8e5{% elif m.tipo == 'sobrante' %}#e0f2fe{% elif m.tipo == 'correccion_baja' %}#fef3c7{% elif m.tipo == 'correccion_alta' %}#e0e7ff{% else %}#f0ece8{% endif %}; color:{% if m.tipo == 'entrada' %}#065f46{% elif m.tipo == 'consumo' %}#b45309{% elif m.tipo == 'reserva' %}#1e40af{% elif m.tipo == 'merma' %}#991b1b{% elif m.tipo == 'sobrante' %}#075985{% elif m.tipo == 'correccion_baja' %}#78350f{% elif m.tipo == 'correccion_alta' %}#3730a3{% else %}#555{% endif %};">
                                 {{ m.tipo.replace('_', ' ').title() }}
@@ -1305,22 +1305,8 @@
         initAllCustomSelects();
 
         // Chart
-        const fechasRaw = {{ fechas_json|safe }};
-        // Convertir las fechas de UTC a la hora local del navegador
-        const fechas = fechasRaw.map(f => {
-            // Reemplazamos el espacio por 'T' y añadimos 'Z' para decirle a JS que es UTC
-            const isoString = f.replace(' ', 'T') + 'Z';
-            const dateObj = new Date(isoString);
-            
-            // Si la fecha es inválida, devolvemos el texto original
-            if (isNaN(dateObj)) return f;
-            
-            // Formatear a hora local (ej. 30/10/2026, 15:24)
-            return dateObj.toLocaleString('es-ES', { 
-                day: '2-digit', month: '2-digit', year: 'numeric', 
-                hour: '2-digit', minute: '2-digit' 
-            });
-        });
+        const fechas = {{ fechas_json|safe }};
+        
         const saldos = {{ saldos_json|safe }};
         const saldosMetros = {{ saldos_metros_json|safe if saldos_metros_json else '[]' }};
 

@@ -1157,28 +1157,49 @@ def detalle_producto(producto_id):
     fechas = []
     saldos = []
     saldos_metros = []
+
+    from datetime import timezone
+    # Usa la zona horaria configurada en el Sistema Operativo (localhost)
+    tz_local = datetime.now().astimezone().tzinfo
+
     TIPOS_SUMAN = ['entrada', 'entrada_ajuste', 'sobrante', 'correccion_alta']
-    TIPOS_RESTAN = ['consumo', 'merma', 'reserva', 'correccion_baja']
+    # AQUI ESTA EL ARREGLO DEL STOCK: quitamos 'reserva' de la lista
+    TIPOS_RESTAN = ['consumo', 'salida_ajuste', 'merma', 'correccion_baja']
+
     for m in movimientos:
+        # AQUI ESTA EL ARREGLO DE LA HORA
+        if m.fecha and m.fecha.tzinfo is None and tz_local:
+            fecha_local = m.fecha.replace(tzinfo=timezone.utc).astimezone(tz_local)
+        else:
+            fecha_local = m.fecha 
+
         if m.tipo in TIPOS_SUMAN:
             saldo += m.cantidad
-            saldo_metros += m.cantidad_metros or m.cantidad
+            saldo_metros += m.cantidad_metros if m.cantidad_metros is not None else m.cantidad
         elif m.tipo in TIPOS_RESTAN:
             saldo -= m.cantidad
             saldo_metros -= m.cantidad_metros or m.cantidad
-        fechas.append(m.fecha.strftime('%Y-%m-%d %H:%M'))
+            
+        fechas.append(fecha_local.strftime('%Y-%m-%d %H:%M'))
         saldos.append(round(saldo, 2))
         saldos_metros.append(round(saldo_metros, 2))
+        
     if not fechas:
-        fechas.append(datetime.now().strftime('%Y-%m-%d'))
+        fechas.append(datetime.now().strftime('%Y-%m-%d %H:%M'))
         saldos.append(round(producto.stock, 2))
         saldos_metros.append(round(producto.stock_metros, 2))
+        
     if len(fechas) > 50:
         fechas = fechas[-50:]
         saldos = saldos[-50:]
         saldos_metros = saldos_metros[-50:]
 
     movimientos_recientes = Movimiento.query.filter_by(producto_id=producto_id).order_by(Movimiento.fecha.desc()).limit(50).all()
+    for m in movimientos_recientes:
+        if m.fecha and m.fecha.tzinfo is None and tz_local:
+            m.fecha_local = m.fecha.replace(tzinfo=timezone.utc).astimezone(tz_local)
+        else:
+            m.fecha_local = m.fecha
     proveedores = Proveedor.query.order_by(Proveedor.nombre).all()
 
     merma_estimada = calcular_merma_estimada_producto(producto_id)
