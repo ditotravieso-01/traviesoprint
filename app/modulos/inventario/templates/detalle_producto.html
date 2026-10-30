@@ -1305,7 +1305,22 @@
         initAllCustomSelects();
 
         // Chart
-        const fechas = {{ fechas_json|safe }};
+        const fechasRaw = {{ fechas_json|safe }};
+        // Convertir las fechas de UTC a la hora local del navegador
+        const fechas = fechasRaw.map(f => {
+            // Reemplazamos el espacio por 'T' y añadimos 'Z' para decirle a JS que es UTC
+            const isoString = f.replace(' ', 'T') + 'Z';
+            const dateObj = new Date(isoString);
+            
+            // Si la fecha es inválida, devolvemos el texto original
+            if (isNaN(dateObj)) return f;
+            
+            // Formatear a hora local (ej. 30/10/2026, 15:24)
+            return dateObj.toLocaleString('es-ES', { 
+                day: '2-digit', month: '2-digit', year: 'numeric', 
+                hour: '2-digit', minute: '2-digit' 
+            });
+        });
         const saldos = {{ saldos_json|safe }};
         const saldosMetros = {{ saldos_metros_json|safe if saldos_metros_json else '[]' }};
 
