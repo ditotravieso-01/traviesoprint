@@ -1962,11 +1962,8 @@ function toggleLineaCollapse(headerEl) {
         let abrir = false;
         try {
             const stored = localStorage.getItem('linea_open_' + archivoId);
-            if (stored === '1') abrir = true;
-            else if (stored === null && index === 0) abrir = true;
-        } catch (_) {
-            if (index === 0) abrir = true;
-        }
+            if (stored === '1') abrir = true; // Solo abre si el usuario lo dejó abierto antes
+        } catch (_) {}
         if (abrir) t.classList.add('open');
     });
 })();

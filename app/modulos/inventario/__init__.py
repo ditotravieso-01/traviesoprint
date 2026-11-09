@@ -1163,7 +1163,6 @@ def detalle_producto(producto_id):
     tz_local = datetime.now().astimezone().tzinfo
 
     TIPOS_SUMAN = ['entrada', 'entrada_ajuste', 'sobrante', 'correccion_alta']
-    # AQUI ESTA EL ARREGLO DEL STOCK: quitamos 'reserva' de la lista
     TIPOS_RESTAN = ['consumo', 'salida_ajuste', 'merma', 'correccion_baja']
 
     for m in movimientos:

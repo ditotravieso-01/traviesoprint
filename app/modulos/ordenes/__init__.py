@@ -1081,9 +1081,9 @@ def create_order():
                     context = _get_form_context(form_data=request.form, edit=False, order=None)
                     return render_template('form_orden.html', **context)
 
-                ancho_cm = float(ancho_etiqueta_list[i]) if i < len(ancho_etiqueta_list) and ancho_etiqueta_list[i] else 0
-                alto_cm = float(alto_etiqueta_list[i]) if i < len(alto_etiqueta_list) and alto_etiqueta_list[i] else 0
-                precio = float(precio_etiqueta_list[i]) if i < len(precio_etiqueta_list) and precio_etiqueta_list[i] else 10.0
+                ancho_cm = float(ancho_etiqueta_list[i].replace(',', '.')) if i < len(ancho_etiqueta_list) and ancho_etiqueta_list[i] else 0
+                alto_cm = float(alto_etiqueta_list[i].replace(',', '.')) if i < len(alto_etiqueta_list) and alto_etiqueta_list[i] else 0
+                precio = float(precio_etiqueta_list[i].replace(',', '.')) if i < len(precio_etiqueta_list) and precio_etiqueta_list[i] else 10.0
                 mesa = mesa_etiqueta_list[i] == '1' if i < len(mesa_etiqueta_list) else False
                 girar = girar_etiqueta_list[i] == '1' if i < len(girar_etiqueta_list) else False
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
@@ -1119,8 +1119,8 @@ def create_order():
                     context = _get_form_context(form_data=request.form, edit=False, order=None)
                     return render_template('form_orden.html', **context)
 
-                ancho_cartel_cm = float(ancho_cartel_list[i]) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
-                alto_cartel_cm = float(alto_cartel_list[i]) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
+                ancho_cartel_cm = float(ancho_cartel_list[i].replace(',', '.')) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
+                alto_cartel_cm = float(alto_cartel_list[i].replace(',', '.')) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
                 cantidad_cartel_piezas = int(cantidad_cartel_list[i]) if i < len(cantidad_cartel_list) and cantidad_cartel_list[i] else 1
                 girar_cartel = girar_cartel_list[i] == '1' if i < len(girar_cartel_list) else False
                 auto_girar_cartel = auto_girar_cartel_list[i] == '1' if i < len(auto_girar_cartel_list) else True
@@ -1131,8 +1131,8 @@ def create_order():
                         ancho_util_cartel = float(ancho_util_cartel_list[i].strip())
                     except:
                         pass
-                precio_impresion = float(precio_impresion_cartel_list[i]) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
-                precio_merma = float(precio_merma_cartel_list[i]) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
+                precio_impresion = float(precio_impresion_cartel_list[i].replace(',', '.')) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
+                precio_merma = float(precio_merma_cartel_list[i].replace(',', '.')) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
                 tipo_mat = tipo_material_cartel_list[i] if i < len(tipo_material_cartel_list) and tipo_material_cartel_list[i] else 'Vinilo'
 
                 if ancho_cartel_cm <= 0 or alto_cartel_cm <= 0 or cantidad_cartel_piezas < 1:
@@ -1282,6 +1282,10 @@ def edit_order(order_id):
         ancho_util_override_edit = request.form.getlist('ancho_util_override_edit[]')
         ancho_util_override_cartel_edit = request.form.getlist('ancho_util_override_cartel_edit[]')
 
+        precio_etiqueta_edit_list = request.form.getlist('precio_etiqueta_edit[]')
+        precio_impresion_cartel_edit_list = request.form.getlist('precio_impresion_cartel_edit[]')
+        precio_merma_cartel_edit_list = request.form.getlist('precio_merma_cartel_edit[]')
+
         for archivo_id in ids_a_eliminar:
             archivo = ArchivoAdjunto.query.get(int(archivo_id))
             if archivo and archivo.orden_id == order.id:
@@ -1316,7 +1320,6 @@ def edit_order(order_id):
                 except ValueError:
                     cantidad_original = None
 
-            # ⭐ Leer fav_id del hidden input que el JS pone en la fila
             fav_id_raw = request.form.get(f'fav_id_{archivo_id}', '').strip()
             fav_id_edit = None
             if fav_id_raw:
@@ -1333,27 +1336,26 @@ def edit_order(order_id):
             if es_etiqueta:
                 ancho_util_override = None
                 if override_etiq_idx < len(ancho_util_override_edit) and ancho_util_override_edit[override_etiq_idx].strip():
-                    try:
-                        ancho_util_override = float(ancho_util_override_edit[override_etiq_idx].strip())
-                    except:
-                        pass
+                    try: ancho_util_override = float(ancho_util_override_edit[override_etiq_idx].strip())
+                    except: pass
+                
+                precio_editado = None
+                if override_etiq_idx < len(precio_etiqueta_edit_list) and precio_etiqueta_edit_list[override_etiq_idx]:
+                    try: precio_editado = float(precio_etiqueta_edit_list[override_etiq_idx].replace(',', '.'))
+                    except: pass
+                
                 override_etiq_idx += 1
-            elif es_cartel:
-                ancho_util_override = None
-                if override_cartel_idx < len(ancho_util_override_cartel_edit) and ancho_util_override_cartel_edit[override_cartel_idx].strip():
-                    try:
-                        ancho_util_override = float(ancho_util_override_cartel_edit[override_cartel_idx].strip())
-                    except:
-                        pass
-                override_cartel_idx += 1
-            else:
-                ancho_util_override = None
 
-            producto_anterior = archivo.producto
-            producto_anterior_id = archivo.producto_id
+                producto_anterior = archivo.producto
+                producto_anterior_id = archivo.producto_id
+                precio_anterior = params.get('precio', 10.0) if params else 10.0
 
-            if es_etiqueta:
-                cambio_significativo = (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad)
+                cambio_significativo = (
+                    producto_id_nuevo != producto_anterior_id or 
+                    cantidad_original != archivo.cantidad or
+                    (precio_editado is not None and precio_editado != precio_anterior)
+                )
+                
                 if cambio_significativo:
                     if producto_anterior and archivo.cantidad:
                         op_anterior = OrdenProducto.query.filter_by(orden_id=order.id, producto_id=producto_anterior_id).first()
@@ -1368,7 +1370,7 @@ def edit_order(order_id):
 
                     ancho_cm = params.get('ancho', 10)
                     alto_cm = params.get('alto', 10)
-                    precio = params.get('precio', 10.0)
+                    precio = precio_editado if precio_editado is not None else params.get('precio', 10.0)
                     mesa = params.get('mesa', False)
                     girar = params.get('girar', False)
                     auto_girar = params.get('auto_girar', False)
@@ -1399,13 +1401,39 @@ def edit_order(order_id):
                     db.session.add(op_nuevo)
                     db.session.add(mov)
                 else:
-                    # No cambió dimensiones/material: solo actualizar nombre y fav_id
                     if nombre_visible:
                         archivo.nombre_visible = nombre_visible
                     _actualizar_fav_id_en_archivo(archivo, fav_id_edit)
 
             elif es_cartel:
-                cambio_significativo = (producto_id_nuevo != producto_anterior_id or cantidad_original != archivo.cantidad)
+                ancho_util_override = None
+                if override_cartel_idx < len(ancho_util_override_cartel_edit) and ancho_util_override_cartel_edit[override_cartel_idx].strip():
+                    try: ancho_util_override = float(ancho_util_override_cartel_edit[override_cartel_idx].strip())
+                    except: pass
+                
+                p_imp = None
+                p_mer = None
+                if override_cartel_idx < len(precio_impresion_cartel_edit_list) and precio_impresion_cartel_edit_list[override_cartel_idx]:
+                    try: p_imp = float(precio_impresion_cartel_edit_list[override_cartel_idx].replace(',', '.'))
+                    except: pass
+                if override_cartel_idx < len(precio_merma_cartel_edit_list) and precio_merma_cartel_edit_list[override_cartel_idx]:
+                    try: p_mer = float(precio_merma_cartel_edit_list[override_cartel_idx].replace(',', '.'))
+                    except: pass
+                
+                override_cartel_idx += 1
+
+                producto_anterior = archivo.producto
+                producto_anterior_id = archivo.producto_id
+                precio_imp_ant = params.get('precio_impresion_m2', 10.0) if params else 10.0
+                precio_mer_ant = params.get('precio_merma_m2', 5.0) if params else 5.0
+
+                cambio_significativo = (
+                    producto_id_nuevo != producto_anterior_id or 
+                    cantidad_original != archivo.cantidad or
+                    (p_imp is not None and p_imp != precio_imp_ant) or
+                    (p_mer is not None and p_mer != precio_mer_ant)
+                )
+                
                 if cambio_significativo:
                     if producto_anterior and archivo.cantidad:
                         op_anterior = OrdenProducto.query.filter_by(orden_id=order.id, producto_id=producto_anterior_id).first()
@@ -1425,8 +1453,9 @@ def edit_order(order_id):
                     auto_girar = params.get('auto_girar', True)
                     centrar = params.get('centrar', True)
                     tipo_material = params.get('tipo_material', 'Vinilo')
-                    precio_impresion = params.get('precio_impresion_m2', 10.0)
-                    precio_merma = params.get('precio_merma_m2', 5.0)
+                    
+                    precio_impresion = p_imp if p_imp is not None else params.get('precio_impresion_m2', 10.0)
+                    precio_merma = p_mer if p_mer is not None else params.get('precio_merma_m2', 5.0)
 
                     adjunto_tmp, op_nuevo, mov, error = _procesar_linea_cartel(
                         order=order, producto=producto_nuevo,
@@ -1540,9 +1569,9 @@ def edit_order(order_id):
                     context = _get_form_context(form_data=request.form, edit=True, order=order)
                     return render_template('form_orden.html', **context)
 
-                ancho_cm = float(ancho_etiqueta_list[i]) if i < len(ancho_etiqueta_list) and ancho_etiqueta_list[i] else 0
-                alto_cm = float(alto_etiqueta_list[i]) if i < len(alto_etiqueta_list) and alto_etiqueta_list[i] else 0
-                precio = float(precio_etiqueta_list[i]) if i < len(precio_etiqueta_list) and precio_etiqueta_list[i] else 10.0
+                ancho_cm = float(ancho_etiqueta_list[i].replace(',', '.')) if i < len(ancho_etiqueta_list) and ancho_etiqueta_list[i] else 0
+                alto_cm = float(alto_etiqueta_list[i].replace(',', '.')) if i < len(alto_etiqueta_list) and alto_etiqueta_list[i] else 0
+                precio = float(precio_etiqueta_list[i].replace(',', '.')) if i < len(precio_etiqueta_list) and precio_etiqueta_list[i] else 10.0
                 mesa = mesa_etiqueta_list[i] == '1' if i < len(mesa_etiqueta_list) else False
                 girar = girar_etiqueta_list[i] == '1' if i < len(girar_etiqueta_list) else False
                 auto_girar = auto_girar_etiqueta_list[i] == '1' if i < len(auto_girar_etiqueta_list) else False
@@ -1578,8 +1607,8 @@ def edit_order(order_id):
                     context = _get_form_context(form_data=request.form, edit=True, order=order)
                     return render_template('form_orden.html', **context)
 
-                ancho_cartel_cm = float(ancho_cartel_list[i]) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
-                alto_cartel_cm = float(alto_cartel_list[i]) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
+                ancho_cartel_cm = float(ancho_cartel_list[i].replace(',', '.')) if i < len(ancho_cartel_list) and ancho_cartel_list[i] else 0
+                alto_cartel_cm = float(alto_cartel_list[i].replace(',', '.')) if i < len(alto_cartel_list) and alto_cartel_list[i] else 0
                 cantidad_cartel_piezas = int(cantidad_cartel_list[i]) if i < len(cantidad_cartel_list) and cantidad_cartel_list[i] else 1
                 girar_cartel = girar_cartel_list[i] == '1' if i < len(girar_cartel_list) else False
                 auto_girar_cartel = auto_girar_cartel_list[i] == '1' if i < len(auto_girar_cartel_list) else True
@@ -1590,8 +1619,8 @@ def edit_order(order_id):
                         ancho_util_cartel = float(ancho_util_cartel_list[i].strip())
                     except:
                         pass
-                precio_impresion = float(precio_impresion_cartel_list[i]) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
-                precio_merma = float(precio_merma_cartel_list[i]) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
+                precio_impresion = float(precio_impresion_cartel_list[i].replace(',', '.')) if i < len(precio_impresion_cartel_list) and precio_impresion_cartel_list[i] else 10.0
+                precio_merma = float(precio_merma_cartel_list[i].replace(',', '.')) if i < len(precio_merma_cartel_list) and precio_merma_cartel_list[i] else 5.0
                 tipo_mat = tipo_material_cartel_list[i] if i < len(tipo_material_cartel_list) and tipo_material_cartel_list[i] else 'Vinilo'
 
                 if ancho_cartel_cm <= 0 or alto_cartel_cm <= 0 or cantidad_cartel_piezas < 1:

@@ -1626,7 +1626,7 @@
                                             </svg>
                                             Etiquetas
                                         </span>
-                                        <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}" data-tipo-accion="etiquetas">Ocultar</button>
+                                        <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}" data-tipo-accion="etiquetas">Ver</button>
                                     {% elif is_cartel %}
                                         <span class="chip-tipo cartel">
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1636,7 +1636,7 @@
                                             </svg>
                                             Cartel
                                         </span>
-                                        <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}" data-tipo-accion="carteles">Ocultar</button>
+                                        <button type="button" class="btn btn-sm btn-outline toggle-etiquetas" data-params-id="{{ paramsId }}" data-tipo-accion="carteles">Ver</button>
                                     {% else %}
                                         <span class="chip-tipo otros">
                                             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1658,9 +1658,9 @@
                             </tr>
 
                             {% if is_etiqueta %}
-                                <tr class="etiquetas-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-fav-id="{{ params.fav_id if params and params.fav_id else '' }}">
+                                <tr class="etiquetas-params-row" style="display:none;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}" data-fav-id="{{ params.fav_id if params and params.fav_id else '' }}">
                                     <td colspan="6">
-                                        <div class="etiquetas-params visible" style="display:block;">
+                                        <div class="etiquetas-params" style="display:none;">
                                             <div class="fav-picker-bar" style="display:none;">
                                                 <span class="fav-picker-info">
                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1717,7 +1717,7 @@
                                             </div>
                                             <div class="form-group">
                                                 <label>Precio (USD/m²)</label>
-                                                <input type="number" step="0.01" min="0" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.get('precio', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                <input type="text" inputmode="decimal" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.get('precio', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                             <div class="checkbox-grid">
                                                 <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.get('mesa') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
@@ -1782,9 +1782,9 @@
                             {% endif %}
 
                             {% if is_cartel %}
-                                <tr class="carteles-params-row" style="display:table-row;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
+                                <tr class="carteles-params-row" style="display:none;" data-params-id="{{ paramsId }}" data-id="{{ archivo.id }}">
                                     <td colspan="6">
-                                        <div class="carteles-params visible" style="display:block;">
+                                        <div class="carteles-params" style="display:none;">
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
@@ -1816,11 +1816,11 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Precio impresión ($/m²)</label>
-                                                    <input type="number" step="0.01" min="0" class="precio_impresion_cartel_edit" name="precio_impresion_cartel_edit[]" value="{{ params.get('precio_impresion_m2', 10.00) if params else 10.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="text" inputmode="decimal" class="precio_impresion_cartel_edit" name="precio_impresion_cartel_edit[]" value="{{ params.get('precio_impresion_m2', 10.00) if params else 10.00 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Precio merma ($/m²)</label>
-                                                    <input type="number" step="0.01" min="0" class="precio_merma_cartel_edit" name="precio_merma_cartel_edit[]" value="{{ params.get('precio_merma_m2', 4.00) if params else 4.00 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="text" inputmode="decimal" class="precio_merma_cartel_edit" name="precio_merma_cartel_edit[]" value="{{ params.get('precio_merma_m2', 4.00) if params else 4.00 }}" data-archivo-id="{{ archivo.id }}">
                                                     <span class="precio-hint">💡 La merma se cobra al cliente a este precio</span>
                                                 </div>
                                             </div>
@@ -3414,7 +3414,7 @@ function agregarLinea() {
                 </div>
                 <div class="form-group">
                     <label>Precio (USD/m²)</label>
-                    <input type="number" step="0.01" min="0" class="precio_etiqueta" name="precio_etiqueta[]" value="10">
+                    <input type="text" inputmode="decimal" class="precio_etiqueta" name="precio_etiqueta[]" value="10">
                 </div>
                 <div class="checkbox-grid">
                     <label><input type="checkbox" class="mesa_etiqueta" name="mesa_etiqueta[]" value="1" checked> Margen de mesa (2 mm)</label>
@@ -3489,11 +3489,11 @@ function agregarLinea() {
                 <div class="form-grid-2">
                     <div class="form-group">
                         <label>Precio impresión ($/m²)</label>
-                        <input type="number" step="0.01" min="0" class="precio_impresion_cartel" name="precio_impresion_cartel[]" value="10.00">
+                        <input type="text" inputmode="decimal" class="precio_impresion_cartel" name="precio_impresion_cartel[]" value="10.00">
                     </div>
                     <div class="form-group">
                         <label>Precio merma ($/m²)</label>
-                        <input type="number" step="0.01" min="0" class="precio_merma_cartel" name="precio_merma_cartel[]" value="4.00">
+                        <input type="text" inputmode="decimal" class="precio_merma_cartel" name="precio_merma_cartel[]" value="4.00">
                         <span class="precio-hint">💡 La merma se cobra al cliente a este precio (más económico)</span>
                     </div>
                 </div>
@@ -3857,7 +3857,7 @@ function calcularLinea(paramsRow) {
     if (!anchoEl || !altoEl || !precioEl) return;
     const ancho = anchoEl.value;
     const alto = altoEl.value;
-    const precio = precioEl.value || '10';
+    const precio = (precioEl.value || '10').replace(',', '.');
     const mesa = mesaEl && mesaEl.checked ? '1' : '0';
     const girar = girarEl && girarEl.checked ? '1' : '0';
     const auto_girar = autoGirarEl && autoGirarEl.checked ? '1' : '0';
@@ -4104,8 +4104,8 @@ function calcularLineaCartel(cartelesRow) {
     const cantidad = cantidadEl.value;
     const anchoUtilOverride = anchoUtilEl ? anchoUtilEl.value : '';
     const tipoMaterial = tipoMaterialEl ? tipoMaterialEl.value : 'Vinilo';
-    const precioImpresion = precioImpresionEl ? precioImpresionEl.value : '10';
-    const precioMerma = precioMermaEl ? precioMermaEl.value : '4';
+    const precioImpresion = precioImpresionEl ? precioImpresionEl.value.replace(',', '.') : '10';
+    const precioMerma = precioMermaEl ? precioMermaEl.value.replace(',', '.') : '4';
     const girar = girarEl && girarEl.checked ? '1' : '0';
     const auto_girar = autoGirarEl && autoGirarEl.checked ? '1' : '0';
     const centrar = centrarEl && centrarEl.checked ? '1' : '0';
