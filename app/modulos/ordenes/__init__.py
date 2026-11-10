@@ -673,11 +673,11 @@ def _procesar_linea_etiqueta(
         es_rotado = diff_rotado < diff_unrotado
 
     if es_rotado:
-        alto_cell_m = (ancho_cm / 100.0) + MARGEN_MESA_M
-        ancho_cell_m = (alto_cm / 100.0) + MARGEN_MESA_M if mesa else (alto_cm / 100.0)
+        alto_cell_m = (ancho_cm / 100.0) + (MARGEN_MESA_M if mesa else 0)
+        ancho_cell_m = (alto_cm / 100.0) + (MARGEN_MESA_M if mesa else 0)
     else:
-        alto_cell_m = (alto_cm / 100.0) + MARGEN_MESA_M
-        ancho_cell_m = (ancho_cm / 100.0) + MARGEN_MESA_M if mesa else (ancho_cm / 100.0)
+        alto_cell_m = (alto_cm / 100.0) + (MARGEN_MESA_M if mesa else 0)
+        ancho_cell_m = (ancho_cm / 100.0) + (MARGEN_MESA_M if mesa else 0)
 
     gap_cm = producto.gap_panno_cm if producto.gap_panno_cm is not None else GAP_PAÑOS_DEFAULT_CM
 
@@ -1339,21 +1339,38 @@ def edit_order(order_id):
                     try: ancho_util_override = float(ancho_util_override_edit[override_etiq_idx].strip())
                     except: pass
                 
+                # Leer precio editado
                 precio_editado = None
                 if override_etiq_idx < len(precio_etiqueta_edit_list) and precio_etiqueta_edit_list[override_etiq_idx]:
                     try: precio_editado = float(precio_etiqueta_edit_list[override_etiq_idx].replace(',', '.'))
                     except: pass
                 
+                # ⭐ LEER LOS NUEVOS VALORES DEL FORMULARIO POR ID
+                ancho_nuevo = request.form.get(f'ancho_etiqueta_edit_{archivo_id}', type=float, default=params.get('ancho', 10))
+                alto_nuevo = request.form.get(f'alto_etiqueta_edit_{archivo_id}', type=float, default=params.get('alto', 10))
+                mesa_nuevo = '1' in request.form.getlist(f'mesa_etiqueta_edit_{archivo_id}')
+                girar_nuevo = '1' in request.form.getlist(f'girar_etiqueta_edit_{archivo_id}')
+                auto_girar_nuevo = '1' in request.form.getlist(f'auto_girar_etiqueta_edit_{archivo_id}')
+                centrar_nuevo = '1' in request.form.getlist(f'centrar_etiqueta_edit_{archivo_id}')
+                
                 override_etiq_idx += 1
 
                 producto_anterior = archivo.producto
                 producto_anterior_id = archivo.producto_id
+                
                 precio_anterior = params.get('precio', 10.0) if params else 10.0
 
+                # ⭐ COMPARAR CON LOS VALORES ANTERIORES PARA VER SI HUBO CAMBIOS
                 cambio_significativo = (
                     producto_id_nuevo != producto_anterior_id or 
                     cantidad_original != archivo.cantidad or
-                    (precio_editado is not None and precio_editado != precio_anterior)
+                    (precio_editado is not None and precio_editado != precio_anterior) or
+                    ancho_nuevo != params.get('ancho', 10) or
+                    alto_nuevo != params.get('alto', 10) or
+                    mesa_nuevo != params.get('mesa', False) or
+                    girar_nuevo != params.get('girar', False) or
+                    auto_girar_nuevo != params.get('auto_girar', True) or
+                    centrar_nuevo != params.get('centrar', True)
                 )
                 
                 if cambio_significativo:
@@ -1368,18 +1385,13 @@ def edit_order(order_id):
                         db.session.delete(archivo)
                         continue
 
-                    ancho_cm = params.get('ancho', 10)
-                    alto_cm = params.get('alto', 10)
+                    # ⭐ USAR LOS NUEVOS VALORES
                     precio = precio_editado if precio_editado is not None else params.get('precio', 10.0)
-                    mesa = params.get('mesa', False)
-                    girar = params.get('girar', False)
-                    auto_girar = params.get('auto_girar', False)
-                    centrar = params.get('centrar', True)
 
                     adjunto_tmp, op_nuevo, mov, error = _procesar_linea_etiqueta(
                         order=order, producto=producto_nuevo,
-                        ancho_cm=ancho_cm, alto_cm=alto_cm,
-                        precio=precio, mesa=mesa, girar=girar, auto_girar=auto_girar,
+                        ancho_cm=ancho_nuevo, alto_cm=alto_nuevo,
+                        precio=precio, mesa=mesa_nuevo, girar=girar_nuevo, auto_girar=auto_girar_nuevo,
                         unidad=unidad, cantidad_original=cantidad_original,
                         ancho_util_override=ancho_util_override,
                         nombre_visible=nombre_visible,

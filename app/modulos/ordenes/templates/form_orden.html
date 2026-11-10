@@ -1683,11 +1683,11 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit[]" value="{{ params.get('ancho', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit_{{ archivo.id }}" value="{{ params.get('ancho', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Alto (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit[]" value="{{ params.get('alto', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit_{{ archivo.id }}" value="{{ params.get('alto', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                             </div>
 
@@ -1720,12 +1720,18 @@
                                                 <input type="text" inputmode="decimal" class="precio_etiqueta_edit" name="precio_etiqueta_edit[]" value="{{ params.get('precio', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                             </div>
                                             <div class="checkbox-grid">
-                                                <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit[]" value="1" {% if params and params.get('mesa') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
-                                                <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit[]" value="1" {% if params and params.get('girar') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
-                                                <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit[]" value="1" {% if not params or params.get('auto_girar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
-                                                <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit[]" value="1" {% if not params or params.get('centrar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
+                                                <input type="hidden" name="mesa_etiqueta_edit_{{ archivo.id }}" value="0">
+                                                <label><input type="checkbox" class="mesa_etiqueta_edit" name="mesa_etiqueta_edit_{{ archivo.id }}" value="1" {% if params and params.get('mesa') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Margen de mesa (2 mm)</label>
+                                                
+                                                <input type="hidden" name="girar_etiqueta_edit_{{ archivo.id }}" value="0">
+                                                <label><input type="checkbox" class="girar_etiqueta_edit" name="girar_etiqueta_edit_{{ archivo.id }}" value="1" {% if params and params.get('girar') %}checked{% endif %} data-archivo-id="{{ archivo.id }}"> Girar 90° (manual)</label>
+                                                
+                                                <input type="hidden" name="auto_girar_etiqueta_edit_{{ archivo.id }}" value="0">
+                                                <label><input type="checkbox" class="auto_girar_etiqueta_edit" name="auto_girar_etiqueta_edit_{{ archivo.id }}" value="1" {% if not params or params.get('auto_girar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Modo Inteligente</label>
+                                                
+                                                <input type="hidden" name="centrar_etiqueta_edit_{{ archivo.id }}" value="0">
+                                                <label><input type="checkbox" class="centrar_etiqueta_edit" name="centrar_etiqueta_edit_{{ archivo.id }}" value="1" {% if not params or params.get('centrar', True) %}checked{% endif %} data-archivo-id="{{ archivo.id }}">Centrar en el rollo</label>
                                             </div>
-
                                             <div class="form-group">
                                                 <label>Vista previa</label>
                                                 <div class="preview-canvas-wrap">
@@ -1788,11 +1794,11 @@
                                             <div class="form-grid-2">
                                                 <div class="form-group">
                                                     <label>Ancho (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="ancho_cartel_edit" name="ancho_cartel_edit[]" value="{{ params.get('ancho', 100) if params else 100 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="ancho_etiqueta_edit" name="ancho_etiqueta_edit_{{ archivo.id }}" value="{{ params.get('ancho', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                                 <div class="form-group">
                                                     <label>Alto (cm)</label>
-                                                    <input type="number" step="0.01" min="0.01" class="alto_cartel_edit" name="alto_cartel_edit[]" value="{{ params.get('alto', 200) if params else 200 }}" data-archivo-id="{{ archivo.id }}">
+                                                    <input type="number" step="0.01" min="0.01" class="alto_etiqueta_edit" name="alto_etiqueta_edit_{{ archivo.id }}" value="{{ params.get('alto', 10) if params else 10 }}" data-archivo-id="{{ archivo.id }}">
                                                 </div>
                                             </div>
                                             <div class="form-group">
@@ -2688,16 +2694,7 @@ function resetCanvasZoomBtn(btn) {
 let _draggingCanvas = null;
 let _dragStartX = 0, _dragStartY = 0;
 
-document.addEventListener('wheel', (e) => {
-    const canvas = e.target.closest('canvas[id^="preview-etiqueta-"], canvas[id^="preview-cartel-"]');
-    if (!canvas) return;
-    e.preventDefault();
-    const state = getCanvasViewState(canvas.id);
-    if (e.deltaY < 0) state.scale = Math.min(state.scale * 1.15, 10);
-    else state.scale = Math.max(state.scale / 1.15, 0.2);
-    actualizarZoomLabel(canvas.id);
-    redibujarCanvas(canvas.id);
-}, { passive: false });
+
 
 document.addEventListener('mousedown', (e) => {
     if (e.button !== 0) return;
