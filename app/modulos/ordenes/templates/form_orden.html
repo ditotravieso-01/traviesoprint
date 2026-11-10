@@ -3937,8 +3937,9 @@ function calcularLinea(paramsRow) {
             esRotado = diffRotado < diffUnrotado;
         }
 
-        const altoCellM = esRotado ? (anchoCmNum / 100) + MARGEN_MESA_M : (altoCmNum / 100) + MARGEN_MESA_M;
-        const anchoCellM = esRotado ? (altoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0) : (anchoCmNum / 100) + (mesa === '1' ? MARGEN_MESA_M : 0);
+        const margenMesa = mesa === '1' ? MARGEN_MESA_M : 0;
+        const altoCellM = esRotado ? (anchoCmNum / 100) + margenMesa : (altoCmNum / 100) + margenMesa;
+        const anchoCellM = esRotado ? (altoCmNum / 100) + margenMesa : (anchoCmNum / 100) + margenMesa;
         const esUnidades = (unidad === 'unidades');
         const gapM = gapCm / 100.0;
         const filasPorPañoMax = altoCellM > 0 ? Math.floor((1.0 / anchoUtilEfectivo) / altoCellM) : 1;
